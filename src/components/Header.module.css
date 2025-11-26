@@ -58,6 +58,30 @@
   color: white;
 }
 
+.exportButton {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #8b5cf6;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.exportButton:hover {
+  background-color: #7c3aed;
+}
+
+.exportIcon {
+  width: 16px;
+  height: 16px;
+}
+
 @media (max-width: 768px) {
   .headerContent {
     flex-direction: column;

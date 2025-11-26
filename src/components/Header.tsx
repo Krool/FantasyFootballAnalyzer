@@ -1,13 +1,22 @@
 import { Link, useLocation } from 'react-router-dom';
+import type { League } from '@/types';
+import { exportLeagueReport } from '@/utils/exportPdf';
 import styles from './Header.module.css';
 
 interface HeaderProps {
   leagueName?: string;
   platform?: string;
+  league?: League | null;
 }
 
-export function Header({ leagueName, platform }: HeaderProps) {
+export function Header({ leagueName, platform, league }: HeaderProps) {
   const location = useLocation();
+
+  const handleExportPdf = () => {
+    if (league) {
+      exportLeagueReport(league);
+    }
+  };
 
   return (
     <header className={styles.header}>
@@ -51,6 +60,20 @@ export function Header({ leagueName, platform }: HeaderProps) {
             >
               Teams
             </Link>
+            <button
+              onClick={handleExportPdf}
+              className={styles.exportButton}
+              title="Export PDF Report"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.exportIcon}>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <line x1="9" y1="15" x2="12" y2="18" />
+                <line x1="15" y1="15" x2="12" y2="18" />
+              </svg>
+              PDF
+            </button>
           </nav>
         )}
       </div>

@@ -19,6 +19,7 @@ function App() {
       <Header
         leagueName={league?.name}
         platform={league?.platform}
+        league={league}
       />
 
       <main>
