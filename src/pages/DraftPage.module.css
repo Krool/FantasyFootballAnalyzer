@@ -1,0 +1,51 @@
+.page {
+  padding: 2rem 0;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+}
+
+.empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.empty h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.empty p {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.empty ul {
+  list-style: none;
+  padding: 0;
+  color: var(--text-secondary);
+}
+
+.empty li {
+  padding: 0.25rem 0;
+}
+
+.empty li::before {
+  content: "•";
+  color: var(--border-color);
+  margin-right: 0.5rem;
+}
