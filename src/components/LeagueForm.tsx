@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Platform, LeagueCredentials } from '@/types';
+import { isAuthenticated, getAuthUrl, getUserLeagues, clearTokens } from '@/api/yahoo';
 import styles from './LeagueForm.module.css';
 
 interface LeagueFormProps {
@@ -15,8 +16,71 @@ export function LeagueForm({ onSubmit, isLoading }: LeagueFormProps) {
   const [swid, setSwid] = useState('');
   const [showEspnHelp, setShowEspnHelp] = useState(false);
 
+  // Yahoo OAuth state
+  const [yahooAuthenticated, setYahooAuthenticated] = useState(isAuthenticated());
+  const [yahooLeagues, setYahooLeagues] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedYahooLeague, setSelectedYahooLeague] = useState('');
+  const [loadingYahooLeagues, setLoadingYahooLeagues] = useState(false);
+  const [yahooError, setYahooError] = useState<string | null>(null);
+
+  // Load Yahoo leagues when authenticated
+  useEffect(() => {
+    if (platform === 'yahoo' && yahooAuthenticated) {
+      loadYahooLeagues();
+    }
+  }, [platform, yahooAuthenticated, season]);
+
+  const loadYahooLeagues = async () => {
+    setLoadingYahooLeagues(true);
+    setYahooError(null);
+    try {
+      const leagues = await getUserLeagues(season);
+      setYahooLeagues(leagues);
+      if (leagues.length > 0 && !selectedYahooLeague) {
+        setSelectedYahooLeague(leagues[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to load Yahoo leagues:', err);
+      setYahooError('Failed to load leagues. Please try logging in again.');
+      if (String(err).includes('re-authenticate')) {
+        clearTokens();
+        setYahooAuthenticated(false);
+      }
+    } finally {
+      setLoadingYahooLeagues(false);
+    }
+  };
+
+  const handleYahooLogin = async () => {
+    try {
+      const authUrl = await getAuthUrl();
+      window.location.href = authUrl;
+    } catch (err) {
+      console.error('Failed to get Yahoo auth URL:', err);
+      setYahooError('Failed to start Yahoo login. Please try again.');
+    }
+  };
+
+  const handleYahooLogout = () => {
+    clearTokens();
+    setYahooAuthenticated(false);
+    setYahooLeagues([]);
+    setSelectedYahooLeague('');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (platform === 'yahoo') {
+      if (!selectedYahooLeague) return;
+      onSubmit({
+        platform: 'yahoo',
+        leagueId: selectedYahooLeague,
+        season
+      });
+      return;
+    }
+
     if (!leagueId.trim()) return;
 
     const credentials: LeagueCredentials = {
@@ -56,54 +120,140 @@ export function LeagueForm({ onSubmit, isLoading }: LeagueFormProps) {
           type="button"
           className={`${styles.platformButton} ${platform === 'yahoo' ? styles.active : ''}`}
           onClick={() => setPlatform('yahoo')}
-          disabled
-          title="Yahoo requires OAuth (server-side auth)"
         >
           <span className={styles.platformIcon}>Y</span>
           Yahoo
-          <span className={styles.comingSoon}>Soon</span>
         </button>
       </div>
 
-      <div className={styles.fields}>
-        <div className={styles.field}>
-          <label htmlFor="leagueId" className={styles.label}>
-            League ID
-          </label>
-          <input
-            id="leagueId"
-            type="text"
-            className="input"
-            value={leagueId}
-            onChange={(e) => setLeagueId(e.target.value)}
-            placeholder={platform === 'sleeper' ? 'e.g., 123456789012345678' : 'e.g., 12345678'}
-            required
-          />
-          <span className={styles.hint}>
-            {platform === 'sleeper'
-              ? 'Found in your league URL: sleeper.com/leagues/[LEAGUE_ID]'
-              : 'Found in your league URL: fantasy.espn.com/football/league?leagueId=[LEAGUE_ID]'}
-          </span>
-        </div>
+      {/* Yahoo OAuth Flow */}
+      {platform === 'yahoo' && (
+        <div className={styles.yahooAuth}>
+          {!yahooAuthenticated ? (
+            <div className={styles.yahooLogin}>
+              <p className={styles.yahooDescription}>
+                Connect your Yahoo account to access your fantasy leagues.
+              </p>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleYahooLogin}
+              >
+                <span className={styles.yahooLogo}>Y!</span>
+                Log in with Yahoo
+              </button>
+              {yahooError && <p className={styles.error}>{yahooError}</p>}
+            </div>
+          ) : (
+            <div className={styles.yahooLeagueSelect}>
+              <div className={styles.yahooHeader}>
+                <span className={styles.yahooConnected}>Connected to Yahoo</span>
+                <button
+                  type="button"
+                  className={styles.logoutButton}
+                  onClick={handleYahooLogout}
+                >
+                  Log out
+                </button>
+              </div>
 
-        <div className={styles.field}>
-          <label htmlFor="season" className={styles.label}>
-            Season
-          </label>
-          <select
-            id="season"
-            className="input"
-            value={season}
-            onChange={(e) => setSeason(Number(e.target.value))}
-          >
-            {[2024, 2023, 2022, 2021, 2020].map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
+              <div className={styles.fields}>
+                <div className={styles.field}>
+                  <label htmlFor="yahooSeason" className={styles.label}>
+                    Season
+                  </label>
+                  <select
+                    id="yahooSeason"
+                    className="input"
+                    value={season}
+                    onChange={(e) => setSeason(Number(e.target.value))}
+                  >
+                    {[2024, 2023, 2022, 2021, 2020].map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={styles.field}>
+                  <label htmlFor="yahooLeague" className={styles.label}>
+                    Select League
+                  </label>
+                  {loadingYahooLeagues ? (
+                    <div className={styles.loadingLeagues}>
+                      <span className={styles.spinner}></span>
+                      Loading leagues...
+                    </div>
+                  ) : yahooLeagues.length > 0 ? (
+                    <select
+                      id="yahooLeague"
+                      className="input"
+                      value={selectedYahooLeague}
+                      onChange={(e) => setSelectedYahooLeague(e.target.value)}
+                    >
+                      {yahooLeagues.map((league) => (
+                        <option key={league.id} value={league.id}>
+                          {league.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className={styles.noLeagues}>
+                      No leagues found for {season}. Try a different season.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {yahooError && <p className={styles.error}>{yahooError}</p>}
+            </div>
+          )}
         </div>
-      </div>
+      )}
+
+      {/* Sleeper/ESPN League ID Form */}
+      {platform !== 'yahoo' && (
+        <div className={styles.fields}>
+          <div className={styles.field}>
+            <label htmlFor="leagueId" className={styles.label}>
+              League ID
+            </label>
+            <input
+              id="leagueId"
+              type="text"
+              className="input"
+              value={leagueId}
+              onChange={(e) => setLeagueId(e.target.value)}
+              placeholder={platform === 'sleeper' ? 'e.g., 123456789012345678' : 'e.g., 12345678'}
+              required
+            />
+            <span className={styles.hint}>
+              {platform === 'sleeper'
+                ? 'Found in your league URL: sleeper.com/leagues/[LEAGUE_ID]'
+                : 'Found in your league URL: fantasy.espn.com/football/league?leagueId=[LEAGUE_ID]'}
+            </span>
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor="season" className={styles.label}>
+              Season
+            </label>
+            <select
+              id="season"
+              className="input"
+              value={season}
+              onChange={(e) => setSeason(Number(e.target.value))}
+            >
+              {[2024, 2023, 2022, 2021, 2020].map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       {platform === 'espn' && (
         <div className={styles.espnAuth}>
@@ -165,16 +315,26 @@ export function LeagueForm({ onSubmit, isLoading }: LeagueFormProps) {
         </div>
       )}
 
-      <button type="submit" className="btn btn-primary" disabled={isLoading || !leagueId.trim()}>
-        {isLoading ? (
-          <>
-            <span className={styles.spinner}></span>
-            Loading League...
-          </>
-        ) : (
-          'Load League'
-        )}
-      </button>
+      {/* Submit button - show only when appropriate */}
+      {(platform !== 'yahoo' || (yahooAuthenticated && selectedYahooLeague)) && (
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={
+            isLoading ||
+            (platform === 'yahoo' ? !selectedYahooLeague : !leagueId.trim())
+          }
+        >
+          {isLoading ? (
+            <>
+              <span className={styles.spinner}></span>
+              Loading League...
+            </>
+          ) : (
+            'Load League'
+          )}
+        </button>
+      )}
     </form>
   );
 }

@@ -1,6 +1,7 @@
 import type { League, LeagueCredentials } from '@/types';
 import * as sleeper from './sleeper';
 import * as espn from './espn';
+import * as yahoo from './yahoo';
 
 export async function loadLeague(credentials: LeagueCredentials): Promise<League> {
   switch (credentials.platform) {
@@ -17,15 +18,16 @@ export async function loadLeague(credentials: LeagueCredentials): Promise<League
         }
       );
 
-    case 'yahoo':
-      throw new Error(
-        'Yahoo Fantasy requires OAuth authentication which is not supported in client-side apps. ' +
-        'Consider using a backend service or exporting your league data manually.'
-      );
+    case 'yahoo': {
+      const league = await yahoo.loadLeague(credentials.leagueId);
+      // Enrich players with stats
+      await yahoo.enrichPlayersWithStats(league);
+      return league;
+    }
 
     default:
       throw new Error(`Unknown platform: ${credentials.platform}`);
   }
 }
 
-export { sleeper, espn };
+export { sleeper, espn, yahoo };

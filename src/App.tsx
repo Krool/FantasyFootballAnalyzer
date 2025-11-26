@@ -1,12 +1,42 @@
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components';
 import { HomePage, DraftPage, TradesPage, WaiversPage, TeamsPage, HistoryPage } from '@/pages';
 import { useLeague } from '@/hooks/useLeague';
+import { saveTokens } from '@/api/yahoo';
 import type { LeagueCredentials } from '@/types';
 
 function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { league, isLoading, error, load } = useLeague();
+
+  // Handle Yahoo OAuth callback
+  useEffect(() => {
+    const path = location.pathname;
+    const search = new URLSearchParams(location.search);
+
+    if (path === '/yahoo-success') {
+      const tokensParam = search.get('tokens');
+      if (tokensParam) {
+        try {
+          const tokens = JSON.parse(decodeURIComponent(tokensParam));
+          saveTokens(tokens);
+          // Navigate to home to show league selection
+          navigate('/', { replace: true });
+        } catch (e) {
+          console.error('Failed to parse Yahoo tokens:', e);
+          navigate('/', { replace: true });
+        }
+      } else {
+        navigate('/', { replace: true });
+      }
+    } else if (path === '/yahoo-error') {
+      const errorMsg = search.get('error');
+      console.error('Yahoo OAuth error:', errorMsg);
+      navigate('/', { replace: true });
+    }
+  }, [location, navigate]);
 
   const handleLoadLeague = async (credentials: LeagueCredentials) => {
     await load(credentials);
