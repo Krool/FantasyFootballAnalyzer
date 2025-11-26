@@ -112,6 +112,42 @@ export interface League {
   totalTeams: number;
   currentWeek?: number;
   isLoaded: boolean;
+  previousLeagueId?: string;
+}
+
+export interface HeadToHeadRecord {
+  opponentId: string;
+  opponentName: string;
+  wins: number;
+  losses: number;
+  ties: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  matchups: MatchupResult[];
+}
+
+export interface MatchupResult {
+  season: number;
+  week: number;
+  teamScore: number;
+  opponentScore: number;
+  won: boolean;
+}
+
+export interface SeasonSummary {
+  season: number;
+  leagueId: string;
+  leagueName: string;
+  teams: {
+    id: string;
+    name: string;
+    wins: number;
+    losses: number;
+    ties: number;
+    pointsFor: number;
+    pointsAgainst: number;
+    standing: number;
+  }[];
 }
 
 export interface LeagueCredentials {

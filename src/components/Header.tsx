@@ -60,6 +60,12 @@ export function Header({ leagueName, platform, league }: HeaderProps) {
             >
               Teams
             </Link>
+            <Link
+              to="/history"
+              className={`${styles.navLink} ${location.pathname === '/history' ? styles.active : ''}`}
+            >
+              History
+            </Link>
             <button
               onClick={handleExportPdf}
               className={styles.exportButton}

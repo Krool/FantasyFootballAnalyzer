@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Header } from '@/components';
-import { HomePage, DraftPage, TradesPage, WaiversPage, TeamsPage } from '@/pages';
+import { HomePage, DraftPage, TradesPage, WaiversPage, TeamsPage, HistoryPage } from '@/pages';
 import { useLeague } from '@/hooks/useLeague';
 import type { LeagueCredentials } from '@/types';
 
@@ -77,6 +77,17 @@ function App() {
             element={
               league ? (
                 <TeamsPage league={league} />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+
+          <Route
+            path="/history"
+            element={
+              league ? (
+                <HistoryPage league={league} />
               ) : (
                 <Navigate to="/" replace />
               )

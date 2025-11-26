@@ -1,4 +1,4 @@
-import type { SleeperAPI, League, Team, DraftPick, Transaction, Player, Trade } from '@/types';
+import type { SleeperAPI, League, Team, DraftPick, Transaction, Player, Trade, SeasonSummary, HeadToHeadRecord } from '@/types';
 
 const BASE_URL = 'https://api.sleeper.app/v1';
 
@@ -376,5 +376,191 @@ export async function loadLeague(leagueId: string): Promise<League> {
     totalTeams: leagueData.total_rosters,
     currentWeek: nflState.week,
     isLoaded: true,
+    previousLeagueId: (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id,
   };
+}
+
+// Load historical seasons by following previous_league_id chain
+export async function loadLeagueHistory(leagueId: string, maxSeasons: number = 5): Promise<SeasonSummary[]> {
+  const history: SeasonSummary[] = [];
+  let currentLeagueId: string | undefined = leagueId;
+  let seasonsLoaded = 0;
+
+  while (currentLeagueId && seasonsLoaded < maxSeasons) {
+    try {
+      const leagueData = await getLeague(currentLeagueId);
+      const rosters = await getLeagueRosters(currentLeagueId);
+      const users = await getLeagueUsers(currentLeagueId);
+
+      // Build user map
+      const userMap = new Map<string, SleeperAPI.User>();
+      users.forEach(user => userMap.set(user.user_id, user));
+
+      // Build teams with standings
+      const teamsWithStandings = rosters
+        .map(roster => {
+          const owner = userMap.get(roster.owner_id);
+          return {
+            id: String(roster.roster_id),
+            name: owner?.display_name || owner?.username || `Team ${roster.roster_id}`,
+            wins: roster.settings?.wins || 0,
+            losses: roster.settings?.losses || 0,
+            ties: roster.settings?.ties || 0,
+            pointsFor: (roster.settings?.fpts || 0) + (roster.settings?.fpts_decimal || 0) / 100,
+            pointsAgainst: (roster.settings?.fpts_against || 0) + (roster.settings?.fpts_against_decimal || 0) / 100,
+            standing: 0,
+          };
+        })
+        .sort((a, b) => {
+          if (a.wins !== b.wins) return b.wins - a.wins;
+          return b.pointsFor - a.pointsFor;
+        })
+        .map((team, index) => ({ ...team, standing: index + 1 }));
+
+      history.push({
+        season: parseInt(leagueData.season),
+        leagueId: currentLeagueId,
+        leagueName: leagueData.name,
+        teams: teamsWithStandings,
+      });
+
+      currentLeagueId = (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id;
+      seasonsLoaded++;
+    } catch (error) {
+      console.warn(`Could not load season for league ${currentLeagueId}:`, error);
+      break;
+    }
+  }
+
+  return history;
+}
+
+// Load head-to-head records for a specific team across seasons
+export async function loadHeadToHeadRecords(
+  leagueId: string,
+  teamId: string,
+  maxSeasons: number = 5
+): Promise<{ records: Map<string, HeadToHeadRecord>; teamName: string }> {
+  const records = new Map<string, HeadToHeadRecord>();
+  let teamName = '';
+  let currentLeagueId: string | undefined = leagueId;
+  let seasonsLoaded = 0;
+
+  // Map to track owner IDs across seasons (since roster IDs can change)
+  const ownerIdToName = new Map<string, string>();
+
+  while (currentLeagueId && seasonsLoaded < maxSeasons) {
+    try {
+      const leagueData = await getLeague(currentLeagueId);
+      const rosters = await getLeagueRosters(currentLeagueId);
+      const users = await getLeagueUsers(currentLeagueId);
+      const season = parseInt(leagueData.season);
+
+      // Build maps
+      const userMap = new Map<string, SleeperAPI.User>();
+      users.forEach(user => userMap.set(user.user_id, user));
+
+      const rosterToOwner = new Map<number, string>();
+      const rosterToName = new Map<number, string>();
+      rosters.forEach(roster => {
+        rosterToOwner.set(roster.roster_id, roster.owner_id);
+        const owner = userMap.get(roster.owner_id);
+        const name = owner?.display_name || owner?.username || `Team ${roster.roster_id}`;
+        rosterToName.set(roster.roster_id, name);
+        ownerIdToName.set(roster.owner_id, name);
+      });
+
+      // Find our team's roster ID for this season
+      let ourRosterId: number | undefined;
+      if (seasonsLoaded === 0) {
+        // First season: use the provided teamId
+        ourRosterId = parseInt(teamId);
+        teamName = rosterToName.get(ourRosterId) || teamId;
+      } else {
+        // Subsequent seasons: find by matching owner ID
+        const ourOwnerIdInFirstSeason = rosters.find(r => String(r.roster_id) === teamId)?.owner_id;
+        if (ourOwnerIdInFirstSeason) {
+          const roster = rosters.find(r => r.owner_id === ourOwnerIdInFirstSeason);
+          ourRosterId = roster?.roster_id;
+        }
+      }
+
+      if (!ourRosterId) {
+        currentLeagueId = (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id;
+        seasonsLoaded++;
+        continue;
+      }
+
+      // Load all matchups for the season
+      const weekCount = 17; // Regular season weeks
+      for (let week = 1; week <= weekCount; week++) {
+        try {
+          const matchups = await getMatchups(currentLeagueId, week);
+
+          // Find our matchup
+          const ourMatchup = matchups.find(m => m.roster_id === ourRosterId);
+          if (!ourMatchup || ourMatchup.matchup_id === null) continue;
+
+          // Find opponent
+          const opponentMatchup = matchups.find(
+            m => m.matchup_id === ourMatchup.matchup_id && m.roster_id !== ourRosterId
+          );
+          if (!opponentMatchup) continue;
+
+          const opponentOwnerId = rosterToOwner.get(opponentMatchup.roster_id) || '';
+          const opponentName = rosterToName.get(opponentMatchup.roster_id) || `Team ${opponentMatchup.roster_id}`;
+
+          // Get or create record
+          let record = records.get(opponentOwnerId);
+          if (!record) {
+            record = {
+              opponentId: opponentOwnerId,
+              opponentName,
+              wins: 0,
+              losses: 0,
+              ties: 0,
+              pointsFor: 0,
+              pointsAgainst: 0,
+              matchups: [],
+            };
+            records.set(opponentOwnerId, record);
+          }
+
+          // Update record
+          const ourScore = ourMatchup.points || 0;
+          const oppScore = opponentMatchup.points || 0;
+          const won = ourScore > oppScore;
+          const tied = ourScore === oppScore;
+
+          if (won) record.wins++;
+          else if (tied) record.ties++;
+          else record.losses++;
+
+          record.pointsFor += ourScore;
+          record.pointsAgainst += oppScore;
+          record.matchups.push({
+            season,
+            week,
+            teamScore: ourScore,
+            opponentScore: oppScore,
+            won,
+          });
+
+          // Update opponent name (may have changed over seasons)
+          record.opponentName = ownerIdToName.get(opponentOwnerId) || record.opponentName;
+        } catch {
+          // Week might not exist
+          continue;
+        }
+      }
+
+      currentLeagueId = (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id;
+      seasonsLoaded++;
+    } catch (error) {
+      console.warn(`Could not load matchups for league ${currentLeagueId}:`, error);
+      break;
+    }
+  }
+
+  return { records, teamName };
 }

@@ -1,0 +1,186 @@
+.page {
+  padding: 2rem 0;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem;
+  color: var(--text-secondary);
+}
+
+.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.notice {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  padding: 2rem;
+  border-radius: 8px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.topThree {
+  background: linear-gradient(90deg, rgba(234, 179, 8, 0.1) 0%, transparent 100%);
+}
+
+.topThree:first-child {
+  background: linear-gradient(90deg, rgba(234, 179, 8, 0.2) 0%, transparent 100%);
+}
+
+.teamName {
+  font-weight: 500;
+}
+
+.championship {
+  font-size: 1rem;
+}
+
+/* Season Cards */
+.seasons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.seasonCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.seasonHeader {
+  background: var(--bg-tertiary);
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.seasonYear {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--accent);
+}
+
+.seasonName {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.seasonStandings {
+  padding: 0.5rem 0;
+}
+
+.standingRow {
+  display: grid;
+  grid-template-columns: 2rem 1fr 3.5rem 4.5rem;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.standingRow:hover {
+  background: var(--bg-tertiary);
+}
+
+.champion {
+  background: linear-gradient(90deg, rgba(234, 179, 8, 0.15) 0%, transparent 100%);
+}
+
+.standing {
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.standingTeam {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trophy {
+  flex-shrink: 0;
+}
+
+.standingRecord {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.standingPoints {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.moreTeams {
+  padding: 0.5rem 1rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 640px) {
+  .seasons {
+    grid-template-columns: 1fr;
+  }
+
+  .standingRow {
+    grid-template-columns: 1.5rem 1fr 3rem 3.5rem;
+    font-size: 0.8rem;
+  }
+}
