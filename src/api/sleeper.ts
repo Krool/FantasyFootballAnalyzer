@@ -1,4 +1,4 @@
-import type { SleeperAPI, League, Team, DraftPick, Transaction, Player } from '@/types';
+import type { SleeperAPI, League, Team, DraftPick, Transaction, Player, Trade } from '@/types';
 
 const BASE_URL = 'https://api.sleeper.app/v1';
 
@@ -180,6 +180,8 @@ export async function loadLeague(leagueId: string): Promise<League> {
 
   // Convert transactions and group by team
   const teamTransactions = new Map<number, Transaction[]>();
+  const allTrades: Trade[] = [];
+
   allTransactions
     .filter(tx => tx.status === 'complete' && (tx.type === 'waiver' || tx.type === 'free_agent'))
     .forEach(tx => {
@@ -223,6 +225,108 @@ export async function loadLeague(leagueId: string): Promise<League> {
       });
     });
 
+  // Process trades
+  allTransactions
+    .filter(tx => tx.status === 'complete' && tx.type === 'trade')
+    .forEach(tx => {
+      const rosterIds = tx.roster_ids || [];
+      if (rosterIds.length < 2) return;
+
+      // Build adds/drops per roster
+      const addsPerRoster = new Map<number, string[]>();
+      const dropsPerRoster = new Map<number, string[]>();
+
+      if (tx.adds) {
+        Object.entries(tx.adds).forEach(([playerId, rosterId]) => {
+          const list = addsPerRoster.get(rosterId) || [];
+          list.push(playerId);
+          addsPerRoster.set(rosterId, list);
+        });
+      }
+
+      if (tx.drops) {
+        Object.entries(tx.drops).forEach(([playerId, rosterId]) => {
+          const list = dropsPerRoster.get(rosterId) || [];
+          list.push(playerId);
+          dropsPerRoster.set(rosterId, list);
+        });
+      }
+
+      // Calculate points for each side
+      const tradeTeams = rosterIds.map(rosterId => {
+        const received = addsPerRoster.get(rosterId) || [];
+        const sent = dropsPerRoster.get(rosterId) || [];
+
+        let pointsGained = 0;
+        let pointsLost = 0;
+
+        received.forEach(playerId => {
+          const startedData = playerStartedPoints.get(playerId);
+          if (startedData) {
+            pointsGained += startedData.points;
+          }
+        });
+
+        sent.forEach(playerId => {
+          const startedData = playerStartedPoints.get(playerId);
+          if (startedData) {
+            pointsLost += startedData.points;
+          }
+        });
+
+        return {
+          teamId: String(rosterId),
+          teamName: '', // Will be set later
+          playersReceived: received.map(id => convertPlayer(id, players)),
+          playersSent: sent.map(id => convertPlayer(id, players)),
+          pointsGained,
+          pointsLost,
+          netValue: pointsGained - pointsLost,
+        };
+      });
+
+      // Determine winner
+      let winner: string | undefined;
+      let winnerMargin = 0;
+      if (tradeTeams.length === 2) {
+        const [team1, team2] = tradeTeams;
+        const diff = team1.netValue - team2.netValue;
+        if (Math.abs(diff) > 10) { // Margin threshold
+          winner = diff > 0 ? team1.teamId : team2.teamId;
+          winnerMargin = Math.abs(diff);
+        }
+      }
+
+      const trade: Trade = {
+        id: tx.transaction_id,
+        timestamp: tx.created,
+        week: tx.leg,
+        status: 'completed',
+        teams: tradeTeams,
+        winner,
+        winnerMargin,
+      };
+
+      allTrades.push(trade);
+    });
+
+  // Build team name map for trades
+  const teamNameMap = new Map<string, string>();
+  rosters.forEach(roster => {
+    const owner = userMap.get(roster.owner_id);
+    const teamName = owner?.display_name || owner?.username || `Team ${roster.roster_id}`;
+    teamNameMap.set(String(roster.roster_id), teamName);
+  });
+
+  // Update trade team names
+  const tradesWithNames = allTrades.map(trade => ({
+    ...trade,
+    teams: trade.teams.map(t => ({
+      ...t,
+      teamName: teamNameMap.get(t.teamId) || t.teamId,
+    })),
+  }));
+
   // Build teams
   const teams: Team[] = rosters.map(roster => {
     const owner = userMap.get(roster.owner_id);
@@ -238,6 +342,11 @@ export async function loadLeague(leagueId: string): Promise<League> {
       teamName,
     }));
 
+    // Get trades involving this team
+    const teamTrades = tradesWithNames.filter(trade =>
+      trade.teams.some(t => t.teamId === String(roster.roster_id))
+    );
+
     return {
       id: String(roster.roster_id),
       name: teamName,
@@ -246,6 +355,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
       roster: roster.players?.map(id => convertPlayer(id, players)) || [],
       draftPicks: draftPicksForTeam,
       transactions: transactionsForTeam,
+      trades: teamTrades,
       wins: roster.settings?.wins || 0,
       losses: roster.settings?.losses || 0,
       ties: roster.settings?.ties || 0,
@@ -261,6 +371,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
     season: parseInt(leagueData.season),
     draftType: 'snake', // Sleeper primarily supports snake drafts
     teams,
+    trades: tradesWithNames,
     scoringType,
     totalTeams: leagueData.total_rosters,
     currentWeek: nflState.week,

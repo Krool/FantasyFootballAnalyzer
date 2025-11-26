@@ -44,6 +44,37 @@ export interface Transaction {
   gamesStarted?: number;
 }
 
+export interface Trade {
+  id: string;
+  timestamp: number;
+  week: number;
+  status: 'completed' | 'pending' | 'vetoed';
+  // Teams involved
+  teams: {
+    teamId: string;
+    teamName: string;
+    playersReceived: Player[];
+    playersSent: Player[];
+    draftPicksReceived?: TradedDraftPick[];
+    draftPicksSent?: TradedDraftPick[];
+    // Points generated after trade
+    pointsGained: number;
+    pointsLost: number;
+    netValue: number;
+  }[];
+  // Trade winner determination
+  winner?: string; // teamId of winner
+  winnerMargin?: number;
+}
+
+export interface TradedDraftPick {
+  season: number;
+  round: number;
+  originalOwner?: string;
+}
+
+export type TradeGrade = 'big_win' | 'win' | 'fair' | 'loss' | 'big_loss';
+
 export interface Team {
   id: string;
   name: string;
@@ -52,6 +83,7 @@ export interface Team {
   roster?: Player[];
   draftPicks?: DraftPick[];
   transactions?: Transaction[];
+  trades?: Trade[];
   // Season stats
   wins?: number;
   losses?: number;
@@ -75,6 +107,7 @@ export interface League {
   season: number;
   draftType: DraftType;
   teams: Team[];
+  trades?: Trade[];
   scoringType: 'standard' | 'ppr' | 'half_ppr' | 'custom';
   totalTeams: number;
   currentWeek?: number;

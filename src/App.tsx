@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Header } from '@/components';
-import { HomePage, DraftPage, WaiversPage, TeamsPage } from '@/pages';
+import { HomePage, DraftPage, TradesPage, WaiversPage, TeamsPage } from '@/pages';
 import { useLeague } from '@/hooks/useLeague';
 import type { LeagueCredentials } from '@/types';
 
@@ -43,6 +43,17 @@ function App() {
             element={
               league ? (
                 <DraftPage league={league} />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+
+          <Route
+            path="/trades"
+            element={
+              league ? (
+                <TradesPage league={league} />
               ) : (
                 <Navigate to="/" replace />
               )

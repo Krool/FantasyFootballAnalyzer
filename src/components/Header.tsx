@@ -31,13 +31,19 @@ export function Header({ leagueName, platform }: HeaderProps) {
               to="/draft"
               className={`${styles.navLink} ${location.pathname === '/draft' ? styles.active : ''}`}
             >
-              Draft Analysis
+              Draft
+            </Link>
+            <Link
+              to="/trades"
+              className={`${styles.navLink} ${location.pathname === '/trades' ? styles.active : ''}`}
+            >
+              Trades
             </Link>
             <Link
               to="/waivers"
               className={`${styles.navLink} ${location.pathname === '/waivers' ? styles.active : ''}`}
             >
-              Waiver Pickups
+              Waivers
             </Link>
             <Link
               to="/teams"
