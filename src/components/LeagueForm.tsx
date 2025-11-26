@@ -11,7 +11,8 @@ interface LeagueFormProps {
 export function LeagueForm({ onSubmit, isLoading }: LeagueFormProps) {
   const [platform, setPlatform] = useState<Platform>('sleeper');
   const [leagueId, setLeagueId] = useState('');
-  const [season, setSeason] = useState(new Date().getFullYear());
+  const currentYear = new Date().getFullYear();
+  const [season, setSeason] = useState(currentYear);
   const [espnS2, setEspnS2] = useState('');
   const [swid, setSwid] = useState('');
   const [showEspnHelp, setShowEspnHelp] = useState(false);
@@ -168,7 +169,7 @@ export function LeagueForm({ onSubmit, isLoading }: LeagueFormProps) {
                     value={season}
                     onChange={(e) => setSeason(Number(e.target.value))}
                   >
-                    {[2024, 2023, 2022, 2021, 2020].map((year) => (
+                    {Array.from({ length: 6 }, (_, i) => currentYear - i).map((year) => (
                       <option key={year} value={year}>
                         {year}
                       </option>
@@ -230,28 +231,31 @@ export function LeagueForm({ onSubmit, isLoading }: LeagueFormProps) {
             />
             <span className={styles.hint}>
               {platform === 'sleeper'
-                ? 'Found in your league URL: sleeper.com/leagues/[LEAGUE_ID]'
+                ? 'Found in your league URL: sleeper.com/leagues/[LEAGUE_ID] (each season has a unique ID)'
                 : 'Found in your league URL: fantasy.espn.com/football/league?leagueId=[LEAGUE_ID]'}
             </span>
           </div>
 
-          <div className={styles.field}>
-            <label htmlFor="season" className={styles.label}>
-              Season
-            </label>
-            <select
-              id="season"
-              className="input"
-              value={season}
-              onChange={(e) => setSeason(Number(e.target.value))}
-            >
-              {[2024, 2023, 2022, 2021, 2020].map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Season selector only for ESPN - Sleeper uses season-specific league IDs */}
+          {platform === 'espn' && (
+            <div className={styles.field}>
+              <label htmlFor="season" className={styles.label}>
+                Season
+              </label>
+              <select
+                id="season"
+                className="input"
+                value={season}
+                onChange={(e) => setSeason(Number(e.target.value))}
+              >
+                {Array.from({ length: 6 }, (_, i) => currentYear - i).map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
 
