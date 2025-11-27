@@ -12,10 +12,16 @@ const YAHOO_SUPPORTED_SEASONS = [currentYear, 2024, 2023, 2022, 2021, 2020, 2019
 interface LeagueFormProps {
   onSubmit: (credentials: LeagueCredentials) => void;
   isLoading: boolean;
+  onPlatformChange?: (platform: Platform) => void;
 }
 
-export function LeagueForm({ onSubmit, isLoading }: LeagueFormProps) {
-  const [platform, setPlatform] = useState<Platform>('sleeper');
+export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueFormProps) {
+  const [platform, setPlatformState] = useState<Platform>('sleeper');
+
+  const setPlatform = (p: Platform) => {
+    setPlatformState(p);
+    onPlatformChange?.(p);
+  };
   const [leagueId, setLeagueId] = useState('');
   // Default to current year for all platforms
   const [season, setSeason] = useState(currentYear);

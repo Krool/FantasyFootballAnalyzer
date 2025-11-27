@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LeagueForm } from '@/components';
-import type { LeagueCredentials } from '@/types';
+import type { LeagueCredentials, Platform } from '@/types';
 import type { LoadingProgress } from '@/hooks/useLeague';
 import styles from './HomePage.module.css';
 
@@ -12,13 +12,13 @@ interface HomePageProps {
 }
 
 // Secret credentials for the crocodile button
-const SECRET_SLEEPER = {
-  platform: 'sleeper' as const,
+const SECRET_SLEEPER: LeagueCredentials = {
+  platform: 'sleeper',
   leagueId: '1240782642371104768',
 };
 
-const SECRET_ESPN = {
-  platform: 'espn' as const,
+const SECRET_ESPN: LeagueCredentials = {
+  platform: 'espn',
   leagueId: '347749457',
   season: 2024,
   espnS2: 'AECcgwVOUgKOpAFwDhM8LMDZ%2B6kT13GrqWmxCIE14bNXH7MbiuByz4DdB7mTAJZ7Nmh5NRYPV7%2FzrQqIg6UCJSQyXOvFjksg4AFx1rgpiI7gbTS8hCudtxF54SbZys7fKrfYYY%2FOfXxEeTSgRVdw8fx0Q4gS8kiUV0%2FbLbnTmbOxDom%2B%2FqVuwaExb8lWZrXyQ7H3luMiYk%2Bw%2BzMYKq07zm1J4gBTkuwyQp3hFt%2Fd0kN4HAdpCByIzPTP988NEIJz7eZtk5UlnAyF1tkDvTaGT5HXex0OO0hUlPsF5fxNjzHmDA%3D%3D',
@@ -26,19 +26,15 @@ const SECRET_ESPN = {
 };
 
 export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageProps) {
-  const [secretClickCount, setSecretClickCount] = useState(0);
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform>('sleeper');
 
   const handleSecretClick = () => {
-    // Alternate between Sleeper and ESPN on each click
-    const newCount = secretClickCount + 1;
-    setSecretClickCount(newCount);
-
-    if (newCount % 2 === 1) {
-      // Odd clicks = Sleeper
-      onLoadLeague(SECRET_SLEEPER);
-    } else {
-      // Even clicks = ESPN
+    // Load the secret league based on which platform is currently selected
+    if (selectedPlatform === 'espn') {
       onLoadLeague(SECRET_ESPN);
+    } else {
+      // Default to Sleeper for sleeper or yahoo
+      onLoadLeague(SECRET_SLEEPER);
     }
   };
 
@@ -55,7 +51,11 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
       <div className={styles.formContainer}>
         <div className="card">
           <h2 className={styles.formTitle}>Connect Your League</h2>
-          <LeagueForm onSubmit={onLoadLeague} isLoading={isLoading} />
+          <LeagueForm
+            onSubmit={onLoadLeague}
+            isLoading={isLoading}
+            onPlatformChange={setSelectedPlatform}
+          />
 
           {isLoading && progress && (
             <div className={styles.progressContainer}>
@@ -143,6 +143,37 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
           <p className={styles.featureDesc}>
             Compare all teams side by side. See draft grades,
             waiver success, and season performance.
+          </p>
+        </div>
+
+        <div className={styles.feature}>
+          <div className={styles.featureIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+          </div>
+          <h3 className={styles.featureTitle}>PDF Reports</h3>
+          <p className={styles.featureDesc}>
+            Export comprehensive league reports as PDF.
+            Share draft grades and analysis with your league.
+          </p>
+        </div>
+
+        <div className={styles.feature}>
+          <div className={styles.featureIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="8" r="7" />
+              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+            </svg>
+          </div>
+          <h3 className={styles.featureTitle}>League History</h3>
+          <p className={styles.featureDesc}>
+            View all-time standings and past champions.
+            Track dynasty league performance across seasons.
           </p>
         </div>
       </div>
