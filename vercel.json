@@ -1,13 +1,4 @@
 {
-  "version": 2,
-  "framework": null,
-  "buildCommand": null,
-  "outputDirectory": null,
-  "functions": {
-    "api/*.ts": {
-      "runtime": "@vercel/node@3"
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",

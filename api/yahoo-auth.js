@@ -1,9 +1,17 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
 const YAHOO_AUTH_URL = 'https://api.login.yahoo.com/oauth2/request_auth';
 const CLIENT_ID = process.env.YAHOO_CLIENT_ID;
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = (req, res) => {
+  // Handle CORS
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -13,7 +21,9 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Get the redirect URI from the request or use default
-  const redirectUri = `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}/api/yahoo-callback`;
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers.host;
+  const redirectUri = `${protocol}://${host}/api/yahoo-callback`;
 
   // Generate a random state for CSRF protection
   const state = Math.random().toString(36).substring(2, 15);
@@ -29,4 +39,4 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     authUrl: authUrl.toString(),
     state
   });
-}
+};

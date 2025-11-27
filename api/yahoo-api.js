@@ -1,10 +1,10 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { XMLParser } from 'fast-xml-parser';
+const { XMLParser } = require('fast-xml-parser');
 
 const YAHOO_API_BASE = 'https://fantasysports.yahooapis.com/fantasy/v2';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = async (req, res) => {
   // Enable CORS
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -42,7 +42,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (!yahooResponse.ok) {
-      // Try to get error details
       const errorText = await yahooResponse.text();
       console.error('Yahoo API error:', yahooResponse.status, errorText);
 
@@ -86,4 +85,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('Yahoo API proxy error:', err);
     res.status(500).json({ error: 'Server error during API request' });
   }
-}
+};

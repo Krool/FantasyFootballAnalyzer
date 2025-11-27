@@ -1,14 +1,13 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
 const YAHOO_TOKEN_URL = 'https://api.login.yahoo.com/oauth2/get_token';
 const CLIENT_ID = process.env.YAHOO_CLIENT_ID;
 const CLIENT_SECRET = process.env.YAHOO_CLIENT_SECRET;
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = async (req, res) => {
   // Enable CORS
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -29,11 +28,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const credentials = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+
     const tokenResponse = await fetch(YAHOO_TOKEN_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64')}`
+        'Authorization': `Basic ${credentials}`
       },
       body: new URLSearchParams({
         grant_type: 'refresh_token',
@@ -59,4 +60,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('Token refresh error:', err);
     res.status(500).json({ error: 'Server error during token refresh' });
   }
-}
+};

@@ -1,11 +1,9 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
 const YAHOO_TOKEN_URL = 'https://api.login.yahoo.com/oauth2/get_token';
 const CLIENT_ID = process.env.YAHOO_CLIENT_ID;
 const CLIENT_SECRET = process.env.YAHOO_CLIENT_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://krool.github.io/FantasyFootballAnalyzer';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = async (req, res) => {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -13,8 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { code, error, error_description } = req.query;
 
   if (error) {
-    // Redirect to frontend with error
-    return res.redirect(`${FRONTEND_URL}/#/yahoo-error?error=${encodeURIComponent(error as string)}&description=${encodeURIComponent(error_description as string || '')}`);
+    return res.redirect(`${FRONTEND_URL}/#/yahoo-error?error=${encodeURIComponent(error)}&description=${encodeURIComponent(error_description || '')}`);
   }
 
   if (!code || typeof code !== 'string') {
@@ -26,14 +23,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const redirectUri = `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}/api/yahoo-callback`;
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const host = req.headers.host;
+    const redirectUri = `${protocol}://${host}/api/yahoo-callback`;
 
     // Exchange code for tokens
+    const credentials = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+
     const tokenResponse = await fetch(YAHOO_TOKEN_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64')}`
+        'Authorization': `Basic ${credentials}`
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
@@ -50,8 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const tokens = await tokenResponse.json();
 
-    // Redirect to frontend with tokens in URL fragment (more secure than query params)
-    // The frontend will extract these and store them
+    // Redirect to frontend with tokens in URL fragment
     const tokenData = encodeURIComponent(JSON.stringify({
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
@@ -64,4 +64,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('OAuth callback error:', err);
     res.redirect(`${FRONTEND_URL}/#/yahoo-error?error=server_error`);
   }
-}
+};
