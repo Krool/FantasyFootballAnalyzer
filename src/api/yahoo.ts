@@ -1,7 +1,7 @@
 import type { League, Team, DraftPick, Transaction, Player, Trade } from '@/types';
 
-// Backend API URL - will be the Vercel deployment URL
-const API_BASE = import.meta.env.VITE_YAHOO_API_URL || 'https://fantasy-football-analyzer.vercel.app';
+// Backend API URL - Vercel deployment
+const API_BASE = import.meta.env.VITE_YAHOO_API_URL || 'https://fantasy-football-analyzer-mu.vercel.app';
 
 // Storage keys
 const STORAGE_KEYS = {
