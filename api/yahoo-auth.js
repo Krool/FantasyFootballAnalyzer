@@ -1,4 +1,4 @@
-module.exports = (req, res) => {
+export default function handler(req, res) {
   // Handle CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -16,7 +16,7 @@ module.exports = (req, res) => {
   const CLIENT_ID = process.env.YAHOO_CLIENT_ID;
 
   if (!CLIENT_ID) {
-    return res.status(500).json({ error: 'Yahoo client ID not configured', env: Object.keys(process.env).filter(k => k.startsWith('YAHOO')) });
+    return res.status(500).json({ error: 'Yahoo client ID not configured' });
   }
 
   try {
@@ -28,7 +28,7 @@ module.exports = (req, res) => {
     // Generate a random state for CSRF protection
     const state = Math.random().toString(36).substring(2, 15);
 
-    // Build auth URL manually
+    // Build auth URL
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
       redirect_uri: redirectUri,
@@ -38,7 +38,6 @@ module.exports = (req, res) => {
 
     const authUrl = `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`;
 
-    // Return the auth URL for the client to redirect to
     return res.status(200).json({
       authUrl: authUrl,
       state: state
@@ -46,4 +45,4 @@ module.exports = (req, res) => {
   } catch (err) {
     return res.status(500).json({ error: 'Server error', message: err.message });
   }
-};
+}

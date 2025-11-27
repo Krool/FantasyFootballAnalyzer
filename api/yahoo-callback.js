@@ -1,9 +1,7 @@
 const YAHOO_TOKEN_URL = 'https://api.login.yahoo.com/oauth2/get_token';
-const CLIENT_ID = process.env.YAHOO_CLIENT_ID;
-const CLIENT_SECRET = process.env.YAHOO_CLIENT_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://krool.github.io/FantasyFootballAnalyzer';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -17,6 +15,9 @@ module.exports = async (req, res) => {
   if (!code || typeof code !== 'string') {
     return res.redirect(`${FRONTEND_URL}/#/yahoo-error?error=missing_code`);
   }
+
+  const CLIENT_ID = process.env.YAHOO_CLIENT_ID;
+  const CLIENT_SECRET = process.env.YAHOO_CLIENT_SECRET;
 
   if (!CLIENT_ID || !CLIENT_SECRET) {
     return res.redirect(`${FRONTEND_URL}/#/yahoo-error?error=server_config`);
@@ -64,4 +65,4 @@ module.exports = async (req, res) => {
     console.error('OAuth callback error:', err);
     res.redirect(`${FRONTEND_URL}/#/yahoo-error?error=server_error`);
   }
-};
+}

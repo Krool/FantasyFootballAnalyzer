@@ -1,8 +1,6 @@
 const YAHOO_TOKEN_URL = 'https://api.login.yahoo.com/oauth2/get_token';
-const CLIENT_ID = process.env.YAHOO_CLIENT_ID;
-const CLIENT_SECRET = process.env.YAHOO_CLIENT_SECRET;
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,6 +20,9 @@ module.exports = async (req, res) => {
   if (!refresh_token) {
     return res.status(400).json({ error: 'Missing refresh_token' });
   }
+
+  const CLIENT_ID = process.env.YAHOO_CLIENT_ID;
+  const CLIENT_SECRET = process.env.YAHOO_CLIENT_SECRET;
 
   if (!CLIENT_ID || !CLIENT_SECRET) {
     return res.status(500).json({ error: 'Yahoo credentials not configured' });
@@ -60,4 +61,4 @@ module.exports = async (req, res) => {
     console.error('Token refresh error:', err);
     res.status(500).json({ error: 'Server error during token refresh' });
   }
-};
+}
