@@ -3,6 +3,10 @@ import type { Platform, LeagueCredentials } from '@/types';
 import { isAuthenticated, getAuthUrl, getUserLeagues, clearTokens } from '@/api/yahoo';
 import styles from './LeagueForm.module.css';
 
+// Yahoo only supports seasons that have completed or are in progress
+// 2025 NFL fantasy season hasn't started yet
+const YAHOO_SUPPORTED_SEASONS = [2024, 2023, 2022, 2021, 2020, 2019];
+
 interface LeagueFormProps {
   onSubmit: (credentials: LeagueCredentials) => void;
   isLoading: boolean;
@@ -12,7 +16,8 @@ export function LeagueForm({ onSubmit, isLoading }: LeagueFormProps) {
   const [platform, setPlatform] = useState<Platform>('sleeper');
   const [leagueId, setLeagueId] = useState('');
   const currentYear = new Date().getFullYear();
-  const [season, setSeason] = useState(currentYear);
+  // Default to 2024 for Yahoo since 2025 season hasn't started
+  const [season, setSeason] = useState(2024);
   const [espnS2, setEspnS2] = useState('');
   const [swid, setSwid] = useState('');
   const [showEspnHelp, setShowEspnHelp] = useState(false);
@@ -169,7 +174,7 @@ export function LeagueForm({ onSubmit, isLoading }: LeagueFormProps) {
                     value={season}
                     onChange={(e) => setSeason(Number(e.target.value))}
                   >
-                    {Array.from({ length: 6 }, (_, i) => currentYear - i).map((year) => (
+                    {YAHOO_SUPPORTED_SEASONS.map((year) => (
                       <option key={year} value={year}>
                         {year}
                       </option>
