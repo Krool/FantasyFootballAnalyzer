@@ -442,7 +442,8 @@ export async function enrichPlayersWithStats(league: League): Promise<void> {
 
   if (playerKeys.size === 0) return;
 
-  // Batch fetch player info (Yahoo allows up to 25 at a time)
+  // Batch fetch player info in league context to get fantasy points with league scoring
+  // Yahoo allows up to 25 players at a time
   const playerArray = Array.from(playerKeys);
   const batches: string[][] = [];
 
@@ -455,22 +456,39 @@ export async function enrichPlayersWithStats(league: League): Promise<void> {
   for (const batch of batches) {
     try {
       const playerKeysStr = batch.join(',');
-      const data = await yahooFetch<any>(`/players;player_keys=${playerKeysStr};out=stats`);
+      // Use league/players endpoint to get stats with league scoring applied
+      const data = await yahooFetch<any>(
+        `/league/${league.id}/players;player_keys=${playerKeysStr};out=stats`
+      );
 
-      const players = data?.fantasy_content?.players?.player || [];
+      const players = data?.fantasy_content?.league?.players?.player || [];
       const playerList = Array.isArray(players) ? players : [players];
 
       for (const player of playerList) {
-        const stats = player.player_stats?.stats?.stat || [];
-        const pointsStat = Array.isArray(stats)
-          ? stats.find((s: any) => s.stat_id === '0')
-          : stats.stat_id === '0' ? stats : null;
+        // Try to get player_points first (league-context fantasy points)
+        let points: number | undefined;
+
+        // Check for player_points (total fantasy points in league context)
+        if (player.player_points?.total !== undefined) {
+          points = parseFloat(player.player_points.total);
+        } else if (player.player_stats?.stats?.stat) {
+          // Fallback: sum up individual stats (though this won't have correct scoring)
+          const stats = player.player_stats.stats.stat;
+          const statList = Array.isArray(stats) ? stats : [stats];
+          // Look for fantasy points stat if returned
+          const pointsStat = statList.find((s: any) =>
+            s.stat_id === '0' || s.stat_id === 'fpts'
+          );
+          if (pointsStat) {
+            points = parseFloat(pointsStat.value);
+          }
+        }
 
         playerMap.set(player.player_key, {
           name: player.name?.full || 'Unknown',
-          position: player.display_position || '',
+          position: player.display_position || player.primary_position || '',
           team: player.editorial_team_abbr || '',
-          points: pointsStat ? parseFloat(pointsStat.value) : undefined
+          points
         });
       }
     } catch (e) {
