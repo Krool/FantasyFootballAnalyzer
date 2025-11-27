@@ -1,18 +1,7 @@
 import type { DraftPick, DraftGrade, League } from '@/types';
 
-interface GradeThresholds {
-  great: number;
-  good: number;
-  bad: number;
-}
-
-// Default thresholds: how many positions better/worse than expected
-const DEFAULT_THRESHOLDS: GradeThresholds = {
-  great: 12,  // Finished 12+ spots better than drafted
-  good: 3,    // Finished 3-11 spots better than drafted
-  bad: -6,    // Finished 6+ spots worse than drafted
-  // Anything between good and bad is "neutral" but we don't have that grade
-};
+// Grading now considers draft position - early picks are judged on hitting,
+// later picks are judged on finding value. This creates a sliding scale.
 
 export interface GradedPick extends DraftPick {
   grade: DraftGrade;
@@ -76,23 +65,62 @@ export function calculateExpectedRank(
   return positionPicksBefore + 1;
 }
 
-// Grade a single pick
+// Grade a single pick using position-aware thresholds
+// Early picks (1st-3rd at position) are graded on hitting - did you get a top performer?
+// Later picks are graded on value - did you beat expectations?
 export function gradePick(
   _pick: DraftPick,
   positionRank: number,
-  expectedRank: number,
-  thresholds: GradeThresholds = DEFAULT_THRESHOLDS
+  expectedRank: number
 ): DraftGrade {
   const valueOverExpected = expectedRank - positionRank;
 
-  if (valueOverExpected >= thresholds.great) {
-    return 'great';
-  } else if (valueOverExpected >= thresholds.good) {
-    return 'good';
-  } else if (valueOverExpected >= thresholds.bad) {
-    return 'bad';
+  // For early position picks (expected top 3 at position), grade based on finishing position
+  // These are your premium picks - hitting on them is crucial
+  if (expectedRank <= 3) {
+    // Top 3 expected pick grading:
+    // Great: Finished top 3 at position (you hit on your premium pick)
+    // Good: Finished top 6 at position (still a starter-quality outcome)
+    // Bad: Finished 7-12 at position (disappointing but usable)
+    // Terrible: Finished outside top 12 (bust)
+    if (positionRank <= 3) {
+      return 'great';
+    } else if (positionRank <= 6) {
+      return 'good';
+    } else if (positionRank <= 12) {
+      return 'bad';
+    } else {
+      return 'terrible';
+    }
+  }
+
+  // For mid-round picks (expected 4-8 at position), blend of hitting and value
+  if (expectedRank <= 8) {
+    // Great: Finished top 5 OR beat expectation by 4+
+    // Good: Finished top 10 OR beat expectation by 2+
+    // Bad: Missed expectation by 4+ but still top 15
+    // Terrible: Missed badly
+    if (positionRank <= 5 || valueOverExpected >= 4) {
+      return 'great';
+    } else if (positionRank <= 10 || valueOverExpected >= 2) {
+      return 'good';
+    } else if (positionRank <= 15 || valueOverExpected >= -4) {
+      return 'bad';
+    } else {
+      return 'terrible';
+    }
+  }
+
+  // For later picks (expected 9+ at position), grade purely on value over expected
+  // These are dart throws - finding value is the goal
+  if (valueOverExpected >= 6) {
+    return 'great';  // Found a real sleeper
+  } else if (valueOverExpected >= 2) {
+    return 'good';   // Beat expectations
+  } else if (valueOverExpected >= -4) {
+    return 'bad';    // Slight miss
   } else {
-    return 'terrible';
+    return 'terrible'; // Wasted pick
   }
 }
 
