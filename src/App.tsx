@@ -9,7 +9,7 @@ import type { LeagueCredentials } from '@/types';
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { league, isLoading, error, load } = useLeague();
+  const { league, isLoading, error, progress, load } = useLeague();
 
   // Handle Yahoo OAuth callback
   useEffect(() => {
@@ -64,6 +64,7 @@ function App() {
                   onLoadLeague={handleLoadLeague}
                   isLoading={isLoading}
                   error={error}
+                  progress={progress}
                 />
               )
             }

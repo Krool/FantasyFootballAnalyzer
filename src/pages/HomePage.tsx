@@ -1,14 +1,16 @@
 import { LeagueForm } from '@/components';
 import type { LeagueCredentials } from '@/types';
+import type { LoadingProgress } from '@/hooks/useLeague';
 import styles from './HomePage.module.css';
 
 interface HomePageProps {
   onLoadLeague: (credentials: LeagueCredentials) => void;
   isLoading: boolean;
   error: string | null;
+  progress: LoadingProgress | null;
 }
 
-export function HomePage({ onLoadLeague, isLoading, error }: HomePageProps) {
+export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageProps) {
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
@@ -23,6 +25,26 @@ export function HomePage({ onLoadLeague, isLoading, error }: HomePageProps) {
         <div className="card">
           <h2 className={styles.formTitle}>Connect Your League</h2>
           <LeagueForm onSubmit={onLoadLeague} isLoading={isLoading} />
+
+          {isLoading && progress && (
+            <div className={styles.progressContainer}>
+              <div className={styles.progressHeader}>
+                <span className={styles.progressStage}>{progress.stage}</span>
+                <span className={styles.progressCount}>
+                  {progress.current} / {progress.total}
+                </span>
+              </div>
+              <div className={styles.progressBar}>
+                <div
+                  className={styles.progressFill}
+                  style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                />
+              </div>
+              {progress.detail && (
+                <div className={styles.progressDetail}>{progress.detail}</div>
+              )}
+            </div>
+          )}
 
           {error && (
             <div className={styles.error}>

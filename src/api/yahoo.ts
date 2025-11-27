@@ -513,8 +513,14 @@ function buildPlayerOwnershipMap(
   return ownershipMap;
 }
 
+// Progress callback type
+type ProgressCallback = (progress: { stage: string; current: number; total: number; detail?: string }) => void;
+
 // Enrich player data with stats
-export async function enrichPlayersWithStats(league: League): Promise<void> {
+export async function enrichPlayersWithStats(
+  league: League,
+  onProgress?: ProgressCallback
+): Promise<void> {
   // Get all player keys from draft picks AND transactions
   const playerKeys = new Set<string>();
 
@@ -546,12 +552,26 @@ export async function enrichPlayersWithStats(league: League): Promise<void> {
     batches.push(playerArray.slice(i, i + 25));
   }
 
+  // Calculate total API calls needed for progress tracking
+  const allWaiverPlayerKeys = playerArray.filter(pk => ownershipMap.has(pk));
+  const waiverBatches = Math.ceil(allWaiverPlayerKeys.length / 25);
+  const totalCalls = batches.length + (waiverBatches * currentWeek);
+  let completedCalls = 0;
+
   // Map for player info and season stats
   const playerMap = new Map<string, { name: string; position: string; team: string; points?: number }>();
   // Map for weekly stats: playerId -> week -> points
   const weeklyStatsMap = new Map<string, Map<number, number>>();
 
-  for (const batch of batches) {
+  onProgress?.({
+    stage: 'Fetching player data',
+    current: 0,
+    total: totalCalls,
+    detail: `Loading ${playerArray.length} players...`
+  });
+
+  for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+    const batch = batches[batchIndex];
     try {
       const playerKeysStr = batch.join(',');
 
@@ -587,24 +607,32 @@ export async function enrichPlayersWithStats(league: League): Promise<void> {
         });
       }
 
+      completedCalls++;
+      onProgress?.({
+        stage: 'Fetching player data',
+        current: completedCalls,
+        total: totalCalls,
+        detail: `Loaded ${Math.min((batchIndex + 1) * 25, playerArray.length)} of ${playerArray.length} players`
+      });
+
     } catch (e) {
       console.error('Error fetching player batch:', e);
+      completedCalls++;
     }
   }
 
   // Fetch weekly stats for waiver players (those with ownership changes)
   // Do this separately to minimize API calls - fetch all waiver players for each week
-  const allWaiverPlayerKeys = playerArray.filter(pk => ownershipMap.has(pk));
   if (allWaiverPlayerKeys.length > 0) {
     // Batch waiver players (25 at a time) for weekly stats
-    const waiverBatches: string[][] = [];
+    const waiverBatchesArr: string[][] = [];
     for (let i = 0; i < allWaiverPlayerKeys.length; i += 25) {
-      waiverBatches.push(allWaiverPlayerKeys.slice(i, i + 25));
+      waiverBatchesArr.push(allWaiverPlayerKeys.slice(i, i + 25));
     }
 
     // Fetch stats for each week
     for (let week = 1; week <= currentWeek; week++) {
-      for (const waiverBatch of waiverBatches) {
+      for (const waiverBatch of waiverBatchesArr) {
         try {
           const weekData = await yahooFetch<any>(
             `/league/${league.id}/players;player_keys=${waiverBatch.join(',')};out=stats;type=week;week=${week}`
@@ -616,25 +644,34 @@ export async function enrichPlayersWithStats(league: League): Promise<void> {
           for (const player of weekPlayerList) {
             let weekPoints = 0;
 
+            // Yahoo returns player_points.total for the requested week
             if (player.player_points?.total !== undefined) {
               weekPoints = parseFloat(player.player_points.total);
-            } else if (player.player_stats?.stats?.stat) {
-              const stats = player.player_stats.stats.stat;
-              const statList = Array.isArray(stats) ? stats : [stats];
-              const pointsStat = statList.find((s: any) =>
-                s.stat_id === '0' || s.stat_id === 'fpts'
-              );
-              if (pointsStat) {
-                weekPoints = parseFloat(pointsStat.value);
-              }
+            }
+
+            // Sanity check: weekly points shouldn't exceed ~75 for any player
+            // If it's higher, it's likely season totals being returned incorrectly
+            if (weekPoints > 75) {
+              console.warn(`Suspiciously high weekly points for ${player.player_key} week ${week}: ${weekPoints}, skipping`);
+              continue; // Skip this data point entirely
             }
 
             const playerWeeklyStats = weeklyStatsMap.get(player.player_key) || new Map<number, number>();
             playerWeeklyStats.set(week, weekPoints);
             weeklyStatsMap.set(player.player_key, playerWeeklyStats);
           }
+
+          completedCalls++;
+          onProgress?.({
+            stage: 'Fetching weekly stats',
+            current: completedCalls,
+            total: totalCalls,
+            detail: `Week ${week} of ${currentWeek} (${allWaiverPlayerKeys.length} waiver players)`
+          });
+
         } catch (e) {
           console.error(`Error fetching week ${week} stats:`, e);
+          completedCalls++;
         }
       }
     }
