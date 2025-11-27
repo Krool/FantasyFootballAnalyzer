@@ -10,7 +10,8 @@ const STORAGE_KEYS = {
   TOKEN_EXPIRY: 'yahoo_token_expiry'
 };
 
-// Yahoo game keys by season
+// Yahoo game keys by season - use 'nfl' for current season
+// Historical game keys for past seasons
 const NFL_GAME_KEYS: Record<number, string> = {
   2024: '449',
   2023: '423',
@@ -23,6 +24,21 @@ const NFL_GAME_KEYS: Record<number, string> = {
   2016: '359',
   2015: '348'
 };
+
+// Get game key for a season - uses 'nfl' for current year to auto-detect
+function getGameKey(season: number): string {
+  const currentYear = new Date().getFullYear();
+  // For current year, use 'nfl' which auto-resolves to current season
+  if (season === currentYear) {
+    return 'nfl';
+  }
+  // For past seasons, use the known game key
+  const gameKey = NFL_GAME_KEYS[season];
+  if (!gameKey) {
+    throw new Error(`Season ${season} not supported`);
+  }
+  return gameKey;
+}
 
 interface YahooTokens {
   access_token: string;
@@ -149,10 +165,7 @@ async function yahooFetch<T>(endpoint: string): Promise<T> {
 
 // Get user's leagues for a season
 export async function getUserLeagues(season: number = new Date().getFullYear()): Promise<Array<{ id: string; name: string }>> {
-  const gameKey = NFL_GAME_KEYS[season];
-  if (!gameKey) {
-    throw new Error(`Season ${season} not supported`);
-  }
+  const gameKey = getGameKey(season);
 
   const data = await yahooFetch<any>(`/users;use_login=1/games;game_keys=${gameKey}/leagues`);
 

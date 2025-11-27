@@ -3,9 +3,11 @@ import type { Platform, LeagueCredentials } from '@/types';
 import { isAuthenticated, getAuthUrl, getUserLeagues, clearTokens } from '@/api/yahoo';
 import styles from './LeagueForm.module.css';
 
-// Yahoo only supports seasons that have completed or are in progress
-// 2025 NFL fantasy season hasn't started yet
-const YAHOO_SUPPORTED_SEASONS = [2024, 2023, 2022, 2021, 2020, 2019];
+// Yahoo supported seasons - current year uses 'nfl' game key which auto-resolves
+const currentYear = new Date().getFullYear();
+const YAHOO_SUPPORTED_SEASONS = [currentYear, 2024, 2023, 2022, 2021, 2020, 2019].filter(
+  (year, index, arr) => arr.indexOf(year) === index // Remove duplicates if currentYear is 2024
+);
 
 interface LeagueFormProps {
   onSubmit: (credentials: LeagueCredentials) => void;
@@ -15,9 +17,8 @@ interface LeagueFormProps {
 export function LeagueForm({ onSubmit, isLoading }: LeagueFormProps) {
   const [platform, setPlatform] = useState<Platform>('sleeper');
   const [leagueId, setLeagueId] = useState('');
-  const currentYear = new Date().getFullYear();
-  // Default to 2024 for Yahoo since 2025 season hasn't started
-  const [season, setSeason] = useState(2024);
+  // Default to current year for all platforms
+  const [season, setSeason] = useState(currentYear);
   const [espnS2, setEspnS2] = useState('');
   const [swid, setSwid] = useState('');
   const [showEspnHelp, setShowEspnHelp] = useState(false);
