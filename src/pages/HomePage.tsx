@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { LeagueForm } from '@/components';
 import type { LeagueCredentials } from '@/types';
 import type { LoadingProgress } from '@/hooks/useLeague';
@@ -10,7 +11,37 @@ interface HomePageProps {
   progress: LoadingProgress | null;
 }
 
+// Secret credentials for the crocodile button
+const SECRET_SLEEPER = {
+  platform: 'sleeper' as const,
+  leagueId: '1240782642371104768',
+};
+
+const SECRET_ESPN = {
+  platform: 'espn' as const,
+  leagueId: '347749457',
+  season: 2024,
+  espnS2: 'AECcgwVOUgKOpAFwDhM8LMDZ%2B6kT13GrqWmxCIE14bNXH7MbiuByz4DdB7mTAJZ7Nmh5NRYPV7%2FzrQqIg6UCJSQyXOvFjksg4AFx1rgpiI7gbTS8hCudtxF54SbZys7fKrfYYY%2FOfXxEeTSgRVdw8fx0Q4gS8kiUV0%2FbLbnTmbOxDom%2B%2FqVuwaExb8lWZrXyQ7H3luMiYk%2Bw%2BzMYKq07zm1J4gBTkuwyQp3hFt%2Fd0kN4HAdpCByIzPTP988NEIJz7eZtk5UlnAyF1tkDvTaGT5HXex0OO0hUlPsF5fxNjzHmDA%3D%3D',
+  swid: '{419BAD61-FE0D-4590-827B-BAE6A00E5289}',
+};
+
 export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageProps) {
+  const [secretClickCount, setSecretClickCount] = useState(0);
+
+  const handleSecretClick = () => {
+    // Alternate between Sleeper and ESPN on each click
+    const newCount = secretClickCount + 1;
+    setSecretClickCount(newCount);
+
+    if (newCount % 2 === 1) {
+      // Odd clicks = Sleeper
+      onLoadLeague(SECRET_SLEEPER);
+    } else {
+      // Even clicks = ESPN
+      onLoadLeague(SECRET_ESPN);
+    }
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
@@ -115,6 +146,16 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
           </p>
         </div>
       </div>
+
+      {/* Secret button */}
+      <button
+        className={styles.secretButton}
+        onClick={handleSecretClick}
+        title="🐊"
+        aria-label="Secret league loader"
+      >
+        🐊
+      </button>
     </div>
   );
 }

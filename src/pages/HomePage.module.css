@@ -240,6 +240,33 @@
   color: var(--text-secondary);
 }
 
+/* Secret button */
+.secretButton {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  opacity: 0.15;
+  transition: all 0.3s ease;
+  z-index: 50;
+  border-radius: 50%;
+}
+
+.secretButton:hover {
+  opacity: 1;
+  transform: scale(1.2);
+  background: rgba(45, 90, 39, 0.3);
+}
+
+.secretButton:active {
+  transform: scale(1.1);
+}
+
 @media (max-width: 640px) {
   .title {
     font-size: 2rem;
