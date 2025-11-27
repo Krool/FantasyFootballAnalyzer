@@ -453,6 +453,66 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
   return { transactions, trades };
 }
 
+// Build a map of player ownership periods from transactions
+// Returns: playerId -> array of {teamId, startWeek, endWeek}
+function buildPlayerOwnershipMap(
+  teams: Team[],
+  currentWeek: number
+): Map<string, Array<{ teamId: string; startWeek: number; endWeek: number }>> {
+  const ownershipMap = new Map<string, Array<{ teamId: string; startWeek: number; endWeek: number }>>();
+
+  // Collect all transactions across all teams, sorted by week
+  const allTransactions: Array<{ tx: Transaction; teamId: string }> = [];
+  for (const team of teams) {
+    for (const tx of team.transactions || []) {
+      allTransactions.push({ tx, teamId: team.id });
+    }
+  }
+  allTransactions.sort((a, b) => a.tx.week - b.tx.week);
+
+  // Track current owner of each player
+  const currentOwner = new Map<string, { teamId: string; startWeek: number }>();
+
+  for (const { tx } of allTransactions) {
+    // Process drops first (player leaves team)
+    for (const player of tx.drops || []) {
+      const owner = currentOwner.get(player.id);
+      if (owner) {
+        // End the ownership period
+        const periods = ownershipMap.get(player.id) || [];
+        periods.push({
+          teamId: owner.teamId,
+          startWeek: owner.startWeek,
+          endWeek: tx.week - 1 // Owned until the week before drop
+        });
+        ownershipMap.set(player.id, periods);
+        currentOwner.delete(player.id);
+      }
+    }
+
+    // Process adds (player joins team)
+    for (const player of tx.adds || []) {
+      currentOwner.set(player.id, {
+        teamId: tx.teamId,
+        startWeek: tx.week
+      });
+    }
+  }
+
+  // Close out any remaining ownerships (still on roster)
+  for (const [playerId, owner] of currentOwner.entries()) {
+    const periods = ownershipMap.get(playerId) || [];
+    periods.push({
+      teamId: owner.teamId,
+      startWeek: owner.startWeek,
+      endWeek: currentWeek
+    });
+    ownershipMap.set(playerId, periods);
+  }
+
+  return ownershipMap;
+}
+
 // Enrich player data with stats
 export async function enrichPlayersWithStats(league: League): Promise<void> {
   // Get all player keys from draft picks AND transactions
@@ -472,6 +532,11 @@ export async function enrichPlayersWithStats(league: League): Promise<void> {
 
   if (playerKeys.size === 0) return;
 
+  const currentWeek = league.currentWeek || 1;
+
+  // Build ownership map to know when each player was on each team
+  const ownershipMap = buildPlayerOwnershipMap(league.teams, currentWeek);
+
   // Batch fetch player info in league context to get fantasy points with league scoring
   // Yahoo allows up to 25 players at a time
   const playerArray = Array.from(playerKeys);
@@ -481,12 +546,16 @@ export async function enrichPlayersWithStats(league: League): Promise<void> {
     batches.push(playerArray.slice(i, i + 25));
   }
 
+  // Map for player info and season stats
   const playerMap = new Map<string, { name: string; position: string; team: string; points?: number }>();
+  // Map for weekly stats: playerId -> week -> points
+  const weeklyStatsMap = new Map<string, Map<number, number>>();
 
   for (const batch of batches) {
     try {
       const playerKeysStr = batch.join(',');
-      // Use league/players endpoint to get stats with league scoring applied
+
+      // Fetch season stats for player info
       const data = await yahooFetch<any>(
         `/league/${league.id}/players;player_keys=${playerKeysStr};out=stats`
       );
@@ -495,17 +564,13 @@ export async function enrichPlayersWithStats(league: League): Promise<void> {
       const playerList = Array.isArray(players) ? players : [players];
 
       for (const player of playerList) {
-        // Try to get player_points first (league-context fantasy points)
         let points: number | undefined;
 
-        // Check for player_points (total fantasy points in league context)
         if (player.player_points?.total !== undefined) {
           points = parseFloat(player.player_points.total);
         } else if (player.player_stats?.stats?.stat) {
-          // Fallback: sum up individual stats (though this won't have correct scoring)
           const stats = player.player_stats.stats.stat;
           const statList = Array.isArray(stats) ? stats : [stats];
-          // Look for fantasy points stat if returned
           const pointsStat = statList.find((s: any) =>
             s.stat_id === '0' || s.stat_id === 'fpts'
           );
@@ -521,8 +586,57 @@ export async function enrichPlayersWithStats(league: League): Promise<void> {
           points
         });
       }
+
     } catch (e) {
       console.error('Error fetching player batch:', e);
+    }
+  }
+
+  // Fetch weekly stats for waiver players (those with ownership changes)
+  // Do this separately to minimize API calls - fetch all waiver players for each week
+  const allWaiverPlayerKeys = playerArray.filter(pk => ownershipMap.has(pk));
+  if (allWaiverPlayerKeys.length > 0) {
+    // Batch waiver players (25 at a time) for weekly stats
+    const waiverBatches: string[][] = [];
+    for (let i = 0; i < allWaiverPlayerKeys.length; i += 25) {
+      waiverBatches.push(allWaiverPlayerKeys.slice(i, i + 25));
+    }
+
+    // Fetch stats for each week
+    for (let week = 1; week <= currentWeek; week++) {
+      for (const waiverBatch of waiverBatches) {
+        try {
+          const weekData = await yahooFetch<any>(
+            `/league/${league.id}/players;player_keys=${waiverBatch.join(',')};out=stats;type=week;week=${week}`
+          );
+
+          const weekPlayers = weekData?.fantasy_content?.league?.players?.player || [];
+          const weekPlayerList = Array.isArray(weekPlayers) ? weekPlayers : [weekPlayers];
+
+          for (const player of weekPlayerList) {
+            let weekPoints = 0;
+
+            if (player.player_points?.total !== undefined) {
+              weekPoints = parseFloat(player.player_points.total);
+            } else if (player.player_stats?.stats?.stat) {
+              const stats = player.player_stats.stats.stat;
+              const statList = Array.isArray(stats) ? stats : [stats];
+              const pointsStat = statList.find((s: any) =>
+                s.stat_id === '0' || s.stat_id === 'fpts'
+              );
+              if (pointsStat) {
+                weekPoints = parseFloat(pointsStat.value);
+              }
+            }
+
+            const playerWeeklyStats = weeklyStatsMap.get(player.player_key) || new Map<number, number>();
+            playerWeeklyStats.set(week, weekPoints);
+            weeklyStatsMap.set(player.player_key, playerWeeklyStats);
+          }
+        } catch (e) {
+          console.error(`Error fetching week ${week} stats:`, e);
+        }
+      }
     }
   }
 
@@ -540,12 +654,10 @@ export async function enrichPlayersWithStats(league: League): Promise<void> {
       }
     }
 
-    // Update transactions with player stats
-    // For Yahoo, we use season points as an approximation since we can't easily
-    // get week-by-week lineup data. This shows the player's total value.
+    // Update transactions with player stats for the ownership period
     for (const tx of team.transactions || []) {
       let totalPoints = 0;
-      let hasStats = false;
+      let gamesWithPoints = 0;
 
       for (const player of tx.adds || []) {
         const playerInfo = playerMap.get(player.id);
@@ -553,20 +665,32 @@ export async function enrichPlayersWithStats(league: League): Promise<void> {
           player.name = playerInfo.name;
           player.position = playerInfo.position;
           player.team = playerInfo.team;
-          if (playerInfo.points !== undefined) {
-            totalPoints += playerInfo.points;
-            hasStats = true;
+        }
+
+        // Find the ownership period for this transaction
+        const periods = ownershipMap.get(player.id) || [];
+        const ownershipPeriod = periods.find(
+          p => p.teamId === tx.teamId && p.startWeek === tx.week
+        );
+
+        if (ownershipPeriod) {
+          const weeklyStats = weeklyStatsMap.get(player.id);
+          if (weeklyStats) {
+            // Sum points only for weeks during ownership
+            for (let week = ownershipPeriod.startWeek; week <= ownershipPeriod.endWeek; week++) {
+              const weekPoints = weeklyStats.get(week);
+              if (weekPoints !== undefined && weekPoints > 0) {
+                totalPoints += weekPoints;
+                gamesWithPoints++;
+              }
+            }
           }
         }
       }
 
-      if (hasStats) {
-        // For Yahoo, we show season total points since we can't track starts
-        // The gamesStarted is estimated based on weeks since pickup
-        const currentWeek = league.currentWeek || 1;
-        const weeksOwned = Math.max(1, currentWeek - tx.week);
+      if (gamesWithPoints > 0 || totalPoints > 0) {
         tx.totalPointsGenerated = totalPoints;
-        tx.gamesStarted = weeksOwned; // Estimate: weeks since pickup
+        tx.gamesStarted = gamesWithPoints;
       }
     }
   }
