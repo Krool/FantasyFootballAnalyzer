@@ -89,6 +89,19 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
         <div className={styles.feature}>
           <div className={styles.featureIcon}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M7 16l-4-4 4-4M17 8l4 4-4 4M3 12h18" />
+            </svg>
+          </div>
+          <h3 className={styles.featureTitle}>Trade Analysis</h3>
+          <p className={styles.featureDesc}>
+            Evaluate every trade based on points generated.
+            See who won each deal and track trade performance.
+          </p>
+        </div>
+
+        <div className={styles.feature}>
+          <div className={styles.featureIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
               <path d="M23 21v-2a4 4 0 0 0-3-3.87" />

@@ -36,6 +36,9 @@ export function HistoryPage({ league }: HistoryPageProps) {
   }, [league]);
 
   // Calculate all-time standings
+  // Only count championships for completed seasons (not the current year)
+  const currentYear = new Date().getFullYear();
+
   const allTimeStats = history.length > 0 ? (() => {
     const stats = new Map<string, {
       name: string;
@@ -48,6 +51,9 @@ export function HistoryPage({ league }: HistoryPageProps) {
     }>();
 
     history.forEach(season => {
+      // Only award championship for completed seasons (previous years)
+      const isCompletedSeason = season.season < currentYear;
+
       season.teams.forEach(team => {
         const current = stats.get(team.name) || {
           name: team.name,
@@ -63,7 +69,8 @@ export function HistoryPage({ league }: HistoryPageProps) {
         current.totalLosses += team.losses;
         current.totalTies += team.ties;
         current.totalPointsFor += team.pointsFor;
-        if (team.standing === 1) current.championships++;
+        // Only count championship if season is complete
+        if (team.standing === 1 && isCompletedSeason) current.championships++;
         current.seasons++;
 
         stats.set(team.name, current);
@@ -165,37 +172,43 @@ export function HistoryPage({ league }: HistoryPageProps) {
             <section className={styles.section}>
               <h2 className={styles.sectionTitle}>Season History</h2>
               <div className={styles.seasons}>
-                {history.map(season => (
-                  <div key={season.leagueId} className={styles.seasonCard}>
-                    <div className={styles.seasonHeader}>
-                      <h3 className={styles.seasonYear}>{season.season}</h3>
-                      <span className={styles.seasonName}>{season.leagueName}</span>
+                {history.map(season => {
+                  const isCompletedSeason = season.season < currentYear;
+                  return (
+                    <div key={season.leagueId} className={styles.seasonCard}>
+                      <div className={styles.seasonHeader}>
+                        <h3 className={styles.seasonYear}>
+                          {season.season}
+                          {!isCompletedSeason && <span className={styles.inProgress}> (In Progress)</span>}
+                        </h3>
+                        <span className={styles.seasonName}>{season.leagueName}</span>
+                      </div>
+                      <div className={styles.seasonStandings}>
+                        {season.teams.slice(0, 6).map(team => (
+                          <div
+                            key={team.id}
+                            className={`${styles.standingRow} ${team.standing === 1 && isCompletedSeason ? styles.champion : ''}`}
+                          >
+                            <span className={styles.standing}>{team.standing}</span>
+                            <span className={styles.standingTeam}>
+                              {team.standing === 1 && isCompletedSeason && <span className={styles.trophy}>🏆</span>}
+                              {team.name}
+                            </span>
+                            <span className={styles.standingRecord}>
+                              {team.wins}-{team.losses}
+                            </span>
+                            <span className={styles.standingPoints}>{team.pointsFor.toFixed(0)} pts</span>
+                          </div>
+                        ))}
+                        {season.teams.length > 6 && (
+                          <div className={styles.moreTeams}>
+                            +{season.teams.length - 6} more teams
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className={styles.seasonStandings}>
-                      {season.teams.slice(0, 6).map(team => (
-                        <div
-                          key={team.id}
-                          className={`${styles.standingRow} ${team.standing === 1 ? styles.champion : ''}`}
-                        >
-                          <span className={styles.standing}>{team.standing}</span>
-                          <span className={styles.standingTeam}>
-                            {team.standing === 1 && <span className={styles.trophy}>🏆</span>}
-                            {team.name}
-                          </span>
-                          <span className={styles.standingRecord}>
-                            {team.wins}-{team.losses}
-                          </span>
-                          <span className={styles.standingPoints}>{team.pointsFor.toFixed(0)} pts</span>
-                        </div>
-                      ))}
-                      {season.teams.length > 6 && (
-                        <div className={styles.moreTeams}>
-                          +{season.teams.length - 6} more teams
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           </>

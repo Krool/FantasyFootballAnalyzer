@@ -105,6 +105,13 @@
   color: var(--accent);
 }
 
+.inProgress {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-good);
+  vertical-align: middle;
+}
+
 .seasonName {
   font-size: 0.875rem;
   color: var(--text-secondary);
