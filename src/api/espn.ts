@@ -37,8 +37,10 @@ async function fetchESPN<T>(
 ): Promise<T> {
   // If we have cookies, use the proxy (browsers can't send cookies cross-origin)
   if (options?.espnS2 && options?.swid) {
-    const viewParams = views.map(v => `views=${v}`).join('&');
+    const viewParams = views.map(v => `view=${v}`).join('&');
     const url = `${ESPN_PROXY_URL}?season=${season}&leagueId=${leagueId}&${viewParams}`;
+
+    console.log('[ESPN] Using proxy for private league:', url);
 
     const response = await fetch(url, {
       headers: {
@@ -48,11 +50,14 @@ async function fetchESPN<T>(
       },
     });
 
+    console.log('[ESPN] Proxy response status:', response.status);
+
     if (!response.ok) {
       if (response.status === 401) {
         throw new Error('ESPN: League is private. Please check your espn_s2 and SWID cookies.');
       }
       const errorData = await response.json().catch(() => ({}));
+      console.error('[ESPN] Proxy error:', errorData);
       throw new Error(errorData.error || `ESPN API error: ${response.status}`);
     }
 

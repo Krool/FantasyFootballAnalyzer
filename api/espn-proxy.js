@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { season, leagueId, views } = req.query;
+  const { season, leagueId, view } = req.query;
 
   if (!season || !leagueId) {
     return res.status(400).json({ error: 'Missing season or leagueId parameter' });
@@ -27,8 +27,11 @@ export default async function handler(req, res) {
 
   try {
     // Build ESPN URL
-    const viewParams = views ? (Array.isArray(views) ? views : [views]).map(v => `view=${v}`).join('&') : '';
+    const viewParams = view ? (Array.isArray(view) ? view : [view]).map(v => `view=${v}`).join('&') : '';
     const espnUrl = `${ESPN_API_BASE}/${season}/segments/0/leagues/${leagueId}${viewParams ? '?' + viewParams : ''}`;
+
+    console.log('[ESPN Proxy] Fetching:', espnUrl);
+    console.log('[ESPN Proxy] Has cookies:', !!espnS2 && !!swid);
 
     // Build headers for ESPN request
     const headers = {
