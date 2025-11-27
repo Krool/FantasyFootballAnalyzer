@@ -37,7 +37,7 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
               <div className={styles.progressBar}>
                 <div
                   className={styles.progressFill}
-                  style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                  style={{ width: `${progress.total > 0 ? (progress.current / progress.total) * 100 : 0}%` }}
                 />
               </div>
               {progress.detail && (

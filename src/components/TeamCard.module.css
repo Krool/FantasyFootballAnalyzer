@@ -1,9 +1,24 @@
 .card {
-  background-color: var(--bg-secondary);
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, #0d1420 100%);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 1.5rem;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-great), var(--accent-gold));
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .card[role="button"] {
@@ -11,8 +26,13 @@
 }
 
 .card[role="button"]:hover {
-  border-color: #3b82f6;
-  transform: translateY(-2px);
+  border-color: var(--accent-gold);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 215, 0, 0.1);
+}
+
+.card[role="button"]:hover::before {
+  opacity: 1;
 }
 
 .header {
@@ -131,13 +151,42 @@
 .barFill {
   height: 100%;
   border-radius: 4px;
-  transition: width 0.3s ease;
+  transition: width 0.5s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.barFill.great { background-color: var(--color-great); }
-.barFill.good { background-color: var(--color-good); }
-.barFill.bad { background-color: var(--color-bad); }
-.barFill.terrible { background-color: var(--color-terrible); }
+.barFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: barShimmer 2s infinite;
+}
+
+@keyframes barShimmer {
+  100% { left: 100%; }
+}
+
+.barFill.great {
+  background: linear-gradient(90deg, var(--color-great), #00b368);
+  box-shadow: 0 0 8px rgba(0, 217, 126, 0.3);
+}
+.barFill.good {
+  background: linear-gradient(90deg, var(--color-good), #8bc720);
+  box-shadow: 0 0 8px rgba(166, 226, 46, 0.3);
+}
+.barFill.bad {
+  background: linear-gradient(90deg, var(--color-bad), #e07b00);
+  box-shadow: 0 0 8px rgba(253, 151, 31, 0.3);
+}
+.barFill.terrible {
+  background: linear-gradient(90deg, var(--color-terrible), #d41d5c);
+  box-shadow: 0 0 8px rgba(249, 38, 114, 0.3);
+}
 
 .gradeCount {
   font-size: 0.875rem;

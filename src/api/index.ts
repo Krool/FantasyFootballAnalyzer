@@ -11,12 +11,21 @@ export async function loadLeague(
   credentials: LeagueCredentials,
   onProgress?: ProgressCallback
 ): Promise<League> {
+  console.log('[loadLeague] Called with:', {
+    platform: credentials.platform,
+    leagueId: credentials.leagueId,
+    season: credentials.season,
+    hasEspnS2: !!credentials.espnS2,
+    hasSwid: !!credentials.swid,
+  });
+
   switch (credentials.platform) {
     case 'sleeper':
       onProgress?.({ stage: 'Loading league data', current: 0, total: 1 });
       return sleeper.loadLeague(credentials.leagueId);
 
     case 'espn':
+      console.log('[loadLeague] Loading ESPN league...');
       onProgress?.({ stage: 'Loading league data', current: 0, total: 1 });
       return espn.loadLeague(
         credentials.leagueId,

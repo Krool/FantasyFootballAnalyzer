@@ -118,8 +118,32 @@
 
 .empty {
   text-align: center;
-  padding: 3rem;
+  padding: 4rem 2rem;
   color: var(--text-secondary);
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+  border-radius: 12px;
+  border: 1px dashed var(--border-color);
+}
+
+.emptyIcon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  color: var(--border-color);
+  opacity: 0.6;
+}
+
+.emptyTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.emptyText {
+  font-size: 0.9rem;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 .leaderboard {

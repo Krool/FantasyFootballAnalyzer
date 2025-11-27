@@ -1,4 +1,4 @@
-import type { ESPNAPI, League, Team, DraftPick, Transaction, Player } from '@/types';
+import type { ESPNAPI, League, Team, DraftPick, Transaction, Player, Trade } from '@/types';
 
 // Direct ESPN API for public leagues
 const ESPN_DIRECT_URL = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons';
@@ -103,18 +103,52 @@ function getSeasonPoints(player: ESPNAPI.Player, season: number): number | undef
   return seasonStats?.appliedTotal;
 }
 
+// Build a player map from all rosters and draft data
+function buildPlayerMap(leagueData: ESPNAPI.League, season: number): Map<string, Player & { seasonPoints?: number }> {
+  const playerMap = new Map<string, Player & { seasonPoints?: number }>();
+
+  leagueData.teams.forEach(team => {
+    team.roster?.entries.forEach(entry => {
+      if (entry.playerPoolEntry?.player) {
+        const espnPlayer = entry.playerPoolEntry.player;
+        playerMap.set(String(espnPlayer.id), {
+          ...convertPlayer(espnPlayer),
+          seasonPoints: getSeasonPoints(espnPlayer, season),
+        });
+      }
+    });
+  });
+
+  return playerMap;
+}
+
 export async function loadLeague(
   leagueId: string,
   season: number = new Date().getFullYear(),
   options?: FetchOptions
 ): Promise<League> {
-  // Fetch all required data
+  // Fetch all required data including transactions
   const leagueData = await fetchESPN<ESPNAPI.League>(
     season,
     leagueId,
     ['mTeam', 'mRoster', 'mSettings', 'mDraftDetail', 'mMatchup'],
     options
   );
+
+  // Also fetch transactions separately
+  const txData = await fetchESPN<{ transactions?: ESPNAPI.Transaction[] }>(
+    season,
+    leagueId,
+    ['mTransactions2'],
+    options
+  ).catch(() => ({ transactions: [] }));
+
+  const allTransactions = txData.transactions || [];
+  console.log('[ESPN] Total transactions:', allTransactions.length);
+
+  // Log transaction types
+  const txTypes = new Set(allTransactions.map(tx => `${tx.type}:${tx.status}`));
+  console.log('[ESPN] Transaction types:', Array.from(txTypes));
 
   // Build member map
   const memberMap = new Map<string, ESPNAPI.Member>();
@@ -165,6 +199,160 @@ export async function loadLeague(
     });
   }
 
+  // Build player map from roster data
+  const playerMap = buildPlayerMap(leagueData, season);
+
+  // Also add draft pick players to player map
+  if (leagueData.draftDetail?.picks) {
+    leagueData.draftDetail.picks.forEach(pick => {
+      const team = leagueData.teams.find(t => t.id === pick.teamId);
+      const rosterEntry = team?.roster?.entries.find(e => e.playerId === pick.playerId);
+      if (rosterEntry?.playerPoolEntry?.player) {
+        const espnPlayer = rosterEntry.playerPoolEntry.player;
+        playerMap.set(String(espnPlayer.id), {
+          ...convertPlayer(espnPlayer),
+          seasonPoints: getSeasonPoints(espnPlayer, season),
+        });
+      }
+    });
+  }
+
+  // Build team name map
+  const teamNameMap = new Map<number, string>();
+  leagueData.teams.forEach(t => teamNameMap.set(t.id, t.name || `Team ${t.id}`));
+
+  // Helper to get player info
+  const getPlayer = (playerId: number): Player => {
+    const cached = playerMap.get(String(playerId));
+    if (cached) return cached;
+    return {
+      id: String(playerId),
+      platformId: String(playerId),
+      name: `Player ${playerId}`,
+      position: 'Unknown',
+      team: 'Unknown',
+    };
+  };
+
+  // Process waivers/free agent transactions
+  const teamTransactions = new Map<number, Transaction[]>();
+  allTransactions
+    .filter(tx => tx.status === 'EXECUTED' && (tx.type === 'WAIVER' || tx.type === 'FREEAGENT'))
+    .forEach(tx => {
+      const adds: Player[] = [];
+      const drops: Player[] = [];
+      let primaryTeamId = 0;
+
+      tx.items.forEach(item => {
+        const player = getPlayer(item.playerId);
+        if (item.type === 'ADD') {
+          adds.push(player);
+          primaryTeamId = item.toTeamId || primaryTeamId;
+        } else if (item.type === 'DROP') {
+          drops.push(player);
+        }
+      });
+
+      if (primaryTeamId === 0) return;
+
+      const transaction: Transaction = {
+        id: String(tx.id),
+        type: tx.type === 'WAIVER' ? 'waiver' : 'free_agent',
+        timestamp: 0,
+        week: tx.scoringPeriodId,
+        teamId: String(primaryTeamId),
+        teamName: teamNameMap.get(primaryTeamId) || `Team ${primaryTeamId}`,
+        adds,
+        drops,
+        waiverBudgetSpent: tx.bidAmount,
+        // For ESPN, we'll use season points as a proxy for value (not as accurate as Sleeper)
+        totalPointsGenerated: adds.reduce((sum, p) => {
+          const playerData = playerMap.get(p.id);
+          return sum + (playerData?.seasonPoints || 0);
+        }, 0),
+        gamesStarted: undefined, // ESPN doesn't provide this easily
+      };
+
+      const txs = teamTransactions.get(primaryTeamId) || [];
+      txs.push(transaction);
+      teamTransactions.set(primaryTeamId, txs);
+    });
+
+  // Process trades
+  const allTrades: Trade[] = allTransactions
+    .filter(tx => tx.status === 'EXECUTED' && (tx.type === 'TRADE_ACCEPT' || tx.type.includes('TRADE')))
+    .map(tx => {
+      const teamItems = new Map<number, { adds: Player[]; drops: Player[] }>();
+
+      tx.items.forEach(item => {
+        const player = getPlayer(item.playerId);
+        const toTeamId = item.toTeamId;
+        const fromTeamId = item.fromTeamId;
+
+        if (toTeamId && toTeamId !== 0) {
+          if (!teamItems.has(toTeamId)) {
+            teamItems.set(toTeamId, { adds: [], drops: [] });
+          }
+          teamItems.get(toTeamId)!.adds.push(player);
+        }
+
+        if (fromTeamId && fromTeamId !== 0) {
+          if (!teamItems.has(fromTeamId)) {
+            teamItems.set(fromTeamId, { adds: [], drops: [] });
+          }
+          teamItems.get(fromTeamId)!.drops.push(player);
+        }
+      });
+
+      const tradeTeams: Trade['teams'] = [];
+      teamItems.forEach((items, teamId) => {
+        // Calculate value based on season points
+        const pointsGained = items.adds.reduce((sum, p) => {
+          const playerData = playerMap.get(p.id);
+          return sum + (playerData?.seasonPoints || 0);
+        }, 0);
+        const pointsLost = items.drops.reduce((sum, p) => {
+          const playerData = playerMap.get(p.id);
+          return sum + (playerData?.seasonPoints || 0);
+        }, 0);
+
+        tradeTeams.push({
+          teamId: String(teamId),
+          teamName: teamNameMap.get(teamId) || `Team ${teamId}`,
+          playersReceived: items.adds,
+          playersSent: items.drops,
+          pointsGained,
+          pointsLost,
+          netValue: pointsGained - pointsLost,
+        });
+      });
+
+      // Determine winner
+      let winner: string | undefined;
+      let winnerMargin = 0;
+      if (tradeTeams.length === 2) {
+        const [team1, team2] = tradeTeams;
+        const diff = team1.netValue - team2.netValue;
+        if (Math.abs(diff) > 20) {
+          winner = diff > 0 ? team1.teamId : team2.teamId;
+          winnerMargin = Math.abs(diff);
+        }
+      }
+
+      return {
+        id: String(tx.id),
+        timestamp: 0,
+        week: tx.scoringPeriodId,
+        status: 'completed' as const,
+        teams: tradeTeams,
+        winner,
+        winnerMargin,
+      };
+    });
+
+  console.log('[ESPN] Processed trades:', allTrades.length);
+  console.log('[ESPN] Processed waiver transactions:', Array.from(teamTransactions.values()).flat().length);
+
   // Build teams
   const teams: Team[] = leagueData.teams.map(espnTeam => {
     const ownerIds = espnTeam.owners || [];
@@ -186,13 +374,22 @@ export async function loadLeague(
       teamName,
     }));
 
+    // Get transactions for this team
+    const transactionsForTeam = teamTransactions.get(espnTeam.id) || [];
+
+    // Get trades involving this team
+    const teamTrades = allTrades.filter(trade =>
+      trade.teams.some(t => t.teamId === String(espnTeam.id))
+    );
+
     return {
       id: String(espnTeam.id),
       name: teamName,
       ownerName: primaryOwner?.displayName,
       roster,
       draftPicks: draftPicksForTeam,
-      transactions: [], // TODO: Would need separate API call
+      transactions: transactionsForTeam,
+      trades: teamTrades,
       wins: espnTeam.record?.overall.wins || 0,
       losses: espnTeam.record?.overall.losses || 0,
       ties: espnTeam.record?.overall.ties || 0,
@@ -220,65 +417,10 @@ export async function loadLeague(
     season,
     draftType,
     teams,
+    trades: allTrades,
     scoringType,
     totalTeams: leagueData.teams.length,
     currentWeek: leagueData.status?.currentMatchupPeriod,
     isLoaded: true,
   };
-}
-
-// Fetch transactions for ESPN league
-export async function loadTransactions(
-  leagueId: string,
-  season: number,
-  options?: FetchOptions
-): Promise<Transaction[]> {
-  try {
-    const data = await fetchESPN<{ transactions: ESPNAPI.Transaction[] }>(
-      season,
-      leagueId,
-      ['mTransactions2'],
-      options
-    );
-
-    if (!data.transactions) return [];
-
-    return data.transactions
-      .filter(tx => tx.status === 'EXECUTED' && (tx.type === 'WAIVER' || tx.type === 'FREEAGENT'))
-      .map(tx => {
-        const adds: Player[] = [];
-        const drops: Player[] = [];
-
-        tx.items.forEach(item => {
-          const player: Player = {
-            id: String(item.playerId),
-            platformId: String(item.playerId),
-            name: `Player ${item.playerId}`,
-            position: 'Unknown',
-            team: 'Unknown',
-          };
-
-          if (item.type === 'ADD') {
-            adds.push(player);
-          } else if (item.type === 'DROP') {
-            drops.push(player);
-          }
-        });
-
-        return {
-          id: String(tx.id),
-          type: tx.type === 'WAIVER' ? 'waiver' : 'free_agent',
-          timestamp: 0, // ESPN doesn't provide timestamp easily
-          week: tx.scoringPeriodId,
-          teamId: String(tx.items[0]?.toTeamId || 0),
-          teamName: '',
-          adds,
-          drops,
-          waiverBudgetSpent: tx.bidAmount,
-        };
-      });
-  } catch (error) {
-    console.warn('Could not fetch ESPN transactions:', error);
-    return [];
-  }
 }

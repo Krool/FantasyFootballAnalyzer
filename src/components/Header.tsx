@@ -1,29 +1,59 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { League } from '@/types';
 import { exportLeagueReport } from '@/utils/exportPdf';
+import { useSounds } from '@/hooks/useSounds';
 import styles from './Header.module.css';
 
 interface HeaderProps {
   leagueName?: string;
   platform?: string;
   league?: League | null;
+  onChangeLeague?: () => void;
 }
 
-export function Header({ leagueName, platform, league }: HeaderProps) {
+export function Header({ leagueName, platform, league, onChangeLeague }: HeaderProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { playClick, playExport, playPageTransition, isMuted, toggleMute } = useSounds();
 
   const handleExportPdf = () => {
     if (league) {
+      playExport();
       exportLeagueReport(league);
     }
+  };
+
+  const handleChangeLeague = () => {
+    playClick();
+    if (onChangeLeague) {
+      onChangeLeague();
+    }
+    navigate('/');
+  };
+
+  const handleNavClick = () => {
+    playPageTransition();
   };
 
   return (
     <header className={styles.header}>
       <div className={`container ${styles.headerContent}`}>
-        <Link to="/" className={styles.logo}>
-          Fantasy Football Analyzer
-        </Link>
+        <div className={styles.logoSection}>
+          {league && (
+            <button
+              onClick={handleChangeLeague}
+              className={styles.backButton}
+              title="Change League"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.backIcon}>
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          )}
+          <Link to="/" className={styles.logo}>
+            Fantasy Football Analyzer
+          </Link>
+        </div>
 
         {leagueName && (
           <div className={styles.leagueInfo}>
@@ -39,30 +69,35 @@ export function Header({ leagueName, platform, league }: HeaderProps) {
             <Link
               to="/draft"
               className={`${styles.navLink} ${location.pathname === '/draft' ? styles.active : ''}`}
+              onClick={handleNavClick}
             >
               Draft
             </Link>
             <Link
               to="/trades"
               className={`${styles.navLink} ${location.pathname === '/trades' ? styles.active : ''}`}
+              onClick={handleNavClick}
             >
               Trades
             </Link>
             <Link
               to="/waivers"
               className={`${styles.navLink} ${location.pathname === '/waivers' ? styles.active : ''}`}
+              onClick={handleNavClick}
             >
               Waivers
             </Link>
             <Link
               to="/teams"
               className={`${styles.navLink} ${location.pathname === '/teams' ? styles.active : ''}`}
+              onClick={handleNavClick}
             >
               Teams
             </Link>
             <Link
               to="/history"
               className={`${styles.navLink} ${location.pathname === '/history' ? styles.active : ''}`}
+              onClick={handleNavClick}
             >
               History
             </Link>
@@ -79,6 +114,26 @@ export function Header({ leagueName, platform, league }: HeaderProps) {
                 <line x1="15" y1="15" x2="12" y2="18" />
               </svg>
               PDF
+            </button>
+            <button
+              onClick={toggleMute}
+              className={styles.soundButton}
+              title={isMuted ? 'Enable sounds' : 'Mute sounds'}
+            >
+              {isMuted ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.soundIcon}>
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                  <path d="M9 4L4 9H0v6h4l5 5V4z" />
+                  <path d="M19 15l-6-6" />
+                  <path d="M13 9l6 6" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.soundIcon}>
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+              )}
             </button>
           </nav>
         )}

@@ -25,17 +25,39 @@ export function useLeague(): UseLeagueReturn {
   const [progress, setProgress] = useState<LoadingProgress | null>(null);
 
   const load = useCallback(async (credentials: LeagueCredentials) => {
+    console.log('[useLeague] load() called with credentials:', credentials);
     setIsLoading(true);
     setError(null);
     setProgress(null);
 
     try {
+      console.log('[useLeague] Calling loadLeague...');
       const loadedLeague = await loadLeague(credentials, (prog) => {
+        console.log('[useLeague] Progress:', prog);
         setProgress(prog);
       });
+      console.log('[useLeague] League loaded successfully:', loadedLeague?.name);
       setLeague(loadedLeague);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load league';
+      console.error('[useLeague] Error loading league:', err);
+      let message = 'Failed to load league. Please try again.';
+
+      if (err instanceof Error) {
+        // Provide user-friendly error messages
+        const errorText = err.message.toLowerCase();
+        if (errorText.includes('401') || errorText.includes('unauthorized')) {
+          message = 'Authentication failed. Please check your login credentials.';
+        } else if (errorText.includes('404') || errorText.includes('not found')) {
+          message = 'League not found. Please verify your league ID is correct.';
+        } else if (errorText.includes('network') || errorText.includes('fetch')) {
+          message = 'Network error. Please check your internet connection and try again.';
+        } else if (errorText.includes('timeout')) {
+          message = 'Request timed out. The server may be busy, please try again.';
+        } else if (err.message) {
+          message = err.message;
+        }
+      }
+
       setError(message);
       setLeague(null);
     } finally {

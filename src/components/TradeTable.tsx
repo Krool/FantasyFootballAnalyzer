@@ -191,7 +191,15 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
         </div>
       ) : (
         <div className={styles.empty}>
-          No trades found for this season.
+          <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M7 16l-4-4 4-4M17 8l4 4-4 4M3 12h18" />
+          </svg>
+          <div className={styles.emptyTitle}>No Trades Found</div>
+          <p className={styles.emptyText}>
+            {selectedTeam !== 'all'
+              ? 'This team has not made any trades this season.'
+              : 'No trades have been made in this league this season.'}
+          </p>
         </div>
       )}
 

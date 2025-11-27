@@ -1,10 +1,11 @@
 .header {
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, #0d1420 100%);
+  border-bottom: 2px solid var(--border-color);
   padding: 1rem 0;
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .headerContent {
@@ -15,14 +16,56 @@
   flex-wrap: wrap;
 }
 
+.logoSection {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: #3b82f6;
+}
+
+.backIcon {
+  width: 18px;
+  height: 18px;
+}
+
 .logo {
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: all 0.2s ease;
 }
 
 .logo:hover {
-  color: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .leagueInfo {
@@ -45,17 +88,24 @@
   padding: 0.5rem 1rem;
   border-radius: 6px;
   color: var(--text-secondary);
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  position: relative;
 }
 
 .navLink:hover {
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
+  transform: translateY(-1px);
 }
 
 .navLink.active {
-  background-color: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
 }
 
 .exportButton {
@@ -82,6 +132,32 @@
   height: 16px;
 }
 
+.soundButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.soundButton:hover {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--accent-gold);
+}
+
+.soundIcon {
+  width: 18px;
+  height: 18px;
+}
+
 @media (max-width: 768px) {
   .headerContent {
     flex-direction: column;
@@ -91,5 +167,6 @@
   .nav {
     width: 100%;
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }

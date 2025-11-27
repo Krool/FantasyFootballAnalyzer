@@ -1,21 +1,30 @@
 import { useState, useMemo } from 'react';
 import type { Team } from '@/types';
 import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected } from '@/utils/grading';
+import { useSounds } from '@/hooks/useSounds';
 import styles from './DraftTable.module.css';
 
 interface DraftTableProps {
   teams: Team[];
   totalTeams: number;
+  draftType?: 'snake' | 'auction' | 'linear';
 }
 
-type SortField = 'pick' | 'round' | 'player' | 'position' | 'team' | 'points' | 'posRank' | 'value' | 'grade';
+type SortField = 'pick' | 'round' | 'player' | 'position' | 'team' | 'points' | 'posRank' | 'value' | 'grade' | 'cost';
 type SortDirection = 'asc' | 'desc';
 
-export function DraftTable({ teams, totalTeams }: DraftTableProps) {
+export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTableProps) {
+  const { playFilter, playSort } = useSounds();
+
+  // Detect if auction draft
+  const isAuction = draftType === 'auction' || teams.some(t =>
+    t.draftPicks?.some(p => p.auctionValue !== undefined && p.auctionValue > 0)
+  );
+
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
   const [selectedPosition, setSelectedPosition] = useState<string>('all');
-  const [sortField, setSortField] = useState<SortField>('pick');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortField, setSortField] = useState<SortField>(isAuction ? 'cost' : 'pick');
+  const [sortDirection, setSortDirection] = useState<SortDirection>(isAuction ? 'desc' : 'asc');
 
   // Grade all picks
   const gradedPicks = useMemo(() => {
@@ -24,14 +33,17 @@ export function DraftTable({ teams, totalTeams }: DraftTableProps) {
       platform: 'sleeper' as const,
       name: '',
       season: 2024,
-      draftType: 'snake' as const,
+      draftType: isAuction ? 'auction' as const : 'snake' as const,
       teams,
       scoringType: 'ppr' as const,
       totalTeams,
       isLoaded: true,
     };
-    return gradeAllPicks(mockLeague);
-  }, [teams, totalTeams]);
+    // Filter out unknown players (those with names like "Player 12345")
+    return gradeAllPicks(mockLeague).filter(pick =>
+      !pick.player.name.match(/^Player\s+-?\d+$/)
+    );
+  }, [teams, totalTeams, isAuction]);
 
   // Get unique positions
   const positions = useMemo(() => {
@@ -85,6 +97,9 @@ export function DraftTable({ teams, totalTeams }: DraftTableProps) {
           const gradeOrder = { great: 0, good: 1, bad: 2, terrible: 3 };
           comparison = gradeOrder[a.grade] - gradeOrder[b.grade];
           break;
+        case 'cost':
+          comparison = (a.auctionValue || 0) - (b.auctionValue || 0);
+          break;
       }
 
       return sortDirection === 'asc' ? comparison : -comparison;
@@ -92,12 +107,23 @@ export function DraftTable({ teams, totalTeams }: DraftTableProps) {
   }, [gradedPicks, selectedTeam, selectedPosition, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
+    playSort();
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
       setSortDirection('asc');
     }
+  };
+
+  const handleTeamFilter = (value: string) => {
+    playFilter();
+    setSelectedTeam(value);
+  };
+
+  const handlePositionFilter = (value: string) => {
+    playFilter();
+    setSelectedPosition(value);
   };
 
   const getSortIndicator = (field: SortField) => {
@@ -123,7 +149,7 @@ export function DraftTable({ teams, totalTeams }: DraftTableProps) {
             id="teamFilter"
             className="input"
             value={selectedTeam}
-            onChange={(e) => setSelectedTeam(e.target.value)}
+            onChange={(e) => handleTeamFilter(e.target.value)}
           >
             <option value="all">All Teams</option>
             {teams.map(team => (
@@ -142,7 +168,7 @@ export function DraftTable({ teams, totalTeams }: DraftTableProps) {
             id="positionFilter"
             className="input"
             value={selectedPosition}
-            onChange={(e) => setSelectedPosition(e.target.value)}
+            onChange={(e) => handlePositionFilter(e.target.value)}
           >
             <option value="all">All Positions</option>
             {positions.map(pos => (
@@ -165,12 +191,20 @@ export function DraftTable({ teams, totalTeams }: DraftTableProps) {
         <table className={`table ${styles.table}`}>
           <thead>
             <tr>
-              <th onClick={() => handleSort('pick')} className={styles.sortable}>
-                Pick{getSortIndicator('pick')}
-              </th>
-              <th onClick={() => handleSort('round')} className={styles.sortable}>
-                Round{getSortIndicator('round')}
-              </th>
+              {isAuction ? (
+                <th onClick={() => handleSort('cost')} className={styles.sortable}>
+                  Cost{getSortIndicator('cost')}
+                </th>
+              ) : (
+                <>
+                  <th onClick={() => handleSort('pick')} className={styles.sortable}>
+                    Pick{getSortIndicator('pick')}
+                  </th>
+                  <th onClick={() => handleSort('round')} className={styles.sortable}>
+                    Rd{getSortIndicator('round')}
+                  </th>
+                </>
+              )}
               <th onClick={() => handleSort('player')} className={styles.sortable}>
                 Player{getSortIndicator('player')}
               </th>
@@ -186,19 +220,27 @@ export function DraftTable({ teams, totalTeams }: DraftTableProps) {
               <th onClick={() => handleSort('posRank')} className={styles.sortable}>
                 Pos Rank{getSortIndicator('posRank')}
               </th>
-              <th onClick={() => handleSort('value')} className={styles.sortable}>
-                Value{getSortIndicator('value')}
-              </th>
+              {!isAuction && (
+                <th onClick={() => handleSort('value')} className={styles.sortable}>
+                  Value{getSortIndicator('value')}
+                </th>
+              )}
               <th onClick={() => handleSort('grade')} className={styles.sortable}>
                 Grade{getSortIndicator('grade')}
               </th>
             </tr>
           </thead>
           <tbody>
-            {displayPicks.map((pick) => (
-              <tr key={`${pick.teamId}-${pick.pickNumber}`}>
-                <td className="font-mono">{pick.pickNumber}</td>
-                <td className="font-mono">{pick.round}</td>
+            {displayPicks.map((pick, index) => (
+              <tr key={`${pick.teamId}-${pick.pickNumber}-${index}`}>
+                {isAuction ? (
+                  <td className="font-mono text-right">${pick.auctionValue || 0}</td>
+                ) : (
+                  <>
+                    <td className="font-mono">{pick.pickNumber}</td>
+                    <td className="font-mono">{pick.round}</td>
+                  </>
+                )}
                 <td>
                   <div className={styles.playerCell}>
                     <span className={styles.playerName}>{pick.player.name}</span>
@@ -215,9 +257,11 @@ export function DraftTable({ teams, totalTeams }: DraftTableProps) {
                 <td className="font-mono text-center">
                   {pick.positionRank < 999 ? `${pick.player.position}${pick.positionRank}` : '-'}
                 </td>
-                <td className={`font-mono text-center ${pick.valueOverExpected >= 0 ? 'grade-great' : 'grade-terrible'}`}>
-                  {formatValueOverExpected(pick.valueOverExpected)}
-                </td>
+                {!isAuction && (
+                  <td className={`font-mono text-center ${pick.valueOverExpected >= 0 ? 'grade-great' : 'grade-terrible'}`}>
+                    {formatValueOverExpected(pick.valueOverExpected)}
+                  </td>
+                )}
                 <td>
                   <span className={`grade-badge ${pick.grade}`}>
                     {getGradeDisplayText(pick.grade)}
@@ -231,7 +275,17 @@ export function DraftTable({ teams, totalTeams }: DraftTableProps) {
 
       {displayPicks.length === 0 && (
         <div className={styles.empty}>
-          No draft picks found. Make sure the draft has completed.
+          <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+          <div className={styles.emptyTitle}>No Draft Picks Found</div>
+          <p className={styles.emptyText}>
+            {selectedTeam !== 'all' || selectedPosition !== 'all'
+              ? 'Try adjusting your filters to see more results.'
+              : 'Make sure the draft has completed and player data is available.'}
+          </p>
         </div>
       )}
     </div>

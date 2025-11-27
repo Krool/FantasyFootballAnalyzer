@@ -10,13 +10,24 @@
 }
 
 .title {
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: 2.75rem;
+  font-weight: 900;
   margin-bottom: 1rem;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #ffd700 0%, #ffffff 25%, #ffd700 50%, #ffffff 75%, #ffd700 100%);
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: shimmer 3s linear infinite;
+  text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+}
+
+@keyframes shimmer {
+  to {
+    background-position: 200% center;
+  }
 }
 
 .subtitle {
@@ -73,17 +84,26 @@
 }
 
 .progressBar {
-  height: 8px;
+  height: 10px;
   background-color: var(--bg-tertiary);
-  border-radius: 4px;
+  border-radius: 5px;
   overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-  border-radius: 4px;
+  background: linear-gradient(90deg, var(--color-great), var(--accent-gold), var(--color-great));
+  background-size: 200% auto;
+  border-radius: 5px;
   transition: width 0.3s ease;
+  animation: progressShimmer 1.5s linear infinite;
+  box-shadow: 0 0 10px rgba(0, 217, 126, 0.4);
+}
+
+@keyframes progressShimmer {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
 }
 
 .progressDetail {
@@ -100,18 +120,48 @@
 }
 
 .feature {
-  background-color: var(--bg-secondary);
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, #0d1420 100%);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 1.5rem;
   text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.feature:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-gold);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 215, 0, 0.1);
+}
+
+.feature:hover::before {
+  opacity: 1;
 }
 
 .featureIcon {
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   margin: 0 auto 1rem;
-  color: #3b82f6;
+  color: var(--accent-gold);
+  transition: transform 0.3s ease;
+}
+
+.feature:hover .featureIcon {
+  transform: scale(1.1);
 }
 
 .featureIcon svg {
@@ -121,8 +171,10 @@
 
 .featureTitle {
   font-size: 1.125rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .featureDesc {

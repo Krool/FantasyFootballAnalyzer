@@ -20,7 +20,7 @@ export function DraftPage({ league }: DraftPageProps) {
         </div>
 
         {hasDraftData ? (
-          <DraftTable teams={league.teams} totalTeams={league.totalTeams} />
+          <DraftTable teams={league.teams} totalTeams={league.totalTeams} draftType={league.draftType} />
         ) : (
           <div className={styles.empty}>
             <h2>No Draft Data Available</h2>

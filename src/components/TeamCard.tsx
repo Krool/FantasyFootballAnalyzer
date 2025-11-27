@@ -75,7 +75,7 @@ export function TeamCard({ team, allTeams, totalTeams, onClick }: TeamCardProps)
               <div className={styles.barTrack}>
                 <div
                   className={`${styles.barFill} ${styles.great}`}
-                  style={{ width: `${(summary.great / summary.totalPicks) * 100}%` }}
+                  style={{ width: `${summary.totalPicks > 0 ? (summary.great / summary.totalPicks) * 100 : 0}%` }}
                 />
               </div>
               <span className={styles.gradeCount}>{summary.great}</span>
@@ -85,7 +85,7 @@ export function TeamCard({ team, allTeams, totalTeams, onClick }: TeamCardProps)
               <div className={styles.barTrack}>
                 <div
                   className={`${styles.barFill} ${styles.good}`}
-                  style={{ width: `${(summary.good / summary.totalPicks) * 100}%` }}
+                  style={{ width: `${summary.totalPicks > 0 ? (summary.good / summary.totalPicks) * 100 : 0}%` }}
                 />
               </div>
               <span className={styles.gradeCount}>{summary.good}</span>
@@ -95,7 +95,7 @@ export function TeamCard({ team, allTeams, totalTeams, onClick }: TeamCardProps)
               <div className={styles.barTrack}>
                 <div
                   className={`${styles.barFill} ${styles.bad}`}
-                  style={{ width: `${(summary.bad / summary.totalPicks) * 100}%` }}
+                  style={{ width: `${summary.totalPicks > 0 ? (summary.bad / summary.totalPicks) * 100 : 0}%` }}
                 />
               </div>
               <span className={styles.gradeCount}>{summary.bad}</span>
@@ -105,7 +105,7 @@ export function TeamCard({ team, allTeams, totalTeams, onClick }: TeamCardProps)
               <div className={styles.barTrack}>
                 <div
                   className={`${styles.barFill} ${styles.terrible}`}
-                  style={{ width: `${(summary.terrible / summary.totalPicks) * 100}%` }}
+                  style={{ width: `${summary.totalPicks > 0 ? (summary.terrible / summary.totalPicks) * 100 : 0}%` }}
                 />
               </div>
               <span className={styles.gradeCount}>{summary.terrible}</span>

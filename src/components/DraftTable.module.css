@@ -34,8 +34,10 @@
 
 .tableWrapper {
   overflow-x: auto;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--border-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  background-color: var(--bg-secondary);
 }
 
 .table {
@@ -46,10 +48,29 @@
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
+  transition: all 0.15s ease;
+  position: relative;
 }
 
 .sortable:hover {
-  color: var(--text-primary);
+  color: var(--accent-gold);
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.1) 0%, transparent 100%);
+}
+
+.sortable::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent-gold);
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+}
+
+.sortable:hover::after {
+  transform: scaleX(1);
 }
 
 .playerCell {
@@ -70,9 +91,18 @@
   display: inline-block;
   padding: 0.125rem 0.5rem;
   border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background-color: var(--bg-tertiary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, #1a2235 100%);
+  border: 1px solid var(--border-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.15s ease;
+}
+
+.positionBadge:hover {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
 }
 
 .fantasyTeam {
@@ -84,8 +114,32 @@
 
 .empty {
   text-align: center;
-  padding: 3rem;
+  padding: 4rem 2rem;
   color: var(--text-secondary);
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+  border-radius: 12px;
+  border: 1px dashed var(--border-color);
+}
+
+.emptyIcon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  color: var(--border-color);
+  opacity: 0.6;
+}
+
+.emptyTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.emptyText {
+  font-size: 0.9rem;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 @media (max-width: 768px) {

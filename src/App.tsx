@@ -1,15 +1,29 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components';
 import { HomePage, DraftPage, TradesPage, WaiversPage, TeamsPage, HistoryPage } from '@/pages';
 import { useLeague } from '@/hooks/useLeague';
+import { useSounds } from '@/hooks/useSounds';
 import { saveTokens } from '@/api/yahoo';
 import type { LeagueCredentials } from '@/types';
 
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { league, isLoading, error, progress, load } = useLeague();
+  const { league, isLoading, error, progress, load, clear } = useLeague();
+  const { playLoadComplete, playError } = useSounds();
+  const prevLeagueRef = useRef<typeof league>(null);
+
+  // Play sounds on league load success/error
+  useEffect(() => {
+    if (league && !prevLeagueRef.current) {
+      playLoadComplete();
+    }
+    if (error && !prevLeagueRef.current) {
+      playError();
+    }
+    prevLeagueRef.current = league;
+  }, [league, error, playLoadComplete, playError]);
 
   // Handle Yahoo OAuth callback
   useEffect(() => {
@@ -50,6 +64,7 @@ function App() {
         leagueName={league?.name}
         platform={league?.platform}
         league={league}
+        onChangeLeague={clear}
       />
 
       <main>
