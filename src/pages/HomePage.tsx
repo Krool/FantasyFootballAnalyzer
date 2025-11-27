@@ -80,27 +80,6 @@ export function HomePage({ onLoadLeague, isLoading, error }: HomePageProps) {
           </p>
         </div>
       </div>
-
-      <div className={styles.platforms}>
-        <h3 className={styles.platformsTitle}>Supported Platforms</h3>
-        <div className={styles.platformList}>
-          <div className={`${styles.platform} ${styles.supported}`}>
-            <span className={styles.platformBadge} style={{ backgroundColor: 'var(--sleeper-color)' }}>S</span>
-            <span>Sleeper</span>
-            <span className={styles.platformStatus}>Full Support</span>
-          </div>
-          <div className={`${styles.platform} ${styles.partial}`}>
-            <span className={styles.platformBadge} style={{ backgroundColor: 'var(--espn-color)' }}>E</span>
-            <span>ESPN</span>
-            <span className={styles.platformStatus}>Public Leagues</span>
-          </div>
-          <div className={`${styles.platform} ${styles.coming}`}>
-            <span className={styles.platformBadge} style={{ backgroundColor: 'var(--yahoo-color)' }}>Y</span>
-            <span>Yahoo</span>
-            <span className={styles.platformStatus}>Coming Soon</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
