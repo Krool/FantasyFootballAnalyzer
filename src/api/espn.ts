@@ -1,6 +1,9 @@
 import type { ESPNAPI, League, Team, DraftPick, Transaction, Player } from '@/types';
 
-const BASE_URL = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons';
+// Direct ESPN API for public leagues
+const ESPN_DIRECT_URL = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons';
+// Proxy URL for private leagues (to handle cookies server-side)
+const ESPN_PROXY_URL = import.meta.env.VITE_ESPN_PROXY_URL || 'https://fantasy-football-analyzer-mu.vercel.app/api/espn-proxy';
 
 // ESPN position ID mapping
 const POSITION_MAP: Record<number, string> = {
@@ -32,21 +35,37 @@ async function fetchESPN<T>(
   views: string[],
   options?: FetchOptions
 ): Promise<T> {
-  const viewParams = views.map(v => `view=${v}`).join('&');
-  const url = `${BASE_URL}/${season}/segments/0/leagues/${leagueId}?${viewParams}`;
-
-  const headers: HeadersInit = {
-    'Accept': 'application/json',
-  };
-
-  // For private leagues, we need cookies
-  // Note: This only works in Node.js or with a CORS proxy
-  // In browser, private leagues won't work without a backend
+  // If we have cookies, use the proxy (browsers can't send cookies cross-origin)
   if (options?.espnS2 && options?.swid) {
-    headers['Cookie'] = `espn_s2=${options.espnS2}; SWID=${options.swid}`;
+    const viewParams = views.map(v => `views=${v}`).join('&');
+    const url = `${ESPN_PROXY_URL}?season=${season}&leagueId=${leagueId}&${viewParams}`;
+
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'X-ESPN-S2': options.espnS2,
+        'X-ESPN-SWID': options.swid,
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('ESPN: League is private. Please check your espn_s2 and SWID cookies.');
+      }
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `ESPN API error: ${response.status}`);
+    }
+
+    return response.json();
   }
 
-  const response = await fetch(url, { headers });
+  // For public leagues, call ESPN directly
+  const viewParams = views.map(v => `view=${v}`).join('&');
+  const url = `${ESPN_DIRECT_URL}/${season}/segments/0/leagues/${leagueId}?${viewParams}`;
+
+  const response = await fetch(url, {
+    headers: { 'Accept': 'application/json' },
+  });
 
   if (!response.ok) {
     if (response.status === 401) {
