@@ -220,21 +220,32 @@ export async function loadLeague(leagueKey: string): Promise<League> {
     else if (recValue > 0) scoringType = 'custom';
   }
 
-  // Parse teams
+  // Parse teams - standings come from the standings sub-resource
   const teamsData = leagueInfo.teams?.team || [];
   const teamsList = Array.isArray(teamsData) ? teamsData : [teamsData];
 
+  // Also get standings data separately for more reliable access
+  const standingsData = leagueInfo.standings?.teams?.team || [];
+  const standingsList = Array.isArray(standingsData) ? standingsData : [standingsData];
+  const standingsMap = new Map<string, any>();
+  standingsList.forEach((s: any) => {
+    if (s.team_key) standingsMap.set(s.team_key, s.team_standings);
+  });
+
   const teams: Team[] = teamsList.map((team: any) => {
-    const standings = team.team_standings;
+    // Try team_standings from team object first, then from standings sub-resource
+    const standings = team.team_standings || standingsMap.get(team.team_key) || {};
+    const outcomes = standings.outcome_totals || {};
+
     return {
       id: team.team_key,
       name: team.name,
-      ownerName: team.managers?.manager?.nickname,
-      wins: parseInt(standings?.outcome_totals?.wins || 0),
-      losses: parseInt(standings?.outcome_totals?.losses || 0),
-      ties: parseInt(standings?.outcome_totals?.ties || 0),
-      pointsFor: parseFloat(standings?.points_for || 0),
-      pointsAgainst: parseFloat(standings?.points_against || 0)
+      ownerName: team.managers?.manager?.nickname || team.managers?.manager?.[0]?.nickname,
+      wins: parseInt(outcomes.wins || '0'),
+      losses: parseInt(outcomes.losses || '0'),
+      ties: parseInt(outcomes.ties || '0'),
+      pointsFor: parseFloat(standings.points_for || '0'),
+      pointsAgainst: parseFloat(standings.points_against || '0')
     };
   });
 
@@ -444,12 +455,18 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
 
 // Enrich player data with stats
 export async function enrichPlayersWithStats(league: League): Promise<void> {
-  // Get all player keys from draft picks
+  // Get all player keys from draft picks AND transactions
   const playerKeys = new Set<string>();
 
   for (const team of league.teams) {
     for (const pick of team.draftPicks || []) {
       playerKeys.add(pick.player.id);
+    }
+    // Also add transaction players
+    for (const tx of team.transactions || []) {
+      for (const player of tx.adds || []) {
+        playerKeys.add(player.id);
+      }
     }
   }
 
@@ -520,6 +537,36 @@ export async function enrichPlayersWithStats(league: League): Promise<void> {
         if (playerInfo.points !== undefined) {
           pick.seasonPoints = playerInfo.points;
         }
+      }
+    }
+
+    // Update transactions with player stats
+    // For Yahoo, we use season points as an approximation since we can't easily
+    // get week-by-week lineup data. This shows the player's total value.
+    for (const tx of team.transactions || []) {
+      let totalPoints = 0;
+      let hasStats = false;
+
+      for (const player of tx.adds || []) {
+        const playerInfo = playerMap.get(player.id);
+        if (playerInfo) {
+          player.name = playerInfo.name;
+          player.position = playerInfo.position;
+          player.team = playerInfo.team;
+          if (playerInfo.points !== undefined) {
+            totalPoints += playerInfo.points;
+            hasStats = true;
+          }
+        }
+      }
+
+      if (hasStats) {
+        // For Yahoo, we show season total points since we can't track starts
+        // The gamesStarted is estimated based on weeks since pickup
+        const currentWeek = league.currentWeek || 1;
+        const weeksOwned = Math.max(1, currentWeek - tx.week);
+        tx.totalPointsGenerated = totalPoints;
+        tx.gamesStarted = weeksOwned; // Estimate: weeks since pickup
       }
     }
   }

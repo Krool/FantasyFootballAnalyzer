@@ -71,7 +71,14 @@ export function WaiverTable({ teams }: WaiverTableProps) {
           comparison = a.playerName.localeCompare(b.playerName);
           break;
         case 'type':
+          // Primary: type (waiver before free_agent)
           comparison = a.transaction.type.localeCompare(b.transaction.type);
+          // Secondary: FAAB amount (higher first) when types are equal
+          if (comparison === 0) {
+            const aFaab = a.transaction.waiverBudgetSpent || 0;
+            const bFaab = b.transaction.waiverBudgetSpent || 0;
+            comparison = bFaab - aFaab; // Higher FAAB first (descending)
+          }
           break;
         case 'points':
           comparison = a.totalPoints - b.totalPoints;
