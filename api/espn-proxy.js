@@ -22,8 +22,11 @@ export default async function handler(req, res) {
   }
 
   // Get cookies from custom headers (browsers can't send Cookie header cross-origin)
-  const espnS2 = req.headers['x-espn-s2'];
-  const swid = req.headers['x-espn-swid'];
+  // Values are URL-encoded to preserve special characters like + / =
+  const espnS2Raw = req.headers['x-espn-s2'];
+  const swidRaw = req.headers['x-espn-swid'];
+  const espnS2 = espnS2Raw ? decodeURIComponent(espnS2Raw) : null;
+  const swid = swidRaw ? decodeURIComponent(swidRaw) : null;
 
   try {
     // Build ESPN URL
