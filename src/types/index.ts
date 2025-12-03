@@ -368,6 +368,7 @@ export namespace ESPNAPI {
     status: string;
     items: TransactionItem[];
     bidAmount?: number;
+    proposedDate?: number;
   }
 
   export interface TransactionItem {

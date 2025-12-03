@@ -183,29 +183,6 @@ function buildPlayerMap(leagueData: ESPNAPI.League, season: number): Map<string,
   return playerMap;
 }
 
-// Activity message type IDs for trades
-const ACTIVITY_MAP = {
-  FA_ADD: 178,
-  WAIVER_ADD: 180,
-  DROP: 179,
-  TRADE_ACCEPT: 244,
-  TRADE_DECLINE: 181,
-  TRADE_PROPOSE: 239,
-};
-
-interface CommunicationTopic {
-  id: string;
-  date: number;
-  messages: Array<{
-    id: string;
-    messageTypeId: number;
-    targetId: number;
-    to?: number;
-    from?: number;
-    for?: number;
-  }>;
-}
-
 export async function loadLeague(
   leagueId: string,
   season: number = new Date().getFullYear(),
@@ -268,40 +245,10 @@ export async function loadLeague(
   });
   console.log('[ESPN] Transaction types:', txTypes);
 
-  // Also fetch recent activity for trades via the communication endpoint
-  let tradeActivities: CommunicationTopic[] = [];
-  try {
-    // The filter must have a sort when using limit
-    const activityFilter = {
-      topics: {
-        filterType: { value: ['ACTIVITY_TRANSACTIONS'] },
-        limit: 500,
-        limitPerMessageSet: { value: 50 },
-        offset: 0,
-        sortMessageDate: { sortPriority: 1, sortAsc: false },
-        filterIncludeMessageTypeIds: { value: [ACTIVITY_MAP.TRADE_ACCEPT] }
-      }
-    };
-
-    const activityData = await fetchESPN<{ topics?: CommunicationTopic[] }>(
-      season,
-      leagueId,
-      ['kona_league_communication'],
-      {
-        ...options,
-        extend: 'communication',
-        fantasyFilter: activityFilter,
-      }
-    ).catch((e) => {
-      console.warn('[ESPN] Communication endpoint failed:', e);
-      return { topics: [] };
-    });
-
-    tradeActivities = activityData.topics || [];
-    console.log('[ESPN] Trade activities from communication endpoint:', tradeActivities.length);
-  } catch (e) {
-    console.warn('[ESPN] Could not fetch trade activities:', e);
-  }
+  // Note: We previously tried fetching trades from the /communication/ endpoint
+  // but that data format is complex and the mTransactions2 endpoint returns
+  // TRADE_ACCEPT transactions which we process below. Keeping this comment
+  // in case we need to revisit the communication endpoint approach.
 
   // Build member map
   const memberMap = new Map<string, ESPNAPI.Member>();
@@ -436,7 +383,7 @@ export async function loadLeague(
       const transaction: Transaction = {
         id: String(tx.id),
         type: tx.type === 'WAIVER' ? 'waiver' : 'free_agent',
-        timestamp: 0,
+        timestamp: tx.proposedDate || 0,
         week: pickupWeek,
         teamId: String(primaryTeamId),
         teamName: teamNameMap.get(primaryTeamId) || `Team ${primaryTeamId}`,
@@ -524,7 +471,7 @@ export async function loadLeague(
 
       return {
         id: String(tx.id),
-        timestamp: 0,
+        timestamp: tx.proposedDate || 0,
         week: tx.scoringPeriodId,
         status: 'completed' as const,
         teams: tradeTeams,
