@@ -222,15 +222,10 @@ export async function loadLeague(
   const currentWeek = leagueData.status?.currentMatchupPeriod || 17;
   console.log('[ESPN] Current week:', currentWeek);
 
-  // Fetch transactions for ALL weeks with proper filter
-  // The filter tells ESPN to return WAIVER and FREEAGENT type transactions
-  const transactionFilter = {
-    transactions: {
-      filterType: {
-        value: ['FREEAGENT', 'WAIVER', 'TRADEPENDING', 'TRADE_ACCEPT']
-      }
-    }
-  };
+  // Fetch transactions for ALL weeks
+  // Valid types: DRAFT, TRADE_ACCEPT, WAIVER, TRADE_VETO, FUTURE_ROSTER, ROSTER,
+  // RETRO_ROSTER, TRADE_PROPOSAL, TRADE_UPHOLD, FREEAGENT, TRADE_DECLINE, WAIVER_ERROR, TRADE_ERROR
+  // We don't filter - we want FREEAGENT, WAIVER, and TRADE_ACCEPT and we'll filter client-side
 
   // Fetch transactions for each week in parallel
   const txPromises: Promise<{ transactions?: ESPNAPI.Transaction[] }>[] = [];
@@ -243,7 +238,6 @@ export async function loadLeague(
         {
           ...options,
           scoringPeriodId: week,
-          fantasyFilter: transactionFilter,
         }
       ).catch(() => ({ transactions: [] }))
     );
@@ -277,6 +271,7 @@ export async function loadLeague(
   // Also fetch recent activity for trades via the communication endpoint
   let tradeActivities: CommunicationTopic[] = [];
   try {
+    // The filter must have a sort when using limit
     const activityFilter = {
       topics: {
         filterType: { value: ['ACTIVITY_TRANSACTIONS'] },
@@ -284,7 +279,6 @@ export async function loadLeague(
         limitPerMessageSet: { value: 50 },
         offset: 0,
         sortMessageDate: { sortPriority: 1, sortAsc: false },
-        sortFor: { sortPriority: 2, sortAsc: false },
         filterIncludeMessageTypeIds: { value: [ACTIVITY_MAP.TRADE_ACCEPT] }
       }
     };
@@ -298,7 +292,10 @@ export async function loadLeague(
         extend: 'communication',
         fantasyFilter: activityFilter,
       }
-    ).catch(() => ({ topics: [] }));
+    ).catch((e) => {
+      console.warn('[ESPN] Communication endpoint failed:', e);
+      return { topics: [] };
+    });
 
     tradeActivities = activityData.topics || [];
     console.log('[ESPN] Trade activities from communication endpoint:', tradeActivities.length);
@@ -455,14 +452,14 @@ export async function loadLeague(
       teamTransactions.set(primaryTeamId, txs);
     });
 
-  // Process trades - ESPN uses TRADEPENDING for pending trades and various statuses
+  // Process trades - ESPN TRADE_ACCEPT type doesn't always have a status
   const tradeTransactions = allTransactions.filter(tx => {
-    const isTradeType = tx.type === 'TRADE_ACCEPT' ||
-                        tx.type === 'TRADE' ||
-                        tx.type === 'TRADEPENDING' ||
-                        tx.type.toUpperCase().includes('TRADE');
-    const isCompleted = tx.status === 'EXECUTED' || tx.status === 'ACCEPTED';
-    return isTradeType && isCompleted;
+    // TRADE_ACCEPT is the executed trade type
+    if (tx.type === 'TRADE_ACCEPT') {
+      // Status can be undefined, EXECUTED, or ACCEPTED for completed trades
+      return tx.status === undefined || tx.status === 'EXECUTED' || tx.status === 'ACCEPTED';
+    }
+    return false;
   });
   console.log('[ESPN] Trade transactions after filter:', tradeTransactions.length);
 
