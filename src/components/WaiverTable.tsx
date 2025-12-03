@@ -13,16 +13,22 @@ type SortDirection = 'asc' | 'desc';
 interface WaiverPickup {
   transaction: Transaction;
   playerName: string;
+  playerId: string;
   position: string;
   nflTeam: string;
   totalPoints: number;
   gamesStarted: number;
   pointsPerGame: number;
   par: number;
+  pickupCount: number; // How many times this player was picked up by this team
 }
+
+// FLEX positions (RB/WR/TE)
+const FLEX_POSITIONS = ['RB', 'WR', 'TE'];
 
 export function WaiverTable({ teams, platform }: WaiverTableProps) {
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
+  const [selectedPosition, setSelectedPosition] = useState<string>('all');
   // Default to PAR sorting since it's the most meaningful cross-position metric
   const [sortField, setSortField] = useState<SortField>('par');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -30,35 +36,87 @@ export function WaiverTable({ teams, platform }: WaiverTableProps) {
   // For Yahoo, games started data isn't available (API limitation)
   const hasGamesData = platform !== 'yahoo';
 
-  // Flatten all waiver pickups
+  // Flatten and consolidate waiver pickups (merge multiple pickups of same player by same team)
   const allPickups = useMemo(() => {
-    const pickups: WaiverPickup[] = [];
+    // First, collect all raw pickups
+    const rawPickups: Array<{
+      teamId: string;
+      teamName: string;
+      playerId: string;
+      playerName: string;
+      position: string;
+      nflTeam: string;
+      points: number;
+      games: number;
+      par: number;
+      transaction: Transaction;
+    }> = [];
 
     teams.forEach(team => {
       team.transactions?.forEach(tx => {
         if (tx.type === 'waiver' || tx.type === 'free_agent') {
           tx.adds.forEach(player => {
-            // Use per-player stats if available, fall back to transaction totals for backward compatibility
             const playerPoints = player.pointsSincePickup ?? tx.totalPointsGenerated ?? 0;
             const playerGames = player.gamesSincePickup ?? tx.gamesStarted ?? 0;
             const playerPAR = player.pointsAboveReplacement ?? 0;
-            pickups.push({
-              transaction: tx,
+            rawPickups.push({
+              teamId: tx.teamId,
+              teamName: tx.teamName,
+              playerId: player.id,
               playerName: player.name,
               position: player.position,
               nflTeam: player.team,
-              totalPoints: playerPoints,
-              gamesStarted: playerGames,
-              pointsPerGame: playerGames > 0 ? playerPoints / playerGames : 0,
+              points: playerPoints,
+              games: playerGames,
               par: playerPAR,
+              transaction: tx,
             });
           });
         }
       });
     });
 
-    return pickups;
+    // Consolidate by teamId + playerId (use earliest transaction for display)
+    const consolidated = new Map<string, WaiverPickup>();
+
+    rawPickups.forEach(pickup => {
+      const key = `${pickup.teamId}-${pickup.playerId}`;
+      const existing = consolidated.get(key);
+
+      if (existing) {
+        // Already have this player for this team - DON'T add points again
+        // The points/games are already cumulative from the API, just increment pickup count
+        // Use the earliest week's transaction for display
+        if (pickup.transaction.week < existing.transaction.week) {
+          existing.transaction = pickup.transaction;
+        }
+        existing.pickupCount += 1;
+      } else {
+        // First time seeing this player for this team
+        consolidated.set(key, {
+          transaction: pickup.transaction,
+          playerName: pickup.playerName,
+          playerId: pickup.playerId,
+          position: pickup.position,
+          nflTeam: pickup.nflTeam,
+          totalPoints: pickup.points,
+          gamesStarted: pickup.games,
+          pointsPerGame: pickup.games > 0 ? pickup.points / pickup.games : 0,
+          par: pickup.par,
+          pickupCount: 1,
+        });
+      }
+    });
+
+    return Array.from(consolidated.values());
   }, [teams]);
+
+  // Get unique positions
+  const positions = useMemo(() => {
+    const posSet = new Set<string>();
+    allPickups.forEach(pickup => posSet.add(pickup.position));
+    return Array.from(posSet).sort();
+  }, [allPickups]);
 
   // Filter and sort
   const displayPickups = useMemo(() => {
@@ -66,6 +124,12 @@ export function WaiverTable({ teams, platform }: WaiverTableProps) {
 
     if (selectedTeam !== 'all') {
       filtered = filtered.filter(p => p.transaction.teamId === selectedTeam);
+    }
+
+    if (selectedPosition === 'FLEX') {
+      filtered = filtered.filter(p => FLEX_POSITIONS.includes(p.position));
+    } else if (selectedPosition !== 'all') {
+      filtered = filtered.filter(p => p.position === selectedPosition);
     }
 
     return [...filtered].sort((a, b) => {
@@ -107,7 +171,7 @@ export function WaiverTable({ teams, platform }: WaiverTableProps) {
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [allPickups, selectedTeam, sortField, sortDirection]);
+  }, [allPickups, selectedTeam, selectedPosition, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -176,6 +240,26 @@ export function WaiverTable({ teams, platform }: WaiverTableProps) {
           </select>
         </div>
 
+        <div className={styles.filter}>
+          <label htmlFor="positionFilter" className={styles.filterLabel}>
+            Position
+          </label>
+          <select
+            id="positionFilter"
+            className="input"
+            value={selectedPosition}
+            onChange={(e) => setSelectedPosition(e.target.value)}
+          >
+            <option value="all">All Positions</option>
+            <option value="FLEX">FLEX (RB/WR/TE)</option>
+            {positions.map(pos => (
+              <option key={pos} value={pos}>
+                {pos}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className={styles.stats}>
           <div className={styles.stat}>
             <span className={styles.statLabel}>Total Pickups</span>
@@ -227,13 +311,20 @@ export function WaiverTable({ teams, platform }: WaiverTableProps) {
             </tr>
           </thead>
           <tbody>
-            {displayPickups.map((pickup, index) => (
-              <tr key={`${pickup.transaction.id}-${pickup.playerName}-${index}`}>
+            {displayPickups.map((pickup) => (
+              <tr key={`${pickup.transaction.teamId}-${pickup.playerId}`}>
                 <td className="font-mono text-center">{pickup.transaction.week}</td>
                 <td className={styles.fantasyTeam}>{pickup.transaction.teamName}</td>
                 <td>
                   <div className={styles.playerCell}>
-                    <span className={styles.playerName}>{pickup.playerName}</span>
+                    <span className={styles.playerName}>
+                      {pickup.playerName}
+                      {pickup.pickupCount > 1 && (
+                        <span className={styles.pickupCount} title={`Picked up ${pickup.pickupCount} times`}>
+                          x{pickup.pickupCount}
+                        </span>
+                      )}
+                    </span>
                     <span className={styles.playerMeta}>
                       {pickup.position} - {pickup.nflTeam}
                     </span>

@@ -61,6 +61,11 @@
   overflow: hidden;
 }
 
+.tradeCard.incomplete {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
 .tradeHeader {
   display: flex;
   justify-content: space-between;
@@ -68,6 +73,8 @@
   padding: 0.75rem 1rem;
   background-color: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-color);
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .tradeWeek {
@@ -77,6 +84,15 @@
 .tradeDate {
   color: var(--text-secondary);
   font-size: 0.875rem;
+}
+
+.incompleteTag {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  background-color: rgba(255, 165, 0, 0.2);
+  color: #ffa500;
+  border-radius: 4px;
+  margin-left: auto;
 }
 
 .tradeSides {

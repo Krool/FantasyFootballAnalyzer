@@ -166,6 +166,7 @@ async function yahooFetch<T>(endpoint: string): Promise<T> {
 // Get user's leagues for a season
 export async function getUserLeagues(season: number = new Date().getFullYear()): Promise<Array<{ id: string; name: string }>> {
   const gameKey = getGameKey(season);
+  console.log('[Yahoo] getUserLeagues called for season:', season, 'using gameKey:', gameKey);
 
   const data = await yahooFetch<any>(`/users;use_login=1/games;game_keys=${gameKey}/leagues`);
 
@@ -180,8 +181,10 @@ export async function getUserLeagues(season: number = new Date().getFullYear()):
     if (leagueData) {
       const leagueList = Array.isArray(leagueData) ? leagueData : [leagueData];
       for (const league of leagueList) {
+        const leagueKey = league.league_key || league['@_league_key'];
+        console.log('[Yahoo] Found league:', league.name, 'with key:', leagueKey);
         leagues.push({
-          id: league.league_key || league['@_league_key'],
+          id: leagueKey,
           name: league.name
         });
       }
@@ -190,15 +193,53 @@ export async function getUserLeagues(season: number = new Date().getFullYear()):
     console.error('Error parsing leagues:', e, data);
   }
 
+  console.log('[Yahoo] Returning', leagues.length, 'leagues');
   return leagues;
+}
+
+// Parse roster settings to get position slot counts
+function parseRosterSettings(settings: any): { QB: number; RB: number; WR: number; TE: number; FLEX: number; K: number; DST: number } {
+  const rosterPositions = settings?.roster_positions?.roster_position || [];
+  const posList = Array.isArray(rosterPositions) ? rosterPositions : [rosterPositions];
+
+  const slots = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, K: 0, DST: 0 };
+
+  for (const pos of posList) {
+    const posType = pos.position || pos.position_type || '';
+    const count = parseInt(pos.count || '1');
+
+    switch (posType) {
+      case 'QB': slots.QB += count; break;
+      case 'RB': slots.RB += count; break;
+      case 'WR': slots.WR += count; break;
+      case 'TE': slots.TE += count; break;
+      case 'W/R/T': case 'W/R': case 'FLEX': slots.FLEX += count; break;
+      case 'K': slots.K += count; break;
+      case 'DEF': case 'D/ST': case 'DST': slots.DST += count; break;
+    }
+  }
+
+  // Defaults if nothing parsed
+  if (slots.QB === 0) slots.QB = 1;
+  if (slots.RB === 0) slots.RB = 2;
+  if (slots.WR === 0) slots.WR = 2;
+  if (slots.TE === 0) slots.TE = 1;
+  if (slots.K === 0) slots.K = 1;
+  if (slots.DST === 0) slots.DST = 1;
+
+  return slots;
 }
 
 // Load a specific league
 export async function loadLeague(leagueKey: string): Promise<League> {
+  console.log('[Yahoo] loadLeague called with leagueKey:', leagueKey);
+
   // Get league info with settings, standings, and teams
   const leagueData = await yahooFetch<any>(
     `/league/${leagueKey};out=settings,standings,teams`
   );
+
+  console.log('[Yahoo] League data received, season from response:', leagueData?.fantasy_content?.league?.season);
 
   const leagueInfo = leagueData?.fantasy_content?.league;
   if (!leagueInfo) {
@@ -208,6 +249,9 @@ export async function loadLeague(leagueKey: string): Promise<League> {
   // Parse league info
   const season = parseInt(leagueInfo.season);
   const draftType = leagueInfo.settings?.draft_type === 'auction' ? 'auction' : 'snake';
+
+  // Parse roster settings for PAR calculation
+  const rosterSlots = parseRosterSettings(leagueInfo.settings);
 
   // Parse scoring type
   let scoringType: 'standard' | 'ppr' | 'half_ppr' | 'custom' = 'standard';
@@ -279,7 +323,18 @@ export async function loadLeague(leagueKey: string): Promise<League> {
     scoringType,
     totalTeams: teams.length,
     currentWeek: parseInt(leagueInfo.current_week || 1),
-    isLoaded: true
+    isLoaded: true,
+    rosterSlots: {
+      QB: rosterSlots.QB,
+      RB: rosterSlots.RB,
+      WR: rosterSlots.WR,
+      TE: rosterSlots.TE,
+      FLEX: rosterSlots.FLEX,
+      K: rosterSlots.K,
+      DST: rosterSlots.DST,
+      BENCH: 6, // Default
+      IR: 1, // Default
+    },
   };
 }
 
@@ -339,6 +394,9 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
           teamName: string;
           playersReceived: Player[];
           playersSent: Player[];
+          parGained: number;
+          parLost: number;
+          netPAR: number;
           pointsGained: number;
           pointsLost: number;
           netValue: number;
@@ -364,6 +422,9 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
               teamName: teams.find(t => t.id === sourceTeam)?.name || 'Unknown',
               playersReceived: [] as Player[],
               playersSent: [] as Player[],
+              parGained: 0,
+              parLost: 0,
+              netPAR: 0,
               pointsGained: 0,
               pointsLost: 0,
               netValue: 0
@@ -379,6 +440,9 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
               teamName: teams.find(t => t.id === destTeam)?.name || 'Unknown',
               playersReceived: [] as Player[],
               playersSent: [] as Player[],
+              parGained: 0,
+              parLost: 0,
+              netPAR: 0,
               pointsGained: 0,
               pointsLost: 0,
               netValue: 0
@@ -453,70 +517,10 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
   return { transactions, trades };
 }
 
-// Build a map of player ownership periods from transactions
-// Returns: playerId -> array of {teamId, startWeek, endWeek}
-function buildPlayerOwnershipMap(
-  teams: Team[],
-  currentWeek: number
-): Map<string, Array<{ teamId: string; startWeek: number; endWeek: number }>> {
-  const ownershipMap = new Map<string, Array<{ teamId: string; startWeek: number; endWeek: number }>>();
-
-  // Collect all transactions across all teams, sorted by week
-  const allTransactions: Array<{ tx: Transaction; teamId: string }> = [];
-  for (const team of teams) {
-    for (const tx of team.transactions || []) {
-      allTransactions.push({ tx, teamId: team.id });
-    }
-  }
-  allTransactions.sort((a, b) => a.tx.week - b.tx.week);
-
-  // Track current owner of each player
-  const currentOwner = new Map<string, { teamId: string; startWeek: number }>();
-
-  for (const { tx } of allTransactions) {
-    // Process drops first (player leaves team)
-    for (const player of tx.drops || []) {
-      const owner = currentOwner.get(player.id);
-      if (owner) {
-        // End the ownership period
-        const periods = ownershipMap.get(player.id) || [];
-        periods.push({
-          teamId: owner.teamId,
-          startWeek: owner.startWeek,
-          endWeek: tx.week - 1 // Owned until the week before drop
-        });
-        ownershipMap.set(player.id, periods);
-        currentOwner.delete(player.id);
-      }
-    }
-
-    // Process adds (player joins team)
-    for (const player of tx.adds || []) {
-      currentOwner.set(player.id, {
-        teamId: tx.teamId,
-        startWeek: tx.week
-      });
-    }
-  }
-
-  // Close out any remaining ownerships (still on roster)
-  for (const [playerId, owner] of currentOwner.entries()) {
-    const periods = ownershipMap.get(playerId) || [];
-    periods.push({
-      teamId: owner.teamId,
-      startWeek: owner.startWeek,
-      endWeek: currentWeek
-    });
-    ownershipMap.set(playerId, periods);
-  }
-
-  return ownershipMap;
-}
-
 // Progress callback type
 type ProgressCallback = (progress: { stage: string; current: number; total: number; detail?: string }) => void;
 
-// Enrich player data with stats
+// Enrich player data with stats and calculate PAR (Points Above Replacement)
 export async function enrichPlayersWithStats(
   league: League,
   onProgress?: ProgressCallback
@@ -538,11 +542,6 @@ export async function enrichPlayersWithStats(
 
   if (playerKeys.size === 0) return;
 
-  const currentWeek = league.currentWeek || 1;
-
-  // Build ownership map to know when each player was on each team
-  const ownershipMap = buildPlayerOwnershipMap(league.teams, currentWeek);
-
   // Batch fetch player info in league context to get fantasy points with league scoring
   // Yahoo allows up to 25 players at a time
   const playerArray = Array.from(playerKeys);
@@ -552,16 +551,12 @@ export async function enrichPlayersWithStats(
     batches.push(playerArray.slice(i, i + 25));
   }
 
-  // Calculate total API calls needed for progress tracking
-  const allWaiverPlayerKeys = playerArray.filter(pk => ownershipMap.has(pk));
-  const waiverBatches = Math.ceil(allWaiverPlayerKeys.length / 25);
-  const totalCalls = batches.length + (waiverBatches * currentWeek);
+  // Total API calls = just the player batches (skip broken weekly stats)
+  const totalCalls = batches.length;
   let completedCalls = 0;
 
   // Map for player info and season stats
   const playerMap = new Map<string, { name: string; position: string; team: string; points?: number }>();
-  // Map for weekly stats: playerId -> week -> points
-  const weeklyStatsMap = new Map<string, Map<number, number>>();
 
   onProgress?.({
     stage: 'Fetching player data',
@@ -621,61 +616,77 @@ export async function enrichPlayersWithStats(
     }
   }
 
-  // Fetch weekly stats for waiver players (those with ownership changes)
-  // Do this separately to minimize API calls - fetch all waiver players for each week
-  if (allWaiverPlayerKeys.length > 0) {
-    // Batch waiver players (25 at a time) for weekly stats
-    const waiverBatchesArr: string[][] = [];
-    for (let i = 0; i < allWaiverPlayerKeys.length; i += 25) {
-      waiverBatchesArr.push(allWaiverPlayerKeys.slice(i, i + 25));
+  // ========== POINTS ABOVE REPLACEMENT (PAR) CALCULATION ==========
+  // Build position rankings to calculate replacement level baselines
+  const totalTeamsCount = league.totalTeams;
+  const rosterSlots = league.rosterSlots || {
+    QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, K: 1, DST: 1, BENCH: 6, IR: 1
+  };
+
+  // Calculate replacement level for each position
+  // Replacement = (starters * teams) + 1
+  // FLEX counts toward RB/WR since they're most commonly flexed
+  const replacementRank: Record<string, number> = {
+    QB: rosterSlots.QB * totalTeamsCount + 1,
+    RB: (rosterSlots.RB * totalTeamsCount) + Math.floor(rosterSlots.FLEX * totalTeamsCount * 0.6) + 1,
+    WR: (rosterSlots.WR * totalTeamsCount) + Math.floor(rosterSlots.FLEX * totalTeamsCount * 0.3) + 1,
+    TE: (rosterSlots.TE * totalTeamsCount) + Math.floor(rosterSlots.FLEX * totalTeamsCount * 0.1) + 1,
+    K: rosterSlots.K * totalTeamsCount + 1,
+    DEF: rosterSlots.DST * totalTeamsCount + 1,
+  };
+
+  console.log('[Yahoo] Replacement ranks by position:', replacementRank);
+
+  // Build position rankings from all players in playerMap
+  const positionPlayers: Record<string, Array<{ id: string; points: number }>> = {
+    QB: [], RB: [], WR: [], TE: [], K: [], DEF: [],
+  };
+
+  playerMap.forEach((player, id) => {
+    const pos = player.position;
+    if (pos && positionPlayers[pos]) {
+      positionPlayers[pos].push({
+        id,
+        points: player.points || 0,
+      });
     }
+  });
 
-    // Fetch stats for each week
-    for (let week = 1; week <= currentWeek; week++) {
-      for (const waiverBatch of waiverBatchesArr) {
-        try {
-          const weekData = await yahooFetch<any>(
-            `/league/${league.id}/players;player_keys=${waiverBatch.join(',')};out=stats;type=week;week=${week}`
-          );
+  // Sort by points descending
+  Object.keys(positionPlayers).forEach(pos => {
+    positionPlayers[pos].sort((a, b) => b.points - a.points);
+  });
 
-          const weekPlayers = weekData?.fantasy_content?.league?.players?.player || [];
-          const weekPlayerList = Array.isArray(weekPlayers) ? weekPlayers : [weekPlayers];
+  // Calculate replacement baseline for each position
+  const replacementBaseline: Record<string, number> = {};
+  Object.keys(replacementRank).forEach(pos => {
+    const rank = replacementRank[pos];
+    const players = positionPlayers[pos] || [];
 
-          for (const player of weekPlayerList) {
-            let weekPoints = 0;
+    console.log(`[Yahoo] ${pos}: ${players.length} players in map, need rank ${rank}`);
 
-            // Yahoo returns player_points.total for the requested week
-            if (player.player_points?.total !== undefined) {
-              weekPoints = parseFloat(player.player_points.total);
-            }
-
-            // Sanity check: weekly points shouldn't exceed ~75 for any player
-            // If it's higher, it's likely season totals being returned incorrectly
-            if (weekPoints > 75) {
-              console.warn(`Suspiciously high weekly points for ${player.player_key} week ${week}: ${weekPoints}, skipping`);
-              continue; // Skip this data point entirely
-            }
-
-            const playerWeeklyStats = weeklyStatsMap.get(player.player_key) || new Map<number, number>();
-            playerWeeklyStats.set(week, weekPoints);
-            weeklyStatsMap.set(player.player_key, playerWeeklyStats);
-          }
-
-          completedCalls++;
-          onProgress?.({
-            stage: 'Fetching weekly stats',
-            current: completedCalls,
-            total: totalCalls,
-            detail: `Week ${week} of ${currentWeek} (${allWaiverPlayerKeys.length} waiver players)`
-          });
-
-        } catch (e) {
-          console.error(`Error fetching week ${week} stats:`, e);
-          completedCalls++;
-        }
-      }
+    if (players.length === 0) {
+      replacementBaseline[pos] = 0;
+    } else if (rank <= players.length) {
+      replacementBaseline[pos] = players[rank - 1]?.points || 0;
+    } else {
+      // Not enough players - use the worst player we have as baseline
+      replacementBaseline[pos] = players[players.length - 1]?.points || 0;
     }
-  }
+  });
+
+  console.log('[Yahoo] Replacement baselines (season points):', replacementBaseline);
+
+  // Calculate PAR for a player
+  const getPlayerPAR = (playerId: string): number => {
+    const player = playerMap.get(playerId);
+    if (!player) return 0;
+    const baseline = replacementBaseline[player.position] || 0;
+    const seasonPts = player.points || 0;
+    return Math.max(0, seasonPts - baseline); // PAR can't be negative (replacement is free)
+  };
+
+  // ========== END PAR CALCULATION ==========
 
   // Update draft picks with enriched data
   for (const team of league.teams) {
@@ -691,10 +702,11 @@ export async function enrichPlayersWithStats(
       }
     }
 
-    // Update transactions with player stats for the ownership period
+    // Update transactions with player stats
+    // NOTE: Yahoo's weekly stats API doesn't work properly (returns season totals)
+    // So we use season points and PAR instead of "points since pickup"
     for (const tx of team.transactions || []) {
-      let totalPoints = 0;
-      let gamesWithPoints = 0;
+      let txTotalPAR = 0;
 
       for (const player of tx.adds || []) {
         const playerInfo = playerMap.get(player.id);
@@ -702,32 +714,64 @@ export async function enrichPlayersWithStats(
           player.name = playerInfo.name;
           player.position = playerInfo.position;
           player.team = playerInfo.team;
-        }
 
-        // Find the ownership period for this transaction
-        const periods = ownershipMap.get(player.id) || [];
-        const ownershipPeriod = periods.find(
-          p => p.teamId === tx.teamId && p.startWeek === tx.week
-        );
+          // Store season points and PAR on the player
+          const seasonPoints = playerInfo.points || 0;
+          const par = getPlayerPAR(player.id);
 
-        if (ownershipPeriod) {
-          const weeklyStats = weeklyStatsMap.get(player.id);
-          if (weeklyStats) {
-            // Sum points only for weeks during ownership
-            for (let week = ownershipPeriod.startWeek; week <= ownershipPeriod.endWeek; week++) {
-              const weekPoints = weeklyStats.get(week);
-              if (weekPoints !== undefined && weekPoints > 0) {
-                totalPoints += weekPoints;
-                gamesWithPoints++;
-              }
-            }
-          }
+          (player as any).seasonPoints = Math.round(seasonPoints * 10) / 10;
+          (player as any).pointsAboveReplacement = Math.round(par * 10) / 10;
+          // For display compatibility, use PAR as the "points since pickup"
+          (player as any).pointsSincePickup = Math.round(par * 10) / 10;
+          // Games is not available via Yahoo API, set to undefined
+          (player as any).gamesSincePickup = undefined;
+
+          txTotalPAR += par;
         }
       }
 
-      if (gamesWithPoints > 0 || totalPoints > 0) {
-        tx.totalPointsGenerated = totalPoints;
-        tx.gamesStarted = gamesWithPoints;
+      // Store transaction-level totals using PAR
+      tx.totalPointsGenerated = Math.round(txTotalPAR * 10) / 10;
+      // Games started not available for Yahoo
+      tx.gamesStarted = undefined;
+    }
+  }
+
+  // Also calculate PAR for trades
+  for (const trade of league.trades || []) {
+    for (const tradeTeam of trade.teams) {
+      const parGained = tradeTeam.playersReceived.reduce((sum, p) => {
+        return sum + getPlayerPAR(p.id);
+      }, 0);
+      const parLost = tradeTeam.playersSent.reduce((sum, p) => {
+        return sum + getPlayerPAR(p.id);
+      }, 0);
+
+      // Also calculate raw season points (for reference)
+      const rawGained = tradeTeam.playersReceived.reduce((sum, p) => {
+        const info = playerMap.get(p.id);
+        return sum + (info?.points || 0);
+      }, 0);
+      const rawLost = tradeTeam.playersSent.reduce((sum, p) => {
+        const info = playerMap.get(p.id);
+        return sum + (info?.points || 0);
+      }, 0);
+
+      tradeTeam.parGained = Math.round(parGained * 10) / 10;
+      tradeTeam.parLost = Math.round(parLost * 10) / 10;
+      tradeTeam.netPAR = Math.round((parGained - parLost) * 10) / 10;
+      tradeTeam.pointsGained = Math.round(rawGained * 10) / 10;
+      tradeTeam.pointsLost = Math.round(rawLost * 10) / 10;
+      tradeTeam.netValue = Math.round((rawGained - rawLost) * 10) / 10;
+    }
+
+    // Determine winner based on PAR
+    if (trade.teams.length === 2) {
+      const [team1, team2] = trade.teams;
+      const diff = team1.netPAR - team2.netPAR;
+      if (Math.abs(diff) > 20) {
+        trade.winner = diff > 0 ? team1.teamId : team2.teamId;
+        trade.winnerMargin = Math.abs(diff);
       }
     }
   }

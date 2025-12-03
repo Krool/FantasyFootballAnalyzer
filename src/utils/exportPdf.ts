@@ -3,12 +3,35 @@ import autoTable from 'jspdf-autotable';
 import type { League, Trade } from '@/types';
 import { gradeAllPicks, calculateDraftSummary, getGradeDisplayText } from './grading';
 
+// Import trophy images
+import BestWaiverPickup from '@/images/BestWaiverPickup.png';
+import WorstWaiverPickup from '@/images/WorstWaiverPickup.png';
+import BestTrade from '@/images/BestTrade.png';
+import BestDraft from '@/images/BestDraft.png';
+import WorstDraft from '@/images/WorstDraft.png';
+import WaiverWireKing from '@/images/WaiverWireKing.png';
+import WaiverWireSlacker from '@/images/WaiverWireSlacker.png';
+import MostActive from '@/images/MostActive.png';
+import LeastActive from '@/images/LeastActive.png';
+
+// Map award titles to their trophy images
+const awardImages: Record<string, string> = {
+  'Best Waiver Pickup': BestWaiverPickup,
+  'Worst Waiver Pickup': WorstWaiverPickup,
+  'Best Trade': BestTrade,
+  'Best Draft': BestDraft,
+  'Worst Draft': WorstDraft,
+  'Waiver Wire King': WaiverWireKing,
+  'Waiver Wire Slacker': WaiverWireSlacker,
+  'Most Active': MostActive,
+  'Least Active': LeastActive,
+};
+
 // Award types for the first page
 interface Award {
   title: string;
   winner: string;
   detail: string;
-  icon: string;
 }
 
 // Helper to get all waiver pickups with PAR
@@ -80,7 +103,6 @@ function generateAwards(league: League): Award[] {
       title: 'Best Waiver Pickup',
       winner: bestWaiver.playerName,
       detail: `${bestWaiver.teamName} | +${bestWaiver.par.toFixed(1)} PAR`,
-      icon: '*',
     });
   }
 
@@ -93,7 +115,6 @@ function generateAwards(league: League): Award[] {
       title: 'Worst Waiver Pickup',
       winner: worstWaiver.playerName,
       detail: `${worstWaiver.teamName} | ${worstWaiver.par.toFixed(1)} PAR`,
-      icon: 'X',
     });
   }
 
@@ -119,7 +140,6 @@ function generateAwards(league: League): Award[] {
         title: 'Best Trade',
         winner: bestTradeInfo.teamName,
         detail: `Got ${receivedNames} | +${bestTradeInfo.netPAR.toFixed(1)} PAR`,
-        icon: '<>',
       });
     }
   }
@@ -137,7 +157,6 @@ function generateAwards(league: League): Award[] {
       title: 'Best Draft',
       winner: best.name,
       detail: `${best.great} great picks | +${best.avgValue.toFixed(1)} avg value`,
-      icon: '+',
     });
   }
 
@@ -148,7 +167,6 @@ function generateAwards(league: League): Award[] {
       title: 'Worst Draft',
       winner: worst.name,
       detail: `${worst.avgValue >= 0 ? '+' : ''}${worst.avgValue.toFixed(1)} avg value`,
-      icon: '-',
     });
   }
 
@@ -160,7 +178,6 @@ function generateAwards(league: League): Award[] {
       title: 'Waiver Wire King',
       winner: best.name,
       detail: `${best.pickups} pickups | +${best.par.toFixed(1)} PAR`,
-      icon: '#1',
     });
   }
 
@@ -171,7 +188,6 @@ function generateAwards(league: League): Award[] {
       title: 'Waiver Wire Slacker',
       winner: worst.name,
       detail: `${worst.pickups} pickups | ${worst.par >= 0 ? '+' : ''}${worst.par.toFixed(1)} PAR`,
-      icon: '...',
     });
   }
 
@@ -183,7 +199,6 @@ function generateAwards(league: League): Award[] {
       title: 'Most Active',
       winner: most.name,
       detail: `${most.transactions} transactions`,
-      icon: '>>',
     });
   }
 
@@ -194,7 +209,6 @@ function generateAwards(league: League): Award[] {
       title: 'Least Active',
       winner: least.name,
       detail: `${least.transactions} transactions`,
-      icon: '__',
     });
   }
 
@@ -241,11 +255,21 @@ export function exportLeagueReport(league: League) {
     doc.setFillColor(250, 250, 250);
     doc.roundedRect(x, y, awardColWidth - 4, awardHeight - 2, 2, 2, 'FD');
 
-    // Icon and title
+    // Trophy image on the right side
+    const imageUrl = awardImages[award.title];
+    if (imageUrl) {
+      try {
+        doc.addImage(imageUrl, 'PNG', x + awardColWidth - 18, y + 1, 12, 12);
+      } catch (e) {
+        // Image failed to load, skip it
+      }
+    }
+
+    // Title (no icon)
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(80, 80, 80);
-    doc.text(`${award.icon} ${award.title}`, x + 2, y + 4);
+    doc.text(award.title, x + 2, y + 4);
 
     // Winner
     doc.setFontSize(8);

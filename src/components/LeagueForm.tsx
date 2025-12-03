@@ -49,8 +49,12 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     try {
       const leagues = await getUserLeagues(season);
       setYahooLeagues(leagues);
-      if (leagues.length > 0 && !selectedYahooLeague) {
+      // Always select the first league for the new season
+      // (the old selection is from a different season and won't be valid)
+      if (leagues.length > 0) {
         setSelectedYahooLeague(leagues[0].id);
+      } else {
+        setSelectedYahooLeague('');
       }
     } catch (err) {
       console.error('Failed to load Yahoo leagues:', err);

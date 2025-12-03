@@ -164,6 +164,20 @@ function App() {
           </p>
         </div>
       </footer>
+
+      {/* Build version indicator */}
+      <div style={{
+        position: 'fixed',
+        bottom: '8px',
+        left: '8px',
+        fontSize: '15px',
+        color: 'rgba(255,255,255,0.5)',
+        fontFamily: 'monospace',
+        pointerEvents: 'none',
+        zIndex: 9999,
+      }}>
+        v{import.meta.env.VITE_BUILD_TIME || 'dev'}
+      </div>
     </div>
   );
 }

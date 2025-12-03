@@ -164,6 +164,10 @@
     align-items: flex-start;
   }
 
+  .logo {
+    font-size: 0.9rem;
+  }
+
   .nav {
     width: 100%;
     justify-content: flex-start;

@@ -435,28 +435,126 @@ For advanced filtering, use the `X-Fantasy-Filter` header with JSON:
 GET /seasons/{year}/segments/0/leagues/{league_id}/communication/?view=kona_league_communication
 ```
 
-This endpoint returns trade activity with player movement details:
+**IMPORTANT**: The `mTransactions2` view shows TRADE_ACCEPT transactions but with empty `items` arrays. To get actual trade details (which players moved between teams), you MUST use the communication endpoint.
+
+**Response Structure**:
 ```json
 {
   "topics": [
     {
       "id": "topic-uuid",
-      "type": "ACTIVITY_TRADE",
+      "type": "ACTIVITY_TRANSACTIONS",
       "date": 1699234567890,
       "messages": [
         {
-          "messageTypeId": 180,
-          "targetId": "12345",
-          "for": 1,
-          "to": 2
+          "id": "message-uuid",
+          "messageTypeId": 188,
+          "targetId": 12345,
+          "for": 3,
+          "from": 2,
+          "to": 20
         }
       ]
     }
   ]
 }
 ```
-- `messageTypeId` 180: Player traded from team
-- `messageTypeId` 181: Player traded to team
+
+**Key Message Fields**:
+| Field | Description |
+|-------|-------------|
+| `messageTypeId` | Type of roster action (188 = roster transaction) |
+| `targetId` | Player ID being moved |
+| `for` | **Fantasy Team ID** receiving the player |
+| `from` | **Lineup slot ID** the player came FROM (NOT team ID!) |
+| `to` | **Lineup slot ID** the player is going TO (NOT team ID!) |
+
+**CRITICAL**: The `from` and `to` fields are **lineup slot IDs**, NOT team IDs! Use the `for` field to identify which team is receiving the player.
+
+**Topic Types**:
+| Type | Description |
+|------|-------------|
+| `ACTIVITY_TRANSACTIONS` | Roster moves including trades, waivers, drops |
+| `ACTIVITY_TRADE` | (Rarely used) Dedicated trade activity |
+| `ACTIVITY_RECAP` | Game recaps and summaries |
+| `ACTIVITY_PROJECTION` | Player projections |
+
+**Identifying Trades**:
+1. Topic type is `ACTIVITY_TRANSACTIONS`
+2. Multiple messages with different `for` values (2+ teams involved)
+3. Messages show players moving between teams
+4. To filter only ACCEPTED trades (not proposals), cross-reference with `TRADE_ACCEPT` timestamps from `mTransactions2`
+
+**Trade Filtering Strategy**:
+The communication endpoint shows ALL trade activity including proposals. To get only accepted trades:
+1. Query `mTransactions2` for `TRADE_ACCEPT` transactions
+2. Extract `proposedDate` timestamps from accepted trades
+3. Match communication topics with timestamps within 24-hour tolerance
+4. Only include topics where timestamps match accepted trades
+
+**Message Type IDs**:
+| ID | Description |
+|----|-------------|
+| 178 | Player dropped |
+| 179 | Player added (waiver/FA) |
+| 180 | Trade - player leaving team |
+| 181 | Trade - player joining team |
+| 188 | General roster transaction |
+
+**Example: Parsing a Trade**:
+```javascript
+// Group messages by team (for field)
+const teamPlayers = new Map();
+topic.messages.forEach(msg => {
+  const teamId = msg.for;
+  if (!teamPlayers.has(teamId)) {
+    teamPlayers.set(teamId, []);
+  }
+  teamPlayers.get(teamId).push(msg.targetId);
+});
+
+// If 2+ teams involved, it's a trade
+if (teamPlayers.size >= 2) {
+  // Each team's array contains players they RECEIVED
+}
+```
+
+### Tracking Games Started (for Waiver Analysis)
+
+To accurately track how many games a player was STARTED (not just on roster):
+
+1. **Fetch weekly rosters** with `scoringPeriodId` parameter:
+```
+GET /seasons/{year}/segments/0/leagues/{league_id}?view=mRoster&view=mMatchup&scoringPeriodId={week}
+```
+
+2. **Check `lineupSlotId`** for each roster entry:
+   - Starter slots: 0 (QB), 2 (RB), 4 (WR), 6 (TE), 16 (D/ST), 17 (K), 23 (FLEX)
+   - Non-starter slots: 20 (Bench), 21 (IR)
+
+3. **Build weekly tracking map**:
+```javascript
+// Map: playerId -> Map<teamId -> Set<weeks started>>
+const playerStartsByTeamAndWeek = new Map();
+
+for (let week = 1; week <= currentWeek; week++) {
+  const weekData = await fetchWeekRoster(leagueId, year, week);
+  weekData.teams.forEach(team => {
+    team.roster.entries.forEach(entry => {
+      const slotId = entry.lineupSlotId;
+      const isStarter = [0, 2, 4, 6, 16, 17, 23].includes(slotId);
+      if (isStarter) {
+        // Track this player was started by this team in this week
+      }
+    });
+  });
+}
+```
+
+4. **Calculate games started for waiver pickup**:
+   - Get pickup week from transaction
+   - Count weeks from pickup_week to current_week where player was in starting lineup
+   - Sum points only from those started weeks
 
 ---
 
@@ -687,8 +785,11 @@ For cross-platform lookups, use player name + team + position matching, or exter
 - Always use the new base URL (`lm-api-reads.fantasy.espn.com`)
 - Combine multiple views in one request when possible
 - Use `scoringPeriodId` to get week-specific roster data
-- For trades, use the `/communication/` endpoint
+- For trades: `mTransactions2` has TRADE_ACCEPT but NO items - use `/communication/` endpoint for player details
+- Communication endpoint shows ALL trade activity (proposals + accepted) - filter by matching TRADE_ACCEPT timestamps
+- In communication messages: `for` = team ID, but `from`/`to` = lineup slot IDs (NOT teams!)
 - Private league cookies must be URL-encoded in headers
+- For accurate "games started" tracking, fetch each week's roster separately with `scoringPeriodId`
 
 ### Yahoo
 - Implement token refresh logic (1 hour expiry)

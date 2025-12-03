@@ -52,6 +52,9 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
     return Array.from(posSet).sort();
   }, [gradedPicks]);
 
+  // FLEX positions (RB/WR/TE)
+  const FLEX_POSITIONS = ['RB', 'WR', 'TE'];
+
   // Filter and sort picks
   const displayPicks = useMemo(() => {
     let filtered = gradedPicks;
@@ -60,7 +63,9 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
       filtered = filtered.filter(pick => pick.teamId === selectedTeam);
     }
 
-    if (selectedPosition !== 'all') {
+    if (selectedPosition === 'FLEX') {
+      filtered = filtered.filter(pick => FLEX_POSITIONS.includes(pick.player.position));
+    } else if (selectedPosition !== 'all') {
       filtered = filtered.filter(pick => pick.player.position === selectedPosition);
     }
 
@@ -171,6 +176,7 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
             onChange={(e) => handlePositionFilter(e.target.value)}
           >
             <option value="all">All Positions</option>
+            <option value="FLEX">FLEX (RB/WR/TE)</option>
             {positions.map(pos => (
               <option key={pos} value={pos}>
                 {pos}
