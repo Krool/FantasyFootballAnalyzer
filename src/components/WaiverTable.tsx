@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
-import type { Team, Transaction } from '@/types';
+import type { Team, Platform, Transaction } from '@/types';
 import styles from './WaiverTable.module.css';
 
 interface WaiverTableProps {
   teams: Team[];
+  platform?: Platform;
 }
 
-type SortField = 'week' | 'team' | 'player' | 'type' | 'points' | 'games' | 'ppg';
+type SortField = 'week' | 'team' | 'player' | 'type' | 'points' | 'games' | 'ppg' | 'par';
 type SortDirection = 'asc' | 'desc';
 
 interface WaiverPickup {
@@ -17,12 +18,17 @@ interface WaiverPickup {
   totalPoints: number;
   gamesStarted: number;
   pointsPerGame: number;
+  par: number;
 }
 
-export function WaiverTable({ teams }: WaiverTableProps) {
+export function WaiverTable({ teams, platform }: WaiverTableProps) {
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
-  const [sortField, setSortField] = useState<SortField>('points');
+  // Default to PAR sorting since it's the most meaningful cross-position metric
+  const [sortField, setSortField] = useState<SortField>('par');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  // For Yahoo, games started data isn't available (API limitation)
+  const hasGamesData = platform !== 'yahoo';
 
   // Flatten all waiver pickups
   const allPickups = useMemo(() => {
@@ -35,6 +41,7 @@ export function WaiverTable({ teams }: WaiverTableProps) {
             // Use per-player stats if available, fall back to transaction totals for backward compatibility
             const playerPoints = player.pointsSincePickup ?? tx.totalPointsGenerated ?? 0;
             const playerGames = player.gamesSincePickup ?? tx.gamesStarted ?? 0;
+            const playerPAR = player.pointsAboveReplacement ?? 0;
             pickups.push({
               transaction: tx,
               playerName: player.name,
@@ -43,6 +50,7 @@ export function WaiverTable({ teams }: WaiverTableProps) {
               totalPoints: playerPoints,
               gamesStarted: playerGames,
               pointsPerGame: playerGames > 0 ? playerPoints / playerGames : 0,
+              par: playerPAR,
             });
           });
         }
@@ -92,6 +100,9 @@ export function WaiverTable({ teams }: WaiverTableProps) {
         case 'ppg':
           comparison = a.pointsPerGame - b.pointsPerGame;
           break;
+        case 'par':
+          comparison = a.par - b.par;
+          break;
       }
 
       return sortDirection === 'asc' ? comparison : -comparison;
@@ -114,12 +125,13 @@ export function WaiverTable({ teams }: WaiverTableProps) {
 
   // Calculate team totals
   const teamTotals = useMemo(() => {
-    const totals = new Map<string, { points: number; pickups: number }>();
+    const totals = new Map<string, { points: number; par: number; pickups: number }>();
 
     allPickups.forEach(pickup => {
-      const current = totals.get(pickup.transaction.teamId) || { points: 0, pickups: 0 };
+      const current = totals.get(pickup.transaction.teamId) || { points: 0, par: 0, pickups: 0 };
       totals.set(pickup.transaction.teamId, {
         points: current.points + pickup.totalPoints,
+        par: current.par + pickup.par,
         pickups: current.pickups + 1,
       });
     });
@@ -128,11 +140,18 @@ export function WaiverTable({ teams }: WaiverTableProps) {
   }, [allPickups]);
 
   // Summary stats
-  const totalPoints = useMemo(() => {
+  const { totalPoints, totalPAR } = useMemo(() => {
     if (selectedTeam === 'all') {
-      return displayPickups.reduce((sum, p) => sum + p.totalPoints, 0);
+      return {
+        totalPoints: displayPickups.reduce((sum, p) => sum + p.totalPoints, 0),
+        totalPAR: displayPickups.reduce((sum, p) => sum + p.par, 0),
+      };
     }
-    return teamTotals.get(selectedTeam)?.points || 0;
+    const teamData = teamTotals.get(selectedTeam);
+    return {
+      totalPoints: teamData?.points || 0,
+      totalPAR: teamData?.par || 0,
+    };
   }, [displayPickups, selectedTeam, teamTotals]);
 
   return (
@@ -163,7 +182,11 @@ export function WaiverTable({ teams }: WaiverTableProps) {
             <span className={styles.statValue}>{displayPickups.length}</span>
           </div>
           <div className={styles.stat}>
-            <span className={styles.statLabel}>Points Generated</span>
+            <span className={styles.statLabel}>Total PAR</span>
+            <span className={styles.statValue}>{totalPAR >= 0 ? '+' : ''}{totalPAR.toFixed(1)}</span>
+          </div>
+          <div className={styles.stat}>
+            <span className={styles.statLabel}>Raw Points</span>
             <span className={styles.statValue}>{totalPoints.toFixed(1)}</span>
           </div>
         </div>
@@ -185,15 +208,22 @@ export function WaiverTable({ teams }: WaiverTableProps) {
               <th onClick={() => handleSort('type')} className={styles.sortable}>
                 Type{getSortIndicator('type')}
               </th>
+              <th onClick={() => handleSort('par')} className={styles.sortable}>
+                PAR{getSortIndicator('par')}
+              </th>
               <th onClick={() => handleSort('points')} className={styles.sortable}>
-                Total Points{getSortIndicator('points')}
+                Season Pts{getSortIndicator('points')}
               </th>
-              <th onClick={() => handleSort('games')} className={styles.sortable}>
-                Games Started{getSortIndicator('games')}
-              </th>
-              <th onClick={() => handleSort('ppg')} className={styles.sortable}>
-                PPG{getSortIndicator('ppg')}
-              </th>
+              {hasGamesData && (
+                <>
+                  <th onClick={() => handleSort('games')} className={styles.sortable}>
+                    Games{getSortIndicator('games')}
+                  </th>
+                  <th onClick={() => handleSort('ppg')} className={styles.sortable}>
+                    PPG{getSortIndicator('ppg')}
+                  </th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -217,13 +247,20 @@ export function WaiverTable({ teams }: WaiverTableProps) {
                     )}
                   </span>
                 </td>
-                <td className={`font-mono text-right ${pickup.totalPoints > 50 ? 'grade-great' : pickup.totalPoints > 20 ? 'grade-good' : ''}`}>
+                <td className={`font-mono text-right ${pickup.par > 20 ? 'grade-great' : pickup.par > 5 ? 'grade-good' : ''}`}>
+                  {pickup.par >= 0 ? '+' : ''}{pickup.par.toFixed(1)}
+                </td>
+                <td className="font-mono text-right">
                   {pickup.totalPoints.toFixed(1)}
                 </td>
-                <td className="font-mono text-center">{pickup.gamesStarted}</td>
-                <td className="font-mono text-right">
-                  {pickup.gamesStarted > 0 ? pickup.pointsPerGame.toFixed(1) : '-'}
-                </td>
+                {hasGamesData && (
+                  <>
+                    <td className="font-mono text-center">{pickup.gamesStarted}</td>
+                    <td className="font-mono text-right">
+                      {pickup.gamesStarted > 0 ? pickup.pointsPerGame.toFixed(1) : '-'}
+                    </td>
+                  </>
+                )}
               </tr>
             ))}
           </tbody>
@@ -249,10 +286,10 @@ export function WaiverTable({ teams }: WaiverTableProps) {
 
       {selectedTeam === 'all' && teams.length > 0 && (
         <div className={styles.leaderboard}>
-          <h3 className={styles.leaderboardTitle}>Team Waiver Leaderboard</h3>
+          <h3 className={styles.leaderboardTitle}>Team Waiver Leaderboard (PAR)</h3>
           <div className={styles.leaderboardList}>
             {Array.from(teamTotals.entries())
-              .sort((a, b) => b[1].points - a[1].points)
+              .sort((a, b) => b[1].par - a[1].par)
               .map(([teamId, data], index) => {
                 const team = teams.find(t => t.id === teamId);
                 return (
@@ -260,7 +297,7 @@ export function WaiverTable({ teams }: WaiverTableProps) {
                     <span className={styles.rank}>#{index + 1}</span>
                     <span className={styles.teamName}>{team?.name || teamId}</span>
                     <span className={styles.pickupCount}>{data.pickups} pickups</span>
-                    <span className={styles.pointsTotal}>{data.points.toFixed(1)} pts</span>
+                    <span className={styles.pointsTotal}>{data.par >= 0 ? '+' : ''}{data.par.toFixed(1)} PAR</span>
                   </div>
                 );
               })}

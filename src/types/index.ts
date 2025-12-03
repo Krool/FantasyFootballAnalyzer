@@ -13,6 +13,10 @@ export interface Player {
   // Per-player stats for waiver pickups (points/games since pickup)
   pointsSincePickup?: number;
   gamesSincePickup?: number;
+  // Points Above Replacement for waiver pickups
+  pointsAboveReplacement?: number;
+  // Full season points (useful when weekly stats unavailable, e.g., Yahoo)
+  seasonPoints?: number;
 }
 
 export interface DraftPick {
@@ -45,6 +49,8 @@ export interface Transaction {
   // Calculated stats
   totalPointsGenerated?: number;
   gamesStarted?: number;
+  // Points Above Replacement total
+  totalPAR?: number;
 }
 
 export interface Trade {
@@ -60,12 +66,16 @@ export interface Trade {
     playersSent: Player[];
     draftPicksReceived?: TradedDraftPick[];
     draftPicksSent?: TradedDraftPick[];
-    // Points generated after trade
+    // Points Above Replacement after trade
+    parGained: number;
+    parLost: number;
+    netPAR: number;
+    // Legacy raw points (kept for reference)
     pointsGained: number;
     pointsLost: number;
     netValue: number;
   }[];
-  // Trade winner determination
+  // Trade winner determination (based on PAR)
   winner?: string; // teamId of winner
   winnerMargin?: number;
 }
@@ -103,6 +113,19 @@ export interface Team {
   };
 }
 
+// Roster slot configuration for calculating replacement level
+export interface RosterSlots {
+  QB: number;
+  RB: number;
+  WR: number;
+  TE: number;
+  FLEX: number; // RB/WR/TE flex
+  K: number;
+  DST: number;
+  BENCH: number;
+  IR: number;
+}
+
 export interface League {
   id: string;
   platform: Platform;
@@ -116,6 +139,7 @@ export interface League {
   currentWeek?: number;
   isLoaded: boolean;
   previousLeagueId?: string;
+  rosterSlots?: RosterSlots; // For PAR calculation
 }
 
 export interface HeadToHeadRecord {

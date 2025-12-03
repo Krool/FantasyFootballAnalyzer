@@ -1,4 +1,11 @@
-import type { SleeperAPI, League, Team, DraftPick, Transaction, Player, Trade, SeasonSummary, HeadToHeadRecord } from '@/types';
+import type { SleeperAPI, League, Team, DraftPick, Transaction, Player, Trade, SeasonSummary, HeadToHeadRecord, RosterSlots } from '@/types';
+import {
+  parseSleeperRosterPositions,
+  calculateReplacementLevels,
+  calculateReplacementPoints,
+  calculateGamesPAR,
+  type PositionStats,
+} from '@/utils/par';
 
 const BASE_URL = 'https://api.sleeper.app/v1';
 
@@ -144,6 +151,37 @@ export async function loadLeague(leagueId: string): Promise<League> {
     scoringType = 'standard';
   }
 
+  // Parse roster slots for PAR calculation
+  const rosterSlots: RosterSlots = parseSleeperRosterPositions(leagueData.roster_positions || []);
+
+  // Calculate replacement levels based on league settings
+  const replacementLevels = calculateReplacementLevels(rosterSlots, leagueData.total_rosters);
+
+  // Build position stats for all players to calculate replacement points
+  const allPlayerStats: PositionStats[] = [];
+  Object.entries(seasonStats).forEach(([playerId, stats]) => {
+    const player = players[playerId];
+    if (player && player.position) {
+      // Use the appropriate scoring type
+      const points = scoringType === 'ppr'
+        ? stats.pts_ppr
+        : scoringType === 'half_ppr'
+          ? stats.pts_half_ppr
+          : stats.pts_std;
+
+      if (points !== undefined) {
+        allPlayerStats.push({
+          playerId,
+          position: player.position,
+          seasonPoints: points,
+        });
+      }
+    }
+  });
+
+  // Calculate replacement-level points for each position
+  const replacementPoints = calculateReplacementPoints(allPlayerStats, replacementLevels);
+
   // Build a map of player starts by roster and week for waiver impact tracking
   // Key: `${rosterId}-${playerId}`, Value: Map<week, points>
   const playerStartsByRosterAndWeek = new Map<string, Map<number, number>>();
@@ -200,6 +238,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
       let totalGamesStarted = 0;
 
       // Calculate per-player stats for each added player
+      let totalPAR = 0;
       const adds = tx.adds ? Object.keys(tx.adds).map(id => {
         const player = convertPlayer(id, players);
         const key = `${primaryRosterId}-${player.platformId}`;
@@ -222,10 +261,20 @@ export async function loadLeague(leagueId: string): Promise<League> {
         totalPointsGenerated += pointsSincePickup;
         totalGamesStarted += gamesSincePickup;
 
+        // Calculate PAR for this player
+        const playerPAR = calculateGamesPAR(
+          pointsSincePickup,
+          player.position,
+          gamesSincePickup,
+          replacementPoints
+        );
+        totalPAR += playerPAR;
+
         return {
           ...player,
           pointsSincePickup: Math.round(pointsSincePickup * 10) / 10,
           gamesSincePickup,
+          pointsAboveReplacement: Math.round(playerPAR * 10) / 10,
         };
       }) : [];
 
@@ -241,6 +290,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
         waiverBudgetSpent: tx.settings?.waiver_bid,
         totalPointsGenerated,
         gamesStarted: totalGamesStarted,
+        totalPAR: Math.round(totalPAR * 10) / 10,
       };
 
       rosterIds.forEach(rosterId => {
@@ -277,7 +327,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
         });
       }
 
-      // Calculate points for each side - points scored BY THAT TEAM AFTER the trade
+      // Calculate points and PAR for each side - based on players started BY THAT TEAM AFTER the trade
       const tradeWeek = tx.leg;
       const tradeTeams = rosterIds.map(rosterId => {
         const received = addsPerRoster.get(rosterId) || [];
@@ -285,36 +335,72 @@ export async function loadLeague(leagueId: string): Promise<League> {
 
         let pointsGained = 0;
         let pointsLost = 0;
+        let parGained = 0;
+        let parLost = 0;
 
-        // Points gained = points from received players started by this team after trade
+        // Points/PAR gained = from received players started by this team after trade
         received.forEach(playerId => {
           const key = `${rosterId}-${playerId}`;
           const weekMap = playerStartsByRosterAndWeek.get(key);
+          const player = players[playerId];
+          let playerPoints = 0;
+          let gamesStarted = 0;
+
           if (weekMap) {
             weekMap.forEach((points, week) => {
               if (week >= tradeWeek) {
-                pointsGained += points;
+                playerPoints += points;
+                gamesStarted += 1;
               }
             });
           }
+
+          pointsGained += playerPoints;
+
+          // Calculate PAR for this player
+          if (player && gamesStarted > 0) {
+            const playerPAR = calculateGamesPAR(
+              playerPoints,
+              player.position || 'Unknown',
+              gamesStarted,
+              replacementPoints
+            );
+            parGained += playerPAR;
+          }
         });
 
-        // Points lost = points from sent players started by the OTHER team after trade
-        // Find the other roster ID(s) that received these players
+        // Points/PAR lost = from sent players started by the OTHER team after trade
         sent.forEach(playerId => {
-          // Find which roster received this player
           rosterIds.forEach(otherRosterId => {
             if (otherRosterId !== rosterId) {
               const otherReceived = addsPerRoster.get(otherRosterId) || [];
               if (otherReceived.includes(playerId)) {
                 const key = `${otherRosterId}-${playerId}`;
                 const weekMap = playerStartsByRosterAndWeek.get(key);
+                const player = players[playerId];
+                let playerPoints = 0;
+                let gamesStarted = 0;
+
                 if (weekMap) {
                   weekMap.forEach((points, week) => {
                     if (week >= tradeWeek) {
-                      pointsLost += points;
+                      playerPoints += points;
+                      gamesStarted += 1;
                     }
                   });
+                }
+
+                pointsLost += playerPoints;
+
+                // Calculate PAR for this player
+                if (player && gamesStarted > 0) {
+                  const playerPAR = calculateGamesPAR(
+                    playerPoints,
+                    player.position || 'Unknown',
+                    gamesStarted,
+                    replacementPoints
+                  );
+                  parLost += playerPAR;
                 }
               }
             }
@@ -326,19 +412,22 @@ export async function loadLeague(leagueId: string): Promise<League> {
           teamName: '', // Will be set later
           playersReceived: received.map(id => convertPlayer(id, players)),
           playersSent: sent.map(id => convertPlayer(id, players)),
+          parGained: Math.round(parGained * 10) / 10,
+          parLost: Math.round(parLost * 10) / 10,
+          netPAR: Math.round((parGained - parLost) * 10) / 10,
           pointsGained,
           pointsLost,
           netValue: pointsGained - pointsLost,
         };
       });
 
-      // Determine winner
+      // Determine winner based on PAR (not raw points)
       let winner: string | undefined;
       let winnerMargin = 0;
       if (tradeTeams.length === 2) {
         const [team1, team2] = tradeTeams;
-        const diff = team1.netValue - team2.netValue;
-        if (Math.abs(diff) > 10) { // Margin threshold
+        const diff = team1.netPAR - team2.netPAR;
+        if (Math.abs(diff) > 5) { // PAR margin threshold (lower than raw points since PAR is smaller)
           winner = diff > 0 ? team1.teamId : team2.teamId;
           winnerMargin = Math.abs(diff);
         }

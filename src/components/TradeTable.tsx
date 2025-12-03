@@ -24,17 +24,17 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
     return [...filtered].sort((a, b) => b.week - a.week);
   }, [trades, selectedTeam]);
 
-  // Calculate team trade stats
+  // Calculate team trade stats (using PAR)
   const teamStats = useMemo(() => {
-    const stats = new Map<string, { wins: number; losses: number; fair: number; netPoints: number }>();
+    const stats = new Map<string, { wins: number; losses: number; fair: number; netPAR: number }>();
 
     teams.forEach(team => {
-      stats.set(team.id, { wins: 0, losses: 0, fair: 0, netPoints: 0 });
+      stats.set(team.id, { wins: 0, losses: 0, fair: 0, netPAR: 0 });
     });
 
     trades.forEach(trade => {
       trade.teams.forEach(t => {
-        const current = stats.get(t.teamId) || { wins: 0, losses: 0, fair: 0, netPoints: 0 };
+        const current = stats.get(t.teamId) || { wins: 0, losses: 0, fair: 0, netPAR: 0 };
 
         if (trade.winner === t.teamId) {
           current.wins++;
@@ -44,7 +44,7 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
           current.fair++;
         }
 
-        current.netPoints += t.netValue;
+        current.netPAR += t.netPAR ?? t.netValue ?? 0;
         stats.set(t.teamId, current);
       });
     });
@@ -59,19 +59,20 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
     });
   };
 
-  const getTradeGradeClass = (netValue: number) => {
-    if (netValue >= 50) return styles.bigWin;
-    if (netValue >= 10) return styles.win;
-    if (netValue <= -50) return styles.bigLoss;
-    if (netValue <= -10) return styles.loss;
+  // Grade thresholds adjusted for PAR (smaller values than raw points)
+  const getTradeGradeClass = (netPAR: number) => {
+    if (netPAR >= 20) return styles.bigWin;
+    if (netPAR >= 5) return styles.win;
+    if (netPAR <= -20) return styles.bigLoss;
+    if (netPAR <= -5) return styles.loss;
     return styles.fair;
   };
 
-  const getTradeGradeText = (netValue: number) => {
-    if (netValue >= 50) return 'Big Win';
-    if (netValue >= 10) return 'Win';
-    if (netValue <= -50) return 'Big Loss';
-    if (netValue <= -10) return 'Loss';
+  const getTradeGradeText = (netPAR: number) => {
+    if (netPAR >= 20) return 'Big Win';
+    if (netPAR >= 5) return 'Win';
+    if (netPAR <= -20) return 'Big Loss';
+    if (netPAR <= -5) return 'Loss';
     return 'Fair';
   };
 
@@ -107,11 +108,16 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
 
       {displayTrades.length > 0 ? (
         <div className={styles.trades}>
-          {displayTrades.map((trade) => (
-            <div key={trade.id} className={styles.tradeCard}>
+          {displayTrades.map((trade) => {
+            const isIncomplete = (trade as any).isIncomplete;
+            return (
+            <div key={trade.id} className={`${styles.tradeCard} ${isIncomplete ? styles.incomplete : ''}`}>
               <div className={styles.tradeHeader}>
                 <span className={styles.tradeWeek}>Week {trade.week}</span>
                 <span className={styles.tradeDate}>{formatDate(trade.timestamp)}</span>
+                {isIncomplete && (
+                  <span className={styles.incompleteTag}>Player data unavailable</span>
+                )}
               </div>
 
               <div className={styles.tradeSides}>
@@ -122,8 +128,8 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
                   >
                     <div className={styles.teamHeader}>
                       <span className={styles.teamName}>{teamSide.teamName}</span>
-                      <span className={`${styles.gradeTag} ${getTradeGradeClass(teamSide.netValue)}`}>
-                        {getTradeGradeText(teamSide.netValue)}
+                      <span className={`${styles.gradeTag} ${getTradeGradeClass(teamSide.netPAR ?? teamSide.netValue)}`}>
+                        {getTradeGradeText(teamSide.netPAR ?? teamSide.netValue)}
                       </span>
                     </div>
 
@@ -161,17 +167,17 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
 
                     <div className={styles.pointsBreakdown}>
                       <div className={styles.pointItem}>
-                        <span>Points Gained:</span>
-                        <span className={styles.positive}>+{teamSide.pointsGained.toFixed(1)}</span>
+                        <span>PAR Gained:</span>
+                        <span className={styles.positive}>+{(teamSide.parGained ?? teamSide.pointsGained).toFixed(1)}</span>
                       </div>
                       <div className={styles.pointItem}>
-                        <span>Points Lost:</span>
-                        <span className={styles.negative}>-{teamSide.pointsLost.toFixed(1)}</span>
+                        <span>PAR Lost:</span>
+                        <span className={styles.negative}>-{(teamSide.parLost ?? teamSide.pointsLost).toFixed(1)}</span>
                       </div>
                       <div className={`${styles.pointItem} ${styles.netValue}`}>
-                        <span>Net Value:</span>
-                        <span className={teamSide.netValue >= 0 ? styles.positive : styles.negative}>
-                          {teamSide.netValue >= 0 ? '+' : ''}{teamSide.netValue.toFixed(1)}
+                        <span>Net PAR:</span>
+                        <span className={(teamSide.netPAR ?? teamSide.netValue) >= 0 ? styles.positive : styles.negative}>
+                          {(teamSide.netPAR ?? teamSide.netValue) >= 0 ? '+' : ''}{(teamSide.netPAR ?? teamSide.netValue).toFixed(1)}
                         </span>
                       </div>
                     </div>
@@ -187,7 +193,8 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
                 ))}
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       ) : (
         <div className={styles.empty}>
@@ -205,10 +212,10 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
 
       {teams.length > 0 && trades.length > 0 && (
         <div className={styles.leaderboard}>
-          <h3 className={styles.leaderboardTitle}>Trade Performance Leaderboard</h3>
+          <h3 className={styles.leaderboardTitle}>Trade Performance Leaderboard (PAR)</h3>
           <div className={styles.leaderboardList}>
             {Array.from(teamStats.entries())
-              .sort((a, b) => b[1].netPoints - a[1].netPoints)
+              .sort((a, b) => b[1].netPAR - a[1].netPAR)
               .map(([teamId, stats], index) => {
                 const team = teams.find(t => t.id === teamId);
                 return (
@@ -218,8 +225,8 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
                     <span className={styles.tradeRecord}>
                       {stats.wins}W - {stats.losses}L - {stats.fair}F
                     </span>
-                    <span className={`${styles.netPointsLb} ${stats.netPoints >= 0 ? styles.positive : styles.negative}`}>
-                      {stats.netPoints >= 0 ? '+' : ''}{stats.netPoints.toFixed(1)} pts
+                    <span className={`${styles.netPointsLb} ${stats.netPAR >= 0 ? styles.positive : styles.negative}`}>
+                      {stats.netPAR >= 0 ? '+' : ''}{stats.netPAR.toFixed(1)} PAR
                     </span>
                   </div>
                 );
