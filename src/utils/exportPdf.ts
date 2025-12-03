@@ -80,7 +80,7 @@ function generateAwards(league: League): Award[] {
       title: 'Best Waiver Pickup',
       winner: bestWaiver.playerName,
       detail: `${bestWaiver.teamName} | +${bestWaiver.par.toFixed(1)} PAR`,
-      icon: '🏆',
+      icon: '*',
     });
   }
 
@@ -93,7 +93,7 @@ function generateAwards(league: League): Award[] {
       title: 'Worst Waiver Pickup',
       winner: worstWaiver.playerName,
       detail: `${worstWaiver.teamName} | ${worstWaiver.par.toFixed(1)} PAR`,
-      icon: '💩',
+      icon: 'X',
     });
   }
 
@@ -119,7 +119,7 @@ function generateAwards(league: League): Award[] {
         title: 'Best Trade',
         winner: bestTradeInfo.teamName,
         detail: `Got ${receivedNames} | +${bestTradeInfo.netPAR.toFixed(1)} PAR`,
-        icon: '🤝',
+        icon: '<>',
       });
     }
   }
@@ -137,7 +137,7 @@ function generateAwards(league: League): Award[] {
       title: 'Best Draft',
       winner: best.name,
       detail: `${best.great} great picks | +${best.avgValue.toFixed(1)} avg value`,
-      icon: '📋',
+      icon: '+',
     });
   }
 
@@ -148,7 +148,7 @@ function generateAwards(league: League): Award[] {
       title: 'Worst Draft',
       winner: worst.name,
       detail: `${worst.avgValue >= 0 ? '+' : ''}${worst.avgValue.toFixed(1)} avg value`,
-      icon: '📉',
+      icon: '-',
     });
   }
 
@@ -160,7 +160,7 @@ function generateAwards(league: League): Award[] {
       title: 'Waiver Wire King',
       winner: best.name,
       detail: `${best.pickups} pickups | +${best.par.toFixed(1)} PAR`,
-      icon: '👑',
+      icon: '#1',
     });
   }
 
@@ -171,7 +171,7 @@ function generateAwards(league: League): Award[] {
       title: 'Waiver Wire Slacker',
       winner: worst.name,
       detail: `${worst.pickups} pickups | ${worst.par >= 0 ? '+' : ''}${worst.par.toFixed(1)} PAR`,
-      icon: '😴',
+      icon: '...',
     });
   }
 
@@ -183,7 +183,7 @@ function generateAwards(league: League): Award[] {
       title: 'Most Active',
       winner: most.name,
       detail: `${most.transactions} transactions`,
-      icon: '🔥',
+      icon: '>>',
     });
   }
 
@@ -194,7 +194,7 @@ function generateAwards(league: League): Award[] {
       title: 'Least Active',
       winner: least.name,
       detail: `${least.transactions} transactions`,
-      icon: '🦥',
+      icon: '__',
     });
   }
 
