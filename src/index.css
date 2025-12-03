@@ -297,3 +297,36 @@ input, select {
 .justify-between { justify-content: space-between; }
 .gap-2 { gap: 0.5rem; }
 .gap-4 { gap: 1rem; }
+
+/* Footer - consistent with Krool World */
+.site-footer {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+  margin-top: auto;
+}
+
+.site-footer p {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.site-footer a {
+  color: #00d4ff;
+  transition: color 0.2s ease;
+}
+
+.site-footer a:hover {
+  color: #00ff88;
+}
+
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.footer-link svg {
+  width: 14px;
+  height: 14px;
+}

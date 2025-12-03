@@ -20,8 +20,9 @@ const SECRET_SLEEPER: LeagueCredentials = {
 const SECRET_ESPN: LeagueCredentials = {
   platform: 'espn',
   leagueId: '347749457',
-  season: 2024,
-  espnS2: 'AECcgwVOUgKOpAFwDhM8LMDZ%2B6kT13GrqWmxCIE14bNXH7MbiuByz4DdB7mTAJZ7Nmh5NRYPV7%2FzrQqIg6UCJSQyXOvFjksg4AFx1rgpiI7gbTS8hCudtxF54SbZys7fKrfYYY%2FOfXxEeTSgRVdw8fx0Q4gS8kiUV0%2FbLbnTmbOxDom%2B%2FqVuwaExb8lWZrXyQ7H3luMiYk%2Bw%2BzMYKq07zm1J4gBTkuwyQp3hFt%2Fd0kN4HAdpCByIzPTP988NEIJz7eZtk5UlnAyF1tkDvTaGT5HXex0OO0hUlPsF5fxNjzHmDA%3D%3D',
+  season: 2025,
+  // Store decoded - the API layer will encode for headers
+  espnS2: 'AECcgwVOUgKOpAFwDhM8LMDZ+6kT13GrqWmxCIE14bNXH7MbiuByz4DdB7mTAJZ7Nmh5NRYPV7/zrQqIg6UCJSQyXOvFjksg4AFx1rgpiI7gbTS8hCudtxF54SbZys7fKrfYYY/OfXxEeTSgRVdw8fx0Q4gS8kiUV0/bLbnTmbOxDom+/qVuwaExb8lWZrXyQ7H3luMiYk+w+zMYKq07zm1J4gBTkuwyQp3hFt/d0kN4HAdpCByIzPTP988NEIJz7eZtk5UlnAyF1tkDvTaGT5HXex0OO0hUlPsF5fxNjzHmDA==',
   swid: '{419BAD61-FE0D-4590-827B-BAE6A00E5289}',
 };
 

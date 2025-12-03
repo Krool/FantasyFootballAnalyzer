@@ -25,7 +25,11 @@ export function TeamCard({ team, allTeams, totalTeams, onClick }: TeamCardProps)
       isLoaded: true,
     };
     const allGraded = gradeAllPicks(mockLeague);
-    return allGraded.filter(pick => pick.teamId === team.id);
+    // Filter to this team's picks and exclude unknown players (e.g., "Player 12345")
+    return allGraded.filter(pick =>
+      pick.teamId === team.id &&
+      !pick.player.name.match(/^Player\s+-?\d+$/)
+    );
   }, [team, allTeams, totalTeams]);
 
   const summary = useMemo(() => calculateDraftSummary(gradedPicks), [gradedPicks]);

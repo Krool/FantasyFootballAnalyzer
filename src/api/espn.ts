@@ -418,22 +418,40 @@ export async function loadLeague(
       teamTransactions.set(primaryTeamId, txs);
     });
 
-  // Process trades - ESPN TRADE_ACCEPT type doesn't always have a status
-  const tradeTransactions = allTransactions.filter(tx => {
-    // TRADE_ACCEPT is the executed trade type, must have items
-    if (tx.type === 'TRADE_ACCEPT' && tx.items) {
-      // Status can be undefined, EXECUTED, or ACCEPTED for completed trades
-      return tx.status === undefined || tx.status === 'EXECUTED' || tx.status === 'ACCEPTED';
-    }
-    return false;
-  });
-  console.log('[ESPN] Trade transactions after filter:', tradeTransactions.length);
+  // Process trades - ESPN TRADE_ACCEPT has relatedTransactionId pointing to TRADE_PROPOSAL with items
+  // Build a map of transaction ID -> transaction for quick lookup
+  const txById = new Map<string, ESPNAPI.Transaction>();
+  allTransactions.forEach(tx => txById.set(String(tx.id), tx));
 
-  const allTrades: Trade[] = tradeTransactions
-    .map(tx => {
+  // Find TRADE_ACCEPT transactions and get items from related TRADE_PROPOSAL
+  const tradeAccepts = allTransactions.filter(tx => tx.type === 'TRADE_ACCEPT');
+  console.log('[ESPN] TRADE_ACCEPT transactions found:', tradeAccepts.length);
+
+  const allTrades: Trade[] = tradeAccepts
+    .map((acceptTx): Trade | null => {
+      // Get items from the related TRADE_PROPOSAL
+      let items: ESPNAPI.TransactionItem[] = [];
+
+      // First check if TRADE_ACCEPT itself has items (rare but possible)
+      if (acceptTx.items && acceptTx.items.length > 0) {
+        items = acceptTx.items;
+      }
+      // Otherwise look up the related TRADE_PROPOSAL
+      else if (acceptTx.relatedTransactionId) {
+        const proposal = txById.get(String(acceptTx.relatedTransactionId));
+        if (proposal?.items && proposal.items.length > 0) {
+          items = proposal.items;
+        }
+      }
+
+      if (items.length === 0) {
+        console.log('[ESPN] Trade has no items:', acceptTx.id, 'relatedId:', acceptTx.relatedTransactionId);
+        return null;
+      }
+
       const teamItems = new Map<number, { adds: Player[]; drops: Player[] }>();
 
-      (tx.items || []).forEach(item => {
+      items.forEach(item => {
         const player = getPlayer(item.playerId);
         const toTeamId = item.toTeamId;
         const fromTeamId = item.fromTeamId;
@@ -489,15 +507,16 @@ export async function loadLeague(
       }
 
       return {
-        id: String(tx.id),
-        timestamp: tx.proposedDate || 0,
-        week: tx.scoringPeriodId,
+        id: String(acceptTx.id),
+        timestamp: acceptTx.proposedDate || 0,
+        week: acceptTx.scoringPeriodId,
         status: 'completed' as const,
         teams: tradeTeams,
         winner,
         winnerMargin,
       };
-    });
+    })
+    .filter((trade): trade is Trade => trade !== null);
 
   console.log('[ESPN] Processed trades:', allTrades.length);
   console.log('[ESPN] Processed waiver transactions:', Array.from(teamTransactions.values()).flat().length);
