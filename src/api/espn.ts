@@ -462,12 +462,75 @@ export async function loadLeague(
   const tradeAccepts = allTransactions.filter(tx => tx.type === 'TRADE_ACCEPT');
   console.log('[ESPN] TRADE_ACCEPT transactions found:', tradeAccepts.length);
 
-  const allTrades: Trade[] = tradeAccepts
-    .map((acceptTx): Trade | null => {
-      // Get items from the related TRADE_PROPOSAL
+  // Debug: Log all trade-related transactions
+  const tradeRelated = allTransactions.filter(tx => tx.type.includes('TRADE'));
+  console.log('[ESPN] All trade-related transactions:', tradeRelated.map(tx => ({
+    id: tx.id,
+    type: tx.type,
+    status: tx.status,
+    hasItems: !!(tx.items && tx.items.length > 0),
+    itemCount: tx.items?.length || 0,
+    relatedId: tx.relatedTransactionId,
+  })));
+
+  // Try to fetch trade data from communication endpoint
+  let communicationTrades: Array<{ id: string; items: ESPNAPI.TransactionItem[]; week: number; timestamp: number }> = [];
+  try {
+    const commData = await fetchESPN<{ topics?: Array<{ id: string; type: string; messages?: Array<{ messageTypeId: number; targetId: string; for?: number; to?: number }>; date: number }> }>(
+      season,
+      leagueId,
+      ['kona_league_communication'],
+      {
+        ...options,
+        extend: 'communication',
+      }
+    );
+
+    console.log('[ESPN] Communication topics:', commData.topics?.length || 0);
+
+    // Find trade topics and extract player movement
+    commData.topics?.forEach(topic => {
+      if (topic.type === 'ACTIVITY_TRADE') {
+        const items: ESPNAPI.TransactionItem[] = [];
+        topic.messages?.forEach(msg => {
+          // messageTypeId 180 = player traded from, 181 = player traded to
+          if (msg.messageTypeId === 180 && msg.targetId && msg.for !== undefined) {
+            items.push({
+              playerId: parseInt(msg.targetId),
+              fromTeamId: msg.for,
+              toTeamId: msg.to || 0,
+              type: 'TRADE',
+            });
+          }
+        });
+        if (items.length > 0) {
+          communicationTrades.push({
+            id: topic.id,
+            items,
+            week: 0, // Will need to calculate from date
+            timestamp: topic.date,
+          });
+        }
+      }
+    });
+
+    console.log('[ESPN] Trades from communication endpoint:', communicationTrades.length);
+  } catch (e) {
+    console.warn('[ESPN] Failed to fetch communication data:', e);
+  }
+
+  // Use communication trades if available, otherwise fall back to TRADE_ACCEPT parsing
+  let tradesToProcess: Array<{ id: string; items: ESPNAPI.TransactionItem[]; week: number; timestamp: number }> = [];
+
+  if (communicationTrades.length > 0) {
+    tradesToProcess = communicationTrades;
+    console.log('[ESPN] Using communication endpoint trades');
+  } else {
+    // Fall back to TRADE_ACCEPT transactions
+    tradeAccepts.forEach(acceptTx => {
       let items: ESPNAPI.TransactionItem[] = [];
 
-      // First check if TRADE_ACCEPT itself has items (rare but possible)
+      // First check if TRADE_ACCEPT itself has items
       if (acceptTx.items && acceptTx.items.length > 0) {
         items = acceptTx.items;
       }
@@ -479,8 +542,24 @@ export async function loadLeague(
         }
       }
 
-      if (items.length === 0) {
+      if (items.length > 0) {
+        tradesToProcess.push({
+          id: String(acceptTx.id),
+          items,
+          week: acceptTx.scoringPeriodId,
+          timestamp: acceptTx.proposedDate || 0,
+        });
+      } else {
         console.log('[ESPN] Trade has no items:', acceptTx.id, 'relatedId:', acceptTx.relatedTransactionId);
+      }
+    });
+  }
+
+  const allTrades: Trade[] = tradesToProcess
+    .map((tradeTx): Trade | null => {
+      const items = tradeTx.items;
+
+      if (items.length === 0) {
         return null;
       }
 
@@ -542,9 +621,9 @@ export async function loadLeague(
       }
 
       return {
-        id: String(acceptTx.id),
-        timestamp: acceptTx.proposedDate || 0,
-        week: acceptTx.scoringPeriodId,
+        id: tradeTx.id,
+        timestamp: tradeTx.timestamp,
+        week: tradeTx.week,
         status: 'completed' as const,
         teams: tradeTeams,
         winner,
