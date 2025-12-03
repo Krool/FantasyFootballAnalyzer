@@ -360,13 +360,13 @@ export async function loadLeague(
   // Process waivers/free agent transactions
   const teamTransactions = new Map<number, Transaction[]>();
   allTransactions
-    .filter(tx => tx.status === 'EXECUTED' && (tx.type === 'WAIVER' || tx.type === 'FREEAGENT'))
+    .filter(tx => tx.status === 'EXECUTED' && (tx.type === 'WAIVER' || tx.type === 'FREEAGENT') && tx.items)
     .forEach(tx => {
       const adds: Player[] = [];
       const drops: Player[] = [];
       let primaryTeamId = 0;
 
-      tx.items.forEach(item => {
+      (tx.items || []).forEach(item => {
         const player = getPlayer(item.playerId);
         if (item.type === 'ADD') {
           adds.push(player);
@@ -420,8 +420,8 @@ export async function loadLeague(
 
   // Process trades - ESPN TRADE_ACCEPT type doesn't always have a status
   const tradeTransactions = allTransactions.filter(tx => {
-    // TRADE_ACCEPT is the executed trade type
-    if (tx.type === 'TRADE_ACCEPT') {
+    // TRADE_ACCEPT is the executed trade type, must have items
+    if (tx.type === 'TRADE_ACCEPT' && tx.items) {
       // Status can be undefined, EXECUTED, or ACCEPTED for completed trades
       return tx.status === undefined || tx.status === 'EXECUTED' || tx.status === 'ACCEPTED';
     }
@@ -433,7 +433,7 @@ export async function loadLeague(
     .map(tx => {
       const teamItems = new Map<number, { adds: Player[]; drops: Player[] }>();
 
-      tx.items.forEach(item => {
+      (tx.items || []).forEach(item => {
         const player = getPlayer(item.playerId);
         const toTeamId = item.toTeamId;
         const fromTeamId = item.fromTeamId;
