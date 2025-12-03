@@ -183,11 +183,17 @@ function buildPlayerMap(leagueData: ESPNAPI.League, season: number): Map<string,
   return playerMap;
 }
 
+// Progress callback type
+type ProgressCallback = (progress: { stage: string; current: number; total: number; detail?: string }) => void;
+
 export async function loadLeague(
   leagueId: string,
   season: number = new Date().getFullYear(),
-  options?: FetchOptions
+  options?: FetchOptions,
+  onProgress?: ProgressCallback
 ): Promise<League> {
+  onProgress?.({ stage: 'Loading league data', current: 0, total: 1, detail: 'Fetching league info...' });
+
   // Fetch all required data
   const leagueData = await fetchESPN<ESPNAPI.League>(
     season,
@@ -204,11 +210,21 @@ export async function loadLeague(
   // RETRO_ROSTER, TRADE_PROPOSAL, TRADE_UPHOLD, FREEAGENT, TRADE_DECLINE, WAIVER_ERROR, TRADE_ERROR
   // We don't filter - we want FREEAGENT, WAIVER, and TRADE_ACCEPT and we'll filter client-side
 
-  // Fetch transactions for each week in parallel
-  const txPromises: Promise<{ transactions?: ESPNAPI.Transaction[] }>[] = [];
+  const allTransactions: ESPNAPI.Transaction[] = [];
+  const seenTxIds = new Set<string>();
+  const totalWeeks = currentWeek + 1; // weeks 0 to currentWeek
+
+  // Fetch transactions for each week sequentially with progress updates
   for (let week = 0; week <= currentWeek; week++) {
-    txPromises.push(
-      fetchESPN<{ transactions?: ESPNAPI.Transaction[] }>(
+    onProgress?.({
+      stage: 'Loading transactions',
+      current: week,
+      total: totalWeeks,
+      detail: `Fetching week ${week} of ${currentWeek}...`
+    });
+
+    try {
+      const result = await fetchESPN<{ transactions?: ESPNAPI.Transaction[] }>(
         season,
         leagueId,
         ['mTransactions2'],
@@ -216,23 +232,26 @@ export async function loadLeague(
           ...options,
           scoringPeriodId: week,
         }
-      ).catch(() => ({ transactions: [] }))
-    );
+      );
+
+      (result.transactions || []).forEach(tx => {
+        // Deduplicate by transaction ID
+        const txId = String(tx.id);
+        if (!seenTxIds.has(txId)) {
+          seenTxIds.add(txId);
+          allTransactions.push(tx);
+        }
+      });
+    } catch (e) {
+      console.warn(`[ESPN] Failed to fetch transactions for week ${week}:`, e);
+    }
   }
 
-  const txResults = await Promise.all(txPromises);
-  const allTransactions: ESPNAPI.Transaction[] = [];
-  const seenTxIds = new Set<string>();
-
-  txResults.forEach(result => {
-    (result.transactions || []).forEach(tx => {
-      // Deduplicate by transaction ID
-      const txId = String(tx.id);
-      if (!seenTxIds.has(txId)) {
-        seenTxIds.add(txId);
-        allTransactions.push(tx);
-      }
-    });
+  onProgress?.({
+    stage: 'Processing data',
+    current: totalWeeks,
+    total: totalWeeks,
+    detail: 'Building team data...'
   });
 
   console.log('[ESPN] Total transactions after fetching all weeks:', allTransactions.length);

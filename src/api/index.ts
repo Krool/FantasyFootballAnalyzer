@@ -26,14 +26,14 @@ export async function loadLeague(
 
     case 'espn':
       console.log('[loadLeague] Loading ESPN league...');
-      onProgress?.({ stage: 'Loading league data', current: 0, total: 1 });
       return espn.loadLeague(
         credentials.leagueId,
         credentials.season || new Date().getFullYear(),
         {
           espnS2: credentials.espnS2,
           swid: credentials.swid,
-        }
+        },
+        onProgress
       );
 
     case 'yahoo': {
