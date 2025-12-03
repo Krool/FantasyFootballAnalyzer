@@ -128,39 +128,8 @@ function getSeasonPoints(player: ESPNAPI.Player, season: number): number | undef
   return seasonStats?.appliedTotal;
 }
 
-// Get weekly stats for a player (for calculating points since pickup)
-function getWeeklyStats(player: ESPNAPI.Player, season: number): Map<number, number> {
-  const weeklyStats = new Map<number, number>();
-  if (!player.stats) return weeklyStats;
-
-  player.stats
-    .filter(s => s.seasonId === season && s.scoringPeriodId > 0 && s.statSourceId === 0)
-    .forEach(s => {
-      weeklyStats.set(s.scoringPeriodId, s.appliedTotal);
-    });
-
-  return weeklyStats;
-}
-
-// Calculate points generated after a pickup week
-function getPointsSinceWeek(weeklyStats: Map<number, number>, pickupWeek: number, currentWeek: number): { points: number; gamesStarted: number } {
-  let points = 0;
-  let gamesStarted = 0;
-
-  for (let week = pickupWeek; week <= currentWeek; week++) {
-    const weekPoints = weeklyStats.get(week);
-    if (weekPoints !== undefined && weekPoints > 0) {
-      points += weekPoints;
-      gamesStarted++;
-    }
-  }
-
-  return { points, gamesStarted };
-}
-
 interface PlayerData extends Player {
   seasonPoints?: number;
-  weeklyStats?: Map<number, number>;
 }
 
 // Build a player map from all rosters and draft data
@@ -174,7 +143,6 @@ function buildPlayerMap(leagueData: ESPNAPI.League, season: number): Map<string,
         playerMap.set(String(espnPlayer.id), {
           ...convertPlayer(espnPlayer),
           seasonPoints: getSeasonPoints(espnPlayer, season),
-          weeklyStats: getWeeklyStats(espnPlayer, season),
         });
       }
     });
@@ -205,6 +173,59 @@ export async function loadLeague(
   const currentWeek = leagueData.status?.currentMatchupPeriod || 17;
   console.log('[ESPN] Current week:', currentWeek);
 
+  // Fetch weekly roster data to track who was STARTED each week
+  // Key: `${teamId}-${playerId}`, Value: Map<week, points>
+  const playerStartsByTeamAndWeek = new Map<string, Map<number, number>>();
+  const totalSteps = (currentWeek * 2) + 2; // roster weeks + transaction weeks + processing
+  let currentStep = 0;
+
+  // ESPN lineup slot IDs for starters (not bench/IR)
+  // 0=QB, 2=RB, 4=WR, 6=TE, 16=D/ST, 17=K, 23=FLEX
+  // 20=Bench, 21=IR - these are NOT starters
+  const STARTER_SLOTS = new Set([0, 2, 4, 6, 16, 17, 23]);
+
+  for (let week = 1; week <= currentWeek; week++) {
+    currentStep++;
+    onProgress?.({
+      stage: 'Loading rosters',
+      current: currentStep,
+      total: totalSteps,
+      detail: `Fetching week ${week} rosters...`
+    });
+
+    try {
+      const weekData = await fetchESPN<ESPNAPI.League>(
+        season,
+        leagueId,
+        ['mRoster', 'mMatchup'],
+        {
+          ...options,
+          scoringPeriodId: week,
+        }
+      );
+
+      // Process each team's roster for this week
+      weekData.teams?.forEach(team => {
+        team.roster?.entries?.forEach(entry => {
+          // Check if player was in a starter slot
+          if (STARTER_SLOTS.has(entry.lineupSlotId)) {
+            const playerId = String(entry.playerId);
+            const key = `${team.id}-${playerId}`;
+            const weekMap = playerStartsByTeamAndWeek.get(key) || new Map<number, number>();
+            // Get the points for this week
+            const points = entry.playerPoolEntry?.appliedStatTotal || 0;
+            weekMap.set(week, points);
+            playerStartsByTeamAndWeek.set(key, weekMap);
+          }
+        });
+      });
+    } catch (e) {
+      console.warn(`[ESPN] Failed to fetch roster for week ${week}:`, e);
+    }
+  }
+
+  console.log('[ESPN] Player starts tracked:', playerStartsByTeamAndWeek.size);
+
   // Fetch transactions for ALL weeks
   // Valid types: DRAFT, TRADE_ACCEPT, WAIVER, TRADE_VETO, FUTURE_ROSTER, ROSTER,
   // RETRO_ROSTER, TRADE_PROPOSAL, TRADE_UPHOLD, FREEAGENT, TRADE_DECLINE, WAIVER_ERROR, TRADE_ERROR
@@ -212,15 +233,15 @@ export async function loadLeague(
 
   const allTransactions: ESPNAPI.Transaction[] = [];
   const seenTxIds = new Set<string>();
-  const totalWeeks = currentWeek + 1; // weeks 0 to currentWeek
 
   // Fetch transactions for each week sequentially with progress updates
   for (let week = 0; week <= currentWeek; week++) {
+    currentStep++;
     onProgress?.({
       stage: 'Loading transactions',
-      current: week,
-      total: totalWeeks,
-      detail: `Fetching week ${week} of ${currentWeek}...`
+      current: currentStep,
+      total: totalSteps,
+      detail: `Fetching week ${week} transactions...`
     });
 
     try {
@@ -247,10 +268,11 @@ export async function loadLeague(
     }
   }
 
+  currentStep++;
   onProgress?.({
     stage: 'Processing data',
-    current: totalWeeks,
-    total: totalWeeks,
+    current: currentStep,
+    total: totalSteps,
     detail: 'Building team data...'
   });
 
@@ -369,27 +391,31 @@ export async function loadLeague(
       const pickupWeek = tx.scoringPeriodId;
 
       // Calculate points and games for each added player individually
+      // Using ACTUAL STARTS from playerStartsByTeamAndWeek (not NFL game stats)
       let totalPointsGenerated = 0;
       let totalGamesStarted = 0;
 
       (tx.items || []).forEach(item => {
         const player = getPlayer(item.playerId);
         if (item.type === 'ADD') {
-          // Calculate per-player stats
-          const playerData = playerMap.get(player.id);
+          const teamId = item.toTeamId;
+          primaryTeamId = teamId || primaryTeamId;
+
+          // Look up actual starts for this player on this team
+          const key = `${teamId}-${player.id}`;
+          const weekMap = playerStartsByTeamAndWeek.get(key);
+
           let pointsSincePickup = 0;
           let gamesSincePickup = 0;
 
-          if (playerData?.weeklyStats) {
-            const { points, gamesStarted } = getPointsSinceWeek(playerData.weeklyStats, pickupWeek, currentWeek);
-            pointsSincePickup = points;
-            gamesSincePickup = gamesStarted;
-          } else if (playerData?.seasonPoints) {
-            // Fallback: estimate based on season points and weeks remaining
-            const weeksOwned = Math.max(1, currentWeek - pickupWeek + 1);
-            const avgPPG = playerData.seasonPoints / currentWeek;
-            pointsSincePickup = avgPPG * weeksOwned;
-            gamesSincePickup = weeksOwned;
+          if (weekMap) {
+            // Count weeks where player was STARTED (in lineup) after pickup
+            weekMap.forEach((points, week) => {
+              if (week >= pickupWeek) {
+                pointsSincePickup += points;
+                gamesSincePickup += 1;
+              }
+            });
           }
 
           // Add per-player stats to the player object
@@ -401,7 +427,6 @@ export async function loadLeague(
 
           totalPointsGenerated += pointsSincePickup;
           totalGamesStarted += gamesSincePickup;
-          primaryTeamId = item.toTeamId || primaryTeamId;
         } else if (item.type === 'DROP') {
           drops.push(player);
         }
