@@ -27,6 +27,9 @@ const TEAM_MAP: Record<number, string> = {
 interface FetchOptions {
   espnS2?: string;
   swid?: string;
+  scoringPeriodId?: number;
+  fantasyFilter?: object;
+  extend?: string;
 }
 
 async function fetchESPN<T>(
@@ -37,18 +40,33 @@ async function fetchESPN<T>(
 ): Promise<T> {
   // If we have cookies, use the proxy (browsers can't send cookies cross-origin)
   if (options?.espnS2 && options?.swid) {
-    const viewParams = views.map(v => `view=${v}`).join('&');
-    const url = `${ESPN_PROXY_URL}?season=${season}&leagueId=${leagueId}&${viewParams}`;
+    const queryParams = [
+      `season=${season}`,
+      `leagueId=${leagueId}`,
+      ...views.map(v => `view=${v}`),
+    ];
+    if (options.scoringPeriodId !== undefined) {
+      queryParams.push(`scoringPeriodId=${options.scoringPeriodId}`);
+    }
+    if (options.extend) {
+      queryParams.push(`extend=${options.extend}`);
+    }
+    const url = `${ESPN_PROXY_URL}?${queryParams.join('&')}`;
 
     console.log('[ESPN] Using proxy for private league:', url);
 
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'X-ESPN-S2': options.espnS2,
-        'X-ESPN-SWID': options.swid,
-      },
-    });
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+      // URL-encode to preserve special characters like + / = in headers
+      'X-ESPN-S2': encodeURIComponent(options.espnS2),
+      'X-ESPN-SWID': encodeURIComponent(options.swid),
+    };
+
+    if (options.fantasyFilter) {
+      headers['X-Fantasy-Filter'] = JSON.stringify(options.fantasyFilter);
+    }
+
+    const response = await fetch(url, { headers });
 
     console.log('[ESPN] Proxy response status:', response.status);
 
@@ -65,12 +83,19 @@ async function fetchESPN<T>(
   }
 
   // For public leagues, call ESPN directly
-  const viewParams = views.map(v => `view=${v}`).join('&');
-  const url = `${ESPN_DIRECT_URL}/${season}/segments/0/leagues/${leagueId}?${viewParams}`;
+  const queryParams = views.map(v => `view=${v}`);
+  if (options?.scoringPeriodId !== undefined) {
+    queryParams.push(`scoringPeriodId=${options.scoringPeriodId}`);
+  }
+  const extendPath = options?.extend ? `/${options.extend}` : '';
+  const url = `${ESPN_DIRECT_URL}/${season}/segments/0/leagues/${leagueId}${extendPath}?${queryParams.join('&')}`;
 
-  const response = await fetch(url, {
-    headers: { 'Accept': 'application/json' },
-  });
+  const headers: Record<string, string> = { 'Accept': 'application/json' };
+  if (options?.fantasyFilter) {
+    headers['x-fantasy-filter'] = JSON.stringify(options.fantasyFilter);
+  }
+
+  const response = await fetch(url, { headers });
 
   if (!response.ok) {
     if (response.status === 401) {
@@ -103,9 +128,44 @@ function getSeasonPoints(player: ESPNAPI.Player, season: number): number | undef
   return seasonStats?.appliedTotal;
 }
 
+// Get weekly stats for a player (for calculating points since pickup)
+function getWeeklyStats(player: ESPNAPI.Player, season: number): Map<number, number> {
+  const weeklyStats = new Map<number, number>();
+  if (!player.stats) return weeklyStats;
+
+  player.stats
+    .filter(s => s.seasonId === season && s.scoringPeriodId > 0 && s.statSourceId === 0)
+    .forEach(s => {
+      weeklyStats.set(s.scoringPeriodId, s.appliedTotal);
+    });
+
+  return weeklyStats;
+}
+
+// Calculate points generated after a pickup week
+function getPointsSinceWeek(weeklyStats: Map<number, number>, pickupWeek: number, currentWeek: number): { points: number; gamesStarted: number } {
+  let points = 0;
+  let gamesStarted = 0;
+
+  for (let week = pickupWeek; week <= currentWeek; week++) {
+    const weekPoints = weeklyStats.get(week);
+    if (weekPoints !== undefined && weekPoints > 0) {
+      points += weekPoints;
+      gamesStarted++;
+    }
+  }
+
+  return { points, gamesStarted };
+}
+
+interface PlayerData extends Player {
+  seasonPoints?: number;
+  weeklyStats?: Map<number, number>;
+}
+
 // Build a player map from all rosters and draft data
-function buildPlayerMap(leagueData: ESPNAPI.League, season: number): Map<string, Player & { seasonPoints?: number }> {
-  const playerMap = new Map<string, Player & { seasonPoints?: number }>();
+function buildPlayerMap(leagueData: ESPNAPI.League, season: number): Map<string, PlayerData> {
+  const playerMap = new Map<string, PlayerData>();
 
   leagueData.teams.forEach(team => {
     team.roster?.entries.forEach(entry => {
@@ -114,6 +174,7 @@ function buildPlayerMap(leagueData: ESPNAPI.League, season: number): Map<string,
         playerMap.set(String(espnPlayer.id), {
           ...convertPlayer(espnPlayer),
           seasonPoints: getSeasonPoints(espnPlayer, season),
+          weeklyStats: getWeeklyStats(espnPlayer, season),
         });
       }
     });
@@ -122,12 +183,35 @@ function buildPlayerMap(leagueData: ESPNAPI.League, season: number): Map<string,
   return playerMap;
 }
 
+// Activity message type IDs for trades
+const ACTIVITY_MAP = {
+  FA_ADD: 178,
+  WAIVER_ADD: 180,
+  DROP: 179,
+  TRADE_ACCEPT: 244,
+  TRADE_DECLINE: 181,
+  TRADE_PROPOSE: 239,
+};
+
+interface CommunicationTopic {
+  id: string;
+  date: number;
+  messages: Array<{
+    id: string;
+    messageTypeId: number;
+    targetId: number;
+    to?: number;
+    from?: number;
+    for?: number;
+  }>;
+}
+
 export async function loadLeague(
   leagueId: string,
   season: number = new Date().getFullYear(),
   options?: FetchOptions
 ): Promise<League> {
-  // Fetch all required data including transactions
+  // Fetch all required data
   const leagueData = await fetchESPN<ESPNAPI.League>(
     season,
     leagueId,
@@ -135,20 +219,92 @@ export async function loadLeague(
     options
   );
 
-  // Also fetch transactions separately
-  const txData = await fetchESPN<{ transactions?: ESPNAPI.Transaction[] }>(
-    season,
-    leagueId,
-    ['mTransactions2'],
-    options
-  ).catch(() => ({ transactions: [] }));
+  const currentWeek = leagueData.status?.currentMatchupPeriod || 17;
+  console.log('[ESPN] Current week:', currentWeek);
 
-  const allTransactions = txData.transactions || [];
-  console.log('[ESPN] Total transactions:', allTransactions.length);
+  // Fetch transactions for ALL weeks with proper filter
+  // The filter tells ESPN to return WAIVER and FREEAGENT type transactions
+  const transactionFilter = {
+    transactions: {
+      filterType: {
+        value: ['FREEAGENT', 'WAIVER', 'TRADEPENDING', 'TRADE_ACCEPT']
+      }
+    }
+  };
+
+  // Fetch transactions for each week in parallel
+  const txPromises: Promise<{ transactions?: ESPNAPI.Transaction[] }>[] = [];
+  for (let week = 0; week <= currentWeek; week++) {
+    txPromises.push(
+      fetchESPN<{ transactions?: ESPNAPI.Transaction[] }>(
+        season,
+        leagueId,
+        ['mTransactions2'],
+        {
+          ...options,
+          scoringPeriodId: week,
+          fantasyFilter: transactionFilter,
+        }
+      ).catch(() => ({ transactions: [] }))
+    );
+  }
+
+  const txResults = await Promise.all(txPromises);
+  const allTransactions: ESPNAPI.Transaction[] = [];
+  const seenTxIds = new Set<string>();
+
+  txResults.forEach(result => {
+    (result.transactions || []).forEach(tx => {
+      // Deduplicate by transaction ID
+      const txId = String(tx.id);
+      if (!seenTxIds.has(txId)) {
+        seenTxIds.add(txId);
+        allTransactions.push(tx);
+      }
+    });
+  });
+
+  console.log('[ESPN] Total transactions after fetching all weeks:', allTransactions.length);
 
   // Log transaction types
-  const txTypes = new Set(allTransactions.map(tx => `${tx.type}:${tx.status}`));
-  console.log('[ESPN] Transaction types:', Array.from(txTypes));
+  const txTypes: Record<string, number> = {};
+  allTransactions.forEach(tx => {
+    const key = `${tx.type}:${tx.status}`;
+    txTypes[key] = (txTypes[key] || 0) + 1;
+  });
+  console.log('[ESPN] Transaction types:', txTypes);
+
+  // Also fetch recent activity for trades via the communication endpoint
+  let tradeActivities: CommunicationTopic[] = [];
+  try {
+    const activityFilter = {
+      topics: {
+        filterType: { value: ['ACTIVITY_TRANSACTIONS'] },
+        limit: 500,
+        limitPerMessageSet: { value: 50 },
+        offset: 0,
+        sortMessageDate: { sortPriority: 1, sortAsc: false },
+        sortFor: { sortPriority: 2, sortAsc: false },
+        filterIncludeMessageTypeIds: { value: [ACTIVITY_MAP.TRADE_ACCEPT] }
+      }
+    };
+
+    const activityData = await fetchESPN<{ topics?: CommunicationTopic[] }>(
+      season,
+      leagueId,
+      ['kona_league_communication'],
+      {
+        ...options,
+        extend: 'communication',
+        fantasyFilter: activityFilter,
+      }
+    ).catch(() => ({ topics: [] }));
+
+    tradeActivities = activityData.topics || [];
+    console.log('[ESPN] Trade activities from communication endpoint:', tradeActivities.length);
+  } catch (e) {
+    console.warn('[ESPN] Could not fetch trade activities:', e);
+  }
 
   // Build member map
   const memberMap = new Map<string, ESPNAPI.Member>();
@@ -234,6 +390,10 @@ export async function loadLeague(
     };
   };
 
+  // Log waiver/FA transactions
+  const waiverTxs = allTransactions.filter(tx => tx.status === 'EXECUTED' && (tx.type === 'WAIVER' || tx.type === 'FREEAGENT'));
+  console.log('[ESPN] Waiver/FA transactions found:', waiverTxs.length);
+
   // Process waivers/free agent transactions
   const teamTransactions = new Map<number, Transaction[]>();
   allTransactions
@@ -255,22 +415,39 @@ export async function loadLeague(
 
       if (primaryTeamId === 0) return;
 
+      const pickupWeek = tx.scoringPeriodId;
+
+      // Calculate points generated SINCE pickup for each added player
+      let totalPointsGenerated = 0;
+      let totalGamesStarted = 0;
+
+      adds.forEach(p => {
+        const playerData = playerMap.get(p.id);
+        if (playerData?.weeklyStats) {
+          const { points, gamesStarted } = getPointsSinceWeek(playerData.weeklyStats, pickupWeek, currentWeek);
+          totalPointsGenerated += points;
+          totalGamesStarted += gamesStarted;
+        } else if (playerData?.seasonPoints) {
+          // Fallback: estimate based on season points and weeks remaining
+          const weeksOwned = Math.max(1, currentWeek - pickupWeek + 1);
+          const avgPPG = playerData.seasonPoints / currentWeek;
+          totalPointsGenerated += avgPPG * weeksOwned;
+          totalGamesStarted += weeksOwned;
+        }
+      });
+
       const transaction: Transaction = {
         id: String(tx.id),
         type: tx.type === 'WAIVER' ? 'waiver' : 'free_agent',
         timestamp: 0,
-        week: tx.scoringPeriodId,
+        week: pickupWeek,
         teamId: String(primaryTeamId),
         teamName: teamNameMap.get(primaryTeamId) || `Team ${primaryTeamId}`,
         adds,
         drops,
         waiverBudgetSpent: tx.bidAmount,
-        // For ESPN, we'll use season points as a proxy for value (not as accurate as Sleeper)
-        totalPointsGenerated: adds.reduce((sum, p) => {
-          const playerData = playerMap.get(p.id);
-          return sum + (playerData?.seasonPoints || 0);
-        }, 0),
-        gamesStarted: undefined, // ESPN doesn't provide this easily
+        totalPointsGenerated: Math.round(totalPointsGenerated * 10) / 10,
+        gamesStarted: totalGamesStarted,
       };
 
       const txs = teamTransactions.get(primaryTeamId) || [];
@@ -278,9 +455,18 @@ export async function loadLeague(
       teamTransactions.set(primaryTeamId, txs);
     });
 
-  // Process trades
-  const allTrades: Trade[] = allTransactions
-    .filter(tx => tx.status === 'EXECUTED' && (tx.type === 'TRADE_ACCEPT' || tx.type.includes('TRADE')))
+  // Process trades - ESPN uses TRADEPENDING for pending trades and various statuses
+  const tradeTransactions = allTransactions.filter(tx => {
+    const isTradeType = tx.type === 'TRADE_ACCEPT' ||
+                        tx.type === 'TRADE' ||
+                        tx.type === 'TRADEPENDING' ||
+                        tx.type.toUpperCase().includes('TRADE');
+    const isCompleted = tx.status === 'EXECUTED' || tx.status === 'ACCEPTED';
+    return isTradeType && isCompleted;
+  });
+  console.log('[ESPN] Trade transactions after filter:', tradeTransactions.length);
+
+  const allTrades: Trade[] = tradeTransactions
     .map(tx => {
       const teamItems = new Map<number, { adds: Player[]; drops: Player[] }>();
 

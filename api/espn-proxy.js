@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-ESPN-S2, X-ESPN-SWID');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-ESPN-S2, X-ESPN-SWID, X-Fantasy-Filter');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { season, leagueId, view } = req.query;
+  const { season, leagueId, view, scoringPeriodId, extend } = req.query;
 
   if (!season || !leagueId) {
     return res.status(400).json({ error: 'Missing season or leagueId parameter' });
@@ -25,16 +25,29 @@ export default async function handler(req, res) {
   // Values are URL-encoded to preserve special characters like + / =
   const espnS2Raw = req.headers['x-espn-s2'];
   const swidRaw = req.headers['x-espn-swid'];
+  const fantasyFilter = req.headers['x-fantasy-filter'];
   const espnS2 = espnS2Raw ? decodeURIComponent(espnS2Raw) : null;
   const swid = swidRaw ? decodeURIComponent(swidRaw) : null;
 
   try {
     // Build ESPN URL
-    const viewParams = view ? (Array.isArray(view) ? view : [view]).map(v => `view=${v}`).join('&') : '';
-    const espnUrl = `${ESPN_API_BASE}/${season}/segments/0/leagues/${leagueId}${viewParams ? '?' + viewParams : ''}`;
+    const queryParams = [];
+    if (view) {
+      const views = Array.isArray(view) ? view : [view];
+      views.forEach(v => queryParams.push(`view=${v}`));
+    }
+    if (scoringPeriodId) {
+      queryParams.push(`scoringPeriodId=${scoringPeriodId}`);
+    }
+
+    // Support extend path for endpoints like /communication/
+    const extendPath = extend ? `/${extend}` : '';
+    const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : '';
+    const espnUrl = `${ESPN_API_BASE}/${season}/segments/0/leagues/${leagueId}${extendPath}${queryString}`;
 
     console.log('[ESPN Proxy] Fetching:', espnUrl);
     console.log('[ESPN Proxy] Has cookies:', !!espnS2 && !!swid);
+    console.log('[ESPN Proxy] Has fantasy filter:', !!fantasyFilter);
 
     // Build headers for ESPN request
     const headers = {
@@ -44,6 +57,11 @@ export default async function handler(req, res) {
     // Add cookies if provided (for private leagues)
     if (espnS2 && swid) {
       headers['Cookie'] = `espn_s2=${espnS2}; SWID=${swid}`;
+    }
+
+    // Forward x-fantasy-filter header if provided
+    if (fantasyFilter) {
+      headers['x-fantasy-filter'] = fantasyFilter;
     }
 
     const espnResponse = await fetch(espnUrl, { headers });
