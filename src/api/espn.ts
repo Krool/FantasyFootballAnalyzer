@@ -366,10 +366,41 @@ export async function loadLeague(
       const drops: Player[] = [];
       let primaryTeamId = 0;
 
+      const pickupWeek = tx.scoringPeriodId;
+
+      // Calculate points and games for each added player individually
+      let totalPointsGenerated = 0;
+      let totalGamesStarted = 0;
+
       (tx.items || []).forEach(item => {
         const player = getPlayer(item.playerId);
         if (item.type === 'ADD') {
-          adds.push(player);
+          // Calculate per-player stats
+          const playerData = playerMap.get(player.id);
+          let pointsSincePickup = 0;
+          let gamesSincePickup = 0;
+
+          if (playerData?.weeklyStats) {
+            const { points, gamesStarted } = getPointsSinceWeek(playerData.weeklyStats, pickupWeek, currentWeek);
+            pointsSincePickup = points;
+            gamesSincePickup = gamesStarted;
+          } else if (playerData?.seasonPoints) {
+            // Fallback: estimate based on season points and weeks remaining
+            const weeksOwned = Math.max(1, currentWeek - pickupWeek + 1);
+            const avgPPG = playerData.seasonPoints / currentWeek;
+            pointsSincePickup = avgPPG * weeksOwned;
+            gamesSincePickup = weeksOwned;
+          }
+
+          // Add per-player stats to the player object
+          adds.push({
+            ...player,
+            pointsSincePickup: Math.round(pointsSincePickup * 10) / 10,
+            gamesSincePickup,
+          });
+
+          totalPointsGenerated += pointsSincePickup;
+          totalGamesStarted += gamesSincePickup;
           primaryTeamId = item.toTeamId || primaryTeamId;
         } else if (item.type === 'DROP') {
           drops.push(player);
@@ -377,27 +408,6 @@ export async function loadLeague(
       });
 
       if (primaryTeamId === 0) return;
-
-      const pickupWeek = tx.scoringPeriodId;
-
-      // Calculate points generated SINCE pickup for each added player
-      let totalPointsGenerated = 0;
-      let totalGamesStarted = 0;
-
-      adds.forEach(p => {
-        const playerData = playerMap.get(p.id);
-        if (playerData?.weeklyStats) {
-          const { points, gamesStarted } = getPointsSinceWeek(playerData.weeklyStats, pickupWeek, currentWeek);
-          totalPointsGenerated += points;
-          totalGamesStarted += gamesStarted;
-        } else if (playerData?.seasonPoints) {
-          // Fallback: estimate based on season points and weeks remaining
-          const weeksOwned = Math.max(1, currentWeek - pickupWeek + 1);
-          const avgPPG = playerData.seasonPoints / currentWeek;
-          totalPointsGenerated += avgPPG * weeksOwned;
-          totalGamesStarted += weeksOwned;
-        }
-      });
 
       const transaction: Transaction = {
         id: String(tx.id),

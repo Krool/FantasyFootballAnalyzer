@@ -32,14 +32,17 @@ export function WaiverTable({ teams }: WaiverTableProps) {
       team.transactions?.forEach(tx => {
         if (tx.type === 'waiver' || tx.type === 'free_agent') {
           tx.adds.forEach(player => {
+            // Use per-player stats if available, fall back to transaction totals for backward compatibility
+            const playerPoints = player.pointsSincePickup ?? tx.totalPointsGenerated ?? 0;
+            const playerGames = player.gamesSincePickup ?? tx.gamesStarted ?? 0;
             pickups.push({
               transaction: tx,
               playerName: player.name,
               position: player.position,
               nflTeam: player.team,
-              totalPoints: tx.totalPointsGenerated || 0,
-              gamesStarted: tx.gamesStarted || 0,
-              pointsPerGame: tx.gamesStarted ? (tx.totalPointsGenerated || 0) / tx.gamesStarted : 0,
+              totalPoints: playerPoints,
+              gamesStarted: playerGames,
+              pointsPerGame: playerGames > 0 ? playerPoints / playerGames : 0,
             });
           });
         }

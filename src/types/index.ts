@@ -10,6 +10,9 @@ export interface Player {
   position: string;
   team: string;
   avatarUrl?: string;
+  // Per-player stats for waiver pickups (points/games since pickup)
+  pointsSincePickup?: number;
+  gamesSincePickup?: number;
 }
 
 export interface DraftPick {
