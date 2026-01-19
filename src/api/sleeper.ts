@@ -1,4 +1,4 @@
-import type { SleeperAPI, League, Team, DraftPick, Transaction, Player, Trade, SeasonSummary, HeadToHeadRecord, RosterSlots } from '@/types';
+import type { SleeperAPI, League, Team, DraftPick, Transaction, Player, Trade, SeasonSummary, HeadToHeadRecord, RosterSlots, WeeklyMatchup } from '@/types';
 import {
   parseSleeperRosterPositions,
   calculateReplacementLevels,
@@ -9,8 +9,9 @@ import {
 
 const BASE_URL = 'https://api.sleeper.app/v1';
 
-// Cache for player data (it's a large file, fetch once)
-let playerCache: Record<string, SleeperAPI.Player> | null = null;
+// Promise-based cache for player data to prevent race conditions
+// Using a Promise cache ensures concurrent calls share the same request
+let playerCachePromise: Promise<Record<string, SleeperAPI.Player>> | null = null;
 
 async function fetchJSON<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${BASE_URL}${endpoint}`);
@@ -21,11 +22,13 @@ async function fetchJSON<T>(endpoint: string): Promise<T> {
 }
 
 export async function getAllPlayers(): Promise<Record<string, SleeperAPI.Player>> {
-  if (playerCache) return playerCache;
-
-  // This is a large file (~5MB), only fetch once per session
-  playerCache = await fetchJSON<Record<string, SleeperAPI.Player>>('/players/nfl');
-  return playerCache;
+  // If we already have a pending or completed promise, return it
+  // This prevents multiple concurrent fetches of the same large file
+  if (!playerCachePromise) {
+    // This is a large file (~5MB), only fetch once per session
+    playerCachePromise = fetchJSON<Record<string, SleeperAPI.Player>>('/players/nfl');
+  }
+  return playerCachePromise;
 }
 
 export async function getLeague(leagueId: string): Promise<SleeperAPI.League> {
@@ -84,6 +87,50 @@ function convertPlayer(playerId: string, players: Record<string, SleeperAPI.Play
   };
 }
 
+/**
+ * Helper to calculate points and PAR from matchup data after a given week
+ * Used by both waiver processing and trade processing to avoid duplication
+ */
+interface PlayerMatchupStats {
+  pointsSinceTransaction: number;
+  gamesSinceTransaction: number;
+  par: number;
+}
+
+function calculatePlayerPARFromMatchups(
+  weekMap: Map<number, number> | undefined,
+  transactionWeek: number,
+  position: string,
+  replacementPoints: Map<string, number>
+): PlayerMatchupStats {
+  let pointsSinceTransaction = 0;
+  let gamesSinceTransaction = 0;
+
+  if (weekMap) {
+    // Count weeks on or after the transaction week
+    weekMap.forEach((points, week) => {
+      if (week >= transactionWeek) {
+        pointsSinceTransaction += points;
+        gamesSinceTransaction += 1;
+      }
+    });
+  }
+
+  // Calculate PAR for this player
+  const par = calculateGamesPAR(
+    pointsSinceTransaction,
+    position,
+    gamesSinceTransaction,
+    replacementPoints
+  );
+
+  return {
+    pointsSinceTransaction,
+    gamesSinceTransaction,
+    par,
+  };
+}
+
 // Load complete league data
 export async function loadLeague(leagueId: string): Promise<League> {
   // Fetch all required data in parallel
@@ -100,30 +147,32 @@ export async function loadLeague(leagueId: string): Promise<League> {
   if (leagueData.draft_id) {
     try {
       draftPicks = await getDraftPicks(leagueData.draft_id);
-    } catch {
-      console.warn('Could not fetch draft picks');
+    } catch (error) {
+      console.warn('Could not fetch draft picks:', error instanceof Error ? error.message : error);
     }
   }
 
-  // Fetch all transactions for the season
-  const currentWeek = nflState.week || 18;
+  // Fetch all transactions for the season (always fetch all 18 weeks + playoffs)
+  // During offseason, nflState.week might be 0 or 1, so we use max of current week or 18
+  const maxWeek = Math.max(nflState.week || 0, 18);
   const transactionPromises: Promise<SleeperAPI.Transaction[]>[] = [];
-  for (let week = 1; week <= currentWeek; week++) {
+  for (let week = 1; week <= maxWeek; week++) {
     transactionPromises.push(getTransactions(leagueId, week).catch(() => []));
   }
   const allTransactions = (await Promise.all(transactionPromises)).flat();
+  console.log(`[Sleeper] Fetched transactions for weeks 1-${maxWeek}, total: ${allTransactions.length}`);
 
   // Get season stats for player performance
   let seasonStats: SleeperAPI.SeasonStats = {};
   try {
     seasonStats = await getSeasonStats(leagueData.season);
-  } catch {
-    console.warn('Could not fetch season stats');
+  } catch (error) {
+    console.warn('Could not fetch season stats:', error instanceof Error ? error.message : error);
   }
 
   // Get matchups for each week to calculate points in started games
   const matchupPromises: Promise<SleeperAPI.Matchup[]>[] = [];
-  for (let week = 1; week <= currentWeek; week++) {
+  for (let week = 1; week <= maxWeek; week++) {
     matchupPromises.push(getMatchups(leagueId, week).catch(() => []));
   }
   const allMatchups = await Promise.all(matchupPromises);
@@ -209,7 +258,9 @@ export async function loadLeague(leagueId: string): Promise<League> {
       player: convertPlayer(pick.player_id, players),
       teamId: String(pick.roster_id),
       teamName: '', // Will be set later
-      seasonPoints: seasonStats[pick.player_id]?.pts_ppr || seasonStats[pick.player_id]?.pts_half_ppr || seasonStats[pick.player_id]?.pts_std,
+      seasonPoints: seasonStats[pick.player_id]?.pts_ppr ??
+                    seasonStats[pick.player_id]?.pts_half_ppr ??
+                    seasonStats[pick.player_id]?.pts_std ?? 0,
     };
 
     const picks = teamDraftPicks.get(pick.roster_id) || [];
@@ -232,49 +283,33 @@ export async function loadLeague(leagueId: string): Promise<League> {
       const drops = tx.drops ? Object.keys(tx.drops).map(id => convertPlayer(id, players)) : [];
 
       // Calculate points generated by added players in games started BY THIS TEAM AFTER the pickup
-      // tx.leg is the week of the transaction - player can start from the following week
       const pickupWeek = tx.leg;
       let totalPointsGenerated = 0;
       let totalGamesStarted = 0;
-
-      // Calculate per-player stats for each added player
       let totalPAR = 0;
+
       const adds = tx.adds ? Object.keys(tx.adds).map(id => {
         const player = convertPlayer(id, players);
         const key = `${primaryRosterId}-${player.platformId}`;
         const weekMap = playerStartsByRosterAndWeek.get(key);
 
-        let pointsSincePickup = 0;
-        let gamesSincePickup = 0;
-
-        if (weekMap) {
-          // Only count weeks AFTER the pickup week (player was picked up during week X, can start week X+1 or later)
-          // But also count the pickup week if they started that week (mid-week pickups)
-          weekMap.forEach((points, week) => {
-            if (week >= pickupWeek) {
-              pointsSincePickup += points;
-              gamesSincePickup += 1;
-            }
-          });
-        }
-
-        totalPointsGenerated += pointsSincePickup;
-        totalGamesStarted += gamesSincePickup;
-
-        // Calculate PAR for this player
-        const playerPAR = calculateGamesPAR(
-          pointsSincePickup,
+        // Use helper to calculate points and PAR from matchups
+        const stats = calculatePlayerPARFromMatchups(
+          weekMap,
+          pickupWeek,
           player.position,
-          gamesSincePickup,
           replacementPoints
         );
-        totalPAR += playerPAR;
+
+        totalPointsGenerated += stats.pointsSinceTransaction;
+        totalGamesStarted += stats.gamesSinceTransaction;
+        totalPAR += stats.par;
 
         return {
           ...player,
-          pointsSincePickup: Math.round(pointsSincePickup * 10) / 10,
-          gamesSincePickup,
-          pointsAboveReplacement: Math.round(playerPAR * 10) / 10,
+          pointsSincePickup: Math.round(stats.pointsSinceTransaction * 10) / 10,
+          gamesSincePickup: stats.gamesSinceTransaction,
+          pointsAboveReplacement: Math.round(stats.par * 10) / 10,
         };
       }) : [];
 
@@ -343,30 +378,16 @@ export async function loadLeague(leagueId: string): Promise<League> {
           const key = `${rosterId}-${playerId}`;
           const weekMap = playerStartsByRosterAndWeek.get(key);
           const player = players[playerId];
-          let playerPoints = 0;
-          let gamesStarted = 0;
 
-          if (weekMap) {
-            weekMap.forEach((points, week) => {
-              if (week >= tradeWeek) {
-                playerPoints += points;
-                gamesStarted += 1;
-              }
-            });
-          }
+          const stats = calculatePlayerPARFromMatchups(
+            weekMap,
+            tradeWeek,
+            player?.position || 'Unknown',
+            replacementPoints
+          );
 
-          pointsGained += playerPoints;
-
-          // Calculate PAR for this player
-          if (player && gamesStarted > 0) {
-            const playerPAR = calculateGamesPAR(
-              playerPoints,
-              player.position || 'Unknown',
-              gamesStarted,
-              replacementPoints
-            );
-            parGained += playerPAR;
-          }
+          pointsGained += stats.pointsSinceTransaction;
+          parGained += stats.par;
         });
 
         // Points/PAR lost = from sent players started by the OTHER team after trade
@@ -378,30 +399,16 @@ export async function loadLeague(leagueId: string): Promise<League> {
                 const key = `${otherRosterId}-${playerId}`;
                 const weekMap = playerStartsByRosterAndWeek.get(key);
                 const player = players[playerId];
-                let playerPoints = 0;
-                let gamesStarted = 0;
 
-                if (weekMap) {
-                  weekMap.forEach((points, week) => {
-                    if (week >= tradeWeek) {
-                      playerPoints += points;
-                      gamesStarted += 1;
-                    }
-                  });
-                }
+                const stats = calculatePlayerPARFromMatchups(
+                  weekMap,
+                  tradeWeek,
+                  player?.position || 'Unknown',
+                  replacementPoints
+                );
 
-                pointsLost += playerPoints;
-
-                // Calculate PAR for this player
-                if (player && gamesStarted > 0) {
-                  const playerPAR = calculateGamesPAR(
-                    playerPoints,
-                    player.position || 'Unknown',
-                    gamesStarted,
-                    replacementPoints
-                  );
-                  parLost += playerPAR;
-                }
+                pointsLost += stats.pointsSinceTransaction;
+                parLost += stats.par;
               }
             }
           });
@@ -452,6 +459,34 @@ export async function loadLeague(leagueId: string): Promise<League> {
     const owner = userMap.get(roster.owner_id);
     const teamName = owner?.display_name || owner?.username || `Team ${roster.roster_id}`;
     teamNameMap.set(String(roster.roster_id), teamName);
+  });
+
+  // Build weekly matchups for luck analysis
+  const weeklyMatchups: WeeklyMatchup[] = [];
+  allMatchups.forEach((weekMatchups, weekIndex) => {
+    const week = weekIndex + 1;
+    // Group by matchup_id to pair opponents
+    const matchupPairs = new Map<number, SleeperAPI.Matchup[]>();
+    weekMatchups.forEach(matchup => {
+      if (matchup.matchup_id) {
+        const pair = matchupPairs.get(matchup.matchup_id) || [];
+        pair.push(matchup);
+        matchupPairs.set(matchup.matchup_id, pair);
+      }
+    });
+
+    // Convert pairs to WeeklyMatchup format
+    matchupPairs.forEach(pair => {
+      if (pair.length === 2) {
+        weeklyMatchups.push({
+          week,
+          team1Id: String(pair[0].roster_id),
+          team1Points: pair[0].points || 0,
+          team2Id: String(pair[1].roster_id),
+          team2Points: pair[1].points || 0,
+        });
+      }
+    });
   });
 
   // Update trade team names
@@ -508,11 +543,13 @@ export async function loadLeague(leagueId: string): Promise<League> {
     draftType: 'snake', // Sleeper primarily supports snake drafts
     teams,
     trades: tradesWithNames,
+    matchups: weeklyMatchups,
     scoringType,
     totalTeams: leagueData.total_rosters,
     currentWeek: nflState.week,
     isLoaded: true,
     previousLeagueId: (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id,
+    rosterSlots,
   };
 }
 

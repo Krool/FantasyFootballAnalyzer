@@ -181,6 +181,63 @@
   margin-top: 0.25rem;
 }
 
+/* Rivalries Section */
+.sectionDescription {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.teamSelector {
+  margin-bottom: 1.5rem;
+}
+
+.teamDropdown {
+  width: 100%;
+  max-width: 320px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.teamDropdown:hover {
+  border-color: var(--accent);
+}
+
+.teamDropdown:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2);
+}
+
+.rivalriesLoading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  color: var(--text-secondary);
+  justify-content: center;
+}
+
+.rivalriesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.noRivalries {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
 @media (max-width: 640px) {
   .seasons {
     grid-template-columns: 1fr;
@@ -189,5 +246,13 @@
   .standingRow {
     grid-template-columns: 1.5rem 1fr 3rem 3.5rem;
     font-size: 0.8rem;
+  }
+
+  .rivalriesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .teamDropdown {
+    max-width: 100%;
   }
 }

@@ -290,16 +290,41 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
 
           {showEspnHelp && (
             <div className={styles.helpBox}>
-              <p>For private ESPN leagues, you need to provide authentication cookies:</p>
-              <ol>
-                <li>Log into ESPN Fantasy Football in your browser</li>
-                <li>Open DevTools (F12 or Cmd+Opt+I)</li>
-                <li>Go to Application tab &gt; Cookies &gt; espn.com</li>
-                <li>Copy the values for <code>espn_s2</code> and <code>SWID</code></li>
-              </ol>
-              <p className={styles.warning}>
-                Note: Due to browser security (CORS), private leagues may not work directly.
-                Public leagues work without authentication.
+              <p className={styles.helpIntro}>
+                <strong>Why?</strong> ESPN private leagues require authentication cookies that prove you're logged in.
+              </p>
+              <div className={styles.helpSteps}>
+                <div className={styles.helpStep}>
+                  <span className={styles.stepNumber}>1</span>
+                  <div className={styles.stepContent}>
+                    <strong>Log into ESPN</strong>
+                    <span>Visit <a href="https://www.espn.com/fantasy/football/" target="_blank" rel="noopener noreferrer">ESPN Fantasy</a> and sign in</span>
+                  </div>
+                </div>
+                <div className={styles.helpStep}>
+                  <span className={styles.stepNumber}>2</span>
+                  <div className={styles.stepContent}>
+                    <strong>Open DevTools</strong>
+                    <span>Press <kbd>F12</kbd> (Windows) or <kbd>Cmd+Opt+I</kbd> (Mac)</span>
+                  </div>
+                </div>
+                <div className={styles.helpStep}>
+                  <span className={styles.stepNumber}>3</span>
+                  <div className={styles.stepContent}>
+                    <strong>Find Cookies</strong>
+                    <span>Application tab {'>'} Cookies {'>'} espn.com</span>
+                  </div>
+                </div>
+                <div className={styles.helpStep}>
+                  <span className={styles.stepNumber}>4</span>
+                  <div className={styles.stepContent}>
+                    <strong>Copy Values</strong>
+                    <span>Find and copy <code>espn_s2</code> and <code>SWID</code></span>
+                  </div>
+                </div>
+              </div>
+              <p className={styles.helpNote}>
+                Public leagues work without any cookies - just enter your league ID.
               </p>
             </div>
           )}

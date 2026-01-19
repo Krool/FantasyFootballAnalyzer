@@ -1,0 +1,179 @@
+.awardsPage {
+  padding: 2rem 0;
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.category {
+  margin-bottom: 3rem;
+}
+
+.categoryTitle {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.awardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.awardCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.awardCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.awardIcon {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+.awardName {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--color-primary);
+}
+
+.awardWinner {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.awardValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-bottom: 0.25rem;
+}
+
+.awardDetail {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.awardDescription {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  opacity: 0.8;
+}
+
+/* Luck Section */
+.luckSection {
+  margin-top: 3rem;
+}
+
+.luckTable {
+  overflow-x: auto;
+}
+
+.luckTable table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.luckTable th,
+.luckTable td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.luckTable th {
+  background: var(--color-surface-hover);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.luckTable tbody tr:hover {
+  background: var(--color-surface-hover);
+}
+
+.teamName {
+  font-weight: 600;
+}
+
+.winPct {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  margin-left: 0.25rem;
+}
+
+.noData {
+  color: var(--color-text-secondary);
+}
+
+/* Luck Score Colors */
+.veryLucky {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.lucky {
+  color: #34d399;
+  font-weight: 600;
+}
+
+.neutral {
+  color: var(--color-text-secondary);
+}
+
+.unlucky {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.veryUnlucky {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .awardsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .awardCard {
+    padding: 1rem;
+  }
+
+  .awardIcon {
+    font-size: 2.5rem;
+  }
+
+  .luckTable th,
+  .luckTable td {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+}

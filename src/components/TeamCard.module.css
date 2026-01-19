@@ -227,3 +227,61 @@
   font-size: 0.75rem;
   color: var(--text-secondary);
 }
+
+/* Luck Badge */
+.luckBadge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.luckBadge.veryLucky {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.luckBadge.lucky {
+  background: rgba(52, 211, 153, 0.2);
+  color: #34d399;
+}
+
+.luckBadge.neutral {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+}
+
+.luckBadge.unlucky {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.luckBadge.veryUnlucky {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+/* Luck Stats */
+.luckStats {
+  display: flex;
+  justify-content: space-around;
+}
+
+.luckStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.luckValue {
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-family: 'SF Mono', Consolas, monospace;
+}
+
+.luckLabel {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}

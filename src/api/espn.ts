@@ -1,4 +1,4 @@
-import type { ESPNAPI, League, Team, DraftPick, Transaction, Player, Trade, RosterSlots } from '@/types';
+import type { ESPNAPI, League, Team, DraftPick, Transaction, Player, Trade, RosterSlots, WeeklyMatchup, SeasonSummary, HeadToHeadRecord, MatchupResult } from '@/types';
 
 // Direct ESPN API for public leagues
 const ESPN_DIRECT_URL = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons';
@@ -170,8 +170,9 @@ export async function loadLeague(
     options
   );
 
-  const currentWeek = leagueData.status?.currentMatchupPeriod || 17;
-  console.log('[ESPN] Current week:', currentWeek);
+  // During offseason, currentMatchupPeriod might be 0 or low, so ensure we fetch all weeks
+  const currentWeek = Math.max(leagueData.status?.currentMatchupPeriod || 0, 17);
+  console.log('[ESPN] Current week (using max of reported or 17):', currentWeek);
 
   // Fetch weekly roster data to track who was STARTED each week
   // Key: `${teamId}-${playerId}`, Value: Map<week, points>
@@ -1621,6 +1622,25 @@ export async function loadLeague(
   };
   console.log('[ESPN] Roster slots:', rosterSlots);
 
+  // Build weekly matchups for luck analysis from team records
+  // ESPN provides schedule data in the mMatchup view
+  const weeklyMatchups: WeeklyMatchup[] = [];
+  const schedule = (leagueData as any).schedule;
+  if (schedule && Array.isArray(schedule)) {
+    schedule.forEach((matchup: any) => {
+      if (matchup.home && matchup.away && matchup.matchupPeriodId) {
+        weeklyMatchups.push({
+          week: matchup.matchupPeriodId,
+          team1Id: String(matchup.home.teamId),
+          team1Points: matchup.home.totalPoints || 0,
+          team2Id: String(matchup.away.teamId),
+          team2Points: matchup.away.totalPoints || 0,
+        });
+      }
+    });
+  }
+  console.log('[ESPN] Weekly matchups collected:', weeklyMatchups.length);
+
   return {
     id: leagueId,
     platform: 'espn',
@@ -1629,10 +1649,217 @@ export async function loadLeague(
     draftType,
     teams,
     trades: allTrades,
+    matchups: weeklyMatchups,
     scoringType,
     totalTeams: leagueData.teams.length,
     currentWeek: leagueData.status?.currentMatchupPeriod,
     isLoaded: true,
     rosterSlots,
   };
+}
+
+// Load historical seasons for ESPN league
+// ESPN leagues keep the same ID across seasons, just change the year
+export async function loadLeagueHistory(
+  leagueId: string,
+  maxSeasons: number = 5,
+  options?: { espnS2?: string; swid?: string }
+): Promise<SeasonSummary[]> {
+  const history: SeasonSummary[] = [];
+  const currentYear = new Date().getFullYear();
+
+  for (let i = 0; i < maxSeasons; i++) {
+    const season = currentYear - i;
+
+    try {
+      // Fetch basic team/standings data for this season
+      const leagueData = await fetchESPN<ESPNAPI.League>(
+        season,
+        leagueId,
+        ['mTeam', 'mSettings'],
+        options
+      );
+
+      if (!leagueData.teams || leagueData.teams.length === 0) {
+        console.log(`[ESPN History] No teams found for season ${season}, stopping`);
+        break;
+      }
+
+      // Build teams with standings
+      const teamsWithStandings = leagueData.teams
+        .map(team => ({
+          id: String(team.id),
+          name: team.name || `Team ${team.id}`,
+          wins: team.record?.overall.wins || 0,
+          losses: team.record?.overall.losses || 0,
+          ties: team.record?.overall.ties || 0,
+          pointsFor: team.record?.overall.pointsFor || 0,
+          pointsAgainst: team.record?.overall.pointsAgainst || 0,
+          standing: 0,
+        }))
+        .sort((a, b) => {
+          if (a.wins !== b.wins) return b.wins - a.wins;
+          return b.pointsFor - a.pointsFor;
+        })
+        .map((team, index) => ({ ...team, standing: index + 1 }));
+
+      history.push({
+        season,
+        leagueId,
+        leagueName: leagueData.settings.name,
+        teams: teamsWithStandings,
+      });
+
+      console.log(`[ESPN History] Loaded season ${season} with ${teamsWithStandings.length} teams`);
+    } catch (error) {
+      console.warn(`[ESPN History] Could not load season ${season}:`, error);
+      // If this is the first season and it fails, try a couple more years back
+      if (history.length === 0 && i < 2) {
+        continue;
+      }
+      break;
+    }
+  }
+
+  return history;
+}
+
+// Load head-to-head records for a specific team across seasons
+export async function loadHeadToHeadRecords(
+  leagueId: string,
+  teamId: string,
+  maxSeasons: number = 5,
+  options?: { espnS2?: string; swid?: string }
+): Promise<{ records: Map<string, HeadToHeadRecord>; teamName: string }> {
+  const records = new Map<string, HeadToHeadRecord>();
+  let teamName = '';
+  const currentYear = new Date().getFullYear();
+
+  // Track opponents by name (since IDs might change between seasons if teams reorganize)
+  const recordsByName = new Map<string, HeadToHeadRecord>();
+
+  for (let i = 0; i < maxSeasons; i++) {
+    const season = currentYear - i;
+
+    try {
+      // Fetch matchup data for this season
+      const leagueData = await fetchESPN<ESPNAPI.League>(
+        season,
+        leagueId,
+        ['mTeam', 'mMatchup', 'mSettings'],
+        options
+      );
+
+      if (!leagueData.teams || leagueData.teams.length === 0) {
+        console.log(`[ESPN H2H] No teams found for season ${season}, stopping`);
+        break;
+      }
+
+      // Build team name map for this season
+      const teamNameMap = new Map<number, string>();
+      leagueData.teams.forEach(t => teamNameMap.set(t.id, t.name || `Team ${t.id}`));
+
+      // Find the selected team (might have different ID in different seasons)
+      // First try by ID, then by matching against the current season's name
+      let selectedTeamId = parseInt(teamId);
+      let selectedTeamData = leagueData.teams.find(t => t.id === selectedTeamId);
+
+      // If this is the first/current season, get the team name for matching
+      if (i === 0 && selectedTeamData) {
+        teamName = selectedTeamData.name || `Team ${selectedTeamId}`;
+      } else if (i > 0 && teamName) {
+        // For older seasons, try to find team by name
+        const matchByName = leagueData.teams.find(t => t.name === teamName);
+        if (matchByName) {
+          selectedTeamId = matchByName.id;
+          selectedTeamData = matchByName;
+        }
+      }
+
+      if (!selectedTeamData) {
+        console.log(`[ESPN H2H] Team not found in season ${season}`);
+        continue;
+      }
+
+      // Get matchups from schedule
+      const schedule = (leagueData as any).schedule;
+      if (!schedule || !Array.isArray(schedule)) {
+        console.log(`[ESPN H2H] No schedule data for season ${season}`);
+        continue;
+      }
+
+      // Process each matchup involving the selected team
+      schedule.forEach((matchup: any) => {
+        if (!matchup.home || !matchup.away || !matchup.matchupPeriodId) return;
+
+        // Check if our team is involved
+        const isHome = matchup.home.teamId === selectedTeamId;
+        const isAway = matchup.away.teamId === selectedTeamId;
+
+        if (!isHome && !isAway) return;
+
+        const teamPoints = isHome ? matchup.home.totalPoints : matchup.away.totalPoints;
+        const opponentPoints = isHome ? matchup.away.totalPoints : matchup.home.totalPoints;
+        const opponentId = isHome ? matchup.away.teamId : matchup.home.teamId;
+        const opponentName = teamNameMap.get(opponentId) || `Team ${opponentId}`;
+
+        // Skip if no points (game not played yet)
+        if (teamPoints === undefined || opponentPoints === undefined) return;
+        if (teamPoints === 0 && opponentPoints === 0) return;
+
+        // Get or create record for this opponent
+        let record = recordsByName.get(opponentName);
+        if (!record) {
+          record = {
+            opponentId: String(opponentId),
+            opponentName,
+            wins: 0,
+            losses: 0,
+            ties: 0,
+            pointsFor: 0,
+            pointsAgainst: 0,
+            matchups: [],
+          };
+          recordsByName.set(opponentName, record);
+        }
+
+        // Update record
+        const won = teamPoints > opponentPoints;
+        const tied = teamPoints === opponentPoints;
+
+        if (won) record.wins++;
+        else if (tied) record.ties++;
+        else record.losses++;
+
+        record.pointsFor += teamPoints;
+        record.pointsAgainst += opponentPoints;
+
+        // Add matchup detail
+        const matchupResult: MatchupResult = {
+          season,
+          week: matchup.matchupPeriodId,
+          teamScore: teamPoints,
+          opponentScore: opponentPoints,
+          won,
+        };
+        record.matchups.push(matchupResult);
+      });
+
+      console.log(`[ESPN H2H] Processed season ${season}`);
+    } catch (error) {
+      console.warn(`[ESPN H2H] Could not load season ${season}:`, error);
+      break;
+    }
+  }
+
+  // Sort matchups in each record by season/week (most recent first)
+  recordsByName.forEach(record => {
+    record.matchups.sort((a, b) => {
+      if (a.season !== b.season) return b.season - a.season;
+      return b.week - a.week;
+    });
+    records.set(record.opponentId, record);
+  });
+
+  return { records, teamName };
 }

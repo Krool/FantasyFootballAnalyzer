@@ -1,0 +1,167 @@
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.card.winning {
+  border-left: 4px solid #10b981;
+}
+
+.card.losing {
+  border-left: 4px solid #ef4444;
+}
+
+.card.even {
+  border-left: 4px solid #6b7280;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.vsLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.opponentName {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recordDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.recordNumber {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: 'SF Mono', Consolas, monospace;
+}
+
+.recordSeparator {
+  font-size: 1.5rem;
+  color: var(--color-text-secondary);
+}
+
+.winPct {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 0.75rem;
+  background: var(--color-surface-hover);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.statValue {
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: 'SF Mono', Consolas, monospace;
+}
+
+.statValue.positive {
+  color: #10b981;
+}
+
+.statValue.negative {
+  color: #ef4444;
+}
+
+.statLabel {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.recentMatchups {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+}
+
+.matchupsTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  margin: 0 0 0.5rem 0;
+}
+
+.matchupsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.matchup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.375rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.matchupWon {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.matchupLost {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.matchupSeason {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.matchupScore {
+  font-family: 'SF Mono', Consolas, monospace;
+  font-weight: 500;
+}
+
+.matchupResult {
+  font-weight: 700;
+  width: 20px;
+  text-align: center;
+}
+
+.matchupWon .matchupResult {
+  color: #10b981;
+}
+
+.matchupLost .matchupResult {
+  color: #ef4444;
+}

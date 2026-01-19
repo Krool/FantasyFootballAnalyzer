@@ -1,9 +1,10 @@
 const ESPN_API_BASE = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons';
+const ALLOWED_ORIGIN = process.env.FRONTEND_URL || 'https://krool.github.io';
 
 export default async function handler(req, res) {
-  // Enable CORS
+  // Enable CORS with specific origin
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-ESPN-S2, X-ESPN-SWID, X-Fantasy-Filter');
 

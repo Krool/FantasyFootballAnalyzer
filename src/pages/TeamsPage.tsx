@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { TeamCard } from '@/components';
 import type { League } from '@/types';
+import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
 import styles from './TeamsPage.module.css';
 
 interface TeamsPageProps {
@@ -7,6 +9,35 @@ interface TeamsPageProps {
 }
 
 export function TeamsPage({ league }: TeamsPageProps) {
+  // Calculate luck metrics
+  const luckByTeam = useMemo((): Map<string, LuckMetrics> => {
+    if (!league.matchups || league.matchups.length === 0) {
+      return new Map();
+    }
+
+    const matchupData: MatchupData[] = league.matchups.map(m => ({
+      week: m.week,
+      team1Id: m.team1Id,
+      team1Points: m.team1Points,
+      team2Id: m.team2Id,
+      team2Points: m.team2Points,
+    }));
+
+    const teams = league.teams.map(t => ({
+      id: t.id,
+      name: t.name,
+      wins: t.wins || 0,
+      losses: t.losses || 0,
+      ties: t.ties || 0,
+      pointsFor: t.pointsFor || 0,
+    }));
+
+    const metrics = calculateLuckMetrics(matchupData, teams);
+    const map = new Map<string, LuckMetrics>();
+    metrics.forEach(m => map.set(m.teamId, m));
+    return map;
+  }, [league.matchups, league.teams]);
+
   // Sort teams by record (wins desc, then points for desc)
   const sortedTeams = [...league.teams].sort((a, b) => {
     const aWins = a.wins || 0;
@@ -35,6 +66,7 @@ export function TeamsPage({ league }: TeamsPageProps) {
               team={team}
               allTeams={league.teams}
               totalTeams={league.totalTeams}
+              luckMetrics={luckByTeam.get(team.id)}
             />
           ))}
         </div>

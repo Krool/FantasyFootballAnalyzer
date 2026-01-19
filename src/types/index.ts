@@ -126,6 +126,15 @@ export interface RosterSlots {
   IR: number;
 }
 
+// Weekly matchup data for luck analysis
+export interface WeeklyMatchup {
+  week: number;
+  team1Id: string;
+  team1Points: number;
+  team2Id: string;
+  team2Points: number;
+}
+
 export interface League {
   id: string;
   platform: Platform;
@@ -134,6 +143,7 @@ export interface League {
   draftType: DraftType;
   teams: Team[];
   trades?: Trade[];
+  matchups?: WeeklyMatchup[]; // For luck analysis
   scoringType: 'standard' | 'ppr' | 'half_ppr' | 'custom';
   totalTeams: number;
   currentWeek?: number;

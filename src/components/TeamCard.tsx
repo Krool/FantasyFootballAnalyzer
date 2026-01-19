@@ -1,4 +1,5 @@
 import type { Team } from '@/types';
+import type { LuckMetrics } from '@/utils/luck';
 import { useMemo } from 'react';
 import { gradeAllPicks, calculateDraftSummary } from '@/utils/grading';
 import styles from './TeamCard.module.css';
@@ -8,9 +9,10 @@ interface TeamCardProps {
   allTeams: Team[];
   totalTeams: number;
   onClick?: () => void;
+  luckMetrics?: LuckMetrics;
 }
 
-export function TeamCard({ team, allTeams, totalTeams, onClick }: TeamCardProps) {
+export function TeamCard({ team, allTeams, totalTeams, onClick, luckMetrics }: TeamCardProps) {
   // Grade this team's picks
   const gradedPicks = useMemo(() => {
     const mockLeague = {
@@ -68,6 +70,11 @@ export function TeamCard({ team, allTeams, totalTeams, onClick }: TeamCardProps)
           {team.wins}-{team.losses}{team.ties ? `-${team.ties}` : ''}
         </span>
         <span className={styles.recordLabel}>Record</span>
+        {luckMetrics && (
+          <span className={`${styles.luckBadge} ${getLuckClass(luckMetrics.luckScore, styles)}`}>
+            {getLuckEmoji(luckMetrics.luckRating)} {luckMetrics.luckScore >= 0 ? '+' : ''}{luckMetrics.luckScore.toFixed(1)}
+          </span>
+        )}
       </div>
 
       <div className={styles.stats}>
@@ -149,7 +156,51 @@ export function TeamCard({ team, allTeams, totalTeams, onClick }: TeamCardProps)
             </div>
           </div>
         </div>
+
+        {luckMetrics && (
+          <div className={styles.statSection}>
+            <h4 className={styles.sectionTitle}>Luck Analysis</h4>
+            <div className={styles.luckStats}>
+              <div className={styles.luckStat}>
+                <span className={styles.luckValue}>{luckMetrics.expectedWins.toFixed(1)}</span>
+                <span className={styles.luckLabel}>Expected W</span>
+              </div>
+              <div className={styles.luckStat}>
+                <span className={styles.luckValue}>
+                  {luckMetrics.allPlayWins}-{luckMetrics.allPlayLosses}
+                </span>
+                <span className={styles.luckLabel}>All-Play</span>
+              </div>
+              <div className={styles.luckStat}>
+                <span className={styles.luckValue}>
+                  {luckMetrics.closeWins + luckMetrics.closeLosses > 0
+                    ? `${luckMetrics.closeWins}-${luckMetrics.closeLosses}`
+                    : '-'}
+                </span>
+                <span className={styles.luckLabel}>Close Games</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+function getLuckClass(luckScore: number, styles: Record<string, string>): string {
+  if (luckScore >= 2) return styles.veryLucky;
+  if (luckScore >= 1) return styles.lucky;
+  if (luckScore <= -2) return styles.veryUnlucky;
+  if (luckScore <= -1) return styles.unlucky;
+  return styles.neutral;
+}
+
+function getLuckEmoji(rating: LuckMetrics['luckRating']): string {
+  switch (rating) {
+    case 'very_lucky': return '🍀';
+    case 'lucky': return '😊';
+    case 'neutral': return '😐';
+    case 'unlucky': return '😔';
+    case 'very_unlucky': return '💔';
+  }
 }

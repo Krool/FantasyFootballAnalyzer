@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components';
-import { HomePage, DraftPage, TradesPage, WaiversPage, TeamsPage, HistoryPage } from '@/pages';
+import { HomePage, DraftPage, TradesPage, WaiversPage, TeamsPage, HistoryPage, AwardsPage, PlayerJourneyPage } from '@/pages';
 import { useLeague } from '@/hooks/useLeague';
 import { useSounds } from '@/hooks/useSounds';
-import { saveTokens } from '@/api/yahoo';
+import { saveTokens, validateOAuthState, clearOAuthState } from '@/api/yahoo';
 import type { LeagueCredentials } from '@/types';
 
 function App() {
@@ -32,10 +32,22 @@ function App() {
 
     if (path === '/yahoo-success') {
       const tokensParam = search.get('tokens');
+      const stateParam = search.get('state');
+
+      // Validate CSRF state
+      if (!stateParam || !validateOAuthState(stateParam)) {
+        console.error('Yahoo OAuth CSRF validation failed');
+        clearOAuthState();
+        navigate('/', { replace: true });
+        return;
+      }
+
       if (tokensParam) {
         try {
           const tokens = JSON.parse(decodeURIComponent(tokensParam));
           saveTokens(tokens);
+          // Clear URL to prevent token exposure in browser history
+          window.history.replaceState({}, '', '/');
           // Navigate to home to show league selection
           navigate('/', { replace: true });
         } catch (e) {
@@ -48,6 +60,7 @@ function App() {
     } else if (path === '/yahoo-error') {
       const errorMsg = search.get('error');
       console.error('Yahoo OAuth error:', errorMsg);
+      clearOAuthState();
       navigate('/', { replace: true });
     }
   }, [location, navigate]);
@@ -134,6 +147,28 @@ function App() {
             element={
               league ? (
                 <HistoryPage league={league} />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+
+          <Route
+            path="/awards"
+            element={
+              league ? (
+                <AwardsPage league={league} />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+
+          <Route
+            path="/players"
+            element={
+              league ? (
+                <PlayerJourneyPage league={league} />
               ) : (
                 <Navigate to="/" replace />
               )

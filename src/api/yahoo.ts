@@ -7,7 +7,8 @@ const API_BASE = import.meta.env.VITE_YAHOO_API_URL || 'https://fantasy-football
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'yahoo_access_token',
   REFRESH_TOKEN: 'yahoo_refresh_token',
-  TOKEN_EXPIRY: 'yahoo_token_expiry'
+  TOKEN_EXPIRY: 'yahoo_token_expiry',
+  OAUTH_STATE: 'yahoo_oauth_state'
 };
 
 // Yahoo game keys by season - use 'nfl' for current season
@@ -89,7 +90,31 @@ export async function getAuthUrl(): Promise<string> {
     throw new Error('Failed to get auth URL');
   }
   const data = await response.json();
+
+  // Store state in sessionStorage for CSRF validation
+  if (data.state) {
+    sessionStorage.setItem(STORAGE_KEYS.OAUTH_STATE, data.state);
+  }
+
   return data.authUrl;
+}
+
+// Validate OAuth state for CSRF protection
+export function validateOAuthState(receivedState: string): boolean {
+  const storedState = sessionStorage.getItem(STORAGE_KEYS.OAUTH_STATE);
+  // Clear the stored state after validation attempt
+  sessionStorage.removeItem(STORAGE_KEYS.OAUTH_STATE);
+
+  if (!storedState || !receivedState) {
+    return false;
+  }
+
+  return storedState === receivedState;
+}
+
+// Clear OAuth state (call on auth failure)
+export function clearOAuthState(): void {
+  sessionStorage.removeItem(STORAGE_KEYS.OAUTH_STATE);
 }
 
 // Refresh the access token
