@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Platform, LeagueCredentials } from '@/types';
 import { isAuthenticated, getAuthUrl, getUserLeagues, clearTokens } from '@/api/yahoo';
+import { logger } from '@/utils/logger';
 import styles from './LeagueForm.module.css';
 
 // Yahoo supported seasons - current year uses 'nfl' game key which auto-resolves
@@ -57,7 +58,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
         setSelectedYahooLeague('');
       }
     } catch (err) {
-      console.error('Failed to load Yahoo leagues:', err);
+      logger.error('Failed to load Yahoo leagues:', err);
       setYahooError('Failed to load leagues. Please try logging in again.');
       if (String(err).includes('re-authenticate')) {
         clearTokens();
@@ -73,7 +74,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
       const authUrl = await getAuthUrl();
       window.location.href = authUrl;
     } catch (err) {
-      console.error('Failed to get Yahoo auth URL:', err);
+      logger.error('Failed to get Yahoo auth URL:', err);
       setYahooError('Failed to start Yahoo login. Please try again.');
     }
   };
@@ -98,11 +99,17 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
       return;
     }
 
-    if (!leagueId.trim()) return;
+    const trimmedId = leagueId.trim();
+    if (!trimmedId) return;
+
+    // Validate league ID is numeric
+    if (!/^\d+$/.test(trimmedId)) {
+      return;
+    }
 
     const credentials: LeagueCredentials = {
       platform,
-      leagueId: leagueId.trim(),
+      leagueId: trimmedId,
       season,
     };
 

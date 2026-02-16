@@ -1,11 +1,21 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components';
-import { HomePage, DraftPage, TradesPage, WaiversPage, TeamsPage, HistoryPage, AwardsPage, PlayerJourneyPage } from '@/pages';
+import { HomePage } from '@/pages';
+
+// Lazy-load data-heavy pages for smaller initial bundle
+const DraftPage = lazy(() => import('@/pages/DraftPage').then(m => ({ default: m.DraftPage })));
+const TradesPage = lazy(() => import('@/pages/TradesPage').then(m => ({ default: m.TradesPage })));
+const WaiversPage = lazy(() => import('@/pages/WaiversPage').then(m => ({ default: m.WaiversPage })));
+const TeamsPage = lazy(() => import('@/pages/TeamsPage').then(m => ({ default: m.TeamsPage })));
+const HistoryPage = lazy(() => import('@/pages/HistoryPage').then(m => ({ default: m.HistoryPage })));
+const AwardsPage = lazy(() => import('@/pages/AwardsPage').then(m => ({ default: m.AwardsPage })));
+const PlayerJourneyPage = lazy(() => import('@/pages/PlayerJourneyPage').then(m => ({ default: m.PlayerJourneyPage })));
 import { useLeague } from '@/hooks/useLeague';
 import { useSounds } from '@/hooks/useSounds';
 import { saveTokens, validateOAuthState, clearOAuthState } from '@/api/yahoo';
 import type { LeagueCredentials } from '@/types';
+import { logger } from '@/utils/logger';
 
 function App() {
   const navigate = useNavigate();
@@ -36,7 +46,7 @@ function App() {
 
       // Validate CSRF state
       if (!stateParam || !validateOAuthState(stateParam)) {
-        console.error('Yahoo OAuth CSRF validation failed');
+        logger.error('Yahoo OAuth CSRF validation failed');
         clearOAuthState();
         navigate('/', { replace: true });
         return;
@@ -51,7 +61,7 @@ function App() {
           // Navigate to home to show league selection
           navigate('/', { replace: true });
         } catch (e) {
-          console.error('Failed to parse Yahoo tokens:', e);
+          logger.error('Failed to parse Yahoo tokens:', e);
           navigate('/', { replace: true });
         }
       } else {
@@ -59,7 +69,7 @@ function App() {
       }
     } else if (path === '/yahoo-error') {
       const errorMsg = search.get('error');
-      console.error('Yahoo OAuth error:', errorMsg);
+      logger.error('Yahoo OAuth error:', errorMsg);
       clearOAuthState();
       navigate('/', { replace: true });
     }
@@ -73,6 +83,7 @@ function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <a href="#main-content" className="skip-nav">Skip to main content</a>
       <Header
         leagueName={league?.name}
         platform={league?.platform}
@@ -80,7 +91,8 @@ function App() {
         onChangeLeague={clear}
       />
 
-      <main style={{ flex: 1 }}>
+      <main id="main-content" style={{ flex: 1 }}>
+        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="spinner" /></div>}>
         <Routes>
           <Route
             path="/"
@@ -177,6 +189,7 @@ function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </main>
 
       <footer className="site-footer">

@@ -1,11 +1,18 @@
 const ESPN_API_BASE = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons';
 const ALLOWED_ORIGIN = process.env.FRONTEND_URL || 'https://krool.github.io';
 
+// Allowlists for SSRF prevention
+const ALLOWED_VIEWS = new Set([
+  'mTeam', 'mRoster', 'mSettings', 'mDraftDetail', 'mMatchup',
+  'mTransactions2', 'kona_league_communication'
+]);
+const ALLOWED_EXTEND = new Set(['communication']);
+
 export default async function handler(req, res) {
   // Enable CORS with specific origin
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-ESPN-S2, X-ESPN-SWID, X-Fantasy-Filter');
 
   if (req.method === 'OPTIONS') {
@@ -20,6 +27,25 @@ export default async function handler(req, res) {
 
   if (!season || !leagueId) {
     return res.status(400).json({ error: 'Missing season or leagueId parameter' });
+  }
+
+  // Input validation for SSRF prevention
+  if (!/^\d{4}$/.test(season)) {
+    return res.status(400).json({ error: 'Invalid season parameter' });
+  }
+  if (!/^\d+$/.test(leagueId)) {
+    return res.status(400).json({ error: 'Invalid leagueId parameter' });
+  }
+  if (view) {
+    const views = Array.isArray(view) ? view : [view];
+    for (const v of views) {
+      if (!ALLOWED_VIEWS.has(v)) {
+        return res.status(400).json({ error: `Invalid view parameter: ${v}` });
+      }
+    }
+  }
+  if (extend && !ALLOWED_EXTEND.has(extend)) {
+    return res.status(400).json({ error: 'Invalid extend parameter' });
   }
 
   // Get cookies from custom headers (browsers can't send Cookie header cross-origin)
@@ -46,10 +72,6 @@ export default async function handler(req, res) {
     const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : '';
     const espnUrl = `${ESPN_API_BASE}/${season}/segments/0/leagues/${leagueId}${extendPath}${queryString}`;
 
-    console.log('[ESPN Proxy] Fetching:', espnUrl);
-    console.log('[ESPN Proxy] Has cookies:', !!espnS2 && !!swid);
-    console.log('[ESPN Proxy] Has fantasy filter:', !!fantasyFilter);
-
     // Build headers for ESPN request
     const headers = {
       'Accept': 'application/json',
@@ -69,7 +91,6 @@ export default async function handler(req, res) {
 
     if (!espnResponse.ok) {
       const errorText = await espnResponse.text();
-      console.error('ESPN API error:', espnResponse.status, errorText);
 
       if (espnResponse.status === 401) {
         return res.status(401).json({

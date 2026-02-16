@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { League, LeagueCredentials } from '@/types';
 import { loadLeague } from '@/api';
+import { logger } from '@/utils/logger';
 
 export interface LoadingProgress {
   stage: string;
@@ -37,7 +38,7 @@ export function useLeague(): UseLeagueReturn {
   }, []);
 
   const load = useCallback(async (credentials: LeagueCredentials) => {
-    console.log('[useLeague] load() called with credentials:', credentials);
+    logger.debug('[useLeague] load() called with credentials:', credentials);
 
     // Increment request counter to invalidate any in-flight requests
     const requestId = ++currentRequestRef.current;
@@ -47,18 +48,18 @@ export function useLeague(): UseLeagueReturn {
     setProgress(null);
 
     try {
-      console.log('[useLeague] Calling loadLeague...');
+      logger.debug('[useLeague] Calling loadLeague...');
       const loadedLeague = await loadLeague(credentials, (prog) => {
         // Only update progress if this is still the current request and component is mounted
         if (isMountedRef.current && requestId === currentRequestRef.current) {
-          console.log('[useLeague] Progress:', prog);
+          logger.debug('[useLeague] Progress:', prog);
           setProgress(prog);
         }
       });
 
       // Only update state if this is still the current request and component is mounted
       if (isMountedRef.current && requestId === currentRequestRef.current) {
-        console.log('[useLeague] League loaded successfully:', loadedLeague?.name);
+        logger.debug('[useLeague] League loaded successfully:', loadedLeague?.name);
         setLeague(loadedLeague);
 
         // Store ESPN credentials in sessionStorage for history/rivalry features
@@ -72,7 +73,7 @@ export function useLeague(): UseLeagueReturn {
     } catch (err) {
       // Only update state if this is still the current request and component is mounted
       if (isMountedRef.current && requestId === currentRequestRef.current) {
-        console.error('[useLeague] Error loading league:', err);
+        logger.error('[useLeague] Error loading league:', err);
         let message = 'Failed to load league. Please try again.';
 
         if (err instanceof Error) {

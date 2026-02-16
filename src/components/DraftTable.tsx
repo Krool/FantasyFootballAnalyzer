@@ -198,40 +198,40 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
           <thead>
             <tr>
               {isAuction ? (
-                <th onClick={() => handleSort('cost')} className={styles.sortable}>
+                <th onClick={() => handleSort('cost')} className={styles.sortable} role="button" aria-label="Sort by Cost">
                   Cost{getSortIndicator('cost')}
                 </th>
               ) : (
                 <>
-                  <th onClick={() => handleSort('pick')} className={styles.sortable}>
+                  <th onClick={() => handleSort('pick')} className={styles.sortable} role="button" aria-label="Sort by Pick">
                     Pick{getSortIndicator('pick')}
                   </th>
-                  <th onClick={() => handleSort('round')} className={styles.sortable}>
+                  <th onClick={() => handleSort('round')} className={styles.sortable} role="button" aria-label="Sort by Round">
                     Rd{getSortIndicator('round')}
                   </th>
                 </>
               )}
-              <th onClick={() => handleSort('player')} className={styles.sortable}>
+              <th onClick={() => handleSort('player')} className={styles.sortable} role="button" aria-label="Sort by Player">
                 Player{getSortIndicator('player')}
               </th>
-              <th onClick={() => handleSort('position')} className={styles.sortable}>
+              <th onClick={() => handleSort('position')} className={styles.sortable} role="button" aria-label="Sort by Position">
                 Pos{getSortIndicator('position')}
               </th>
-              <th onClick={() => handleSort('team')} className={styles.sortable}>
+              <th onClick={() => handleSort('team')} className={styles.sortable} role="button" aria-label="Sort by Team">
                 Fantasy Team{getSortIndicator('team')}
               </th>
-              <th onClick={() => handleSort('points')} className={styles.sortable}>
+              <th onClick={() => handleSort('points')} className={styles.sortable} role="button" aria-label="Sort by Points">
                 Season Pts{getSortIndicator('points')}
               </th>
-              <th onClick={() => handleSort('posRank')} className={styles.sortable}>
+              <th onClick={() => handleSort('posRank')} className={styles.sortable} role="button" aria-label="Sort by Position Rank">
                 Pos Rank{getSortIndicator('posRank')}
               </th>
               {!isAuction && (
-                <th onClick={() => handleSort('value')} className={styles.sortable}>
+                <th onClick={() => handleSort('value')} className={styles.sortable} role="button" aria-label="Sort by Value">
                   Value{getSortIndicator('value')}
                 </th>
               )}
-              <th onClick={() => handleSort('grade')} className={styles.sortable}>
+              <th onClick={() => handleSort('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade">
                 Grade{getSortIndicator('grade')}
               </th>
             </tr>

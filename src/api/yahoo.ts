@@ -1,4 +1,5 @@
 import type { League, Team, DraftPick, Transaction, Player, Trade } from '@/types';
+import { logger } from '@/utils/logger';
 
 // Backend API URL - Vercel deployment
 const API_BASE = import.meta.env.VITE_YAHOO_API_URL || 'https://fantasy-football-analyzer-mu.vercel.app';
@@ -50,33 +51,33 @@ interface YahooTokens {
 
 // Token management
 export function saveTokens(tokens: YahooTokens): void {
-  localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
-  localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
-  localStorage.setItem(
+  sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
+  sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
+  sessionStorage.setItem(
     STORAGE_KEYS.TOKEN_EXPIRY,
     String(Date.now() + tokens.expires_in * 1000)
   );
 }
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  return sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
 }
 
 export function getRefreshToken(): string | null {
-  return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  return sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
 }
 
 export function isTokenExpired(): boolean {
-  const expiry = localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY);
+  const expiry = sessionStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY);
   if (!expiry) return true;
   // Add 5 minute buffer
   return Date.now() > parseInt(expiry) - 5 * 60 * 1000;
 }
 
 export function clearTokens(): void {
-  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-  localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
+  sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+  sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  sessionStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
 }
 
 export function isAuthenticated(): boolean {
@@ -191,7 +192,7 @@ async function yahooFetch<T>(endpoint: string): Promise<T> {
 // Get user's leagues for a season
 export async function getUserLeagues(season: number = new Date().getFullYear()): Promise<Array<{ id: string; name: string }>> {
   const gameKey = getGameKey(season);
-  console.log('[Yahoo] getUserLeagues called for season:', season, 'using gameKey:', gameKey);
+  logger.debug('[Yahoo] getUserLeagues called for season:', season, 'using gameKey:', gameKey);
 
   const data = await yahooFetch<any>(`/users;use_login=1/games;game_keys=${gameKey}/leagues`);
 
@@ -207,7 +208,7 @@ export async function getUserLeagues(season: number = new Date().getFullYear()):
       const leagueList = Array.isArray(leagueData) ? leagueData : [leagueData];
       for (const league of leagueList) {
         const leagueKey = league.league_key || league['@_league_key'];
-        console.log('[Yahoo] Found league:', league.name, 'with key:', leagueKey);
+        logger.debug('[Yahoo] Found league:', league.name, 'with key:', leagueKey);
         leagues.push({
           id: leagueKey,
           name: league.name
@@ -215,10 +216,10 @@ export async function getUserLeagues(season: number = new Date().getFullYear()):
       }
     }
   } catch (e) {
-    console.error('Error parsing leagues:', e, data);
+    logger.error('Error parsing leagues:', e, data);
   }
 
-  console.log('[Yahoo] Returning', leagues.length, 'leagues');
+  logger.debug('[Yahoo] Returning', leagues.length, 'leagues');
   return leagues;
 }
 
@@ -257,14 +258,14 @@ function parseRosterSettings(settings: any): { QB: number; RB: number; WR: numbe
 
 // Load a specific league
 export async function loadLeague(leagueKey: string): Promise<League> {
-  console.log('[Yahoo] loadLeague called with leagueKey:', leagueKey);
+  logger.debug('[Yahoo] loadLeague called with leagueKey:', leagueKey);
 
   // Get league info with settings, standings, and teams
   const leagueData = await yahooFetch<any>(
     `/league/${leagueKey};out=settings,standings,teams`
   );
 
-  console.log('[Yahoo] League data received, season from response:', leagueData?.fantasy_content?.league?.season);
+  logger.debug('[Yahoo] League data received, season from response:', leagueData?.fantasy_content?.league?.season);
 
   const leagueInfo = leagueData?.fantasy_content?.league;
   if (!leagueInfo) {
@@ -390,7 +391,7 @@ function parseDraftResults(data: any, teams: Team[]): DraftPick[] {
       });
     }
   } catch (e) {
-    console.error('Error parsing draft results:', e);
+    logger.error('Error parsing draft results:', e);
   }
 
   return picks;
@@ -536,7 +537,7 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
       }
     }
   } catch (e) {
-    console.error('Error parsing transactions:', e);
+    logger.error('Error parsing transactions:', e);
   }
 
   return { transactions, trades };
@@ -636,7 +637,7 @@ export async function enrichPlayersWithStats(
       });
 
     } catch (e) {
-      console.error('Error fetching player batch:', e);
+      logger.error('Error fetching player batch:', e);
       completedCalls++;
     }
   }
@@ -660,7 +661,7 @@ export async function enrichPlayersWithStats(
     DEF: rosterSlots.DST * totalTeamsCount + 1,
   };
 
-  console.log('[Yahoo] Replacement ranks by position:', replacementRank);
+  logger.debug('[Yahoo] Replacement ranks by position:', replacementRank);
 
   // Build position rankings from all players in playerMap
   const positionPlayers: Record<string, Array<{ id: string; points: number }>> = {
@@ -688,7 +689,7 @@ export async function enrichPlayersWithStats(
     const rank = replacementRank[pos];
     const players = positionPlayers[pos] || [];
 
-    console.log(`[Yahoo] ${pos}: ${players.length} players in map, need rank ${rank}`);
+    logger.debug(`[Yahoo] ${pos}: ${players.length} players in map, need rank ${rank}`);
 
     if (players.length === 0) {
       replacementBaseline[pos] = 0;
@@ -700,7 +701,7 @@ export async function enrichPlayersWithStats(
     }
   });
 
-  console.log('[Yahoo] Replacement baselines (season points):', replacementBaseline);
+  logger.debug('[Yahoo] Replacement baselines (season points):', replacementBaseline);
 
   // Calculate PAR for a player
   const getPlayerPAR = (playerId: string): number => {

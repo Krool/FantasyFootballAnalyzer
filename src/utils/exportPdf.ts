@@ -1,5 +1,5 @@
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// jsPDF and jspdf-autotable are dynamically imported in exportLeagueReport()
+import type { jsPDF as JsPDFType } from 'jspdf';
 import type { League, Trade } from '@/types';
 import { gradeAllPicks, calculateDraftSummary, getGradeDisplayText } from './grading';
 
@@ -215,7 +215,9 @@ function generateAwards(league: League): Award[] {
   return awards;
 }
 
-export function exportLeagueReport(league: League) {
+export async function exportLeagueReport(league: League) {
+  const { jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -244,7 +246,7 @@ export function exportLeagueReport(league: League) {
   const awardColWidth = (pageWidth - 28) / 3;
   const awardHeight = 16;
   let col = 0;
-  let awardStartY = yPos;
+  const awardStartY = yPos;
 
   awards.forEach((award, index) => {
     const x = 14 + (col * awardColWidth);
@@ -328,7 +330,7 @@ export function exportLeagueReport(league: League) {
     margin: { left: 14 },
   });
 
-  const standingsEndY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+  const standingsEndY = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
 
   // Draft Grade Summary (right side)
   doc.setFontSize(12);
@@ -376,7 +378,7 @@ export function exportLeagueReport(league: League) {
     margin: { left: 14 + halfWidth + 4 },
   });
 
-  const draftEndY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+  const draftEndY = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
   yPos = Math.max(standingsEndY, draftEndY) + 8;
 
   // ===== PAGE 2: Draft Picks =====
@@ -412,7 +414,7 @@ export function exportLeagueReport(league: League) {
     styles: { fontSize: 7 },
   });
 
-  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+  yPos = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
   // Bottom 10 Draft Picks
   doc.setFontSize(14);
@@ -443,7 +445,7 @@ export function exportLeagueReport(league: League) {
     styles: { fontSize: 7 },
   });
 
-  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+  yPos = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
   // ===== PAGE 3: Waiver Wire =====
   doc.addPage();
@@ -480,7 +482,7 @@ export function exportLeagueReport(league: League) {
     styles: { fontSize: 7 },
   });
 
-  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+  yPos = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
   // Worst Waiver Pickups (with at least 2 games)
   doc.setFontSize(14);
@@ -512,7 +514,7 @@ export function exportLeagueReport(league: League) {
     styles: { fontSize: 7 },
   });
 
-  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+  yPos = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
   // Overall Waiver Performance
   doc.setFontSize(14);
@@ -538,7 +540,7 @@ export function exportLeagueReport(league: League) {
     styles: { fontSize: 7 },
   });
 
-  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+  yPos = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
   // ===== PAGE 4: Trades (if any) =====
   if (league.trades && league.trades.length > 0) {
@@ -595,7 +597,7 @@ export function exportLeagueReport(league: League) {
       styles: { fontSize: 7 },
     });
 
-    yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+    yPos = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
     // Trade Summary by Team
     doc.setFontSize(14);

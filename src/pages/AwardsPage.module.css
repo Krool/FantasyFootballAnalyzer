@@ -93,6 +93,7 @@
 
 .luckTable table {
   width: 100%;
+  min-width: 700px;
   border-collapse: collapse;
   background: var(--color-surface);
   border-radius: 8px;

@@ -56,7 +56,7 @@
 .recordNumber {
   font-size: 2rem;
   font-weight: 700;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .recordSeparator {
@@ -89,7 +89,7 @@
 .statValue {
   font-size: 1rem;
   font-weight: 600;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .statValue.positive {
@@ -148,7 +148,7 @@
 }
 
 .matchupScore {
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
   font-weight: 500;
 }
 

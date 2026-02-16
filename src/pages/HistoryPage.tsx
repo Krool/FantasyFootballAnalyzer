@@ -3,6 +3,7 @@ import type { League, SeasonSummary, HeadToHeadRecord } from '@/types';
 import { loadLeagueHistory as loadSleeperHistory, loadHeadToHeadRecords as loadSleeperH2H } from '@/api/sleeper';
 import { loadLeagueHistory as loadESPNHistory, loadHeadToHeadRecords as loadESPNH2H } from '@/api/espn';
 import { RivalryCard } from '@/components';
+import { logger } from '@/utils/logger';
 import styles from './HistoryPage.module.css';
 
 interface HistoryPageProps {
@@ -59,7 +60,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
         setHistory(data);
       } catch (err) {
         setError('Failed to load historical data.');
-        console.error(err);
+        logger.error(err);
       } finally {
         setIsLoading(false);
       }
@@ -94,7 +95,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
         });
         setRivalries(rivalryArray);
       } catch (err) {
-        console.error('Failed to load rivalries:', err);
+        logger.error('Failed to load rivalries:', err);
         setRivalries([]);
       } finally {
         setRivalriesLoading(false);

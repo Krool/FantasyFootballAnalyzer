@@ -45,7 +45,7 @@
 .statValue {
   font-size: 1.5rem;
   font-weight: 600;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .trades {
@@ -343,7 +343,7 @@
 
 .rank {
   font-weight: 600;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
   min-width: 30px;
 }
 
@@ -355,12 +355,12 @@
 .tradeRecord {
   color: var(--text-secondary);
   font-size: 0.875rem;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .netPointsLb {
   font-weight: 600;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
   min-width: 100px;
   text-align: right;
 }

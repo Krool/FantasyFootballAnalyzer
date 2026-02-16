@@ -1,5 +1,7 @@
 const ALLOWED_ORIGIN = process.env.FRONTEND_URL || 'https://krool.github.io';
 
+import crypto from 'crypto';
+
 export default function handler(req, res) {
   // Handle CORS with specific origin
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -27,8 +29,8 @@ export default function handler(req, res) {
     const host = req.headers.host;
     const redirectUri = `${protocol}://${host}/api/yahoo-callback`;
 
-    // Generate a random state for CSRF protection
-    const state = Math.random().toString(36).substring(2, 15);
+    // Generate a cryptographically secure state for CSRF protection
+    const state = crypto.randomBytes(32).toString('hex');
 
     // Build auth URL
     const params = new URLSearchParams({

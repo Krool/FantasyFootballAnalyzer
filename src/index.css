@@ -29,6 +29,22 @@
   /* Fonts */
   --font-display: 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono: 'SF Mono', 'Cascadia Code', Consolas, monospace;
+
+  /* Aliases for CSS variable consistency across modules */
+  --color-surface: var(--bg-secondary);
+  --color-surface-hover: var(--bg-tertiary);
+  --color-border: var(--border-color);
+  --color-text-secondary: var(--text-secondary);
+  --color-primary: #3b82f6;
+  --color-accent: var(--accent-gold);
+  --border: var(--border-color);
+  --accent: var(--accent-gold);
+
+  /* Semantic status colors */
+  --color-positive: #00d97e;
+  --color-negative: #f92672;
+  --color-info: #3b82f6;
+  --color-warning: #fd971f;
 }
 
 * {
@@ -285,7 +301,7 @@ input, select {
 .text-center { text-align: center; }
 .text-right { text-align: right; }
 .text-secondary { color: var(--text-secondary); }
-.font-mono { font-family: 'SF Mono', Consolas, monospace; }
+.font-mono { font-family: var(--font-mono); }
 .mt-1 { margin-top: 0.25rem; }
 .mt-2 { margin-top: 0.5rem; }
 .mt-4 { margin-top: 1rem; }
@@ -329,4 +345,48 @@ input, select {
 .footer-link svg {
   width: 14px;
   height: 14px;
+}
+
+/* Accessibility: Focus styles */
+:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+/* Skip navigation link */
+.skip-nav {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 10000;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-gold);
+  color: #000;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 0 0 8px 0;
+}
+
+.skip-nav:focus {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

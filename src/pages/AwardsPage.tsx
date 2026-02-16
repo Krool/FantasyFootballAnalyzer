@@ -61,6 +61,12 @@ export function AwardsPage({ league }: AwardsPageProps) {
           {league.name} - {awards.length} Awards
         </p>
 
+        {awards.length === 0 && (
+          <p className={styles.subtitle}>
+            No awards data available. Make sure your league has completed at least one week of play.
+          </p>
+        )}
+
         {categoryOrder.map(category => {
           const categoryAwards = groupedAwards.get(category);
           if (!categoryAwards || categoryAwards.length === 0) return null;

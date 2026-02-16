@@ -139,7 +139,7 @@
   background-color: var(--bg-tertiary);
   padding: 0.125rem 0.375rem;
   border-radius: 4px;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .helpBox kbd {

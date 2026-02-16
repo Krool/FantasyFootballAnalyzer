@@ -1,4 +1,5 @@
 import type { SleeperAPI, League, Team, DraftPick, Transaction, Player, Trade, SeasonSummary, HeadToHeadRecord, RosterSlots, WeeklyMatchup } from '@/types';
+import { logger } from '@/utils/logger';
 import {
   parseSleeperRosterPositions,
   calculateReplacementLevels,
@@ -148,7 +149,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
     try {
       draftPicks = await getDraftPicks(leagueData.draft_id);
     } catch (error) {
-      console.warn('Could not fetch draft picks:', error instanceof Error ? error.message : error);
+      logger.warn('Could not fetch draft picks:', error instanceof Error ? error.message : error);
     }
   }
 
@@ -160,14 +161,14 @@ export async function loadLeague(leagueId: string): Promise<League> {
     transactionPromises.push(getTransactions(leagueId, week).catch(() => []));
   }
   const allTransactions = (await Promise.all(transactionPromises)).flat();
-  console.log(`[Sleeper] Fetched transactions for weeks 1-${maxWeek}, total: ${allTransactions.length}`);
+  logger.debug(`[Sleeper] Fetched transactions for weeks 1-${maxWeek}, total: ${allTransactions.length}`);
 
   // Get season stats for player performance
   let seasonStats: SleeperAPI.SeasonStats = {};
   try {
     seasonStats = await getSeasonStats(leagueData.season);
   } catch (error) {
-    console.warn('Could not fetch season stats:', error instanceof Error ? error.message : error);
+    logger.warn('Could not fetch season stats:', error instanceof Error ? error.message : error);
   }
 
   // Get matchups for each week to calculate points in started games
@@ -600,7 +601,7 @@ export async function loadLeagueHistory(leagueId: string, maxSeasons: number = 5
       currentLeagueId = (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id;
       seasonsLoaded++;
     } catch (error) {
-      console.warn(`Could not load season for league ${currentLeagueId}:`, error);
+      logger.warn(`Could not load season for league ${currentLeagueId}:`, error);
       break;
     }
   }
@@ -730,7 +731,7 @@ export async function loadHeadToHeadRecords(
       currentLeagueId = (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id;
       seasonsLoaded++;
     } catch (error) {
-      console.warn(`Could not load matchups for league ${currentLeagueId}:`, error);
+      logger.warn(`Could not load matchups for league ${currentLeagueId}:`, error);
       break;
     }
   }

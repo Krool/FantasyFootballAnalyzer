@@ -2,6 +2,7 @@ import type { League, LeagueCredentials } from '@/types';
 import * as sleeper from './sleeper';
 import * as espn from './espn';
 import * as yahoo from './yahoo';
+import { logger } from '@/utils/logger';
 
 export interface ProgressCallback {
   (progress: { stage: string; current: number; total: number; detail?: string }): void;
@@ -11,7 +12,7 @@ export async function loadLeague(
   credentials: LeagueCredentials,
   onProgress?: ProgressCallback
 ): Promise<League> {
-  console.log('[loadLeague] Called with:', {
+  logger.debug('[loadLeague] Called with:', {
     platform: credentials.platform,
     leagueId: credentials.leagueId,
     season: credentials.season,
@@ -25,7 +26,7 @@ export async function loadLeague(
       return sleeper.loadLeague(credentials.leagueId);
 
     case 'espn':
-      console.log('[loadLeague] Loading ESPN league...');
+      logger.debug('[loadLeague] Loading ESPN league...');
       return espn.loadLeague(
         credentials.leagueId,
         credentials.season || new Date().getFullYear(),

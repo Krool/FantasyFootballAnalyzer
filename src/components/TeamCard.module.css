@@ -93,7 +93,7 @@
 .recordValue {
   font-size: 2rem;
   font-weight: 700;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .recordLabel {
@@ -190,7 +190,7 @@
 
 .gradeCount {
   font-size: 0.875rem;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
   width: 24px;
   text-align: right;
 }
@@ -219,7 +219,7 @@
 .seasonValue {
   font-size: 1.5rem;
   font-weight: 600;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .waiverLabel,
@@ -278,7 +278,7 @@
 .luckValue {
   font-size: 1.25rem;
   font-weight: 600;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .luckLabel {

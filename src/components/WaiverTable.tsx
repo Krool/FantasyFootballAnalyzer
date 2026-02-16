@@ -280,30 +280,30 @@ export function WaiverTable({ teams, platform }: WaiverTableProps) {
         <table className={`table ${styles.table}`}>
           <thead>
             <tr>
-              <th onClick={() => handleSort('week')} className={styles.sortable}>
+              <th onClick={() => handleSort('week')} className={styles.sortable} role="button" aria-label="Sort by Week">
                 Week{getSortIndicator('week')}
               </th>
-              <th onClick={() => handleSort('team')} className={styles.sortable}>
+              <th onClick={() => handleSort('team')} className={styles.sortable} role="button" aria-label="Sort by Team">
                 Fantasy Team{getSortIndicator('team')}
               </th>
-              <th onClick={() => handleSort('player')} className={styles.sortable}>
+              <th onClick={() => handleSort('player')} className={styles.sortable} role="button" aria-label="Sort by Player">
                 Player{getSortIndicator('player')}
               </th>
-              <th onClick={() => handleSort('type')} className={styles.sortable}>
+              <th onClick={() => handleSort('type')} className={styles.sortable} role="button" aria-label="Sort by Type">
                 Type{getSortIndicator('type')}
               </th>
-              <th onClick={() => handleSort('par')} className={styles.sortable}>
+              <th onClick={() => handleSort('par')} className={styles.sortable} role="button" aria-label="Sort by PAR">
                 PAR{getSortIndicator('par')}
               </th>
-              <th onClick={() => handleSort('points')} className={styles.sortable}>
+              <th onClick={() => handleSort('points')} className={styles.sortable} role="button" aria-label="Sort by Points">
                 Season Pts{getSortIndicator('points')}
               </th>
               {hasGamesData && (
                 <>
-                  <th onClick={() => handleSort('games')} className={styles.sortable}>
+                  <th onClick={() => handleSort('games')} className={styles.sortable} role="button" aria-label="Sort by Games">
                     Games{getSortIndicator('games')}
                   </th>
-                  <th onClick={() => handleSort('ppg')} className={styles.sortable}>
+                  <th onClick={() => handleSort('ppg')} className={styles.sortable} role="button" aria-label="Sort by PPG">
                     PPG{getSortIndicator('ppg')}
                   </th>
                 </>

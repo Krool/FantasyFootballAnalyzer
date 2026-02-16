@@ -30,9 +30,22 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing endpoint parameter' });
   }
 
+  // SSRF prevention: validate endpoint against allowlist pattern
+  // Valid Yahoo Fantasy endpoints: /league/..., /users/..., /team/..., /player/...
+  const ENDPOINT_PATTERN = /^\/(?:league|users|team|player|games)[\/;][\w.;=,\/@_+-]+$/;
+  if (!ENDPOINT_PATTERN.test(endpoint.startsWith('/') ? endpoint : '/' + endpoint)) {
+    return res.status(400).json({ error: 'Invalid endpoint parameter' });
+  }
+
   try {
     // Make request to Yahoo API
     const yahooUrl = `${YAHOO_API_BASE}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+
+    // Verify constructed URL stays within Yahoo API origin
+    const parsedUrl = new URL(yahooUrl);
+    if (parsedUrl.origin !== 'https://fantasysports.yahooapis.com') {
+      return res.status(400).json({ error: 'Invalid endpoint - URL origin mismatch' });
+    }
 
     const yahooResponse = await fetch(yahooUrl, {
       method: 'GET',

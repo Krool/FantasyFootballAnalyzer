@@ -1,4 +1,5 @@
 import type { ESPNAPI, League, Team, DraftPick, Transaction, Player, Trade, RosterSlots, WeeklyMatchup, SeasonSummary, HeadToHeadRecord, MatchupResult } from '@/types';
+import { logger } from '@/utils/logger';
 
 // Direct ESPN API for public leagues
 const ESPN_DIRECT_URL = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons';
@@ -53,7 +54,7 @@ async function fetchESPN<T>(
     }
     const url = `${ESPN_PROXY_URL}?${queryParams.join('&')}`;
 
-    console.log('[ESPN] Using proxy for private league:', url);
+    logger.debug('[ESPN] Using proxy for private league:', url);
 
     const headers: Record<string, string> = {
       'Accept': 'application/json',
@@ -68,14 +69,14 @@ async function fetchESPN<T>(
 
     const response = await fetch(url, { headers });
 
-    console.log('[ESPN] Proxy response status:', response.status);
+    logger.debug('[ESPN] Proxy response status:', response.status);
 
     if (!response.ok) {
       if (response.status === 401) {
         throw new Error('ESPN: League is private. Please check your espn_s2 and SWID cookies.');
       }
       const errorData = await response.json().catch(() => ({}));
-      console.error('[ESPN] Proxy error:', errorData);
+      logger.error('[ESPN] Proxy error:', errorData);
       throw new Error(errorData.error || `ESPN API error: ${response.status}`);
     }
 
@@ -172,7 +173,7 @@ export async function loadLeague(
 
   // During offseason, currentMatchupPeriod might be 0 or low, so ensure we fetch all weeks
   const currentWeek = Math.max(leagueData.status?.currentMatchupPeriod || 0, 17);
-  console.log('[ESPN] Current week (using max of reported or 17):', currentWeek);
+  logger.debug('[ESPN] Current week (using max of reported or 17):', currentWeek);
 
   // Fetch weekly roster data to track who was STARTED each week
   // Key: `${teamId}-${playerId}`, Value: Map<week, points>
@@ -194,73 +195,78 @@ export async function loadLeague(
   // 20=Bench, 21=IR - these are NOT starters
   const STARTER_SLOTS = new Set([0, 2, 4, 6, 16, 17, 23]);
 
-  for (let week = 1; week <= currentWeek; week++) {
-    currentStep++;
-    onProgress?.({
-      stage: 'Loading rosters',
-      current: currentStep,
-      total: totalSteps,
-      detail: `Fetching week ${week} rosters...`
-    });
-
-    try {
-      const weekData = await fetchESPN<ESPNAPI.League>(
-        season,
-        leagueId,
-        ['mRoster', 'mMatchup'],
-        {
-          ...options,
-          scoringPeriodId: week,
-        }
-      );
-
-      // Track full roster for this week (for trade detection)
-      const weekRoster = new Map<number, number>();
-
-      // Process each team's roster for this week
-      weekData.teams?.forEach(team => {
-        team.roster?.entries?.forEach(entry => {
-          const playerId = entry.playerId;
-
-          // Track ALL players on roster (for trade detection)
-          weekRoster.set(playerId, team.id);
-
-          // Save player info for later (fixes "Player XXXXX" for dropped players)
-          if (entry.playerPoolEntry?.player && !allPlayersFromWeeklyRosters.has(playerId)) {
-            allPlayersFromWeeklyRosters.set(playerId, entry.playerPoolEntry.player);
-          }
-
-          // Check if player was in a starter slot (for waiver stats)
-          if (STARTER_SLOTS.has(entry.lineupSlotId)) {
-            const key = `${team.id}-${String(playerId)}`;
-            const weekMap = playerStartsByTeamAndWeek.get(key) || new Map<number, number>();
-
-            // Get the points for THIS SPECIFIC WEEK from player stats
-            // appliedStatTotal is cumulative, we need to find the week-specific stat
-            let weekPoints = 0;
-            const playerStats = entry.playerPoolEntry?.player?.stats;
-            if (playerStats) {
-              // Find the stat entry for this specific week (statSourceId 0 = actual, 1 = projected)
-              const weekStat = playerStats.find(
-                s => s.scoringPeriodId === week && s.statSourceId === 0
-              );
-              weekPoints = weekStat?.appliedTotal || 0;
-            }
-
-            weekMap.set(week, weekPoints);
-            playerStartsByTeamAndWeek.set(key, weekMap);
-          }
-        });
-      });
-
-      rostersByWeek.set(week, weekRoster);
-    } catch (e) {
-      console.warn(`[ESPN] Failed to fetch roster for week ${week}:`, e);
+  // Concurrency limiter - run up to 5 requests in parallel
+  async function withConcurrency<T>(tasks: (() => Promise<T>)[], limit: number): Promise<T[]> {
+    const results: T[] = [];
+    let index = 0;
+    async function runNext(): Promise<void> {
+      while (index < tasks.length) {
+        const i = index++;
+        results[i] = await tasks[i]();
+      }
     }
+    await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, () => runNext()));
+    return results;
   }
 
-  console.log('[ESPN] Player starts tracked:', playerStartsByTeamAndWeek.size);
-  console.log('[ESPN] Rosters tracked by week:', rostersByWeek.size);
+  // Fetch all weekly rosters in parallel (5 concurrent)
+  const rosterTasks = Array.from({ length: currentWeek }, (_, i) => {
+    const week = i + 1;
+    return async () => {
+      currentStep++;
+      onProgress?.({
+        stage: 'Loading rosters',
+        current: currentStep,
+        total: totalSteps,
+        detail: `Fetching week ${week} rosters...`
+      });
+      try {
+        return await fetchESPN<ESPNAPI.League>(
+          season, leagueId, ['mRoster', 'mMatchup'],
+          { ...options, scoringPeriodId: week }
+        );
+      } catch (e) {
+        logger.warn(`[ESPN] Failed to fetch roster for week ${week}:`, e);
+        return null;
+      }
+    };
+  });
+
+  const rosterResults = await withConcurrency(rosterTasks, 5);
+
+  // Process roster results sequentially (fast, just data processing)
+  rosterResults.forEach((weekData, i) => {
+    const week = i + 1;
+    if (!weekData) return;
+
+    const weekRoster = new Map<number, number>();
+    weekData.teams?.forEach(team => {
+      team.roster?.entries?.forEach(entry => {
+        const playerId = entry.playerId;
+        weekRoster.set(playerId, team.id);
+
+        if (entry.playerPoolEntry?.player && !allPlayersFromWeeklyRosters.has(playerId)) {
+          allPlayersFromWeeklyRosters.set(playerId, entry.playerPoolEntry.player);
+        }
+
+        if (STARTER_SLOTS.has(entry.lineupSlotId)) {
+          const key = `${team.id}-${String(playerId)}`;
+          const weekMap = playerStartsByTeamAndWeek.get(key) || new Map<number, number>();
+          let weekPoints = 0;
+          const playerStats = entry.playerPoolEntry?.player?.stats;
+          if (playerStats) {
+            const weekStat = playerStats.find(
+              s => s.scoringPeriodId === week && s.statSourceId === 0
+            );
+            weekPoints = weekStat?.appliedTotal || 0;
+          }
+          weekMap.set(week, weekPoints);
+          playerStartsByTeamAndWeek.set(key, weekMap);
+        }
+      });
+    });
+    rostersByWeek.set(week, weekRoster);
+  });
 
   // Fetch transactions for ALL weeks
   // Valid types: DRAFT, TRADE_ACCEPT, WAIVER, TRADE_VETO, FUTURE_ROSTER, ROSTER,
@@ -270,39 +276,40 @@ export async function loadLeague(
   const allTransactions: ESPNAPI.Transaction[] = [];
   const seenTxIds = new Set<string>();
 
-  // Fetch transactions for each week sequentially with progress updates
-  for (let week = 0; week <= currentWeek; week++) {
-    currentStep++;
-    onProgress?.({
-      stage: 'Loading transactions',
-      current: currentStep,
-      total: totalSteps,
-      detail: `Fetching week ${week} transactions...`
-    });
-
-    try {
-      const result = await fetchESPN<{ transactions?: ESPNAPI.Transaction[] }>(
-        season,
-        leagueId,
-        ['mTransactions2'],
-        {
-          ...options,
-          scoringPeriodId: week,
-        }
-      );
-
-      (result.transactions || []).forEach(tx => {
-        // Deduplicate by transaction ID
-        const txId = String(tx.id);
-        if (!seenTxIds.has(txId)) {
-          seenTxIds.add(txId);
-          allTransactions.push(tx);
-        }
+  // Fetch transactions for all weeks in parallel (5 concurrent)
+  const txTasks = Array.from({ length: currentWeek + 1 }, (_, week) => {
+    return async () => {
+      currentStep++;
+      onProgress?.({
+        stage: 'Loading transactions',
+        current: currentStep,
+        total: totalSteps,
+        detail: `Fetching week ${week} transactions...`
       });
-    } catch (e) {
-      console.warn(`[ESPN] Failed to fetch transactions for week ${week}:`, e);
-    }
-  }
+      try {
+        return await fetchESPN<{ transactions?: ESPNAPI.Transaction[] }>(
+          season, leagueId, ['mTransactions2'],
+          { ...options, scoringPeriodId: week }
+        );
+      } catch (e) {
+        logger.warn(`[ESPN] Failed to fetch transactions for week ${week}:`, e);
+        return null;
+      }
+    };
+  });
+
+  const txResults = await withConcurrency(txTasks, 5);
+
+  txResults.forEach(result => {
+    if (!result) return;
+    (result.transactions || []).forEach(tx => {
+      const txId = String(tx.id);
+      if (!seenTxIds.has(txId)) {
+        seenTxIds.add(txId);
+        allTransactions.push(tx);
+      }
+    });
+  });
 
   currentStep++;
   onProgress?.({
@@ -312,7 +319,7 @@ export async function loadLeague(
     detail: 'Building team data...'
   });
 
-  console.log('[ESPN] Total transactions after fetching all weeks:', allTransactions.length);
+  logger.debug('[ESPN] Total transactions after fetching all weeks:', allTransactions.length);
 
   // Log transaction types
   const txTypes: Record<string, number> = {};
@@ -320,7 +327,7 @@ export async function loadLeague(
     const key = `${tx.type}:${tx.status}`;
     txTypes[key] = (txTypes[key] || 0) + 1;
   });
-  console.log('[ESPN] Transaction types:', txTypes);
+  logger.debug('[ESPN] Transaction types:', txTypes);
 
   // Note: We previously tried fetching trades from the /communication/ endpoint
   // but that data format is complex and the mTransactions2 endpoint returns
@@ -338,7 +345,7 @@ export async function loadLeague(
   const playerMap = buildPlayerMap(leagueData, season);
 
   // Add players from weekly rosters (fixes "Player XXXXX" for dropped players)
-  console.log('[ESPN] Players from weekly rosters:', allPlayersFromWeeklyRosters.size);
+  logger.debug('[ESPN] Players from weekly rosters:', allPlayersFromWeeklyRosters.size);
   allPlayersFromWeeklyRosters.forEach((espnPlayer, playerId) => {
     if (!playerMap.has(String(playerId))) {
       playerMap.set(String(playerId), {
@@ -347,7 +354,7 @@ export async function loadLeague(
       });
     }
   });
-  console.log('[ESPN] Total players in playerMap after weekly roster merge:', playerMap.size);
+  logger.debug('[ESPN] Total players in playerMap after weekly roster merge:', playerMap.size);
 
   // Helper to get player info (used for draft and transactions)
   const getPlayerFromMap = (playerId: number): { player: Player; seasonPoints?: number } => {
@@ -393,7 +400,7 @@ export async function loadLeague(
       teamDraftPicks.set(pick.teamId, picks);
     });
   }
-  console.log('[ESPN] Draft picks processed, missing player data:', missingDraftPlayers);
+  logger.debug('[ESPN] Draft picks processed, missing player data:', missingDraftPlayers);
 
   // Build team name map
   const teamNameMap = new Map<number, string>();
@@ -414,7 +421,7 @@ export async function loadLeague(
 
   // Log waiver/FA transactions
   const waiverTxs = allTransactions.filter(tx => tx.status === 'EXECUTED' && (tx.type === 'WAIVER' || tx.type === 'FREEAGENT'));
-  console.log('[ESPN] Waiver/FA transactions found:', waiverTxs.length);
+  logger.debug('[ESPN] Waiver/FA transactions found:', waiverTxs.length);
 
   // Process waivers/free agent transactions
   const teamTransactions = new Map<number, Transaction[]>();
@@ -497,325 +504,19 @@ export async function loadLeague(
 
   // Find TRADE_ACCEPT transactions and get items from related TRADE_PROPOSAL
   const tradeAccepts = allTransactions.filter(tx => tx.type === 'TRADE_ACCEPT');
-  console.log('[ESPN] TRADE_ACCEPT transactions found:', tradeAccepts.length);
-
-  // Debug: Log all trade-related transactions with FULL details for TRADE_PROPOSAL
   const tradeRelated = allTransactions.filter(tx => tx.type.includes('TRADE'));
-  console.log('[ESPN] All trade-related transactions:', tradeRelated.map(tx => ({
-    id: tx.id,
-    type: tx.type,
-    status: tx.status,
-    teamId: (tx as any).teamId,
-    teamName: (tx as any).teamId ? teamNameMap.get((tx as any).teamId) : undefined,
-    hasItems: !!(tx.items && tx.items.length > 0),
-    itemCount: tx.items?.length || 0,
-    relatedId: tx.relatedTransactionId,
-  })));
-
-  // Group trade transactions by relatedTransactionId to understand the trade flow
-  const tradesByRelatedId = new Map<string, ESPNAPI.Transaction[]>();
-  tradeRelated.forEach(tx => {
-    const relId = tx.relatedTransactionId ? String(tx.relatedTransactionId) : 'none';
-    const existing = tradesByRelatedId.get(relId) || [];
-    existing.push(tx);
-    tradesByRelatedId.set(relId, existing);
-  });
-  console.log('[ESPN] Trades grouped by relatedTransactionId:');
-  tradesByRelatedId.forEach((txs, relId) => {
-    if (relId !== 'none') {
-      console.log(`[ESPN] Trade group ${relId}:`, txs.map(tx => ({
-        type: tx.type,
-        status: tx.status,
-        teamId: (tx as any).teamId,
-        teamName: (tx as any).teamId ? teamNameMap.get((tx as any).teamId) : undefined,
-        date: new Date(tx.proposedDate || 0).toISOString(),
-        hasItems: !!(tx.items && tx.items.length > 0),
-      })));
-    }
-  });
-
-  // Log TRADE_PROPOSAL transactions with items
   const tradeProposals = tradeRelated.filter(tx => tx.type === 'TRADE_PROPOSAL');
-  console.log('[ESPN] TRADE_PROPOSAL transactions with items:', tradeProposals.filter(tx => tx.items && tx.items.length > 0).map(tx => {
-    // Extract unique teams involved in this trade
-    const teamsInvolved = new Set<number>();
-    tx.items?.forEach(item => {
-      if (item.fromTeamId) teamsInvolved.add(item.fromTeamId);
-      if (item.toTeamId) teamsInvolved.add(item.toTeamId);
-    });
-    return {
-      id: tx.id,
-      date: new Date(tx.proposedDate || 0).toISOString(),
-      relatedId: tx.relatedTransactionId,
-      status: tx.status,
-      teams: Array.from(teamsInvolved),
-      teamNames: Array.from(teamsInvolved).map(id => teamNameMap.get(id) || id),
-      itemCount: tx.items?.length,
-      players: tx.items?.map(item => {
-        const p = playerMap.get(String(item.playerId));
-        return p ? `${p.name} (${item.fromTeamId}->${item.toTeamId})` : `#${item.playerId}`;
-      }),
-    };
-  }));
-
-  // Also log TRADE_ACCEPT with team info from items (if available)
-  // Note: TRADE_ACCEPT transactions have teamId which tells us ONE of the teams involved
-  console.log('[ESPN] TRADE_ACCEPT with team info:', tradeAccepts.map(tx => {
-    const teamsInvolved = new Set<number>();
-    tx.items?.forEach(item => {
-      if (item.fromTeamId) teamsInvolved.add(item.fromTeamId);
-      if (item.toTeamId) teamsInvolved.add(item.toTeamId);
-    });
-    // Also check the transaction's teamId field
-    if ((tx as any).teamId) {
-      teamsInvolved.add((tx as any).teamId);
-    }
-    return {
-      id: tx.id,
-      proposedDate: tx.proposedDate,
-      teamId: (tx as any).teamId,
-      teamName: (tx as any).teamId ? teamNameMap.get((tx as any).teamId) : undefined,
-      teams: Array.from(teamsInvolved),
-      teamNames: Array.from(teamsInvolved).map(id => teamNameMap.get(id) || id),
-      itemCount: tx.items?.length || 0,
-      relatedId: tx.relatedTransactionId,
-    };
-  }));
-
-  // Log TRADE_ACCEPT timestamps for comparison
-  console.log('[ESPN] TRADE_ACCEPT details:', tradeAccepts.map(tx => ({
-    id: tx.id,
-    proposedDate: tx.proposedDate,
-    date: new Date(tx.proposedDate || 0).toISOString(),
-    teamId: (tx as any).teamId,
-    teamName: (tx as any).teamId ? teamNameMap.get((tx as any).teamId) : undefined,
-    scoringPeriodId: tx.scoringPeriodId,
-    relatedTransactionId: tx.relatedTransactionId,
-  })));
-
-  // Log TRADE_UPHOLD to understand the trade flow
   const tradeUpholds = allTransactions.filter(tx => tx.type === 'TRADE_UPHOLD');
-  console.log('[ESPN] TRADE_UPHOLD transactions:', tradeUpholds.map(tx => ({
-    id: tx.id,
-    date: new Date(tx.proposedDate || 0).toISOString(),
-    teamId: (tx as any).teamId,
-    teamName: (tx as any).teamId ? teamNameMap.get((tx as any).teamId) : undefined,
-    relatedId: tx.relatedTransactionId,
-  })));
 
-  // Check if relatedTransactionId from TRADE_ACCEPT matches any TRADE_PROPOSAL
-  // Also build a map by relatedTransactionId for reverse lookup
+  // Build a map by relatedTransactionId for reverse lookup
   const proposalByRelatedId = new Map<string, ESPNAPI.Transaction>();
   tradeProposals.forEach(proposal => {
     if (proposal.relatedTransactionId) {
       proposalByRelatedId.set(String(proposal.relatedTransactionId), proposal);
     }
   });
-
-  tradeAccepts.forEach(accept => {
-    const relatedId = accept.relatedTransactionId;
-    const foundDirect = txById.get(String(relatedId));
-    // Try reverse lookup - maybe TRADE_PROPOSAL's relatedId points to TRADE_ACCEPT
-    const foundReverse = proposalByRelatedId.get(String(accept.id));
-    console.log('[ESPN] TRADE_ACCEPT relatedId lookup:', {
-      acceptId: accept.id,
-      relatedId,
-      foundDirect: !!foundDirect,
-      foundReverse: !!foundReverse,
-      foundReverseId: foundReverse?.id,
-    });
-  });
-
-  // Log all TRADE_PROPOSAL IDs for comparison with timestamps
-  console.log('[ESPN] All TRADE_PROPOSAL details:', tradeProposals.map(p => ({
-    id: p.id,
-    relatedId: p.relatedTransactionId,
-    proposedDate: p.proposedDate,
-    hasItems: !!(p.items && p.items.length > 0),
-    itemCount: p.items?.length || 0,
-  })));
-
-  // Convert timestamps to dates for easier reading
-  console.log('[ESPN] TRADE_ACCEPT timestamps as dates:', tradeAccepts.map(tx => ({
-    id: tx.id,
-    date: new Date(tx.proposedDate || 0).toISOString(),
-    timestamp: tx.proposedDate,
-  })));
-
-  console.log('[ESPN] TRADE_PROPOSAL timestamps as dates (WITH items):', tradeProposals.filter(tx => tx.items && tx.items.length > 0).map(tx => ({
-    id: tx.id,
-    date: new Date(tx.proposedDate || 0).toISOString(),
-    timestamp: tx.proposedDate,
-    itemCount: tx.items?.length,
-  })));
-
-  // Also show proposals WITHOUT items to find the Nov 6 one
-  console.log('[ESPN] TRADE_PROPOSAL timestamps as dates (WITHOUT items):', tradeProposals.filter(tx => !tx.items || tx.items.length === 0).map(tx => ({
-    id: tx.id,
-    date: new Date(tx.proposedDate || 0).toISOString(),
-    timestamp: tx.proposedDate,
-    relatedId: tx.relatedTransactionId,
-  })));
-
-  // Look for any transaction around Nov 6 (timestamp 1762463344198 +/- 3 days)
-  const nov6Accept = 1762463344198;
-  const threeDays = 3 * 24 * 60 * 60 * 1000;
-  const nov6Transactions = allTransactions.filter(tx => {
-    const time = tx.proposedDate || 0;
-    return Math.abs(time - nov6Accept) < threeDays;
-  });
-  console.log('========== [ESPN] NOV 6 SEARCH ==========');
-  console.log('[ESPN] Looking for transactions within 3 days of Nov 6 accept (timestamp:', nov6Accept, ')');
-  console.log('[ESPN] Found', nov6Transactions.length, 'transactions around Nov 6');
-  // Log trade-related transactions with player names
-  const nov6TradeRelated = nov6Transactions.filter(tx => tx.type.includes('TRADE'));
-  console.log('[ESPN] Nov 6 trade-related:', nov6TradeRelated.length);
-  nov6TradeRelated.forEach(tx => {
-    const players = tx.items?.map(i => {
-      const p = playerMap.get(String(i.playerId));
-      return p ? `${p.name} (${i.fromTeamId}->${i.toTeamId})` : `Unknown #${i.playerId}`;
-    }) || [];
-    console.log(`[ESPN] Nov 6 ${tx.type}:`, {
-      id: tx.id,
-      date: new Date(tx.proposedDate || 0).toISOString(),
-      teamId: (tx as any).teamId,
-      teamName: (tx as any).teamId ? teamNameMap.get((tx as any).teamId) : undefined,
-      relatedId: tx.relatedTransactionId,
-      players,
-    });
-  });
-
-  // Check if Nov 6 TRADE_ACCEPT has a relatedTransactionId we can find
-  const nov6TradeAccept = nov6TradeRelated.find(tx => tx.type === 'TRADE_ACCEPT');
-  if (nov6TradeAccept?.relatedTransactionId) {
-    console.log('[ESPN] Nov 6 TRADE_ACCEPT relatedId:', nov6TradeAccept.relatedTransactionId);
-    // Search entire season for a TRADE_PROPOSAL with this ID or pointing to this
-    const matchingProposal = allTransactions.find(tx =>
-      String(tx.id) === String(nov6TradeAccept.relatedTransactionId) ||
-      String(tx.relatedTransactionId) === String(nov6TradeAccept.id)
-    );
-    if (matchingProposal) {
-      console.log('[ESPN] Found matching proposal for Nov 6:', {
-        id: matchingProposal.id,
-        type: matchingProposal.type,
-        date: new Date(matchingProposal.proposedDate || 0).toISOString(),
-        hasItems: !!(matchingProposal.items && matchingProposal.items.length > 0),
-        itemCount: matchingProposal.items?.length || 0,
-      });
-    } else {
-      console.log('[ESPN] No matching proposal found for Nov 6 relatedId:', nov6TradeAccept.relatedTransactionId);
-    }
-  }
-
-  // Search for Rico Dowdle and Drake Maye in any transaction (expected Nov 6 trade players)
-  const searchPlayers = ['Rico Dowdle', 'Drake Maye'];
-  const searchPlayerIds: string[] = [];
-  playerMap.forEach((player, id) => {
-    if (searchPlayers.some(name => player.name.toLowerCase().includes(name.toLowerCase()))) {
-      searchPlayerIds.push(id);
-      console.log('[ESPN] Found search player:', player.name, 'ID:', id);
-    }
-  });
-
-  if (searchPlayerIds.length > 0) {
-    const txsWithSearchPlayers = allTransactions.filter(tx =>
-      tx.items?.some(item => searchPlayerIds.includes(String(item.playerId)))
-    );
-    console.log('[ESPN] Transactions containing Rico Dowdle or Drake Maye:', txsWithSearchPlayers.length);
-
-    // Look for transactions around Nov 6 that involve these players AND teams 8/9
-    const nov6PlayerTxs = txsWithSearchPlayers.filter(tx => {
-      const time = tx.proposedDate || 0;
-      const isNov6 = Math.abs(time - nov6Accept) < threeDays;
-      const involvesTeam8or9 = tx.items?.some(i =>
-        i.fromTeamId === 8 || i.toTeamId === 8 || i.fromTeamId === 9 || i.toTeamId === 9
-      );
-      return isNov6 && involvesTeam8or9;
-    });
-    console.log('[ESPN] Nov 6 transactions with Rico/Drake involving teams 8 or 9:', nov6PlayerTxs.length);
-    nov6PlayerTxs.forEach(tx => {
-      console.log(`[ESPN] Nov 6 ${tx.type} with search players:`, {
-        id: tx.id,
-        date: new Date(tx.proposedDate || 0).toISOString(),
-        status: tx.status,
-        relatedId: tx.relatedTransactionId,
-        items: tx.items?.map(i => {
-          const p = playerMap.get(String(i.playerId));
-          return `${p?.name || '#' + i.playerId} (${i.fromTeamId}->${i.toTeamId})`;
-        }),
-      });
-    });
-  } else {
-    console.log('[ESPN] Search players not found in playerMap - trying to find them');
-    // Log all player names that contain "dowdle" or "maye"
-    playerMap.forEach((player, id) => {
-      if (player.name.toLowerCase().includes('dowdle') || player.name.toLowerCase().includes('maye')) {
-        console.log('[ESPN] Partial match:', player.name, 'ID:', id);
-      }
-    });
-  }
-
-  // Build a map of trade proposals by their relatedTransactionId for easier lookup
-  // This handles the case where TRADE_ACCEPT's relatedId points to a TRADE_PROPOSAL
-  // that we DO have but under a different reference
-  const tradeProposalsByRelatedId = new Map<string, ESPNAPI.Transaction>();
-  tradeProposals.forEach(proposal => {
-    // Store by ID and by relatedId if present
-    tradeProposalsByRelatedId.set(String(proposal.id), proposal);
-    if (proposal.relatedTransactionId) {
-      tradeProposalsByRelatedId.set(String(proposal.relatedTransactionId), proposal);
-    }
-  });
-  console.log('[ESPN] Trade proposal lookup map size:', tradeProposalsByRelatedId.size);
-
-  // For Nov 6, we know teams 8 and 9 were involved. Look for a TRADE_PROPOSAL with those teams.
-  // "Mahli's Monsters" (8) and "Are We Going To Joseph's?" (9)
-  const nov6MatchingProposals = tradeProposals.filter(proposal => {
-    if (!proposal.items || proposal.items.length === 0) return false;
-    const teamsInProposal = new Set<number>();
-    proposal.items.forEach(item => {
-      if (item.fromTeamId) teamsInProposal.add(item.fromTeamId);
-      if (item.toTeamId) teamsInProposal.add(item.toTeamId);
-    });
-    // Check if teams match (both teams must be present)
-    return teamsInProposal.has(8) && teamsInProposal.has(9);
-  });
-  console.log('[ESPN] Proposals between teams 8 and 9:', nov6MatchingProposals.length);
-  nov6MatchingProposals.forEach(p => {
-    console.log('[ESPN] Team 8-9 proposal:', {
-      id: p.id,
-      date: new Date(p.proposedDate || 0).toISOString(),
-      players: p.items?.map(i => playerMap.get(String(i.playerId))?.name || `#${i.playerId}`),
-    });
-  });
-  console.log('========================================');
-
-  // Build proposal map keyed by teams involved (sorted team IDs as key)
-  const proposalsByTeams = new Map<string, ESPNAPI.Transaction[]>();
-  tradeProposals.filter(tx => tx.items && tx.items.length > 0).forEach(proposal => {
-    const teamIds = new Set<number>();
-    proposal.items?.forEach(item => {
-      if (item.fromTeamId) teamIds.add(item.fromTeamId);
-      if (item.toTeamId) teamIds.add(item.toTeamId);
-    });
-    const key = Array.from(teamIds).sort((a, b) => a - b).join('-');
-    const existing = proposalsByTeams.get(key) || [];
-    existing.push(proposal);
-    proposalsByTeams.set(key, existing);
-  });
-  console.log('[ESPN] Proposals grouped by teams:', Array.from(proposalsByTeams.entries()).map(([key, proposals]) => ({
-    teams: key,
-    teamNames: key.split('-').map(id => teamNameMap.get(parseInt(id)) || id),
-    count: proposals.length,
-    proposals: proposals.map(p => ({
-      id: p.id,
-      date: new Date(p.proposedDate || 0).toISOString(),
-      players: p.items?.map(i => playerMap.get(String(i.playerId))?.name || `#${i.playerId}`),
-    })),
-  })));
-
   // Try to fetch trade data from communication endpoint
-  let communicationTrades: Array<{ id: string; items: ESPNAPI.TransactionItem[]; week: number; timestamp: number }> = [];
+  const communicationTrades: Array<{ id: string; items: ESPNAPI.TransactionItem[]; week: number; timestamp: number }> = [];
   try {
     const commData = await fetchESPN<{ topics?: Array<{ id: string; type: string; messages?: Array<{ messageTypeId: number; targetId: string; for?: number; to?: number }>; date: number }> }>(
       season,
@@ -826,20 +527,6 @@ export async function loadLeague(
         extend: 'communication',
       }
     );
-
-    console.log('[ESPN] Communication topics:', commData.topics?.length || 0);
-
-    // Log all topic types to understand the data structure
-    const topicTypes: Record<string, number> = {};
-    commData.topics?.forEach(topic => {
-      topicTypes[topic.type] = (topicTypes[topic.type] || 0) + 1;
-    });
-    console.log('[ESPN] Communication topic types:', topicTypes);
-
-    // Log a sample topic to understand the structure
-    if (commData.topics && commData.topics.length > 0) {
-      console.log('[ESPN] Sample topic:', JSON.stringify(commData.topics[0], null, 2));
-    }
 
     // The communication endpoint shows ALL trade activity including proposals
     // We need to match with TRADE_ACCEPT transactions to only get completed trades
@@ -852,10 +539,7 @@ export async function loadLeague(
       }
     });
 
-    console.log('[ESPN] TRADE_ACCEPT timestamps:', Array.from(acceptedTradeTimestamps));
-
-    // Debug: Find all ACTIVITY_TRANSACTIONS with 2+ teams involved to understand trade structure
-    // Communication messages have: for (receiving team), from (sending team in trade), to (lineup slot)
+    // Find all ACTIVITY_TRANSACTIONS with 2+ teams involved
     type TopicType = { id: string; type: string; messages?: Array<{ messageTypeId: number; targetId: string | number; for?: number; from?: number; to?: number }>; date: number };
     const potentialTrades: Array<{ topic: TopicType; teams: Set<number> }> = [];
     commData.topics?.forEach(topic => {
@@ -880,8 +564,6 @@ export async function loadLeague(
       }
     });
 
-    console.log('[ESPN] Potential trades (2+ teams using for/from):', potentialTrades.length);
-
     // Build a set of TRADE_UPHOLD timestamps - these indicate completed trades
     const upholdTimestamps = new Set<number>();
     tradeUpholds.forEach(tx => {
@@ -889,8 +571,6 @@ export async function loadLeague(
         upholdTimestamps.add(tx.proposedDate);
       }
     });
-    console.log('[ESPN] TRADE_UPHOLD timestamps:', Array.from(upholdTimestamps).map(t => new Date(t).toISOString()));
-
     // Match communication topics to TRADE_UPHOLD timestamps (within 1 hour)
     potentialTrades.forEach((pt) => {
       const topic = pt.topic;
@@ -913,13 +593,6 @@ export async function loadLeague(
 
       const messages = topic.messages as Array<{ messageTypeId: number; targetId: string | number; for?: number; from?: number; to?: number }>;
       const teamsInvolved = pt.teams;
-
-      console.log('[ESPN] Processing communication trade (matched UPHOLD):', {
-        id: topic.id,
-        date: new Date(topic.date).toISOString(),
-        teams: Array.from(teamsInvolved),
-        teamNames: Array.from(teamsInvolved).map(id => teamNameMap.get(id) || id),
-      });
 
       // Group messages by the team that RECEIVED the player
       const items: ESPNAPI.TransactionItem[] = [];
@@ -961,12 +634,6 @@ export async function loadLeague(
       }
 
       if (items.length > 0) {
-        console.log('[ESPN] Communication trade items:', items.map(i => ({
-          player: playerMap.get(String(i.playerId))?.name || `#${i.playerId}`,
-          from: teamNameMap.get(i.fromTeamId) || i.fromTeamId,
-          to: teamNameMap.get(i.toTeamId) || i.toTeamId,
-        })));
-
         communicationTrades.push({
           id: topic.id,
           items,
@@ -976,15 +643,12 @@ export async function loadLeague(
       }
     });
 
-    console.log('[ESPN] Trades from communication endpoint:', communicationTrades.length);
   } catch (e) {
-    console.warn('[ESPN] Failed to fetch communication data:', e);
+    logger.warn('[ESPN] Failed to fetch communication data:', e);
   }
 
   // ROSTER-BASED TRADE DETECTION
   // Compare rosters week-by-week to find players that swapped teams
-  // A trade is when player A moves from Team 1 -> Team 2 AND player B moves Team 2 -> Team 1 in the same week
-  console.log('========== [ESPN] ROSTER-BASED TRADE DETECTION ==========');
 
   interface RosterTrade {
     week: number;
@@ -1040,20 +704,12 @@ export async function loadLeague(
     });
   }
 
-  console.log('[ESPN] Roster-detected trades:', rosterDetectedTrades.length);
-  rosterDetectedTrades.forEach(trade => {
-    console.log('[ESPN] Trade between', teamNameMap.get(trade.teams[0]), 'and', teamNameMap.get(trade.teams[1]), 'before week', trade.week);
-    console.log('  Players to', teamNameMap.get(trade.teams[0]) + ':', trade.playersMovedToTeam1.map(id => playerMap.get(String(id))?.name || `#${id}`));
-    console.log('  Players to', teamNameMap.get(trade.teams[1]) + ':', trade.playersMovedToTeam2.map(id => playerMap.get(String(id))?.name || `#${id}`));
-  });
-  console.log('========================================================');
-
   // Use roster-detected trades as primary source (most reliable!)
   let tradesToProcess: Array<{ id: string; items: ESPNAPI.TransactionItem[]; week: number; timestamp: number }> = [];
 
   // PRIORITY 1: Roster-based detection (most reliable - we KNOW rosters changed)
   if (rosterDetectedTrades.length > 0) {
-    console.log('[ESPN] Using roster-based trade detection');
+    logger.debug('[ESPN] Using roster-based trade detection');
     rosterDetectedTrades.forEach((trade, index) => {
       const items: ESPNAPI.TransactionItem[] = [];
 
@@ -1088,7 +744,7 @@ export async function loadLeague(
   // PRIORITY 2: Communication endpoint (has timestamps but complex parsing)
   else if (communicationTrades.length > 0) {
     tradesToProcess = communicationTrades;
-    console.log('[ESPN] Using communication endpoint trades');
+    logger.debug('[ESPN] Using communication endpoint trades');
   }
   // PRIORITY 3: TRADE_ACCEPT/TRADE_PROPOSAL matching (fallback)
   else {
@@ -1122,14 +778,14 @@ export async function loadLeague(
       // First check if TRADE_ACCEPT itself has items
       if (acceptTx.items && acceptTx.items.length > 0) {
         items = acceptTx.items;
-        console.log('[ESPN] TRADE_ACCEPT has items directly:', acceptTx.id);
+        logger.debug('[ESPN] TRADE_ACCEPT has items directly:', acceptTx.id);
       }
       // Try to look up the related TRADE_PROPOSAL by ID (direct lookup)
       else if (acceptTx.relatedTransactionId) {
         const proposal = txById.get(String(acceptTx.relatedTransactionId));
         if (proposal?.items && proposal.items.length > 0) {
           items = proposal.items;
-          console.log('[ESPN] Matched TRADE_PROPOSAL by direct relatedId:', acceptTx.relatedTransactionId);
+          logger.debug('[ESPN] Matched TRADE_PROPOSAL by direct relatedId:', acceptTx.relatedTransactionId);
           // Remove from proposalsWithItems to prevent double-matching
           const idx = proposalsWithItems.indexOf(proposal);
           if (idx > -1) proposalsWithItems.splice(idx, 1);
@@ -1140,7 +796,7 @@ export async function loadLeague(
         const reverseMatch = proposalByRelatedId.get(String(acceptTx.id));
         if (reverseMatch?.items && reverseMatch.items.length > 0) {
           items = reverseMatch.items;
-          console.log('[ESPN] Matched TRADE_PROPOSAL by reverse relatedId:', reverseMatch.id);
+          logger.debug('[ESPN] Matched TRADE_PROPOSAL by reverse relatedId:', reverseMatch.id);
           // Remove from proposalsWithItems to prevent double-matching
           const idx = proposalsWithItems.indexOf(reverseMatch);
           if (idx > -1) proposalsWithItems.splice(idx, 1);
@@ -1161,11 +817,11 @@ export async function loadLeague(
               if (item.fromTeamId) teamsInTrade.add(item.fromTeamId);
               if (item.toTeamId) teamsInTrade.add(item.toTeamId);
             });
-            console.log('[ESPN] Added teams from related proposal:', relatedProposal.id);
+            logger.debug('[ESPN] Added teams from related proposal:', relatedProposal.id);
           }
         }
 
-        console.log('[ESPN] Teams in trade (from ACCEPT/UPHOLD + proposal):', Array.from(teamsInTrade), 'for accept:', acceptTx.id);
+        logger.debug('[ESPN] Teams in trade (from ACCEPT/UPHOLD + proposal):', Array.from(teamsInTrade), 'for accept:', acceptTx.id);
 
         // Now find a proposal with items that matches these teams
         if (teamsInTrade.size >= 2) {
@@ -1198,7 +854,7 @@ export async function loadLeague(
 
           if (bestTeamMatch) {
             items = bestTeamMatch.proposal.items!;
-            console.log('[ESPN] Matched TRADE_PROPOSAL by TEAM:', {
+            logger.debug('[ESPN] Matched TRADE_PROPOSAL by TEAM:', {
               acceptId: acceptTx.id,
               proposalId: bestTeamMatch.proposal.id,
               teams: teamsArray,
@@ -1210,14 +866,14 @@ export async function loadLeague(
             const idx = proposalsWithItems.indexOf(bestTeamMatch.proposal);
             if (idx > -1) proposalsWithItems.splice(idx, 1);
           } else {
-            console.log('[ESPN] No proposal found with matching teams:', teamsArray);
+            logger.debug('[ESPN] No proposal found with matching teams:', teamsArray);
           }
         }
       }
 
       // Final fallback: try matching by timestamp only (less reliable)
       if (items.length === 0 && acceptTx.proposedDate) {
-        console.log('[ESPN] Trying timestamp-only match for accept:', acceptTx.id, 'remaining proposals:', proposalsWithItems.length);
+        logger.debug('[ESPN] Trying timestamp-only match for accept:', acceptTx.id, 'remaining proposals:', proposalsWithItems.length);
 
         // Find a TRADE_PROPOSAL with items that has a similar timestamp
         // Allow up to 30 days between proposal and accept
@@ -1237,7 +893,7 @@ export async function loadLeague(
 
         if (bestMatch) {
           items = bestMatch.proposal.items!;
-          console.log('[ESPN] Matched TRADE_PROPOSAL by timestamp:', {
+          logger.debug('[ESPN] Matched TRADE_PROPOSAL by timestamp:', {
             acceptId: acceptTx.id,
             proposalId: bestMatch.proposal.id,
             acceptTime: acceptTx.proposedDate,
@@ -1249,10 +905,10 @@ export async function loadLeague(
           const idx = proposalsWithItems.indexOf(bestMatch.proposal);
           if (idx > -1) proposalsWithItems.splice(idx, 1);
         } else {
-          console.log('[ESPN] No proposal matched within tolerance for accept:', acceptTx.id);
+          logger.debug('[ESPN] No proposal matched within tolerance for accept:', acceptTx.id);
         }
       } else if (items.length === 0) {
-        console.log('[ESPN] Skipping timestamp match - no proposedDate for accept:', acceptTx.id);
+        logger.debug('[ESPN] Skipping timestamp match - no proposedDate for accept:', acceptTx.id);
       }
 
       if (items.length > 0) {
@@ -1265,7 +921,7 @@ export async function loadLeague(
       } else {
         // Trade without items - we know teams from ACCEPT/UPHOLD but can't get players
         // Create a placeholder trade entry so users at least see it happened
-        console.log('[ESPN] Trade has no items, creating placeholder:', acceptTx.id, 'teams:', Array.from(teamsInTrade));
+        logger.debug('[ESPN] Trade has no items, creating placeholder:', acceptTx.id, 'teams:', Array.from(teamsInTrade));
 
         if (teamsInTrade.size >= 2) {
           // Create fake items just to indicate teams involved
@@ -1295,9 +951,9 @@ export async function loadLeague(
       tx.items && tx.items.length > 0 &&
       proposalsWithItems.includes(tx) // Still in the unmatched list
     );
-    console.log('[ESPN] Unmatched EXECUTED TRADE_PROPOSAL (commissioner trades?):', executedProposals.length);
+    logger.debug('[ESPN] Unmatched EXECUTED TRADE_PROPOSAL (commissioner trades?):', executedProposals.length);
     executedProposals.forEach(proposal => {
-      console.log('[ESPN] Commissioner trade:', {
+      logger.debug('[ESPN] Commissioner trade:', {
         id: proposal.id,
         date: new Date(proposal.proposedDate || 0).toISOString(),
         status: proposal.status,
@@ -1323,7 +979,7 @@ export async function loadLeague(
   // ESPN's positionLimits is complex and may have negative values or unexpected structure
   // Use sensible defaults based on standard league settings
   // Standard lineup: 1 QB, 2 RB, 2 WR, 1 TE, 1 FLEX, 1 K, 1 D/ST
-  console.log('[ESPN] Raw position limits:', leagueData.settings.rosterSettings?.positionLimits);
+  logger.debug('[ESPN] Raw position limits:', leagueData.settings.rosterSettings?.positionLimits);
 
   const rosterSlotsForPAR = {
     QB: 1,
@@ -1347,8 +1003,8 @@ export async function loadLeague(
     'D/ST': rosterSlotsForPAR.DST * totalTeamsCount + 1,
   };
 
-  console.log('[ESPN] Teams:', totalTeamsCount);
-  console.log('[ESPN] Replacement ranks by position:', replacementRank);
+  logger.debug('[ESPN] Teams:', totalTeamsCount);
+  logger.debug('[ESPN] Replacement ranks by position:', replacementRank);
 
   // Build position rankings from all players in playerMap
   const positionPlayers: Record<string, Array<{ id: string; points: number }>> = {
@@ -1376,7 +1032,7 @@ export async function loadLeague(
     const players = positionPlayers[pos] || [];
 
     // Log position counts for debugging
-    console.log(`[ESPN] ${pos}: ${players.length} players in map, need rank ${rank}`);
+    logger.debug(`[ESPN] ${pos}: ${players.length} players in map, need rank ${rank}`);
 
     // If we don't have enough players, use the LAST player we have as baseline
     // This is more conservative than using 0
@@ -1387,11 +1043,11 @@ export async function loadLeague(
     } else {
       // Not enough players - use the worst player we have as baseline
       replacementBaseline[pos] = players[players.length - 1]?.points || 0;
-      console.log(`[ESPN] ${pos}: Using last player (rank ${players.length}) as baseline: ${replacementBaseline[pos]}`);
+      logger.debug(`[ESPN] ${pos}: Using last player (rank ${players.length}) as baseline: ${replacementBaseline[pos]}`);
     }
   });
 
-  console.log('[ESPN] Replacement baselines (season points):', replacementBaseline);
+  logger.debug('[ESPN] Replacement baselines (season points):', replacementBaseline);
 
   // Calculate PAR for a player
   const getPlayerPAR = (playerId: string): number => {
@@ -1546,8 +1202,8 @@ export async function loadLeague(
     })
     .filter((trade): trade is Trade => trade !== null);
 
-  console.log('[ESPN] Processed trades:', allTrades.length);
-  console.log('[ESPN] Processed waiver transactions:', Array.from(teamTransactions.values()).flat().length);
+  logger.debug('[ESPN] Processed trades:', allTrades.length);
+  logger.debug('[ESPN] Processed waiver transactions:', Array.from(teamTransactions.values()).flat().length);
 
   // Build teams
   const teams: Team[] = leagueData.teams.map(espnTeam => {
@@ -1620,7 +1276,7 @@ export async function loadLeague(
     BENCH: posLimits[20] || 6,
     IR: posLimits[21] || 1,
   };
-  console.log('[ESPN] Roster slots:', rosterSlots);
+  logger.debug('[ESPN] Roster slots:', rosterSlots);
 
   // Build weekly matchups for luck analysis from team records
   // ESPN provides schedule data in the mMatchup view
@@ -1639,7 +1295,7 @@ export async function loadLeague(
       }
     });
   }
-  console.log('[ESPN] Weekly matchups collected:', weeklyMatchups.length);
+  logger.debug('[ESPN] Weekly matchups collected:', weeklyMatchups.length);
 
   return {
     id: leagueId,
@@ -1681,7 +1337,7 @@ export async function loadLeagueHistory(
       );
 
       if (!leagueData.teams || leagueData.teams.length === 0) {
-        console.log(`[ESPN History] No teams found for season ${season}, stopping`);
+        logger.debug(`[ESPN History] No teams found for season ${season}, stopping`);
         break;
       }
 
@@ -1710,9 +1366,9 @@ export async function loadLeagueHistory(
         teams: teamsWithStandings,
       });
 
-      console.log(`[ESPN History] Loaded season ${season} with ${teamsWithStandings.length} teams`);
+      logger.debug(`[ESPN History] Loaded season ${season} with ${teamsWithStandings.length} teams`);
     } catch (error) {
-      console.warn(`[ESPN History] Could not load season ${season}:`, error);
+      logger.warn(`[ESPN History] Could not load season ${season}:`, error);
       // If this is the first season and it fails, try a couple more years back
       if (history.length === 0 && i < 2) {
         continue;
@@ -1751,7 +1407,7 @@ export async function loadHeadToHeadRecords(
       );
 
       if (!leagueData.teams || leagueData.teams.length === 0) {
-        console.log(`[ESPN H2H] No teams found for season ${season}, stopping`);
+        logger.debug(`[ESPN H2H] No teams found for season ${season}, stopping`);
         break;
       }
 
@@ -1777,14 +1433,14 @@ export async function loadHeadToHeadRecords(
       }
 
       if (!selectedTeamData) {
-        console.log(`[ESPN H2H] Team not found in season ${season}`);
+        logger.debug(`[ESPN H2H] Team not found in season ${season}`);
         continue;
       }
 
       // Get matchups from schedule
       const schedule = (leagueData as any).schedule;
       if (!schedule || !Array.isArray(schedule)) {
-        console.log(`[ESPN H2H] No schedule data for season ${season}`);
+        logger.debug(`[ESPN H2H] No schedule data for season ${season}`);
         continue;
       }
 
@@ -1845,9 +1501,9 @@ export async function loadHeadToHeadRecords(
         record.matchups.push(matchupResult);
       });
 
-      console.log(`[ESPN H2H] Processed season ${season}`);
+      logger.debug(`[ESPN H2H] Processed season ${season}`);
     } catch (error) {
-      console.warn(`[ESPN H2H] Could not load season ${season}:`, error);
+      logger.warn(`[ESPN H2H] Could not load season ${season}:`, error);
       break;
     }
   }

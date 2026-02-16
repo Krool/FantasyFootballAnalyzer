@@ -45,7 +45,7 @@
 .statValue {
   font-size: 1.5rem;
   font-weight: 600;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .tableWrapper {
@@ -113,7 +113,7 @@
   background-color: rgba(0, 0, 0, 0.2);
   padding: 0.125rem 0.25rem;
   border-radius: 3px;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .empty {
@@ -191,7 +191,7 @@
 
 .rank {
   font-weight: 600;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
   min-width: 30px;
 }
 
@@ -214,7 +214,7 @@
 
 .pointsTotal {
   font-weight: 600;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: var(--font-mono);
   color: var(--color-great);
 }
 
