@@ -44,9 +44,9 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
       <aside className={styles.manifesto} aria-label="About this project">
         <span className={styles.manifestoKicker}>★ Completely Free & Open Source</span>
         <p className={styles.manifestoBody}>
-          No accounts. No ads. No data leaves your browser. Credentials stay in
-          browser storage and are only used to call Sleeper, ESPN, and Yahoo on
-          your behalf. Free and open source.
+          No accounts. No ads. No data is stored on any server. Your credentials
+          are kept in your browser's session storage and passed through to
+          Sleeper, ESPN, or Yahoo to fetch your league. Free and open source.
         </p>
         <a
           className={styles.manifestoLink}
