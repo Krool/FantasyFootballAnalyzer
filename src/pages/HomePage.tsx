@@ -46,7 +46,7 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
         <p className={styles.manifestoBody}>
           No accounts. No ads. No data is stored on any server. Your credentials
           are kept in your browser's session storage and passed through to
-          Sleeper, ESPN, or Yahoo to fetch your league. Free and open source.
+          Sleeper, ESPN, or Yahoo to fetch your league, but are never saved. Free and open source.
         </p>
         <a
           className={styles.manifestoLink}
