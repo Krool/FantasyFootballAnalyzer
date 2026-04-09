@@ -42,7 +42,7 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
   return (
     <div className={styles.page}>
       <aside className={styles.manifesto} aria-label="About this project">
-        <span className={styles.manifestoKicker}>★ The Fine Print</span>
+        <span className={styles.manifestoKicker}>★ Completely Free & Open Source</span>
         <p className={styles.manifestoBody}>
           No accounts. No ads. No data leaves your browser. Credentials stay in
           browser storage and are only used to call Sleeper, ESPN, and Yahoo on

@@ -49,30 +49,18 @@
 
 .logo {
   font-family: var(--font-headline);
-  font-size: 2rem;
+  font-size: 1.4rem;
   line-height: 0.85;
   letter-spacing: -0.02em;
   color: var(--bone);
   text-transform: uppercase;
   display: inline-flex;
   align-items: baseline;
-  gap: 0.05em;
-  position: relative;
+  gap: 0.2em;
+  white-space: nowrap;
 }
-.logo::after {
-  content: 'EST · 2019';
-  display: block;
-  position: absolute;
-  bottom: -0.95rem;
-  left: 0;
-  font-family: var(--font-mono);
-  font-size: 0.55rem;
-  letter-spacing: 0.25em;
-  color: var(--bone-dim);
-  text-transform: uppercase;
-}
-.logo span { color: var(--blood); }
-.logo:hover span { color: var(--lime); transition: color .2s ease; }
+.logo span { color: var(--blood); transition: color .2s ease; }
+.logo:hover span { color: var(--lime); }
 
 .leagueInfo {
   display: flex;
@@ -162,6 +150,6 @@
 
 @media (max-width: 880px) {
   .headerContent { flex-direction: column; align-items: flex-start; }
-  .logo { font-size: 1.6rem; }
+  .logo { font-size: 1.1rem; }
   .nav { width: 100%; justify-content: flex-start; }
 }
