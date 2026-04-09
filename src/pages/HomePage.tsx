@@ -104,10 +104,23 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
               <path d="M2 12l10 5 10-5" />
             </svg>
           </div>
-          <h3 className={styles.featureTitle}>Draft Analysis</h3>
+          <h3 className={styles.featureTitle}>Draft Grades</h3>
           <p className={styles.featureDesc}>
-            Grade every draft pick based on actual season performance.
-            See who got the best value and who reached.
+            Grade every pick based on actual season production.
+            See who got value and who reached.
+          </p>
+        </div>
+
+        <div className={styles.feature}>
+          <div className={styles.featureIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M7 16l-4-4 4-4M17 8l4 4-4 4M3 12h18" />
+            </svg>
+          </div>
+          <h3 className={styles.featureTitle}>Trade Verdicts</h3>
+          <p className={styles.featureDesc}>
+            Evaluate every trade by points generated after the deal.
+            Grade each side and crown the winner.
           </p>
         </div>
 
@@ -120,23 +133,10 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
               <path d="M23 11h-6" />
             </svg>
           </div>
-          <h3 className={styles.featureTitle}>Waiver Tracking</h3>
+          <h3 className={styles.featureTitle}>Waiver Wire</h3>
           <p className={styles.featureDesc}>
-            Track every waiver pickup and free agent add.
+            Track every pickup and free agent add.
             See total points generated in started games.
-          </p>
-        </div>
-
-        <div className={styles.feature}>
-          <div className={styles.featureIcon}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M7 16l-4-4 4-4M17 8l4 4-4 4M3 12h18" />
-            </svg>
-          </div>
-          <h3 className={styles.featureTitle}>Trade Analysis</h3>
-          <p className={styles.featureDesc}>
-            Evaluate every trade based on points generated.
-            See who won each deal and track trade performance.
           </p>
         </div>
 
@@ -149,27 +149,10 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
               <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
           </div>
-          <h3 className={styles.featureTitle}>Team Comparison</h3>
+          <h3 className={styles.featureTitle}>Team Breakdown</h3>
           <p className={styles.featureDesc}>
-            Compare all teams side by side. See draft grades,
-            waiver success, and season performance.
-          </p>
-        </div>
-
-        <div className={styles.feature}>
-          <div className={styles.featureIcon}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-              <polyline points="10 9 9 9 8 9" />
-            </svg>
-          </div>
-          <h3 className={styles.featureTitle}>PDF Reports</h3>
-          <p className={styles.featureDesc}>
-            Export comprehensive league reports as PDF.
-            Share draft grades and analysis with your league.
+            Side-by-side team cards with draft grades,
+            waiver ROI, and season stats in one place.
           </p>
         </div>
 
@@ -180,10 +163,71 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
               <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
             </svg>
           </div>
-          <h3 className={styles.featureTitle}>League History</h3>
+          <h3 className={styles.featureTitle}>Season Awards</h3>
           <p className={styles.featureDesc}>
-            View all-time standings and past champions.
-            Track dynasty league performance across seasons.
+            Auto-generated trophies for highest scorer,
+            best draft, trade heist, bench warmer, and more.
+          </p>
+        </div>
+
+        <div className={styles.feature}>
+          <div className={styles.featureIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 4h16v16H4z" />
+              <path d="M4 12h16" />
+              <path d="M12 4v16" />
+              <circle cx="8" cy="8" r="1" fill="currentColor" />
+              <circle cx="16" cy="16" r="1" fill="currentColor" />
+            </svg>
+          </div>
+          <h3 className={styles.featureTitle}>Luck Analysis</h3>
+          <p className={styles.featureDesc}>
+            Expected wins vs actual wins. All-play records,
+            close game rates, and a luck score for every team.
+          </p>
+        </div>
+
+        <div className={styles.feature}>
+          <div className={styles.featureIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+          </div>
+          <h3 className={styles.featureTitle}>Player Journey</h3>
+          <p className={styles.featureDesc}>
+            Full transaction timeline for any player. Drafted,
+            traded, added, dropped. Every move, every team.
+          </p>
+        </div>
+
+        <div className={styles.feature}>
+          <div className={styles.featureIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 8V4H8" />
+              <path d="M2 12h4l3 9 6-18 3 9h4" />
+            </svg>
+          </div>
+          <h3 className={styles.featureTitle}>History & Rivalries</h3>
+          <p className={styles.featureDesc}>
+            All-time standings, past champions, and head-to-head
+            records across every season in the league.
+          </p>
+        </div>
+
+        <div className={styles.feature}>
+          <div className={styles.featureIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="12" y1="18" x2="12" y2="12" />
+              <line x1="9" y1="15" x2="12" y2="18" />
+              <line x1="15" y1="15" x2="12" y2="18" />
+            </svg>
+          </div>
+          <h3 className={styles.featureTitle}>PDF Export</h3>
+          <p className={styles.featureDesc}>
+            Full league report as a shareable PDF.
+            Draft grades, awards, and analysis in one document.
           </p>
         </div>
       </div>
