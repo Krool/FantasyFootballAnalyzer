@@ -34,22 +34,33 @@ export class ErrorBoundary extends Component<Props, State> {
           minHeight: '100vh',
           padding: '2rem',
           textAlign: 'center',
-          color: '#f0f4f8',
-          backgroundColor: '#0a0e1a',
+          color: 'var(--bone)',
+          backgroundColor: 'var(--ink)',
+          fontFamily: 'var(--font-display)',
         }}>
-          <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Something went wrong</h1>
-          <p style={{ color: '#8892a4', marginBottom: '1.5rem', maxWidth: '500px' }}>
+          <h1 style={{
+            fontFamily: 'var(--font-headline)',
+            fontSize: '3rem',
+            textTransform: 'uppercase',
+            lineHeight: 0.85,
+            marginBottom: '1rem',
+          }}>Something<br/>Broke.</h1>
+          <p style={{ color: 'var(--bone-dim)', fontStyle: 'italic', marginBottom: '1.5rem', maxWidth: '500px' }}>
             {this.state.error?.message || 'An unexpected error occurred.'}
           </p>
           <button
             onClick={() => window.location.reload()}
             style={{
-              padding: '0.5rem 1.5rem',
-              borderRadius: '6px',
-              border: 'none',
-              background: '#3b82f6',
-              color: 'white',
-              fontWeight: 600,
+              padding: '0.7rem 1.4rem',
+              border: '2px solid var(--lime)',
+              background: 'var(--lime)',
+              color: 'var(--ink)',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 700,
+              fontSize: '0.78rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.18em',
+              boxShadow: '4px 4px 0 var(--bone)',
               cursor: 'pointer',
             }}
           >

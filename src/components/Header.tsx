@@ -51,8 +51,8 @@ export function Header({ leagueName, platform, league, onChangeLeague }: HeaderP
               </svg>
             </button>
           )}
-          <Link to="/" className={styles.logo}>
-            Fantasy Football Analyzer
+          <Link to="/" className={styles.logo} aria-label="GRIDIRON Fantasy Football Analyzer">
+            GRID<span>/</span>IRON
           </Link>
         </div>
 

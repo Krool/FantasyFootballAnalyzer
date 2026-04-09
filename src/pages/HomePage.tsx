@@ -41,13 +41,22 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
 
   return (
     <div className={styles.page}>
-      <div className={styles.hero}>
-        <h1 className={styles.title}>Fantasy Football Analyzer</h1>
-        <p className={styles.subtitle}>
-          Analyze your fantasy football draft performance, track waiver pickups,
-          and see how your team stacks up against the competition.
+      <aside className={styles.manifesto} aria-label="About this project">
+        <span className={styles.manifestoKicker}>★ The Fine Print</span>
+        <p className={styles.manifestoBody}>
+          No accounts. No ads. No data leaves your browser. Credentials stay in
+          browser storage and are only used to call Sleeper, ESPN, and Yahoo on
+          your behalf. Free and open source.
         </p>
-      </div>
+        <a
+          className={styles.manifestoLink}
+          href="https://github.com/Krool/FantasyFootballAnalyzer"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View source on GitHub →
+        </a>
+      </aside>
 
       <div className={styles.formContainer}>
         <div className="card">

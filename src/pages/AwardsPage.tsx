@@ -62,7 +62,7 @@ export function AwardsPage({ league }: AwardsPageProps) {
         </p>
 
         {awards.length === 0 && (
-          <p className={styles.subtitle}>
+          <p className={styles.empty}>
             No awards data available. Make sure your league has completed at least one week of play.
           </p>
         )}

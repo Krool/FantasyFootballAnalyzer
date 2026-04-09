@@ -1,29 +1,44 @@
+/* GRIDIRON · Teams roster */
+
 .page {
-  padding: 2rem 0;
+  padding: 3rem 0 5rem;
 }
 
 .header {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 3px solid var(--bone);
 }
 
 .title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
+  font-family: var(--font-headline);
+  font-size: clamp(56px, 9vw, 140px);
+  font-weight: 400;
+  line-height: 0.82;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  color: var(--bone);
+  margin-bottom: 0.5rem;
 }
 
 .subtitle {
-  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+.subtitle::before {
+  content: '▌ ';
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 1.5rem;
 }
 
 @media (max-width: 640px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
+  .title { font-size: 56px; }
+  .grid { grid-template-columns: 1fr; }
 }

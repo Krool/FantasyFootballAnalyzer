@@ -1,51 +1,67 @@
-.page {
-  padding: 2rem 0;
-}
+/* GRIDIRON · Draft */
+
+.page { padding: 3rem 0 5rem; }
 
 .header {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 3px solid var(--bone);
 }
 
 .title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
+  font-family: var(--font-headline);
+  font-size: clamp(56px, 9vw, 140px);
+  font-weight: 400;
+  line-height: 0.82;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  color: var(--bone);
+  margin-bottom: 0.5rem;
 }
 
 .subtitle {
-  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
 }
+.subtitle::before { content: '◆ THE BOARD · '; }
 
 .empty {
   text-align: center;
   padding: 4rem 2rem;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
+  background: var(--ink);
+  border: 2px dashed var(--bone-dim);
 }
-
 .empty h2 {
-  font-size: 1.5rem;
+  font-family: var(--font-headline);
+  font-size: 1.75rem;
+  font-weight: 400;
+  text-transform: uppercase;
   margin-bottom: 1rem;
+  color: var(--bone);
 }
-
 .empty p {
-  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
   margin-bottom: 1rem;
 }
-
 .empty ul {
   list-style: none;
   padding: 0;
-  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
 }
-
-.empty li {
-  padding: 0.25rem 0;
-}
-
+.empty li { padding: 0.3rem 0; }
 .empty li::before {
-  content: "•";
-  color: var(--border-color);
-  margin-right: 0.5rem;
+  content: '◆';
+  color: var(--lime);
+  margin-right: 0.6rem;
 }
+
+@media (max-width: 640px) { .title { font-size: 56px; } }

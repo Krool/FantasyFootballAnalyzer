@@ -1,20 +1,32 @@
-.page {
-  padding: 2rem 0;
-}
+/* GRIDIRON · History / Archive */
+
+.page { padding: 3rem 0 5rem; }
 
 .header {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 3px solid var(--bone);
 }
 
 .title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
+  font-family: var(--font-headline);
+  font-size: clamp(56px, 9vw, 140px);
+  font-weight: 400;
+  line-height: 0.82;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  color: var(--bone);
+  margin-bottom: 0.5rem;
 }
 
 .subtitle {
-  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
 }
+.subtitle::before { content: '◆ ARCHIVE · '; }
 
 .loading {
   display: flex;
@@ -22,130 +34,164 @@
   align-items: center;
   gap: 1rem;
   padding: 3rem;
-  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
 }
 
 .error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
-  padding: 1rem;
-  border-radius: 8px;
+  background: var(--ink);
+  border: 2px solid var(--blood);
+  color: var(--bone);
+  padding: 1rem 1.2rem;
   text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  box-shadow: 4px 4px 0 var(--blood);
 }
 
 .notice {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  background: var(--ink);
+  border: 2px dashed var(--bone-dim);
   padding: 2rem;
-  border-radius: 8px;
   text-align: center;
-  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
 }
 
-.section {
-  margin-bottom: 2.5rem;
-}
+.section { margin-bottom: 3rem; }
 
 .sectionTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--border);
+  font-family: var(--font-headline);
+  font-size: 2rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 0.9;
+  color: var(--bone);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px dashed var(--bone-dim);
 }
+.sectionTitle::before { content: '★ '; color: var(--lime); }
 
 .tableWrapper {
   overflow-x: auto;
+  border: 2px solid var(--bone);
+  box-shadow: 5px 5px 0 var(--bone);
+  background: var(--ink);
 }
 
-.topThree {
-  background: linear-gradient(90deg, rgba(234, 179, 8, 0.1) 0%, transparent 100%);
-}
-
+.topThree { background: rgba(214,255,46,0.04); }
 .topThree:first-child {
-  background: linear-gradient(90deg, rgba(234, 179, 8, 0.2) 0%, transparent 100%);
+  background: rgba(214,255,46,0.08);
+  box-shadow: inset 4px 0 0 var(--lime);
 }
 
 .teamName {
+  font-family: var(--font-display);
+  font-style: italic;
   font-weight: 500;
+  color: var(--bone);
 }
 
-.championship {
-  font-size: 1rem;
-}
+.championship { font-size: 1rem; }
 
-/* Season Cards */
+/* ── Season cards / Back issues ── */
 .seasons {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 1.5rem;
 }
 
 .seasonCard {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: var(--ink);
+  border: 2px solid var(--bone);
+  box-shadow: 5px 5px 0 var(--bone);
   overflow: hidden;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.seasonCard:hover {
+  transform: translate(-3px,-3px);
+  box-shadow: 8px 8px 0 var(--lime);
+  border-color: var(--lime);
 }
 
 .seasonHeader {
-  background: var(--bg-tertiary);
-  padding: 1rem;
+  background: var(--ink-2);
+  padding: 1rem 1.2rem;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border);
+  align-items: baseline;
+  border-bottom: 2px solid var(--bone);
 }
 
 .seasonYear {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-family: var(--font-headline);
+  font-size: 1.85rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
   margin: 0;
-  color: var(--accent);
+  color: var(--lime);
 }
 
 .inProgress {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-good);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--lime);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--lime);
   vertical-align: middle;
 }
 
 .seasonName {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
 }
 
-.seasonStandings {
-  padding: 0.5rem 0;
-}
+.seasonStandings { padding: 0.5rem 0; }
 
 .standingRow {
   display: grid;
-  grid-template-columns: 2rem 1fr 3.5rem 4.5rem;
+  grid-template-columns: 2.2rem 1fr 4rem 5rem;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.2rem;
   align-items: center;
-  font-size: 0.875rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  border-bottom: 1px dashed var(--rule);
+  transition: background .15s ease;
 }
-
-.standingRow:hover {
-  background: var(--bg-tertiary);
-}
+.standingRow:last-child { border-bottom: none; }
+.standingRow:hover { background: var(--ink-2); }
 
 .champion {
-  background: linear-gradient(90deg, rgba(234, 179, 8, 0.15) 0%, transparent 100%);
+  background: rgba(214,255,46,0.06);
+  box-shadow: inset 4px 0 0 var(--lime);
 }
 
 .standing {
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-family: var(--font-headline);
+  font-size: 1.1rem;
+  color: var(--bone-dim);
   text-align: center;
 }
+.champion .standing { color: var(--lime); }
 
 .standingTeam {
+  font-family: var(--font-display);
+  font-style: italic;
   font-weight: 500;
+  color: var(--bone);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -154,65 +200,57 @@
   white-space: nowrap;
 }
 
-.trophy {
-  flex-shrink: 0;
-}
+.trophy { flex-shrink: 0; }
 
-.standingRecord {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  text-align: right;
-}
-
+.standingRecord,
 .standingPoints {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--text-secondary);
+  font-size: 0.7rem;
+  color: var(--bone-dim);
   text-align: right;
 }
 
 .moreTeams {
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1rem;
   text-align: center;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  border-top: 1px solid var(--border);
-  margin-top: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  border-top: 1px dashed var(--rule);
 }
 
-/* Rivalries Section */
+/* ── Rivalries section ── */
 .sectionDescription {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
+  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
 }
 
-.teamSelector {
-  margin-bottom: 1.5rem;
-}
+.teamSelector { margin-bottom: 1.75rem; }
 
 .teamDropdown {
   width: 100%;
-  max-width: 320px;
+  max-width: 360px;
   padding: 0.75rem 1rem;
-  font-size: 1rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+  color: var(--bone);
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
-
-.teamDropdown:hover {
-  border-color: var(--accent);
-}
-
+.teamDropdown:hover { border-color: var(--bone); }
 .teamDropdown:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2);
+  border-color: var(--lime);
+  box-shadow: 4px 4px 0 var(--lime);
 }
 
 .rivalriesLoading {
@@ -220,39 +258,37 @@
   align-items: center;
   gap: 1rem;
   padding: 2rem;
-  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
   justify-content: center;
 }
 
 .rivalriesGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.25rem;
 }
 
 .noRivalries {
   padding: 2rem;
   text-align: center;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  border-radius: 8px;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
+  background: var(--ink);
+  border: 2px dashed var(--bone-dim);
 }
 
 @media (max-width: 640px) {
-  .seasons {
-    grid-template-columns: 1fr;
-  }
-
+  .title { font-size: 56px; }
+  .seasons { grid-template-columns: 1fr; }
   .standingRow {
-    grid-template-columns: 1.5rem 1fr 3rem 3.5rem;
-    font-size: 0.8rem;
+    grid-template-columns: 1.6rem 1fr 3rem 3.8rem;
+    font-size: 0.72rem;
   }
-
-  .rivalriesGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .teamDropdown {
-    max-width: 100%;
-  }
+  .rivalriesGrid { grid-template-columns: 1fr; }
+  .teamDropdown { max-width: 100%; }
 }
