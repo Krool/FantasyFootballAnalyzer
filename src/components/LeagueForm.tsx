@@ -254,8 +254,13 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
             />
             <span className={styles.hint}>
               {platform === 'sleeper'
-                ? 'Found in your league URL: sleeper.com/leagues/[LEAGUE_ID] (each season has a unique ID)'
+                ? 'Found in your league URL: sleeper.com/leagues/[LEAGUE_ID]'
                 : 'Found in your league URL: fantasy.espn.com/football/league?leagueId=[LEAGUE_ID]'}
+            </span>
+            <span className={styles.hint}>
+              {platform === 'sleeper'
+                ? 'Each season generates a new league ID. Make sure you use the ID for the season you want to analyze.'
+                : 'Your league ID stays the same across seasons. Use the season dropdown to pick which year to analyze.'}
             </span>
           </div>
 
