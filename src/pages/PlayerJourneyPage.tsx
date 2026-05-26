@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { League, Player, DraftPick } from '@/types';
 import styles from './PlayerJourneyPage.module.css';
 
@@ -28,7 +28,6 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [positionFilter, setPositionFilter] = useState<string>('all');
 
-  // Build comprehensive player map with journey data
   const playersWithJourneys = useMemo(() => {
     const playerMap = new Map<string, PlayerWithJourney>();
 
@@ -170,7 +169,10 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
         return true;
       })
       .sort((a, b) => {
-        // Sort by season points descending
+        // Sort by event count descending, fall back to season points
+        if (a.events.length !== b.events.length) {
+          return b.events.length - a.events.length;
+        }
         const aPoints = a.totalSeasonPoints || 0;
         const bPoints = b.totalSeasonPoints || 0;
         return bPoints - aPoints;
@@ -182,6 +184,15 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
     if (!selectedPlayerId) return null;
     return playersWithJourneys.find(p => p.player.id === selectedPlayerId) || null;
   }, [selectedPlayerId, playersWithJourneys]);
+
+  // Clear the right pane when the active filters would hide the current
+  // selection. Otherwise the detail view shows a player who's invisible in
+  // the list, which is confusing.
+  useEffect(() => {
+    if (!selectedPlayerId) return;
+    const stillVisible = filteredPlayers.some(p => p.player.id === selectedPlayerId);
+    if (!stillVisible) setSelectedPlayerId(null);
+  }, [filteredPlayers, selectedPlayerId]);
 
   const getEventIcon = (type: PlayerJourneyEvent['type']) => {
     switch (type) {

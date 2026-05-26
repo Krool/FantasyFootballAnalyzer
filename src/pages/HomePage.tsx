@@ -44,9 +44,12 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
       <aside className={styles.manifesto} aria-label="About this project">
         <span className={styles.manifestoKicker}>★ Completely Free & Open Source</span>
         <p className={styles.manifestoBody}>
-          No accounts. No ads. No data is stored on any server. Your credentials
-          are kept in your browser's session storage and passed through to
-          Sleeper, ESPN, or Yahoo to fetch your league, but are never saved. Free and open source.
+          No accounts. No ads. No data is stored on any server.
+        </p>
+        <p className={styles.manifestoBody}>
+          Your credentials are kept in your browser's session storage and passed
+          through to Sleeper, ESPN, or Yahoo to fetch your league, but are never
+          saved.
         </p>
         <a
           className={styles.manifestoLink}
@@ -152,7 +155,7 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
           <h3 className={styles.featureTitle}>Team Breakdown</h3>
           <p className={styles.featureDesc}>
             Side-by-side team cards with draft grades,
-            waiver ROI, and season stats in one place.
+            waiver ROI, and season stats.
           </p>
         </div>
 
@@ -166,7 +169,7 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
           <h3 className={styles.featureTitle}>Season Awards</h3>
           <p className={styles.featureDesc}>
             Auto-generated trophies for highest scorer,
-            best draft, trade heist, bench warmer, and more.
+            best draft, trade heist, and bench warmer.
           </p>
         </div>
 
@@ -227,7 +230,7 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
           <h3 className={styles.featureTitle}>PDF Export</h3>
           <p className={styles.featureDesc}>
             Full league report as a shareable PDF.
-            Draft grades, awards, and analysis in one document.
+            Draft grades, awards, and analysis.
           </p>
         </div>
       </div>

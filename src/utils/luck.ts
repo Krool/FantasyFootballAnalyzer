@@ -210,9 +210,12 @@ export function calculateLuckMetrics(
       ? (allPlay.wins + allPlay.ties * 0.5) / allPlayTotal
       : 0;
 
-    // Close game win percentage
+    // Close game win percentage. Default to 0 (not 0.5) so a team that never
+    // played a close game doesn't read as "50% in clutch" in the luck table.
+    // The UI uses (closeWins + closeLosses) to decide whether to display a
+    // dash instead of the percentage.
     const closeTotal = closeWins + closeLosses;
-    const closeGamePct = closeTotal > 0 ? closeWins / closeTotal : 0.5;
+    const closeGamePct = closeTotal > 0 ? closeWins / closeTotal : 0;
 
     return {
       teamId: team.id,

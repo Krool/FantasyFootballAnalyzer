@@ -218,10 +218,15 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
               .sort((a, b) => b[1].netPAR - a[1].netPAR)
               .map(([teamId, stats], index) => {
                 const team = teams.find(t => t.id === teamId);
+                // teamId is internal (Sleeper roster id / ESPN team id); if the
+                // team isn't on the current roster (left the league mid-season,
+                // commissioner deletion) fall back to a readable label instead
+                // of leaking the raw id into the UI.
+                const displayName = team?.name || `Unknown team (#${teamId})`;
                 return (
                   <div key={teamId} className={styles.leaderboardItem}>
                     <span className={styles.rank}>#{index + 1}</span>
-                    <span className={styles.teamNameLb}>{team?.name || teamId}</span>
+                    <span className={styles.teamNameLb}>{displayName}</span>
                     <span className={styles.tradeRecord}>
                       {stats.wins}W - {stats.losses}L - {stats.fair}F
                     </span>

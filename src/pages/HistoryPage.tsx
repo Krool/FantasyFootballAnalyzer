@@ -4,23 +4,11 @@ import { loadLeagueHistory as loadSleeperHistory, loadHeadToHeadRecords as loadS
 import { loadLeagueHistory as loadESPNHistory, loadHeadToHeadRecords as loadESPNH2H } from '@/api/espn';
 import { RivalryCard } from '@/components';
 import { logger } from '@/utils/logger';
+import { loadESPNCredentials } from '@/utils/espnCredentials';
 import styles from './HistoryPage.module.css';
 
 interface HistoryPageProps {
   league: League;
-}
-
-// Helper to get ESPN credentials from session storage
-function getESPNCredentials(): { espnS2?: string; swid?: string } | undefined {
-  try {
-    const stored = sessionStorage.getItem('espn_credentials');
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return undefined;
 }
 
 export function HistoryPage({ league }: HistoryPageProps) {
@@ -51,7 +39,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
         if (league.platform === 'sleeper') {
           data = await loadSleeperHistory(league.id, 5);
         } else if (league.platform === 'espn') {
-          const credentials = getESPNCredentials();
+          const credentials = loadESPNCredentials(league.id);
           data = await loadESPNHistory(league.id, 5, credentials);
         } else {
           data = [];
@@ -81,7 +69,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
         if (league.platform === 'sleeper') {
           result = await loadSleeperH2H(league.id, selectedTeamId, 5);
         } else if (league.platform === 'espn') {
-          const credentials = getESPNCredentials();
+          const credentials = loadESPNCredentials(league.id);
           result = await loadESPNH2H(league.id, selectedTeamId, 5, credentials);
         } else {
           result = { records: new Map(), teamName: '' };
@@ -105,45 +93,58 @@ export function HistoryPage({ league }: HistoryPageProps) {
     loadRivalries();
   }, [selectedTeamId, league.id, league.platform, supportsHistory]);
 
-  // Calculate all-time standings
-  // Only count championships for completed seasons (not the current year)
-  const currentYear = new Date().getFullYear();
-
+  // Calculate all-time standings. Aggregate by stable owner id when the
+  // platform supplied one so a manager who renames their team isn't split
+  // across rows (and two managers who happened to share a name aren't merged).
+  // Fall back to team.name only when ownerId is missing (older caches, Yahoo).
+  // Championships are only awarded when the platform tells us who actually
+  // won the playoffs (championTeamId), never inferred from standings.
   const allTimeStats = history.length > 0 ? (() => {
     const stats = new Map<string, {
       name: string;
+      ownerId?: string;
       totalWins: number;
       totalLosses: number;
       totalTies: number;
       totalPointsFor: number;
       championships: number;
       seasons: number;
+      mostRecentSeason: number;
     }>();
 
-    history.forEach(season => {
-      // Only award championship for completed seasons (previous years)
-      const isCompletedSeason = season.season < currentYear;
+    // Iterate newest-to-oldest so the most recent team name wins the display.
+    const orderedHistory = [...history].sort((a, b) => b.season - a.season);
 
+    orderedHistory.forEach(season => {
       season.teams.forEach(team => {
-        const current = stats.get(team.name) || {
+        const key = team.ownerId ?? `name:${team.name}`;
+        const current = stats.get(key) || {
           name: team.name,
+          ownerId: team.ownerId,
           totalWins: 0,
           totalLosses: 0,
           totalTies: 0,
           totalPointsFor: 0,
           championships: 0,
           seasons: 0,
+          mostRecentSeason: -Infinity,
         };
+
+        if (season.season > current.mostRecentSeason) {
+          current.mostRecentSeason = season.season;
+          current.name = team.name;
+        }
 
         current.totalWins += team.wins;
         current.totalLosses += team.losses;
         current.totalTies += team.ties;
         current.totalPointsFor += team.pointsFor;
-        // Only count championship if season is complete
-        if (team.standing === 1 && isCompletedSeason) current.championships++;
+        if (season.championTeamId && team.id === season.championTeamId) {
+          current.championships++;
+        }
         current.seasons++;
 
-        stats.set(team.name, current);
+        stats.set(key, current);
       });
     });
 
@@ -296,33 +297,37 @@ export function HistoryPage({ league }: HistoryPageProps) {
               <h2 className={styles.sectionTitle}>Season History</h2>
               <div className={styles.seasons}>
                 {history.map(season => {
-                  const isCompletedSeason = season.season < currentYear;
+                  const championId = season.championTeamId;
+                  const showInProgress = season.isComplete === false;
                   return (
                     <div key={season.leagueId + '-' + season.season} className={styles.seasonCard}>
                       <div className={styles.seasonHeader}>
                         <h3 className={styles.seasonYear}>
                           {season.season}
-                          {!isCompletedSeason && <span className={styles.inProgress}> (In Progress)</span>}
+                          {showInProgress && <span className={styles.inProgress}> (In Progress)</span>}
                         </h3>
                         <span className={styles.seasonName}>{season.leagueName}</span>
                       </div>
                       <div className={styles.seasonStandings}>
-                        {season.teams.slice(0, 6).map(team => (
-                          <div
-                            key={team.id}
-                            className={`${styles.standingRow} ${team.standing === 1 && isCompletedSeason ? styles.champion : ''}`}
-                          >
-                            <span className={styles.standing}>{team.standing}</span>
-                            <span className={styles.standingTeam}>
-                              {team.standing === 1 && isCompletedSeason && <span className={styles.trophy}>🏆</span>}
-                              {team.name}
-                            </span>
-                            <span className={styles.standingRecord}>
-                              {team.wins}-{team.losses}
-                            </span>
-                            <span className={styles.standingPoints}>{team.pointsFor.toFixed(0)} pts</span>
-                          </div>
-                        ))}
+                        {season.teams.slice(0, 6).map(team => {
+                          const isChamp = !!championId && team.id === championId;
+                          return (
+                            <div
+                              key={team.id}
+                              className={`${styles.standingRow} ${isChamp ? styles.champion : ''}`}
+                            >
+                              <span className={styles.standing}>{team.standing}</span>
+                              <span className={styles.standingTeam}>
+                                {isChamp && <span className={styles.trophy}>🏆</span>}
+                                {team.name}
+                              </span>
+                              <span className={styles.standingRecord}>
+                                {team.wins}-{team.losses}
+                              </span>
+                              <span className={styles.standingPoints}>{team.pointsFor.toFixed(0)} pts</span>
+                            </div>
+                          );
+                        })}
                         {season.teams.length > 6 && (
                           <div className={styles.moreTeams}>
                             +{season.teams.length - 6} more teams

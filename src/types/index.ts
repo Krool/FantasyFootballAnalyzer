@@ -3,6 +3,20 @@ export type Platform = 'sleeper' | 'espn' | 'yahoo';
 export type DraftType = 'snake' | 'auction';
 export type DraftGrade = 'great' | 'good' | 'bad' | 'terrible';
 
+// Where a league sits in its season lifecycle. Pages branch on this to decide
+// whether to render summaries, live-in-progress views, or "not yet" states.
+export type LeagueStatus = 'preseason' | 'live' | 'final';
+
+// One year reachable by the currently loaded league. The dropdown turns this
+// into a load() call by combining the resolved leagueId with the existing
+// credentials (auth/cookies stay the same; only the league pointer changes).
+export interface SeasonOption {
+  year: number;
+  leagueId: string;
+  status: LeagueStatus;
+  leagueName?: string;
+}
+
 export interface Player {
   id: string;
   platformId: string;
@@ -150,6 +164,12 @@ export interface League {
   isLoaded: boolean;
   previousLeagueId?: string;
   rosterSlots?: RosterSlots; // For PAR calculation
+  // Lifecycle phase for this season. Derived per platform from completion
+  // signals + NFL state. Pages use this to choose summary vs. live views.
+  status?: LeagueStatus;
+  // Epoch ms when this snapshot was fetched. Set by the loader; the cache
+  // layer reads it to render "Loaded <time>" and decide refresh affordances.
+  loadedAt?: number;
 }
 
 export interface HeadToHeadRecord {
@@ -175,8 +195,19 @@ export interface SeasonSummary {
   season: number;
   leagueId: string;
   leagueName: string;
+  // Roster/team id of the actual playoff champion, if known.
+  // Undefined when the season hasn't finished or the platform didn't return
+  // bracket data. Do not infer a champion from regular-season standings.
+  championTeamId?: string;
+  // True when the league has completed its playoffs.
+  isComplete?: boolean;
   teams: {
     id: string;
+    // Stable owner/manager identifier across seasons (Sleeper user_id or ESPN
+    // member id). Used by the all-time leaderboard so a team rename doesn't
+    // split one owner into two rows. Optional because Yahoo and older caches
+    // don't supply it.
+    ownerId?: string;
     name: string;
     wins: number;
     losses: number;
@@ -222,6 +253,20 @@ export namespace SleeperAPI {
       type: number; // 0 = redraft, 1 = keeper, 2 = dynasty
     };
     draft_id: string;
+    metadata?: {
+      latest_league_winner_roster_id?: string;
+      [key: string]: string | undefined;
+    };
+  }
+
+  export interface BracketMatch {
+    r: number;        // round number
+    m: number;        // match id
+    t1?: number;      // roster id of team 1
+    t2?: number;      // roster id of team 2
+    w?: number;       // roster id of winner
+    l?: number;       // roster id of loser
+    p?: number;       // placement (1 = championship game)
   }
 
   export interface Roster {
@@ -351,6 +396,9 @@ export namespace ESPNAPI {
         pointsAgainst: number;
       };
     };
+    // Final standing after playoffs (1 = champion). 0 until the season ends.
+    rankCalculatedFinal?: number;
+    playoffSeed?: number;
   }
 
   export interface Member {

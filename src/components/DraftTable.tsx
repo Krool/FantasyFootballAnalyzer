@@ -237,8 +237,8 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
             </tr>
           </thead>
           <tbody>
-            {displayPicks.map((pick, index) => (
-              <tr key={`${pick.teamId}-${pick.pickNumber}-${index}`}>
+            {displayPicks.map((pick) => (
+              <tr key={`${pick.teamId}-${pick.pickNumber}`}>
                 {isAuction ? (
                   <td className="font-mono text-right">${pick.auctionValue || 0}</td>
                 ) : (

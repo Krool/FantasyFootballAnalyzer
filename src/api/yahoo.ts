@@ -1,4 +1,4 @@
-import type { League, Team, DraftPick, Transaction, Player, Trade } from '@/types';
+import type { League, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade } from '@/types';
 import { logger } from '@/utils/logger';
 
 // Backend API URL - Vercel deployment
@@ -223,6 +223,40 @@ export async function getUserLeagues(season: number = new Date().getFullYear()):
   return leagues;
 }
 
+// Resolve every reachable year for the currently loaded league. Yahoo
+// creates a new leagueKey per year and offers no chain, so we match by the
+// loaded league's name across the user's leagues for each year we know a
+// game key for. Years with multiple name matches are dropped — we can't
+// disambiguate without forcing the user back through the picker.
+export async function getAvailableSeasons(
+  currentLeagueKey: string,
+  currentLeagueName: string,
+): Promise<SeasonOption[]> {
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear, ...Object.keys(NFL_GAME_KEYS).map(Number).sort((a, b) => b - a)];
+  const uniqueYears = Array.from(new Set(years));
+
+  const results = await Promise.all(uniqueYears.map(async (year) => {
+    try {
+      const leagues = await getUserLeagues(year);
+      const matches = leagues.filter(l => l.name === currentLeagueName);
+      if (matches.length !== 1) return null;
+      const match = matches[0];
+      // Past years are necessarily final. Current year we leave as 'live'
+      // until the user actually loads it (cheap heuristic; pages re-derive
+      // from the real response on load).
+      const status: LeagueStatus = year < currentYear ? 'final'
+        : match.id === currentLeagueKey ? 'live' : 'live';
+      return { year, leagueId: match.id, status, leagueName: match.name } as SeasonOption;
+    } catch (err) {
+      logger.debug(`[Yahoo] getAvailableSeasons: year ${year} failed:`, err);
+      return null;
+    }
+  }));
+
+  return results.filter((s): s is SeasonOption => s !== null);
+}
+
 // Parse roster settings to get position slot counts
 function parseRosterSettings(settings: any): { QB: number; RB: number; WR: number; TE: number; FLEX: number; K: number; DST: number } {
   const rosterPositions = settings?.roster_positions?.roster_position || [];
@@ -338,6 +372,21 @@ export async function loadLeague(leagueKey: string): Promise<League> {
     team.trades = trades.filter(t => t.teams.some(tt => tt.teamId === team.id));
   }
 
+  // Yahoo signals: draft_status ('predraft' | 'postdraft'), is_finished (1 = done).
+  // Past seasons are always final regardless of what the response says.
+  const currentYear = new Date().getFullYear();
+  const isFinished = String(leagueInfo.is_finished) === '1';
+  let status: LeagueStatus;
+  if (season < currentYear) {
+    status = 'final';
+  } else if (isFinished) {
+    status = 'final';
+  } else if (leagueInfo.draft_status === 'predraft') {
+    status = 'preseason';
+  } else {
+    status = 'live';
+  }
+
   return {
     id: leagueKey,
     platform: 'yahoo',
@@ -361,6 +410,8 @@ export async function loadLeague(leagueKey: string): Promise<League> {
       BENCH: 6, // Default
       IR: 1, // Default
     },
+    status,
+    loadedAt: Date.now(),
   };
 }
 

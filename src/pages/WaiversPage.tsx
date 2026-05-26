@@ -15,9 +15,9 @@ export function WaiversPage({ league }: WaiversPageProps) {
     <div className={styles.page}>
       <div className="container">
         <div className={styles.header}>
-          <h1 className={styles.title}>Waiver Wire Activity</h1>
+          <h1 className={styles.title}>Waiver Wire</h1>
           <p className={styles.subtitle}>
-            Track waiver pickups and free agent adds throughout the {league.season} season
+            {league.season} pickups and free agent adds
           </p>
         </div>
 

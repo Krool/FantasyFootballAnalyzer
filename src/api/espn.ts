@@ -1,4 +1,4 @@
-import type { ESPNAPI, League, Team, DraftPick, Transaction, Player, Trade, RosterSlots, WeeklyMatchup, SeasonSummary, HeadToHeadRecord, MatchupResult } from '@/types';
+import type { ESPNAPI, League, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, RosterSlots, WeeklyMatchup, SeasonSummary, HeadToHeadRecord, MatchupResult } from '@/types';
 import { logger } from '@/utils/logger';
 
 // Direct ESPN API for public leagues
@@ -1297,6 +1297,22 @@ export async function loadLeague(
   }
   logger.debug('[ESPN] Weekly matchups collected:', weeklyMatchups.length);
 
+  // Derive lifecycle status. ESPN sets rankCalculatedFinal once playoffs end
+  // (1 = champion), and currentMatchupPeriod is 0 before week 1.
+  const currentYear = new Date().getFullYear();
+  const allTeamsRanked = leagueData.teams.length > 0 &&
+    leagueData.teams.every(t => (t.rankCalculatedFinal || 0) > 0);
+  let status: LeagueStatus;
+  if (season < currentYear) {
+    status = 'final';
+  } else if (allTeamsRanked) {
+    status = 'final';
+  } else if ((leagueData.status?.currentMatchupPeriod || 0) === 0) {
+    status = 'preseason';
+  } else {
+    status = 'live';
+  }
+
   return {
     id: leagueId,
     platform: 'espn',
@@ -1311,7 +1327,43 @@ export async function loadLeague(
     currentWeek: leagueData.status?.currentMatchupPeriod,
     isLoaded: true,
     rosterSlots,
+    status,
+    loadedAt: Date.now(),
   };
+}
+
+// Probe each recent year for the same leagueId; ESPN keeps the league id
+// stable across seasons, so a missing year means the league didn't exist or
+// the user lost access. Runs in parallel for speed; tolerant of per-year
+// failures. Returns newest year first.
+export async function getAvailableSeasons(
+  leagueId: string,
+  options?: { espnS2?: string; swid?: string },
+  maxSeasons: number = 7,
+): Promise<SeasonOption[]> {
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: maxSeasons }, (_, i) => currentYear - i);
+
+  const probes = await Promise.all(years.map(async (year) => {
+    try {
+      const data = await fetchESPN<ESPNAPI.League>(
+        year, leagueId, ['mTeam', 'mSettings'], options,
+      );
+      if (!data.teams || data.teams.length === 0) return null;
+      const allTeamsRanked = data.teams.every(t => (t.rankCalculatedFinal || 0) > 0);
+      let status: LeagueStatus;
+      if (year < currentYear) status = 'final';
+      else if (allTeamsRanked) status = 'final';
+      else if ((data.status?.currentMatchupPeriod || 0) === 0) status = 'preseason';
+      else status = 'live';
+      return { year, leagueId, status, leagueName: data.settings?.name } as SeasonOption;
+    } catch (err) {
+      logger.debug(`[ESPN] getAvailableSeasons: year ${year} unreachable:`, err);
+      return null;
+    }
+  }));
+
+  return probes.filter((s): s is SeasonOption => s !== null);
 }
 
 // Load historical seasons for ESPN league
@@ -1341,28 +1393,50 @@ export async function loadLeagueHistory(
         break;
       }
 
-      // Build teams with standings
+      // ESPN sets rankCalculatedFinal once the playoffs end; 1 is the champion.
+      // If every team has a non-zero value, we can trust it as the final order.
+      const finalRanks = leagueData.teams.map(t => t.rankCalculatedFinal || 0);
+      const playoffsComplete = finalRanks.length > 0 && finalRanks.every(r => r > 0);
+      const championTeam = playoffsComplete
+        ? leagueData.teams.find(t => t.rankCalculatedFinal === 1)
+        : undefined;
+      const championTeamId = championTeam ? String(championTeam.id) : undefined;
+
       const teamsWithStandings = leagueData.teams
         .map(team => ({
           id: String(team.id),
+          // ESPN team ids renumber when a manager leaves; the member id under
+          // `owners[0]` is stable across seasons, so we use it for all-time
+          // aggregation in the History page.
+          ownerId: team.owners && team.owners.length > 0 ? team.owners[0] : undefined,
           name: team.name || `Team ${team.id}`,
           wins: team.record?.overall.wins || 0,
           losses: team.record?.overall.losses || 0,
           ties: team.record?.overall.ties || 0,
           pointsFor: team.record?.overall.pointsFor || 0,
           pointsAgainst: team.record?.overall.pointsAgainst || 0,
+          finalRank: team.rankCalculatedFinal || 0,
           standing: 0,
         }))
         .sort((a, b) => {
+          if (playoffsComplete) {
+            return a.finalRank - b.finalRank;
+          }
           if (a.wins !== b.wins) return b.wins - a.wins;
           return b.pointsFor - a.pointsFor;
         })
-        .map((team, index) => ({ ...team, standing: index + 1 }));
+        .map((team, index) => {
+          const { finalRank: _finalRank, ...rest } = team;
+          void _finalRank;
+          return { ...rest, standing: index + 1 };
+        });
 
       history.push({
         season,
         leagueId,
         leagueName: leagueData.settings.name,
+        championTeamId,
+        isComplete: playoffsComplete,
         teams: teamsWithStandings,
       });
 

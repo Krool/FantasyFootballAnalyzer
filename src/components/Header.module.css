@@ -62,6 +62,13 @@
 .logo span { color: var(--blood); transition: color .2s ease; }
 .logo:hover span { color: var(--lime); }
 
+.leagueGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 .leagueInfo {
   display: flex;
   align-items: center;
@@ -77,6 +84,38 @@
 .leagueName {
   font-weight: 700;
   color: var(--bone);
+}
+
+.loadedAt {
+  color: var(--bone-dim);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+}
+
+.refreshButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 2px solid var(--bone-dim);
+  color: var(--bone-dim);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.refreshButton:hover:not(:disabled) {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+.refreshButton:disabled { cursor: wait; opacity: 0.6; }
+.refreshIcon { width: 14px; height: 14px; }
+.refreshIconSpinning { animation: ffaSpin 0.8s linear infinite; }
+
+@keyframes ffaSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .nav {

@@ -1,4 +1,4 @@
-import type { SleeperAPI, League, Team, DraftPick, Transaction, Player, Trade, SeasonSummary, HeadToHeadRecord, RosterSlots, WeeklyMatchup } from '@/types';
+import type { SleeperAPI, League, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, SeasonSummary, HeadToHeadRecord, RosterSlots, WeeklyMatchup } from '@/types';
 import { logger } from '@/utils/logger';
 import {
   parseSleeperRosterPositions,
@@ -58,6 +58,10 @@ export async function getMatchups(leagueId: string, week: number): Promise<Sleep
 
 export async function getNFLState(): Promise<{ week: number; season: string; season_type: string }> {
   return fetchJSON('/state/nfl');
+}
+
+export async function getWinnersBracket(leagueId: string): Promise<SleeperAPI.BracketMatch[]> {
+  return fetchJSON<SleeperAPI.BracketMatch[]>(`/league/${leagueId}/winners_bracket`);
 }
 
 export async function getSeasonStats(season: string, week?: number): Promise<SleeperAPI.SeasonStats> {
@@ -536,11 +540,26 @@ export async function loadLeague(leagueId: string): Promise<League> {
     };
   });
 
+  const season = parseInt(leagueData.season);
+  const nflSeason = parseInt(nflState.season);
+  // Sleeper's league.status moves pre_draft → drafting → in_season → complete.
+  // Past-year leagues are always final regardless of what status says.
+  let status: LeagueStatus;
+  if (season < nflSeason) {
+    status = 'final';
+  } else if (leagueData.status === 'complete') {
+    status = 'final';
+  } else if (leagueData.status === 'pre_draft' || leagueData.status === 'drafting') {
+    status = 'preseason';
+  } else {
+    status = 'live';
+  }
+
   return {
     id: leagueId,
     platform: 'sleeper',
     name: leagueData.name,
-    season: parseInt(leagueData.season),
+    season,
     draftType: 'snake', // Sleeper primarily supports snake drafts
     teams,
     trades: tradesWithNames,
@@ -551,7 +570,46 @@ export async function loadLeague(leagueId: string): Promise<League> {
     isLoaded: true,
     previousLeagueId: (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id,
     rosterSlots,
+    status,
+    loadedAt: Date.now(),
   };
+}
+
+// Walk previous_league_id from `leagueId` to enumerate every reachable season.
+// Each hop maps year → leagueId for the dropdown. Sequential because each
+// response carries the pointer to the next one; capped at 15 to bound runtime
+// for very long-running leagues.
+export async function getAvailableSeasons(leagueId: string): Promise<SeasonOption[]> {
+  const out: SeasonOption[] = [];
+  let nflSeason = new Date().getFullYear();
+  try {
+    const nflState = await getNFLState();
+    nflSeason = parseInt(nflState.season);
+  } catch (err) {
+    logger.warn('[Sleeper] getAvailableSeasons: NFL state lookup failed, using calendar year', err);
+  }
+
+  let id: string | undefined = leagueId;
+  let hops = 0;
+  while (id && hops < 15) {
+    try {
+      const data = await getLeague(id);
+      const year = parseInt(data.season);
+      let status: LeagueStatus;
+      if (year < nflSeason) status = 'final';
+      else if (data.status === 'complete') status = 'final';
+      else if (data.status === 'pre_draft' || data.status === 'drafting') status = 'preseason';
+      else status = 'live';
+
+      out.push({ year, leagueId: id, status, leagueName: data.name });
+      id = (data as SleeperAPI.League & { previous_league_id?: string }).previous_league_id;
+      hops++;
+    } catch (err) {
+      logger.warn(`[Sleeper] getAvailableSeasons: stopped at ${id}:`, err);
+      break;
+    }
+  }
+  return out;
 }
 
 // Load historical seasons by following previous_league_id chain
@@ -570,12 +628,36 @@ export async function loadLeagueHistory(leagueId: string, maxSeasons: number = 5
       const userMap = new Map<string, SleeperAPI.User>();
       users.forEach(user => userMap.set(user.user_id, user));
 
-      // Build teams with standings
+      const isComplete = leagueData.status === 'complete';
+
+      // Identify the actual playoff champion (not the regular-season leader).
+      // Prefer the league metadata; fall back to the winners bracket.
+      let championTeamId: string | undefined;
+      const metaWinner = leagueData.metadata?.latest_league_winner_roster_id;
+      if (metaWinner) {
+        championTeamId = String(metaWinner);
+      } else if (isComplete) {
+        try {
+          const bracket = await getWinnersBracket(currentLeagueId);
+          const championship = bracket.find(m => m.p === 1);
+          if (championship?.w) {
+            championTeamId = String(championship.w);
+          }
+        } catch (err) {
+          logger.warn(`Could not load winners bracket for league ${currentLeagueId}:`, err);
+        }
+      }
+
+      // Standings are regular-season order, but pin the actual champion to #1
+      // so the History page can show the right trophy.
       const teamsWithStandings = rosters
         .map(roster => {
           const owner = userMap.get(roster.owner_id);
           return {
             id: String(roster.roster_id),
+            // owner_id is stable across seasons even when roster IDs renumber
+            // or team names change, so the all-time leaderboard keys off it.
+            ownerId: roster.owner_id || undefined,
             name: owner?.display_name || owner?.username || `Team ${roster.roster_id}`,
             wins: roster.settings?.wins || 0,
             losses: roster.settings?.losses || 0,
@@ -586,6 +668,10 @@ export async function loadLeagueHistory(leagueId: string, maxSeasons: number = 5
           };
         })
         .sort((a, b) => {
+          if (championTeamId) {
+            if (a.id === championTeamId) return -1;
+            if (b.id === championTeamId) return 1;
+          }
           if (a.wins !== b.wins) return b.wins - a.wins;
           return b.pointsFor - a.pointsFor;
         })
@@ -595,6 +681,8 @@ export async function loadLeagueHistory(leagueId: string, maxSeasons: number = 5
         season: parseInt(leagueData.season),
         leagueId: currentLeagueId,
         leagueName: leagueData.name,
+        championTeamId,
+        isComplete,
         teams: teamsWithStandings,
       });
 

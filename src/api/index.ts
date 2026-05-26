@@ -1,4 +1,4 @@
-import type { League, LeagueCredentials } from '@/types';
+import type { League, LeagueCredentials, SeasonOption } from '@/types';
 import * as sleeper from './sleeper';
 import * as espn from './espn';
 import * as yahoo from './yahoo';
@@ -48,6 +48,42 @@ export async function loadLeague(
     default:
       throw new Error(`Unknown platform: ${credentials.platform}`);
   }
+}
+
+// Enumerate every year reachable from the currently loaded league. Used by
+// the header year dropdown to map a chosen year to credentials we can hand
+// back to loadLeague(). Returns newest first.
+export async function getAvailableSeasons(
+  credentials: LeagueCredentials,
+  loadedLeague: League,
+): Promise<SeasonOption[]> {
+  switch (credentials.platform) {
+    case 'sleeper':
+      return sleeper.getAvailableSeasons(credentials.leagueId);
+    case 'espn':
+      return espn.getAvailableSeasons(credentials.leagueId, {
+        espnS2: credentials.espnS2,
+        swid: credentials.swid,
+      });
+    case 'yahoo':
+      return yahoo.getAvailableSeasons(credentials.leagueId, loadedLeague.name);
+    default:
+      return [];
+  }
+}
+
+// Turn a picked SeasonOption back into a credentials payload for loadLeague.
+// Cookies/tokens stay the same — only the league pointer and (for ESPN) the
+// season number change.
+export function credentialsForSeason(
+  base: LeagueCredentials,
+  option: SeasonOption,
+): LeagueCredentials {
+  return {
+    ...base,
+    leagueId: option.leagueId,
+    season: option.year,
+  };
 }
 
 export { sleeper, espn, yahoo };

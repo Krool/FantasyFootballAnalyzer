@@ -1,6 +1,6 @@
-import { useEffect, useRef, Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { Header } from '@/components';
+import { useCallback, useEffect, useRef, Suspense, lazy } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Header, YearSelector } from '@/components';
 import { HomePage } from '@/pages';
 
 // Lazy-load data-heavy pages for smaller initial bundle
@@ -14,15 +14,22 @@ const PlayerJourneyPage = lazy(() => import('@/pages/PlayerJourneyPage').then(m 
 import { useLeague } from '@/hooks/useLeague';
 import { useSounds } from '@/hooks/useSounds';
 import { saveTokens, validateOAuthState, clearOAuthState } from '@/api/yahoo';
-import type { LeagueCredentials } from '@/types';
+import { credentialsForSeason } from '@/api';
+import type { LeagueCredentials, SeasonOption } from '@/types';
 import { logger } from '@/utils/logger';
+import { loadSeasons } from '@/utils/seasonsCache';
 
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { league, isLoading, error, progress, load, clear } = useLeague();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { league, credentials, isLoading, error, progress, load, refresh, clear } = useLeague();
   const { playLoadComplete, playError } = useSounds();
   const prevLeagueRef = useRef<typeof league>(null);
+  // The URL year that's currently being satisfied. Prevents the URL-watch
+  // effect from re-firing on the same value (e.g. after a manual load completes
+  // and updates league.season, which would otherwise look like a "change").
+  const handledYearRef = useRef<number | null>(null);
 
   // Play sounds on league load success/error
   useEffect(() => {
@@ -81,6 +88,54 @@ function App() {
     navigate('/draft');
   };
 
+  // Dropdown click → load the picked season and reflect it in the URL so back
+  // / forward and shareable links work. The URL update fires the watch effect
+  // below, but handledYearRef short-circuits the double-load.
+  const handlePickSeason = useCallback(async (option: SeasonOption) => {
+    if (!credentials) return;
+    handledYearRef.current = option.year;
+    const next = credentialsForSeason(credentials, option);
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      params.set('year', String(option.year));
+      return params;
+    }, { replace: false });
+    await load(next);
+  }, [credentials, load, setSearchParams]);
+
+  // Back/forward (or direct link) changes ?year= → resolve year → load. We
+  // use the seasons cache so this doesn't refetch the chain on every nav.
+  useEffect(() => {
+    if (!league || !credentials) return;
+    const yearParam = searchParams.get('year');
+    if (!yearParam) {
+      handledYearRef.current = league.season;
+      return;
+    }
+    const targetYear = parseInt(yearParam);
+    if (!Number.isFinite(targetYear)) return;
+    if (targetYear === league.season) {
+      handledYearRef.current = targetYear;
+      return;
+    }
+    if (handledYearRef.current === targetYear) return;
+    handledYearRef.current = targetYear;
+
+    (async () => {
+      try {
+        const seasons = await loadSeasons(credentials, league);
+        const match = seasons.find(s => s.year === targetYear);
+        if (!match) {
+          logger.warn('[App] URL year not reachable from current league:', targetYear);
+          return;
+        }
+        await load(credentialsForSeason(credentials, match));
+      } catch (err) {
+        logger.warn('[App] Failed to resolve URL year:', err);
+      }
+    })();
+  }, [searchParams, league, credentials, load]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <a href="#main-content" className="skip-nav">Skip to main content</a>
@@ -89,6 +144,16 @@ function App() {
         platform={league?.platform}
         league={league}
         onChangeLeague={clear}
+        onRefresh={league ? refresh : undefined}
+        isRefreshing={isLoading && !!league}
+        yearSelector={league && credentials ? (
+          <YearSelector
+            league={league}
+            credentials={credentials}
+            onPick={handlePickSeason}
+            disabled={isLoading}
+          />
+        ) : undefined}
       />
 
       <main id="main-content" style={{ flex: 1 }}>

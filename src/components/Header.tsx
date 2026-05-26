@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { League } from '@/types';
 import { exportLeagueReport } from '@/utils/exportPdf';
@@ -9,9 +10,25 @@ interface HeaderProps {
   platform?: string;
   league?: League | null;
   onChangeLeague?: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+  // Header doesn't construct YearSelector itself so it stays decoupled from
+  // credentials and the seasons cache. App.tsx renders it and hands it in.
+  yearSelector?: ReactNode;
 }
 
-export function Header({ leagueName, platform, league, onChangeLeague }: HeaderProps) {
+function formatLoadedAt(ts: number): string {
+  const diffMs = Date.now() - ts;
+  const mins = Math.round(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.round(hrs / 24);
+  return `${days}d ago`;
+}
+
+export function Header({ leagueName, platform, league, onChangeLeague, onRefresh, isRefreshing, yearSelector }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { playClick, playExport, playPageTransition, isMuted, toggleMute } = useSounds();
@@ -57,11 +74,35 @@ export function Header({ leagueName, platform, league, onChangeLeague }: HeaderP
         </div>
 
         {leagueName && (
-          <div className={styles.leagueInfo}>
-            <span className={styles.leagueName}>{leagueName}</span>
-            {platform && (
-              <span className={`platform-badge ${platform}`}>{platform}</span>
-            )}
+          <div className={styles.leagueGroup}>
+            {yearSelector}
+            <div className={styles.leagueInfo}>
+              <span className={styles.leagueName}>{leagueName}</span>
+              {platform && (
+                <span className={`platform-badge ${platform}`}>{platform}</span>
+              )}
+              {league?.loadedAt && (
+                <span className={styles.loadedAt} title={new Date(league.loadedAt).toLocaleString()}>
+                  {formatLoadedAt(league.loadedAt)}
+                </span>
+              )}
+              {onRefresh && (
+                <button
+                  type="button"
+                  onClick={() => { playClick(); onRefresh(); }}
+                  className={styles.refreshButton}
+                  title="Refresh league data"
+                  aria-label="Refresh league data"
+                  disabled={isRefreshing}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`${styles.refreshIcon} ${isRefreshing ? styles.refreshIconSpinning : ''}`} aria-hidden="true">
+                    <polyline points="23 4 23 10 17 10" />
+                    <polyline points="1 20 1 14 7 14" />
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
         )}
 

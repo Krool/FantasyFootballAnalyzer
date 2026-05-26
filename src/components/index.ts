@@ -1,4 +1,5 @@
 export { Header } from './Header';
+export { YearSelector } from './YearSelector';
 export { LeagueForm } from './LeagueForm';
 export { DraftTable } from './DraftTable';
 export { WaiverTable } from './WaiverTable';

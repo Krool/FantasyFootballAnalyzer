@@ -1,0 +1,107 @@
+.root {
+  position: relative;
+  display: inline-flex;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  background: transparent;
+  border: 2px solid var(--bone);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .15s ease;
+  box-shadow: 3px 3px 0 var(--bone);
+}
+.trigger:hover:not(:disabled) {
+  background: var(--lime);
+  color: var(--ink);
+  border-color: var(--lime);
+  transform: translate(-1px,-1px);
+  box-shadow: 4px 4px 0 var(--lime);
+}
+.trigger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.year { line-height: 1; }
+.caret { width: 12px; height: 12px; }
+
+.menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 220px;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: var(--ink);
+  border: 2px solid var(--bone);
+  box-shadow: 6px 6px 0 var(--blood);
+  z-index: 200;
+}
+
+.empty {
+  padding: 0.7rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-align: left;
+  transition: background .12s ease, color .12s ease;
+}
+.option:hover { background: var(--bone); color: var(--ink); }
+.optionCurrent {
+  background: var(--lime);
+  color: var(--ink);
+}
+.optionCurrent:hover { background: var(--lime); color: var(--ink); cursor: default; }
+
+.optionYear { letter-spacing: 0.04em; font-size: 0.85rem; }
+
+.optionStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  opacity: 0.85;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status_live { color: var(--lime); }
+.status_preseason { color: #f5b942; }
+.status_final { color: var(--bone-dim); }
+.optionCurrent .status_live,
+.optionCurrent .status_preseason,
+.optionCurrent .status_final { color: var(--ink); }

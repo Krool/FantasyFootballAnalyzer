@@ -55,7 +55,7 @@ export function AwardsPage({ league }: AwardsPageProps) {
     <div className={styles.awardsPage}>
       <div className="container">
         <h1 className={styles.title}>
-          {league.season} Season Awards
+          Season Awards
         </h1>
         <p className={styles.subtitle}>
           {league.name} - {awards.length} Awards
