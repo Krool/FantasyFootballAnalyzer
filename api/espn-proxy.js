@@ -1,5 +1,5 @@
 const ESPN_API_BASE = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons';
-const ALLOWED_ORIGIN = process.env.FRONTEND_URL || 'https://krool.github.io';
+const ALLOWED_ORIGIN = new URL(process.env.FRONTEND_URL || 'https://krool.github.io').origin;
 
 // Allowlists for SSRF prevention
 const ALLOWED_VIEWS = new Set([

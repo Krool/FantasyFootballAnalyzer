@@ -1,4 +1,4 @@
-const ALLOWED_ORIGIN = process.env.FRONTEND_URL || 'https://krool.github.io';
+const ALLOWED_ORIGIN = new URL(process.env.FRONTEND_URL || 'https://krool.github.io').origin;
 
 import crypto from 'crypto';
 

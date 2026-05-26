@@ -1,6 +1,6 @@
 const YAHOO_TOKEN_URL = 'https://api.login.yahoo.com/oauth2/get_token';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://krool.github.io/FantasyFootballAnalyzer';
-const ALLOWED_ORIGIN = process.env.FRONTEND_URL || 'https://krool.github.io';
+const ALLOWED_ORIGIN = new URL(FRONTEND_URL).origin;
 
 export default async function handler(req, res) {
   // Enable CORS with specific origin

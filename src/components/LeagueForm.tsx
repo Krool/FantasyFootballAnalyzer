@@ -10,6 +10,84 @@ const YAHOO_SUPPORTED_SEASONS = [currentYear, 2024, 2023, 2022, 2021, 2020, 2019
   (year, index, arr) => arr.indexOf(year) === index // Remove duplicates if currentYear is 2024
 );
 
+// Companion extension ID (Chrome Web Store / Firefox AMO). Override with VITE_ESPN_EXTENSION_ID
+// once published; defaults to an unpublished placeholder so detection silently fails in dev.
+const ESPN_EXTENSION_ID =
+  (import.meta.env.VITE_ESPN_EXTENSION_ID as string | undefined) || '';
+
+const SWID_REGEX = /\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}/;
+const SWID_BARE_REGEX = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+
+// Strip common paste mistakes: cookie name prefix, quotes, whitespace, trailing semicolons.
+function normalizeEspnS2(raw: string): string {
+  return raw
+    .trim()
+    .replace(/^espn_s2\s*=\s*/i, '')
+    .replace(/^["']|["']$/g, '')
+    .replace(/;+\s*$/, '')
+    .trim();
+}
+
+function normalizeSwid(raw: string): string {
+  let v = raw
+    .trim()
+    .replace(/^swid\s*=\s*/i, '')
+    .replace(/^["']|["']$/g, '')
+    .replace(/;+\s*$/, '')
+    .trim();
+  // Users often paste the bare UUID without braces - add them back.
+  if (!v.startsWith('{') && SWID_BARE_REGEX.test(v)) {
+    const match = v.match(SWID_BARE_REGEX);
+    if (match) v = `{${match[0]}}`;
+  }
+  return v;
+}
+
+function isEspnS2Valid(v: string): boolean {
+  // ESPN's espn_s2 is opaque but always long; ~300-400 base64-ish chars.
+  return v.length >= 100;
+}
+
+function isSwidValid(v: string): boolean {
+  return SWID_REGEX.test(v);
+}
+
+type ExtensionState = 'unknown' | 'detected' | 'missing';
+
+// Probe the companion extension. Returns cookies if installed and user is logged into ESPN.
+function probeExtension(): Promise<{ espnS2: string; swid: string } | null> {
+  return new Promise((resolve) => {
+    const chrome = (window as unknown as { chrome?: { runtime?: { sendMessage?: Function; lastError?: unknown } } }).chrome;
+    if (!ESPN_EXTENSION_ID || !chrome?.runtime?.sendMessage) {
+      resolve(null);
+      return;
+    }
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) { settled = true; resolve(null); }
+    }, 1500);
+    try {
+      chrome.runtime.sendMessage(
+        ESPN_EXTENSION_ID,
+        { type: 'get-espn-cookies' },
+        (response: { espnS2?: string; swid?: string } | undefined) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          // chrome.runtime.lastError is set when the extension isn't installed
+          if (chrome.runtime?.lastError || !response?.espnS2 || !response?.swid) {
+            resolve(null);
+          } else {
+            resolve({ espnS2: response.espnS2, swid: response.swid });
+          }
+        }
+      );
+    } catch {
+      if (!settled) { settled = true; clearTimeout(timer); resolve(null); }
+    }
+  });
+}
+
 interface LeagueFormProps {
   onSubmit: (credentials: LeagueCredentials) => void;
   isLoading: boolean;
@@ -37,12 +115,47 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
   const [loadingYahooLeagues, setLoadingYahooLeagues] = useState(false);
   const [yahooError, setYahooError] = useState<string | null>(null);
 
+  // ESPN companion extension detection
+  const [extensionState, setExtensionState] = useState<ExtensionState>('unknown');
+  const [extensionBusy, setExtensionBusy] = useState(false);
+  const [extensionError, setExtensionError] = useState<string | null>(null);
+
   // Load Yahoo leagues when authenticated
   useEffect(() => {
     if (platform === 'yahoo' && yahooAuthenticated) {
       loadYahooLeagues();
     }
   }, [platform, yahooAuthenticated, season]);
+
+  // Probe for the companion extension when ESPN is selected (once per platform change).
+  useEffect(() => {
+    if (platform !== 'espn' || extensionState !== 'unknown') return;
+    let cancelled = false;
+    probeExtension().then((cookies) => {
+      if (cancelled) return;
+      // We only care whether the extension responded at all here; a "no cookies" response
+      // still means the extension is installed (user just isn't logged into espn.com).
+      setExtensionState(cookies ? 'detected' : 'missing');
+    });
+    return () => { cancelled = true; };
+  }, [platform, extensionState]);
+
+  const handleExtensionFill = async () => {
+    setExtensionBusy(true);
+    setExtensionError(null);
+    try {
+      const cookies = await probeExtension();
+      if (!cookies) {
+        setExtensionError('Could not read cookies. Make sure you are logged into espn.com in this browser.');
+        return;
+      }
+      setEspnS2(cookies.espnS2);
+      setSwid(cookies.swid);
+      setExtensionState('detected');
+    } finally {
+      setExtensionBusy(false);
+    }
+  };
 
   const loadYahooLeagues = async () => {
     setLoadingYahooLeagues(true);
@@ -300,10 +413,51 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
             </button>
           </div>
 
+          {/* Companion extension auto-fill */}
+          {extensionState === 'detected' && (
+            <div className={styles.extensionPanel}>
+              <div className={styles.extensionBadge}>Extension detected</div>
+              <p className={styles.extensionBody}>
+                Log into espn.com in this browser, then click below to fill cookies automatically.
+              </p>
+              <button
+                type="button"
+                className={styles.extensionButton}
+                onClick={handleExtensionFill}
+                disabled={extensionBusy}
+              >
+                {extensionBusy ? 'Reading cookies...' : 'Auto-fill from extension'}
+              </button>
+              {extensionError && <p className={styles.error}>{extensionError}</p>}
+            </div>
+          )}
+
           {showEspnHelp && (
             <div className={styles.helpBox}>
               <p className={styles.helpIntro}>
                 <strong>Why?</strong> ESPN private leagues require authentication cookies that prove you're logged in.
+              </p>
+              <p className={styles.helpIntro}>
+                <strong>Easier way:</strong> install the free{' '}
+                <a
+                  href="https://chromewebstore.google.com/detail/espn-cookie-finder/oapfffhnckhffnpiophbcmjnpomjkfcj"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  ESPN Cookie Finder
+                </a>{' '}
+                extension (also on{' '}
+                <a
+                  href="https://addons.mozilla.org/en-US/firefox/addon/espn-cookie-finder/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Firefox
+                </a>
+                ). Click the extension icon on espn.com, copy both cookies into the fields below. No DevTools needed.
+              </p>
+              <p className={styles.helpIntro}>
+                <strong>Or do it manually:</strong>
               </p>
               <div className={styles.helpSteps}>
                 <div className={styles.helpStep}>
@@ -349,11 +503,19 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
               <input
                 id="espnS2"
                 type="text"
-                className="input"
+                className={`input ${espnS2 ? (isEspnS2Valid(espnS2) ? styles.inputValid : styles.inputInvalid) : ''}`}
                 value={espnS2}
-                onChange={(e) => setEspnS2(e.target.value)}
+                onChange={(e) => setEspnS2(normalizeEspnS2(e.target.value))}
                 placeholder="Leave empty for public leagues"
+                spellCheck={false}
+                autoComplete="off"
               />
+              {espnS2 && !isEspnS2Valid(espnS2) && (
+                <span className={styles.fieldError}>Looks too short. Copy the entire espn_s2 value, not just the start.</span>
+              )}
+              {espnS2 && isEspnS2Valid(espnS2) && (
+                <span className={styles.fieldOk}>Looks good ({espnS2.length} chars)</span>
+              )}
             </div>
             <div className={styles.field}>
               <label htmlFor="swid" className={styles.label}>
@@ -362,13 +524,26 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
               <input
                 id="swid"
                 type="text"
-                className="input"
+                className={`input ${swid ? (isSwidValid(swid) ? styles.inputValid : styles.inputInvalid) : ''}`}
                 value={swid}
-                onChange={(e) => setSwid(e.target.value)}
+                onChange={(e) => setSwid(normalizeSwid(e.target.value))}
                 placeholder="e.g., {XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}"
+                spellCheck={false}
+                autoComplete="off"
               />
+              {swid && !isSwidValid(swid) && (
+                <span className={styles.fieldError}>Should be a UUID wrapped in braces like {'{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}'}.</span>
+              )}
+              {swid && isSwidValid(swid) && (
+                <span className={styles.fieldOk}>Looks good</span>
+              )}
             </div>
           </div>
+
+          {/* Show inconsistency warning if only one cookie is filled */}
+          {((espnS2 && !swid) || (!espnS2 && swid)) && (
+            <p className={styles.warning}>Private leagues need both cookies. Add the other one too.</p>
+          )}
         </div>
       )}
 

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>FFA ESPN Helper</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="kicker">Fantasy Football Analyzer</div>
+      <h1>ESPN Helper</h1>
+
+      <div id="status" class="status pending">Checking espn.com session...</div>
+
+      <div class="actions">
+        <button id="open-espn">Open espn.com</button>
+        <button id="open-app">Open Analyzer</button>
+      </div>
+
+      <p class="hint">
+        This extension only does one thing: when the Analyzer web app asks,
+        it hands over your <code>espn_s2</code> and <code>SWID</code> cookies so you
+        can skip the DevTools step.
+      </p>
+      <p class="hint dim">
+        No data is sent anywhere by this extension.
+      </p>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

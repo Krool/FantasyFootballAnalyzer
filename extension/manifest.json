@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Fantasy Football Analyzer — ESPN Helper",
+  "short_name": "FFA ESPN Helper",
+  "version": "0.1.0",
+  "description": "Skip the DevTools step. Reads your ESPN espn_s2 and SWID cookies and hands them to Fantasy Football Analyzer so you can import private leagues with one click.",
+  "permissions": ["cookies"],
+  "host_permissions": [
+    "https://*.espn.com/*",
+    "https://*.go.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "FFA ESPN Helper",
+    "default_popup": "popup.html"
+  },
+  "externally_connectable": {
+    "matches": [
+      "https://krool.github.io/*",
+      "http://localhost:*/*"
+    ]
+  }
+}
