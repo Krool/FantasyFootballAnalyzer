@@ -1,4 +1,6 @@
 {
+  "buildCommand": "echo 'Vercel hosts api/ only; frontend ships to gh-pages via npm run deploy'",
+  "outputDirectory": ".",
   "headers": [
     {
       "source": "/api/(.*)",
