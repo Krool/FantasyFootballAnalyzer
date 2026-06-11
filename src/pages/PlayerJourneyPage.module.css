@@ -410,3 +410,47 @@ button.moreResults:hover {
   .statsSummary { flex-wrap: wrap; }
   .statCard { min-width: calc(50% - 0.4rem); }
 }
+
+.stints {
+  display: flex;
+  flex-direction: column;
+}
+
+.stintRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px dashed var(--rule);
+  font-family: var(--font-mono);
+}
+
+.stintTeam {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.92rem;
+  color: var(--bone);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stintWeeks {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--bone-dim);
+}
+
+.stintPpg {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--lime);
+}
+
+.stintTotal {
+  font-size: 0.68rem;
+  color: var(--bone-dim);
+}

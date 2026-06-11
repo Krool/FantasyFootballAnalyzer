@@ -467,6 +467,19 @@ export async function loadLeague(leagueId: string): Promise<League> {
     teamNameMap.set(String(roster.roster_id), teamName);
   });
 
+  // Per-player weekly points for Player Journey stint scoring. All weeks,
+  // not just regular season: a stint can run into the playoffs.
+  const playerWeeklyPoints: Record<string, Record<number, number>> = {};
+  allMatchups.forEach((weekMatchups, weekIndex) => {
+    const week = weekIndex + 1;
+    for (const matchup of weekMatchups) {
+      for (const [playerId, points] of Object.entries(matchup.players_points ?? {})) {
+        if (!points) continue;
+        (playerWeeklyPoints[playerId] ??= {})[week] = points;
+      }
+    }
+  });
+
   // Build weekly matchups for luck analysis. Regular season only: luck
   // metrics compare against regular-season records, so playoff weeks would
   // bias scores against playoff teams. Unplayed weeks (both sides zero)
@@ -583,6 +596,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
     hasSuperflex: (leagueData.roster_positions || []).some(
       p => p === 'SUPER_FLEX' || p === 'SUPERFLEX',
     ),
+    playerWeeklyPoints,
     status,
     loadedAt: Date.now(),
   };

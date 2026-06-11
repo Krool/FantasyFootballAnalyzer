@@ -170,6 +170,11 @@ export interface League {
   // League starts a QB-eligible flex (superflex / 2QB). 1QB rankings badly
   // underprice QBs in these leagues; the Draft Room warns when set.
   hasSuperflex?: boolean;
+  // Per-player weekly fantasy points (platform player id -> week -> pts).
+  // Sleeper supplies this from matchup data; Player Journey uses it to score
+  // each stint of a player's season ("6.2 ppg for you, 18.4 after the
+  // trade"). Absent on platforms that don't expose weekly player points.
+  playerWeeklyPoints?: Record<string, Record<number, number>>;
   // Lifecycle phase for this season. Derived per platform from completion
   // signals + NFL state. Pages use this to choose summary vs. live views.
   status?: LeagueStatus;

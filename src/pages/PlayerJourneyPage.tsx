@@ -209,6 +209,53 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
     return playersWithJourneys.find(p => p.player.id === selectedPlayerId) || null;
   }, [selectedPlayerId, playersWithJourneys]);
 
+  // Per-stint scoring: the payoff of a journey page. Each ownership stretch
+  // (drafted/added week -> dropped/traded week) gets a points-per-week from
+  // the platform's weekly player points, when the platform provides them.
+  const stints = useMemo(() => {
+    if (!selectedPlayer) return [];
+    const weekly = league.playerWeeklyPoints?.[selectedPlayer.player.id];
+    if (!weekly) return [];
+
+    // Ownership transitions in week order. Week 0 (draft) counts as week 1.
+    const ownerEvents = selectedPlayer.events
+      .filter(e => e.type === 'drafted' || e.type.endsWith('_add') || e.type === 'traded_to')
+      .map(e => ({ teamName: e.teamName, fromWeek: Math.max(1, e.week ?? 1) }));
+    const dropEvents = selectedPlayer.events
+      .filter(e => e.type.endsWith('_drop') || e.type === 'traded_from')
+      .map(e => ({ week: Math.max(1, e.week ?? 1) }));
+    if (ownerEvents.length === 0) return [];
+
+    const lastWeek = Math.max(...Object.keys(weekly).map(Number));
+    return ownerEvents.map((own, i) => {
+      const nextOwn = ownerEvents[i + 1];
+      // The stint ends at the next ownership change, or a drop, or season end.
+      const dropAfter = dropEvents.find(
+        d => d.week >= own.fromWeek && (!nextOwn || d.week <= nextOwn.fromWeek),
+      );
+      const toWeek = Math.min(
+        nextOwn ? nextOwn.fromWeek - 1 : lastWeek,
+        dropAfter ? dropAfter.week : lastWeek,
+      );
+      let points = 0;
+      let games = 0;
+      for (let week = own.fromWeek; week <= toWeek; week++) {
+        const pts = weekly[week];
+        if (pts === undefined) continue;
+        points += pts;
+        games += 1;
+      }
+      return {
+        teamName: own.teamName,
+        fromWeek: own.fromWeek,
+        toWeek,
+        points,
+        games,
+        ppg: games > 0 ? points / games : 0,
+      };
+    }).filter(s => s.toWeek >= s.fromWeek);
+  }, [selectedPlayer, league.playerWeeklyPoints]);
+
   // Clear the right pane when the active filters would hide the current
   // selection. Otherwise the detail view shows a player who's invisible in
   // the list, which is confusing.
@@ -398,6 +445,29 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
                     <span className={styles.statLabel}>Transactions</span>
                   </div>
                 </div>
+
+                {stints.length > 0 && (
+                  <div className={styles.timeline}>
+                    <h3 className={styles.timelineTitle}>Production By Stint</h3>
+                    <div className={styles.stints}>
+                      {stints.map((stint, i) => (
+                        <div key={i} className={styles.stintRow}>
+                          <span className={styles.stintTeam}>{stint.teamName}</span>
+                          <span className={styles.stintWeeks}>
+                            W{stint.fromWeek}
+                            {stint.toWeek !== stint.fromWeek ? `–W${stint.toWeek}` : ''}
+                          </span>
+                          <span className={styles.stintPpg}>
+                            {stint.ppg.toFixed(1)} ppg
+                          </span>
+                          <span className={styles.stintTotal}>
+                            {stint.points.toFixed(1)} pts in {stint.games} wk
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Journey Timeline */}
                 <div className={styles.timeline}>
