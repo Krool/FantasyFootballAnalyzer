@@ -167,8 +167,8 @@
   transition: width 0.6s cubic-bezier(.2,.8,.2,1);
 }
 .barFill.great    { background: var(--lime); }
-.barFill.good     { background: #a6e22e; }
-.barFill.bad      { background: #ff8a3d; }
+.barFill.good     { background: var(--color-good); }
+.barFill.bad      { background: var(--color-bad); }
 .barFill.terrible { background: var(--blood); }
 
 .gradeCount {
@@ -246,9 +246,9 @@
 }
 
 .luckBadge.veryLucky   { color: var(--lime); }
-.luckBadge.lucky       { color: #a6e22e; }
+.luckBadge.lucky       { color: var(--color-good); }
 .luckBadge.neutral     { color: var(--bone-dim); }
-.luckBadge.unlucky     { color: #ff8a3d; }
+.luckBadge.unlucky     { color: var(--color-bad); }
 .luckBadge.veryUnlucky { color: var(--blood); }
 
 .topScorers {

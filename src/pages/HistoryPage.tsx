@@ -211,9 +211,18 @@ export function HistoryPage({ league }: HistoryPageProps) {
         </div>
 
         {isLoading && (
-          <div className={styles.loading}>
-            <div className="spinner"></div>
-            <p>Loading historical data...</p>
+          <div className={styles.loading} aria-label="Loading historical data">
+            {/* Skeletons hold the layout: this page walks several seasons of
+                API calls and a bare spinner reads as broken after 5 seconds. */}
+            <div className={styles.skeletonRow}>
+              {Array.from({ length: 4 }, (_, i) => (
+                <div key={i} className="skeleton" style={{ width: 130, height: 110 }} />
+              ))}
+            </div>
+            <div className="skeleton" style={{ height: 42, marginTop: '2rem' }} />
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="skeleton" style={{ height: 30, marginTop: 8 }} />
+            ))}
           </div>
         )}
 

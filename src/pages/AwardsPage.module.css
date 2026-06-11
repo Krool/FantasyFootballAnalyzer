@@ -267,9 +267,9 @@
 
 /* Luck Score Colors */
 .veryLucky   { color: var(--lime); font-weight: 700; }
-.lucky       { color: #a6e22e;     font-weight: 700; }
+.lucky       { color: var(--color-good);     font-weight: 700; }
 .neutral     { color: var(--bone-dim); }
-.unlucky     { color: #ff8a3d;     font-weight: 700; }
+.unlucky     { color: var(--color-bad);     font-weight: 700; }
 .veryUnlucky { color: var(--blood);font-weight: 700; }
 
 @media (max-width: 640px) {

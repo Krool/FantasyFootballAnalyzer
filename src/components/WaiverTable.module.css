@@ -218,7 +218,7 @@
 }
 .leaderboardItem:nth-child(1) { background: var(--ink); border: 2px solid var(--lime);    border-left-width: 6px; }
 .leaderboardItem:nth-child(2) { background: var(--ink); border: 2px solid var(--bone);    border-left-width: 6px; }
-.leaderboardItem:nth-child(3) { background: var(--ink); border: 2px solid #cd7f32;        border-left-width: 6px; }
+.leaderboardItem:nth-child(3) { background: var(--ink); border: 2px solid var(--accent-bronze);        border-left-width: 6px; }
 
 .rank {
   font-family: var(--font-headline);

@@ -185,11 +185,11 @@
   margin-left: 0.5rem;
 }
 .soundButton:hover {
-  background: var(--blood);
-  color: var(--bone);
-  border-color: var(--blood);
+  background: var(--lime);
+  color: var(--ink);
+  border-color: var(--lime);
   transform: translate(-1px,-1px);
-  box-shadow: 4px 4px 0 var(--blood);
+  box-shadow: 4px 4px 0 var(--lime);
 }
 
 .exportIcon, .soundIcon { width: 16px; height: 16px; }

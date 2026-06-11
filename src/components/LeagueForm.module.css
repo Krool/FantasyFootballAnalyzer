@@ -227,7 +227,7 @@
 }
 
 .warning {
-  color: #ff8a3d;
+  color: var(--color-bad);
   margin-top: 0.75rem;
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -358,7 +358,7 @@
   border-color: var(--lime) !important;
 }
 .inputInvalid {
-  border-color: #ff8a3d !important;
+  border-color: var(--color-bad) !important;
 }
 
 .fieldOk {
@@ -374,7 +374,7 @@
   font-family: var(--font-mono);
   font-size: 0.68rem;
   letter-spacing: 0.08em;
-  color: #ff8a3d;
+  color: var(--color-bad);
 }
 .fieldError::before { content: '! '; }
 

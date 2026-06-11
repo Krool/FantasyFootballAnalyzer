@@ -114,8 +114,8 @@
   font-size: 0.6rem;
   padding: 0.25rem 0.55rem;
   background: var(--ink);
-  color: #ff8a3d;
-  border: 1px solid #ff8a3d;
+  color: var(--color-bad);
+  border: 1px solid var(--color-bad);
   margin-left: auto;
   letter-spacing: 0.2em;
 }
@@ -186,9 +186,9 @@
   box-shadow: 2px 2px 0 var(--ink);
 }
 .bigWin    { background: var(--lime);  color: var(--ink); }
-.win       { background: #a6e22e;      color: var(--ink); }
+.win       { background: var(--color-good);      color: var(--ink); }
 .fair      { background: var(--ink-2); color: var(--bone-dim); border-color: var(--bone-dim); box-shadow: 2px 2px 0 var(--bone-dim); }
-.loss      { background: #ff8a3d;      color: var(--ink); }
+.loss      { background: var(--color-bad);      color: var(--ink); }
 .bigLoss   { background: var(--blood); color: var(--bone); }
 
 .tradeDetails {
@@ -383,7 +383,7 @@
 }
 .leaderboardItem:nth-child(3) {
   background: var(--ink);
-  border: 2px solid #cd7f32;
+  border: 2px solid var(--accent-bronze);
   border-left-width: 6px;
 }
 

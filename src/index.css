@@ -48,7 +48,6 @@
 
   --color-positive: var(--lime);
   --color-negative: var(--blood);
-  --color-info:     #6cb8ff;
   --color-warning:  #ff8a3d;
 
   /* Platform colors */
@@ -331,5 +330,32 @@ input, select, textarea { font-family: inherit; color: var(--bone); }
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Hard-edged skeleton loader: ink-2 block with a stepped shimmer. */
+.skeleton {
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(241, 236, 225, 0.05) 50%, transparent 100%);
+  animation: skeletonSweep 1.4s steps(8) infinite;
+}
+
+@keyframes skeletonSweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
   }
 }

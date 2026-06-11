@@ -53,6 +53,7 @@
   background: transparent;
   color: var(--bone-dim);
   cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
 .chip:hover {
@@ -151,6 +152,7 @@
 }
 
 .tierBreak {
+  display: inline-block;
   font-family: var(--font-mono);
   font-style: normal;
   font-size: 0.62rem;
@@ -162,6 +164,19 @@
   margin-left: 0.5rem;
   vertical-align: middle;
   white-space: nowrap;
+  transform-origin: left center;
+  animation: tierBreakIn 0.25s ease 1;
+}
+
+@keyframes tierBreakIn {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tierBreak {
+    animation: none;
+  }
 }
 
 .rookieTag,

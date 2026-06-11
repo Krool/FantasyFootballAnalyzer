@@ -47,6 +47,21 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
 
   return (
     <div className={styles.page}>
+      <header className={styles.hero}>
+        <h1 className={styles.title}>
+          Fantasy
+          <br />
+          Football
+          <br />
+          Analyzer
+        </h1>
+        <p className={styles.subtitle}>
+          Draft grades, a live draft room, trade verdicts, waiver receipts,
+          luck scores, and a trophy case for your league. Bring your league
+          id; leave with the receipts.
+        </p>
+      </header>
+
       <aside className={styles.manifesto} aria-label="About this project">
         <span className={styles.manifestoKicker}>★ Completely Free & Open Source</span>
         <p className={styles.manifestoBody}>

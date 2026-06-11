@@ -29,7 +29,7 @@
   pointer-events: none;
 }
 .hero::after {
-  content: 'WK 14';
+  content: 'FFA';
   position: absolute;
   top: 1rem;
   right: -0.5rem;
@@ -316,7 +316,7 @@
   border: 2px solid var(--bone-dim);
 }
 .platform.supported { border-color: var(--lime); }
-.platform.partial { border-color: #a6e22e; }
+.platform.partial { border-color: var(--color-good); }
 .platform.coming { opacity: 0.5; }
 .platformBadge {
   width: 28px; height: 28px;

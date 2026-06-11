@@ -347,8 +347,8 @@ button.moreResults:hover {
 
 .eventDrafted   { border-left-color: var(--lime); }
 .eventTradeIn   { border-left-color: var(--lime); }
-.eventTradeOut  { border-left-color: #ff8a3d; }
-.eventAdd       { border-left-color: #6cb8ff; }
+.eventTradeOut  { border-left-color: var(--color-bad); }
+.eventAdd       { border-left-color: var(--lime); }
 .eventDrop      { border-left-color: var(--blood); }
 
 .eventIcon {

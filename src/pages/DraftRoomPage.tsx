@@ -174,11 +174,23 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
     }
   }, [phase, isSnake, selected, derived.available]);
 
+  // Two-step inline confirm (no window.confirm): first click arms, second
+  // click within 4s resets.
+  const [resetArmed, setResetArmed] = useState(false);
+  useEffect(() => {
+    if (!resetArmed) return;
+    const timer = setTimeout(() => setResetArmed(false), 4000);
+    return () => clearTimeout(timer);
+  }, [resetArmed]);
+
   const confirmReset = () => {
-    if (window.confirm('Reset the draft? All logged picks for this session will be deleted.')) {
-      playClick();
-      reset();
+    if (!resetArmed) {
+      setResetArmed(true);
+      return;
     }
+    setResetArmed(false);
+    playClick();
+    reset();
   };
 
   const isAuction = config.draftType === 'auction';
@@ -286,13 +298,25 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
               </button>
               <button
                 type="button"
-                className={styles.statusBtn}
+                className={resetArmed ? styles.statusBtnDanger : styles.statusBtn}
                 onClick={confirmReset}
-                title="Delete every logged pick and return to setup"
+                title={
+                  resetArmed
+                    ? 'Click again to delete every logged pick (completed drafts stay archived)'
+                    : 'Delete every logged pick and return to setup'
+                }
               >
-                Reset Draft
+                {resetArmed ? 'Confirm Reset?' : 'Reset Draft'}
               </button>
             </div>
+
+            {phase === 'drafting' && (
+              <p className={styles.shortcutLegend}>
+                <kbd>/</kbd> search · <kbd>↑↓</kbd> move · <kbd>Enter</kbd> select
+                {isSnake ? <> · <kbd>D</kbd> draft</> : <> · <kbd>1-9</kbd> winner</>}
+                {' '}· <kbd>Ctrl+Z</kbd> undo
+              </p>
+            )}
 
             <div className={styles.grid}>
               <div className={styles.colSide}>

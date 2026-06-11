@@ -349,3 +349,9 @@
   font-size: 0.65rem;
   color: var(--bone-dim);
 }
+
+.skeletonRow {
+  display: flex;
+  gap: 0.9rem;
+  overflow: hidden;
+}

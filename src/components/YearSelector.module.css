@@ -42,7 +42,7 @@
   list-style: none;
   background: var(--ink);
   border: 2px solid var(--bone);
-  box-shadow: 6px 6px 0 var(--blood);
+  box-shadow: 6px 6px 0 var(--bone);
   z-index: 200;
 }
 
@@ -100,7 +100,7 @@
 }
 
 .status_live { color: var(--lime); }
-.status_preseason { color: #f5b942; }
+.status_preseason { color: var(--gold); }
 .status_final { color: var(--bone-dim); }
 .optionCurrent .status_live,
 .optionCurrent .status_preseason,
