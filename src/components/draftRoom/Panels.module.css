@@ -10,6 +10,14 @@
   gap: 0.6rem;
 }
 
+/* Keep each side panel whole on paper instead of slicing it mid-list at a
+   page break. */
+@media print {
+  .panel {
+    break-inside: avoid;
+  }
+}
+
 .panelMine {
   border-color: var(--bone);
   border-left: 6px solid var(--lime);

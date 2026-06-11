@@ -68,6 +68,15 @@
   background: var(--ink);
 }
 
+/* Print clips scroll panes to their on-screen window at the current scroll
+   offset; let the full pick log print. */
+@media print {
+  .tableWrapper {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;

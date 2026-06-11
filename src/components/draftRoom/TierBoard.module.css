@@ -116,3 +116,13 @@
   padding: 1.5rem 0.75rem;
   text-align: center;
 }
+
+/* Print clips scroll panes to their on-screen window at the current scroll
+   offset; let every column run its full length on paper. */
+@media print {
+  .column {
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+  }
+}

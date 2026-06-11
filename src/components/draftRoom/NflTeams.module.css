@@ -35,6 +35,15 @@
   overflow-y: auto;
 }
 
+/* Print clips scroll panes to their on-screen window at the current scroll
+   offset; let every NFL team card print. */
+@media print {
+  .grid {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
 .card {
   border: 2px solid var(--bone);
   box-shadow: 5px 5px 0 var(--bone);
