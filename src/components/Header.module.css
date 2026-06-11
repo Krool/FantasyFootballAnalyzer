@@ -118,19 +118,15 @@
   to { transform: rotate(360deg); }
 }
 
+/* The nav always gets its own full-width row, whether it holds two draft
+   tabs or the eight season tabs. Ordered last so the sound button (which
+   follows it in the DOM) keeps the same top-right spot in every view
+   instead of wrapping down to the end of the nav row. */
 .nav {
   display: flex;
   gap: 0.25rem;
   align-items: center;
   flex-wrap: wrap;
-}
-
-/* With only one tab (draft-room mode) the nav is narrow enough to share the
-   top row with the league group; force it onto its own row so the tab bar
-   sits where it does in every other view. Ordered last so the sound button
-   (which follows it in the DOM) keeps its top-right spot instead of
-   wrapping onto a lonely third row. */
-.navFull {
   width: 100%;
   order: 10;
 }

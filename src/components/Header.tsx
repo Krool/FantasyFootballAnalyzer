@@ -133,10 +133,7 @@ export function Header({
         )}
 
         {location.pathname !== '/' && (
-          <nav
-            className={`${styles.nav} ${isDraftPrep ? styles.navFull : ''}`}
-            aria-label="Main navigation"
-          >
+          <nav className={styles.nav} aria-label="Main navigation">
             {isDraftPrep ? (
               /* Draft prep is its own focused mode: just the draft-state
                  tabs, no season-analysis noise. */
