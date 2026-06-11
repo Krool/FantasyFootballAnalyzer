@@ -1,0 +1,179 @@
+/* Shared styles for AuctionLogger, SnakeLogger, and MockBidPanel: the
+   "log the next pick" panel that anchors the draft room. */
+
+.logger {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  border: 2px solid var(--bone);
+  background: var(--ink);
+  box-shadow: 5px 5px 0 var(--bone);
+  padding: 1.2rem 1.3rem 1.4rem;
+}
+
+.title {
+  font-family: var(--font-headline);
+  font-size: 1.35rem;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  margin: 0;
+  color: var(--bone);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.select {
+  padding: 0.6rem 0.8rem;
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--lime);
+  box-shadow: 4px 4px 0 var(--lime);
+}
+
+.priceRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.priceInput {
+  padding: 0.6rem 0.8rem;
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  width: 110px;
+}
+
+.priceInput:focus {
+  outline: none;
+  border-color: var(--lime);
+  box-shadow: 4px 4px 0 var(--lime);
+}
+
+.expected {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.expectedValue {
+  font-family: var(--font-headline);
+  font-size: 1.4rem;
+  color: var(--lime);
+  line-height: 1;
+}
+
+.deltaGood,
+.deltaBad {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.deltaGood {
+  color: var(--lime);
+}
+
+.deltaBad {
+  color: var(--blood);
+}
+
+.error {
+  background: var(--ink);
+  border: 2px solid var(--blood);
+  color: var(--bone);
+  padding: 0.7rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  box-shadow: 4px 4px 0 var(--blood);
+}
+
+.submit {
+  padding: 0.8rem 1.2rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  background: var(--lime);
+  color: var(--ink);
+  border: 2px solid var(--lime);
+  box-shadow: 4px 4px 0 var(--ink);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.submit:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.clock,
+.clockMine {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.75rem 0.9rem;
+  border: 2px solid var(--bone-dim);
+}
+
+.clockMine {
+  border-color: var(--lime);
+  background: var(--ink-2);
+}
+
+.clockKicker {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.clockTeam {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.05rem;
+  color: var(--bone);
+}
+
+.clockMine .clockTeam {
+  color: var(--lime);
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}

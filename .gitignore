@@ -35,3 +35,10 @@ dist-ssr
 
 # Claude
 .claude/
+
+# Test coverage output
+coverage
+
+# Source documents transcribed into data/*.csv (keep binaries out of history)
+data/*.xlsx
+data/*.pdf

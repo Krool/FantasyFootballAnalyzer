@@ -27,6 +27,16 @@ const awardImages: Record<string, string> = {
   'Least Active': LeastActive,
 };
 
+// jspdf-autotable attaches the last table's finalY to the doc as a side
+// channel. If autoTable bailed (empty body, plugin not registered, etc.)
+// the property is missing — reading .finalY would throw. Fall back to the
+// caller's current cursor so layout continues at the same spot instead of
+// crashing the export.
+function lastTableFinalY(doc: JsPDFType, fallback: number): number {
+  const finalY = (doc as JsPDFType & { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY;
+  return typeof finalY === 'number' ? finalY : fallback;
+}
+
 // Award types for the first page
 interface Award {
   title: string;
@@ -330,7 +340,7 @@ export async function exportLeagueReport(league: League) {
     margin: { left: 14 },
   });
 
-  const standingsEndY = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+  const standingsEndY = lastTableFinalY(doc, yPos);
 
   // Draft Grade Summary (right side)
   doc.setFontSize(12);
@@ -378,7 +388,7 @@ export async function exportLeagueReport(league: League) {
     margin: { left: 14 + halfWidth + 4 },
   });
 
-  const draftEndY = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+  const draftEndY = lastTableFinalY(doc, yPos);
   yPos = Math.max(standingsEndY, draftEndY) + 8;
 
   // ===== PAGE 2: Draft Picks =====
@@ -414,7 +424,7 @@ export async function exportLeagueReport(league: League) {
     styles: { fontSize: 7 },
   });
 
-  yPos = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+  yPos = lastTableFinalY(doc, yPos) + 10;
 
   // Bottom 10 Draft Picks
   doc.setFontSize(14);
@@ -445,7 +455,7 @@ export async function exportLeagueReport(league: League) {
     styles: { fontSize: 7 },
   });
 
-  yPos = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+  yPos = lastTableFinalY(doc, yPos) + 10;
 
   // ===== PAGE 3: Waiver Wire =====
   doc.addPage();
@@ -482,7 +492,7 @@ export async function exportLeagueReport(league: League) {
     styles: { fontSize: 7 },
   });
 
-  yPos = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+  yPos = lastTableFinalY(doc, yPos) + 10;
 
   // Worst Waiver Pickups (with at least 2 games)
   doc.setFontSize(14);
@@ -514,7 +524,7 @@ export async function exportLeagueReport(league: League) {
     styles: { fontSize: 7 },
   });
 
-  yPos = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+  yPos = lastTableFinalY(doc, yPos) + 10;
 
   // Overall Waiver Performance
   doc.setFontSize(14);
@@ -540,7 +550,7 @@ export async function exportLeagueReport(league: League) {
     styles: { fontSize: 7 },
   });
 
-  yPos = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+  yPos = lastTableFinalY(doc, yPos) + 10;
 
   // ===== PAGE 4: Trades (if any) =====
   if (league.trades && league.trades.length > 0) {
@@ -597,7 +607,7 @@ export async function exportLeagueReport(league: League) {
       styles: { fontSize: 7 },
     });
 
-    yPos = (doc as JsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+    yPos = lastTableFinalY(doc, yPos) + 10;
 
     // Trade Summary by Team
     doc.setFontSize(14);

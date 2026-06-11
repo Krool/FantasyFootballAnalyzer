@@ -101,6 +101,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
   // won the playoffs (championTeamId), never inferred from standings.
   const allTimeStats = history.length > 0 ? (() => {
     const stats = new Map<string, {
+      key: string;
       name: string;
       ownerId?: string;
       totalWins: number;
@@ -119,6 +120,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
       season.teams.forEach(team => {
         const key = team.ownerId ?? `name:${team.name}`;
         const current = stats.get(key) || {
+          key,
           name: team.name,
           ownerId: team.ownerId,
           totalWins: 0,
@@ -266,7 +268,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
                       const totalGames = team.totalWins + team.totalLosses + team.totalTies;
                       const winPct = totalGames > 0 ? (team.totalWins / totalGames * 100).toFixed(1) : '0.0';
                       return (
-                        <tr key={team.name} className={index < 3 ? styles.topThree : ''}>
+                        <tr key={team.key} className={index < 3 ? styles.topThree : ''}>
                           <td className="font-mono">{index + 1}</td>
                           <td>
                             <span className={styles.teamName}>{team.name}</span>

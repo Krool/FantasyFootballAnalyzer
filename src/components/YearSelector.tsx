@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { League, LeagueCredentials, LeagueStatus, SeasonOption } from '@/types';
+import { useSounds } from '@/hooks/useSounds';
 import { getCachedSeasons, loadSeasons } from '@/utils/seasonsCache';
 import { logger } from '@/utils/logger';
 import styles from './YearSelector.module.css';
@@ -22,6 +24,20 @@ export function YearSelector({ league, credentials, onPick, disabled }: YearSele
   const [seasons, setSeasons] = useState<SeasonOption[] | null>(() => getCachedSeasons(credentials));
   const [loading, setLoading] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { playClick, playPageTransition } = useSounds();
+
+  // The upcoming draft year (NFL seasons match the calendar year). Platforms
+  // don't create next season's league until they renew it, so until then the
+  // dropdown offers a "draft prep" entry that opens the Draft Room instead
+  // of loading a league. While ON the Draft Room page, the selector reflects
+  // that state: the trigger shows the draft year and the prep entry is
+  // marked current; picking a real season leaves the Draft Room.
+  const inDraftRoom = location.pathname === '/draft-room';
+  const draftYear = new Date().getFullYear();
+  const hasDraftYear =
+    league.season >= draftYear || (seasons?.some(s => s.year >= draftYear) ?? false);
 
   // Refetch when the league fingerprint changes — switching leagues from the
   // home form invalidates any prior chain we walked.
@@ -62,6 +78,7 @@ export function YearSelector({ league, credentials, onPick, disabled }: YearSele
 
   const handleToggle = () => {
     if (disabled) return;
+    playClick();
     const next = !open;
     setOpen(next);
     if (next && !seasons) {
@@ -71,7 +88,17 @@ export function YearSelector({ league, credentials, onPick, disabled }: YearSele
 
   const handlePick = (option: SeasonOption) => {
     setOpen(false);
-    if (option.year === league.season && option.leagueId === league.id) return;
+    if (option.year === league.season && option.leagueId === league.id) {
+      // Already-loaded season: nothing to load, but from the Draft Room this
+      // is how you get back to the season view.
+      if (inDraftRoom) {
+        playPageTransition();
+        navigate('/draft');
+      }
+      return;
+    }
+    playPageTransition();
+    if (inDraftRoom) navigate('/draft');
     onPick(option);
   };
 
@@ -86,13 +113,37 @@ export function YearSelector({ league, credentials, onPick, disabled }: YearSele
         aria-expanded={open}
         title="Switch season"
       >
-        <span className={styles.year}>{league.season}</span>
+        <span className={styles.year}>{inDraftRoom ? draftYear : league.season}</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.caret} aria-hidden="true">
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
       {open && (
         <ul className={styles.menu} role="listbox" aria-label="Available seasons">
+          {!hasDraftYear && (
+            <li>
+              <button
+                type="button"
+                className={`${styles.option} ${inDraftRoom ? styles.optionCurrent : ''}`}
+                onClick={() => {
+                  setOpen(false);
+                  if (!inDraftRoom) {
+                    playPageTransition();
+                    navigate('/draft-room');
+                  }
+                }}
+                role="option"
+                aria-selected={inDraftRoom}
+                title={`Prep for the ${draftYear} draft: rankings, values, and live draft tracking`}
+              >
+                <span className={styles.optionYear}>{draftYear}</span>
+                <span className={`${styles.optionStatus} ${styles.status_preseason}`}>
+                  <span className={styles.statusDot} aria-hidden="true" />
+                  draft prep
+                </span>
+              </button>
+            </li>
+          )}
           {loading && (
             <li className={styles.empty}>Loading seasons…</li>
           )}

@@ -1,0 +1,229 @@
+/* Shared styles for the draft room side panels: MyTeamPanel, BestValues,
+   LeagueNeeds. */
+
+.panel {
+  border: 2px solid var(--bone-dim);
+  background: var(--ink);
+  padding: 1rem 1.1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.panelMine {
+  border-color: var(--bone);
+  border-left: 6px solid var(--lime);
+  box-shadow: 5px 5px 0 var(--bone);
+}
+
+.panelTitle {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin: 0;
+}
+
+.panelTitle::before {
+  content: '▌ ';
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.35rem 0.1rem;
+  border-bottom: 1px dashed var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rowPos {
+  color: var(--bone-dim);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  min-width: 4ch;
+}
+
+.rowName {
+  flex: 1;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.92rem;
+  color: var(--bone);
+}
+
+.rowValue {
+  color: var(--lime);
+  font-weight: 700;
+}
+
+.rowValueDim {
+  color: var(--bone-dim);
+}
+
+.rowNote {
+  color: var(--blood);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rowEmpty {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
+  padding: 0.5rem 0;
+}
+
+.tierBreak {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  background: var(--lime);
+  padding: 0.08rem 0.3rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.budget {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.budgetMain {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.budgetValue {
+  font-family: var(--font-headline);
+  font-size: 1.8rem;
+  color: var(--lime);
+  line-height: 1;
+}
+
+.budgetLabel {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.budgetPlan {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  border-top: 1px dashed var(--rule);
+  padding-top: 0.4rem;
+}
+
+.planGood,
+.planBad {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.planGood {
+  color: var(--lime);
+}
+
+.planBad {
+  color: var(--blood);
+}
+
+.needsLine {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 0.9rem;
+  color: var(--bone-dim);
+  margin: 0;
+}
+
+.byeLine {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  border-top: 1px dashed var(--rule);
+  padding-top: 0.4rem;
+}
+
+.byeChip {
+  color: var(--bone);
+}
+
+.byeChipWarn {
+  color: var(--ink);
+  background: var(--blood);
+  padding: 0.05rem 0.3rem;
+  font-weight: 700;
+}
+
+.suggestRow {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.4rem 0.1rem;
+  border: none;
+  border-bottom: 1px dashed var(--rule);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.suggestRow:hover {
+  background: var(--ink-2);
+  box-shadow: inset 4px 0 0 var(--lime);
+}
+
+.suggestMain {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.suggestReasons {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lime);
+}

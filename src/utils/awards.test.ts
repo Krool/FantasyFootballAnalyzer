@@ -189,20 +189,24 @@ describe('calculateAllAwards - Luck', () => {
 });
 
 describe('calculateAllAwards - Draft', () => {
+  // Tests below set seasonPoints and pickNumber and let gradeAllPicks derive
+  // valueOverExpected / grade / round, since the production loaders don't
+  // pre-populate those fields on team.draftPicks.
+
   it('awards best and worst draft', () => {
     const teams = [
       makeTeam({
         id: 't1', name: 'Good Drafter',
         draftPicks: [
-          { pickNumber: 1, round: 1, player: { id: 'p1', platformId: 'p1', name: 'Star', position: 'RB', team: 'KC' }, teamId: 't1', teamName: 'Good Drafter', grade: 'great', valueOverExpected: 8, seasonPoints: 300 },
-          { pickNumber: 13, round: 2, player: { id: 'p2', platformId: 'p2', name: 'Solid', position: 'WR', team: 'SF' }, teamId: 't1', teamName: 'Good Drafter', grade: 'good', valueOverExpected: 3, seasonPoints: 200 },
+          // Picked late at RB but finished as RB1: big positive value.
+          { pickNumber: 80, round: 7, player: { id: 'p1', platformId: 'p1', name: 'LateSteal', position: 'RB', team: 'KC' }, teamId: 't1', teamName: 'Good Drafter', seasonPoints: 300 },
         ],
       }),
       makeTeam({
         id: 't2', name: 'Bad Drafter',
         draftPicks: [
-          { pickNumber: 2, round: 1, player: { id: 'p3', platformId: 'p3', name: 'Bust', position: 'RB', team: 'NYG' }, teamId: 't2', teamName: 'Bad Drafter', grade: 'terrible', valueOverExpected: -10, seasonPoints: 50 },
-          { pickNumber: 14, round: 2, player: { id: 'p4', platformId: 'p4', name: 'Meh', position: 'WR', team: 'DET' }, teamId: 't2', teamName: 'Bad Drafter', grade: 'bad', valueOverExpected: -3, seasonPoints: 100 },
+          // Picked first at RB but finished last: big negative value.
+          { pickNumber: 1, round: 1, player: { id: 'p2', platformId: 'p2', name: 'EarlyBust', position: 'RB', team: 'NYG' }, teamId: 't2', teamName: 'Bad Drafter', seasonPoints: 50 },
         ],
       }),
     ];
@@ -218,13 +222,23 @@ describe('calculateAllAwards - Draft', () => {
   });
 
   it('awards draft steal (best single pick)', () => {
+    // 12 WRs picked early with lower points + Sleeper picked 13th and finishing
+    // as WR1 -> expectedRank 13, positionRank 1, valueOverExpected = +12.
+    const fillerWrs = Array.from({ length: 12 }, (_, i) => ({
+      pickNumber: i + 1,
+      round: 1,
+      player: { id: `wr${i}`, platformId: `wr${i}`, name: `Filler${i}`, position: 'WR', team: 'NE' },
+      teamId: 'tf', teamName: 'Filler',
+      seasonPoints: 200 - i * 10,
+    }));
     const teams = [
       makeTeam({
         id: 't1',
         draftPicks: [
-          { pickNumber: 50, round: 5, player: { id: 'p1', platformId: 'p1', name: 'Sleeper', position: 'WR', team: 'BUF' }, teamId: 't1', teamName: 'Team 1', valueOverExpected: 12, seasonPoints: 250 },
+          { pickNumber: 100, round: 9, player: { id: 'sleeper', platformId: 'sleeper', name: 'Sleeper', position: 'WR', team: 'BUF' }, teamId: 't1', teamName: 'Team 1', seasonPoints: 300 },
         ],
       }),
+      makeTeam({ id: 'tf', name: 'Filler', draftPicks: fillerWrs }),
     ];
     const awards = calculateAllAwards({ league: makeLeague(teams) });
 
@@ -235,11 +249,19 @@ describe('calculateAllAwards - Draft', () => {
   });
 
   it('awards draft bust (worst early pick)', () => {
+    // BigBust is the first RB taken (round 1) but finishes dead last among RBs.
     const teams = [
       makeTeam({
         id: 't1',
         draftPicks: [
-          { pickNumber: 3, round: 1, player: { id: 'p1', platformId: 'p1', name: 'BigBust', position: 'RB', team: 'CHI' }, teamId: 't1', teamName: 'Team 1', valueOverExpected: -15, seasonPoints: 20 },
+          { pickNumber: 3, round: 1, player: { id: 'bust', platformId: 'bust', name: 'BigBust', position: 'RB', team: 'CHI' }, teamId: 't1', teamName: 'Team 1', seasonPoints: 20 },
+        ],
+      }),
+      makeTeam({
+        id: 'tf',
+        draftPicks: [
+          { pickNumber: 50, round: 5, player: { id: 'rb1', platformId: 'rb1', name: 'LateRB1', position: 'RB', team: 'KC' }, teamId: 'tf', teamName: 'Filler', seasonPoints: 200 },
+          { pickNumber: 60, round: 6, player: { id: 'rb2', platformId: 'rb2', name: 'LateRB2', position: 'RB', team: 'SF' }, teamId: 'tf', teamName: 'Filler', seasonPoints: 150 },
         ],
       }),
     ];
@@ -251,14 +273,24 @@ describe('calculateAllAwards - Draft', () => {
   });
 
   it('awards late round hero for round 8+ steals', () => {
+    // LateGem is the 13th WR taken (round 8) but finishes WR1. EarlyPick
+    // hits at RB but its round 1 is filtered out of the late-hero award.
+    const fillerWrs = Array.from({ length: 12 }, (_, i) => ({
+      pickNumber: i + 2,
+      round: 1,
+      player: { id: `wr${i}`, platformId: `wr${i}`, name: `Filler${i}`, position: 'WR', team: 'NE' },
+      teamId: 'tf', teamName: 'Filler',
+      seasonPoints: 200 - i * 10,
+    }));
     const teams = [
       makeTeam({
         id: 't1',
         draftPicks: [
-          { pickNumber: 96, round: 8, player: { id: 'p1', platformId: 'p1', name: 'LateGem', position: 'WR', team: 'MIA' }, teamId: 't1', teamName: 'Team 1', valueOverExpected: 9, seasonPoints: 200 },
-          { pickNumber: 1, round: 1, player: { id: 'p2', platformId: 'p2', name: 'EarlyPick', position: 'RB', team: 'KC' }, teamId: 't1', teamName: 'Team 1', valueOverExpected: 15, seasonPoints: 300 },
+          { pickNumber: 96, round: 8, player: { id: 'gem', platformId: 'gem', name: 'LateGem', position: 'WR', team: 'MIA' }, teamId: 't1', teamName: 'Team 1', seasonPoints: 300 },
+          { pickNumber: 1, round: 1, player: { id: 'early', platformId: 'early', name: 'EarlyPick', position: 'RB', team: 'KC' }, teamId: 't1', teamName: 'Team 1', seasonPoints: 300 },
         ],
       }),
+      makeTeam({ id: 'tf', name: 'Filler', draftPicks: fillerWrs }),
     ];
     const awards = calculateAllAwards({ league: makeLeague(teams) });
 
@@ -355,6 +387,230 @@ describe('calculateAllAwards - Trades', () => {
     const awards = calculateAllAwards({ league: makeLeague(teams) });
     const tradeAwards = awards.filter(a => a.category === 'trades');
     expect(tradeAwards.length).toBe(0);
+  });
+});
+
+describe('calculateAllAwards - Waivers', () => {
+  // The waiver helpers read pointsAboveReplacement / gamesSincePickup /
+  // totalPAR off the Player and Transaction shapes via `as any` casts, so
+  // these fixtures stuff those fields in directly.
+  function makeAdd(player: { id: string; name: string; par: number; games?: number }) {
+    return {
+      id: player.id,
+      platformId: player.id,
+      name: player.name,
+      position: 'WR',
+      team: 'XX',
+      pointsAboveReplacement: player.par,
+      gamesSincePickup: player.games ?? 5,
+    };
+  }
+
+  function makeTx(teamId: string, teamName: string, id: string, adds: ReturnType<typeof makeAdd>[], totalPAR: number) {
+    return {
+      id, type: 'waiver' as const, timestamp: Date.now(), week: 1,
+      teamId, teamName, adds, drops: [], totalPAR,
+    };
+  }
+
+  it('awards best waiver pickup to the highest PAR add across the league', () => {
+    const teams = [
+      makeTeam({
+        id: 't1', name: 'Sharp',
+        transactions: [makeTx('t1', 'Sharp', 'tx1', [makeAdd({ id: 'p1', name: 'Diamond', par: 75 })], 75)],
+      }),
+      makeTeam({
+        id: 't2', name: 'Average',
+        transactions: [makeTx('t2', 'Average', 'tx2', [makeAdd({ id: 'p2', name: 'Okay', par: 10 })], 10)],
+      }),
+    ];
+    const awards = calculateAllAwards({ league: makeLeague(teams) });
+
+    const best = awards.find(a => a.id === 'best_waiver');
+    expect(best).toBeDefined();
+    expect(best!.winner.teamId).toBe('t1');
+    expect(best!.detail).toBe('Diamond');
+  });
+
+  it('worst waiver pickup ignores adds with fewer than 2 games started', () => {
+    const teams = [
+      makeTeam({
+        id: 't1',
+        transactions: [
+          // Big negative but only 1 game started -> should be filtered out.
+          makeTx('t1', 'T1', 'tx1', [makeAdd({ id: 'p1', name: 'NotEnough', par: -50, games: 1 })], -50),
+          // Smaller negative with enough games -> this is the actual worst.
+          makeTx('t1', 'T1', 'tx2', [makeAdd({ id: 'p2', name: 'RealDud', par: -20, games: 3 })], -20),
+        ],
+      }),
+    ];
+    const awards = calculateAllAwards({ league: makeLeague(teams) });
+
+    const worst = awards.find(a => a.id === 'worst_waiver');
+    expect(worst).toBeDefined();
+    expect(worst!.detail).toBe('RealDud');
+  });
+
+  it('awards waiver wire king and slacker by total PAR across pickups', () => {
+    const teams = [
+      makeTeam({
+        id: 't1', name: 'King',
+        transactions: [
+          makeTx('t1', 'King', 'tx1', [makeAdd({ id: 'p1', name: 'A', par: 40 })], 40),
+          makeTx('t1', 'King', 'tx2', [makeAdd({ id: 'p2', name: 'B', par: 30 })], 30),
+        ],
+      }),
+      makeTeam({
+        id: 't2', name: 'Slacker',
+        transactions: [
+          makeTx('t2', 'Slacker', 'tx3', [makeAdd({ id: 'p3', name: 'C', par: 1 })], 1),
+        ],
+      }),
+    ];
+    const awards = calculateAllAwards({ league: makeLeague(teams) });
+
+    const king = awards.find(a => a.id === 'waiver_king');
+    expect(king).toBeDefined();
+    expect(king!.winner.teamId).toBe('t1');
+    expect(king!.value).toBe('70.0');
+    expect(king!.detail).toContain('2 pickups');
+
+    const slacker = awards.find(a => a.id === 'waiver_slacker');
+    expect(slacker).toBeDefined();
+    expect(slacker!.winner.teamId).toBe('t2');
+  });
+});
+
+describe('calculateAllAwards - Inline luck helpers', () => {
+  // These awards live inside calculateAllAwards (not separate exported helpers),
+  // so the only way to verify them is through the public entry point with the
+  // right fixture shape.
+
+  it('emits clutch + all-play champ/loser, weekly highs/lows, and consistent', () => {
+    // Three teams, three weeks. t1 always scores high (most weekly highs,
+    // most all-play wins), t3 always scores low (most weekly lows). t1 wins
+    // all three close games against t2, qualifying for clutch.
+    const weeklyT1: WeeklyScore[] = [
+      { teamId: 't1', week: 1, pointsFor: 120, pointsAgainst: 118, won: true, tied: false, margin: 2 },
+      { teamId: 't1', week: 2, pointsFor: 130, pointsAgainst: 128, won: true, tied: false, margin: 2 },
+      { teamId: 't1', week: 3, pointsFor: 125, pointsAgainst: 122, won: true, tied: false, margin: 3 },
+    ];
+    const weeklyT2: WeeklyScore[] = [
+      { teamId: 't2', week: 1, pointsFor: 118, pointsAgainst: 120, won: false, tied: false, margin: -2 },
+      { teamId: 't2', week: 2, pointsFor: 128, pointsAgainst: 130, won: false, tied: false, margin: -2 },
+      { teamId: 't2', week: 3, pointsFor: 122, pointsAgainst: 125, won: false, tied: false, margin: -3 },
+    ];
+    const weeklyT3: WeeklyScore[] = [
+      { teamId: 't3', week: 1, pointsFor: 60, pointsAgainst: 90, won: false, tied: false, margin: -30 },
+      { teamId: 't3', week: 2, pointsFor: 65, pointsAgainst: 95, won: false, tied: false, margin: -30 },
+      { teamId: 't3', week: 3, pointsFor: 70, pointsAgainst: 100, won: false, tied: false, margin: -30 },
+    ];
+
+    const teams = [makeTeam({ id: 't1' }), makeTeam({ id: 't2' }), makeTeam({ id: 't3' })];
+    const luckMetrics = [
+      makeLuckMetrics({
+        teamId: 't1', teamName: 'Clutch', actualWins: 3, actualLosses: 0,
+        weeklyScores: weeklyT1, closeWins: 3, closeLosses: 0, closeGamePct: 1,
+        allPlayWins: 6, allPlayLosses: 0, allPlayTies: 0, biggestWin: 3,
+      }),
+      makeLuckMetrics({
+        teamId: 't2', teamName: 'Middle',
+        weeklyScores: weeklyT2, allPlayWins: 3, allPlayLosses: 3, allPlayTies: 0,
+      }),
+      makeLuckMetrics({
+        teamId: 't3', teamName: 'Bottom',
+        weeklyScores: weeklyT3, allPlayWins: 0, allPlayLosses: 6, allPlayTies: 0,
+      }),
+    ];
+
+    const awards = calculateAllAwards({ league: makeLeague(teams), luckMetrics });
+
+    const clutch = awards.find(a => a.id === 'clutch');
+    expect(clutch).toBeDefined();
+    expect(clutch!.winner.teamId).toBe('t1');
+    expect(clutch!.value).toBe('3-0');
+
+    const champ = awards.find(a => a.id === 'allplay_champ');
+    expect(champ).toBeDefined();
+    expect(champ!.winner.teamId).toBe('t1');
+
+    const loser = awards.find(a => a.id === 'allplay_loser');
+    expect(loser).toBeDefined();
+    expect(loser!.winner.teamId).toBe('t3');
+
+    const highs = awards.find(a => a.id === 'weekly_highs');
+    expect(highs).toBeDefined();
+    expect(highs!.winner.teamId).toBe('t1');
+    expect(highs!.value).toBe(3);
+
+    const lows = awards.find(a => a.id === 'weekly_lows');
+    expect(lows).toBeDefined();
+    expect(lows!.winner.teamId).toBe('t3');
+
+    // Consistent + boom_bust both require >=3 valid weekly scores per team.
+    // t1's scores (120/130/125) are tighter than t3's (60/65/70 has a similar
+    // spread but t1's stdev is smaller). Just verify both awards emit.
+    const consistent = awards.find(a => a.id === 'consistent');
+    expect(consistent).toBeDefined();
+
+    const boomBust = awards.find(a => a.id === 'boom_bust');
+    expect(boomBust).toBeDefined();
+  });
+
+  it('emits narrowest escape and heartbreak loss for the tightest win/loss', () => {
+    const weeklyT1: WeeklyScore[] = [
+      { teamId: 't1', week: 1, pointsFor: 100, pointsAgainst: 99, won: true, tied: false, margin: 1 }, // narrow win
+      { teamId: 't1', week: 2, pointsFor: 80, pointsAgainst: 82, won: false, tied: false, margin: -2 }, // heartbreak loss
+    ];
+    const teams = [makeTeam({ id: 't1' })];
+    const luckMetrics = [makeLuckMetrics({ teamId: 't1', teamName: 'Team 1', weeklyScores: weeklyT1, biggestWin: 1 })];
+    const awards = calculateAllAwards({ league: makeLeague(teams), luckMetrics });
+
+    const escape = awards.find(a => a.id === 'narrowest_escape');
+    expect(escape).toBeDefined();
+    expect(escape!.value).toBe('+1.0');
+    expect(escape!.detail).toBe('Week 1');
+
+    const heartbreak = awards.find(a => a.id === 'heartbreak');
+    expect(heartbreak).toBeDefined();
+    expect(heartbreak!.value).toBe('-2.0');
+    expect(heartbreak!.detail).toBe('Week 2');
+  });
+});
+
+describe('calculateAllAwards - Trade addict', () => {
+  it('awards trade_addict to the team with 3+ trades when others trade less', () => {
+    const teams = [
+      makeTeam({ id: 't1', name: 'Addict' }),
+      makeTeam({ id: 't2', name: 'Quiet' }),
+    ];
+    const trades: Trade[] = Array.from({ length: 4 }, (_, i) => ({
+      id: `trade${i}`, timestamp: Date.now(), week: i + 1, status: 'completed' as const,
+      teams: [
+        { teamId: 't1', teamName: 'Addict', playersReceived: [], playersSent: [], parGained: 5, parLost: 5, netPAR: 0, pointsGained: 0, pointsLost: 0, netValue: 0 },
+        { teamId: 't2', teamName: 'Quiet', playersReceived: [], playersSent: [], parGained: 5, parLost: 5, netPAR: 0, pointsGained: 0, pointsLost: 0, netValue: 0 },
+      ],
+    }));
+
+    const awards = calculateAllAwards({ league: makeLeague(teams, trades) });
+    const addict = awards.find(a => a.id === 'trade_addict');
+    expect(addict).toBeDefined();
+    expect(addict!.winner.teamId).toBe('t1');
+    expect(addict!.value).toBe(4);
+  });
+
+  it('does not award trade_addict when no team has 3+ trades', () => {
+    const teams = [makeTeam({ id: 't1' }), makeTeam({ id: 't2' })];
+    const trades: Trade[] = [{
+      id: 'trade1', timestamp: Date.now(), week: 1, status: 'completed',
+      teams: [
+        { teamId: 't1', teamName: 'T1', playersReceived: [], playersSent: [], parGained: 5, parLost: 5, netPAR: 0, pointsGained: 0, pointsLost: 0, netValue: 0 },
+        { teamId: 't2', teamName: 'T2', playersReceived: [], playersSent: [], parGained: 5, parLost: 5, netPAR: 0, pointsGained: 0, pointsLost: 0, netValue: 0 },
+      ],
+    }];
+
+    const awards = calculateAllAwards({ league: makeLeague(teams, trades) });
+    expect(awards.find(a => a.id === 'trade_addict')).toBeUndefined();
   });
 });
 

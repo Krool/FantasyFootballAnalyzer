@@ -1,0 +1,338 @@
+.setup {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 760px;
+}
+
+.resume {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border: 2px solid var(--bone);
+  border-left: 6px solid var(--lime);
+  box-shadow: 5px 5px 0 var(--bone);
+  padding: 1.2rem 1.4rem;
+}
+
+.resumeText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.resumeKicker {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+
+.resumeDetail {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
+}
+
+.resumeActions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.section {
+  border: 2px solid var(--bone);
+  background: var(--ink);
+  box-shadow: 5px 5px 0 var(--bone);
+  padding: 1.4rem 1.6rem 1.5rem;
+}
+
+.sectionTitle {
+  font-family: var(--font-headline);
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  margin: 0 0 1rem;
+  color: var(--bone);
+}
+
+.sectionCount {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--lime);
+  letter-spacing: 0.15em;
+}
+
+.formatRow {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.input {
+  padding: 0.6rem 0.8rem;
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--lime);
+  box-shadow: 4px 4px 0 var(--lime);
+}
+
+.field .input[type='number'] {
+  width: 90px;
+}
+
+.toggle {
+  display: flex;
+}
+
+.toggleOn,
+.toggleOff {
+  padding: 0.6rem 1.1rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  border: 2px solid var(--bone);
+  cursor: pointer;
+}
+
+.toggleOn {
+  background: var(--lime);
+  color: var(--ink);
+  border-color: var(--lime);
+}
+
+.toggleOff {
+  background: transparent;
+  color: var(--bone-dim);
+}
+
+.toggleOff:hover {
+  color: var(--bone);
+  background: var(--ink-2);
+}
+
+.hint {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  color: var(--bone-dim);
+  margin: 0.75rem 0 0;
+  font-size: 0.92rem;
+}
+
+.teamList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.teamRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  background: var(--ink-2);
+  border-left: 3px solid var(--rule);
+}
+
+.teamRow:hover {
+  border-left-color: var(--lime);
+}
+
+.teamIndex {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--bone-dim);
+  min-width: 2ch;
+}
+
+.meLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.meLabel:has(input:checked) {
+  color: var(--lime);
+}
+
+.teamButtons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.iconBtn {
+  padding: 0.35rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  background: transparent;
+  border: 2px solid var(--bone-dim);
+  color: var(--bone-dim);
+  cursor: pointer;
+}
+
+.iconBtn:hover:not(:disabled) {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+
+.iconBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.slotGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 1rem;
+}
+
+.keeperToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone);
+  cursor: pointer;
+}
+
+.keeperList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.keeperRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  background: var(--ink-2);
+  border-left: 3px solid var(--rule);
+}
+
+.keeperRow:hover {
+  border-left-color: var(--lime);
+}
+
+.keeperTeam {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  min-width: 160px;
+  color: var(--bone);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keeperSelect {
+  flex: 1;
+  padding: 0.5rem 0.7rem;
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  min-width: 0;
+}
+
+.keeperSelect:focus {
+  outline: none;
+  border-color: var(--lime);
+}
+
+.keeperNone {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
+  font-size: 0.9rem;
+}
+
+.startRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn,
+.btnPrimary {
+  padding: 0.7rem 1.2rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  border: 2px solid var(--bone);
+  background: transparent;
+  color: var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn:hover,
+.btnPrimary:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--bone);
+}
+
+.btnPrimary {
+  background: var(--lime);
+  color: var(--ink);
+  border-color: var(--lime);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

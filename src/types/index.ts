@@ -39,6 +39,9 @@ export interface DraftPick {
   player: Player;
   teamId: string;
   teamName: string;
+  // True when the platform marks this pick as a kept player (consumed a
+  // draft slot without being live-drafted). Drives keeper-history hints.
+  isKeeper?: boolean;
   // For auction drafts
   auctionValue?: number;
   // Grading
@@ -294,6 +297,7 @@ export namespace SleeperAPI {
     roster_id: number;
     picked_by: string;
     draft_slot: number;
+    is_keeper?: boolean | null;
     metadata: {
       first_name: string;
       last_name: string;

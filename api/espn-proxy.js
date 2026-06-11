@@ -1,5 +1,6 @@
+import { applyCors } from './_cors.js';
+
 const ESPN_API_BASE = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons';
-const ALLOWED_ORIGIN = new URL(process.env.FRONTEND_URL || 'https://krool.github.io').origin;
 
 // Allowlists for SSRF prevention
 const ALLOWED_VIEWS = new Set([
@@ -9,15 +10,11 @@ const ALLOWED_VIEWS = new Set([
 const ALLOWED_EXTEND = new Set(['communication']);
 
 export default async function handler(req, res) {
-  // Enable CORS with specific origin
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-ESPN-S2, X-ESPN-SWID, X-Fantasy-Filter');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  const handled = applyCors(req, res, {
+    methods: 'GET, OPTIONS',
+    headers: 'Content-Type, X-ESPN-S2, X-ESPN-SWID, X-Fantasy-Filter',
+  });
+  if (handled) return;
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });

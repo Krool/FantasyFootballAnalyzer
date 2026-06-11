@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { DraftTable } from '@/components';
 import type { League } from '@/types';
 import styles from './DraftPage.module.css';
@@ -33,6 +34,14 @@ export function DraftPage({ league }: DraftPageProps) {
               <li>The league is from a previous season without accessible draft history</li>
               <li>The platform doesn't provide draft data for this league type</li>
             </ul>
+            {league.status !== 'final' && (
+              <div className={styles.ctaBlock}>
+                <p>Drafting soon? Track it live and see values, budgets, and needs as you go.</p>
+                <Link to="/draft-room" className={styles.ctaButton}>
+                  Open Draft Room
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -220,12 +220,28 @@ describe('getHeartbreakLoss', () => {
 
 describe('getClutchTeam', () => {
   it('returns undefined when no team has 3+ close games', () => {
+    // Smallest margin in the fixture is 10, so threshold=5 means zero close
+    // games for any team, which falls below the 3-game eligibility cutoff.
     const { teams, matchups } = makeTestData();
-    const metrics = calculateLuckMetrics(matchups, teams, 5); // tight threshold
+    const metrics = calculateLuckMetrics(matchups, teams, 5);
+    expect(getClutchTeam(metrics)).toBeUndefined();
+  });
+
+  it('returns team with best close-game win pct among eligible teams', () => {
+    const teams = [
+      { id: 't1', name: 'Clutch', wins: 3, losses: 0, ties: 0, pointsFor: 300 },
+      { id: 't2', name: 'Choker', wins: 0, losses: 3, ties: 0, pointsFor: 290 },
+    ];
+    const matchups: MatchupData[] = [
+      { week: 1, team1Id: 't1', team1Points: 100, team2Id: 't2', team2Points: 95 },
+      { week: 2, team1Id: 't1', team1Points: 100, team2Id: 't2', team2Points: 99 },
+      { week: 3, team1Id: 't1', team1Points: 100, team2Id: 't2', team2Points: 96 },
+    ];
+    const metrics = calculateLuckMetrics(matchups, teams, 10);
     const clutch = getClutchTeam(metrics);
-    // With threshold=5, few games qualify as close
-    // This is valid either way
-    expect(clutch === undefined || clutch.closeGamePct >= 0).toBe(true);
+    expect(clutch).toBeDefined();
+    expect(clutch!.teamId).toBe('t1');
+    expect(clutch!.closeGamePct).toBe(1);
   });
 });
 

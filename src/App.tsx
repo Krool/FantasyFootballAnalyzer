@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, Suspense, lazy } from 'react';
+import { useCallback, useEffect, useRef, useState, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Header, YearSelector } from '@/components';
 import { HomePage } from '@/pages';
 
 // Lazy-load data-heavy pages for smaller initial bundle
 const DraftPage = lazy(() => import('@/pages/DraftPage').then(m => ({ default: m.DraftPage })));
+const DraftRoomPage = lazy(() => import('@/pages/DraftRoomPage').then(m => ({ default: m.DraftRoomPage })));
+const RankingsPage = lazy(() => import('@/pages/RankingsPage').then(m => ({ default: m.RankingsPage })));
 const TradesPage = lazy(() => import('@/pages/TradesPage').then(m => ({ default: m.TradesPage })));
 const WaiversPage = lazy(() => import('@/pages/WaiversPage').then(m => ({ default: m.WaiversPage })));
 const TeamsPage = lazy(() => import('@/pages/TeamsPage').then(m => ({ default: m.TeamsPage })));
@@ -13,7 +15,16 @@ const AwardsPage = lazy(() => import('@/pages/AwardsPage').then(m => ({ default:
 const PlayerJourneyPage = lazy(() => import('@/pages/PlayerJourneyPage').then(m => ({ default: m.PlayerJourneyPage })));
 import { useLeague } from '@/hooks/useLeague';
 import { useSounds } from '@/hooks/useSounds';
-import { saveTokens, validateOAuthState, clearOAuthState } from '@/api/yahoo';
+import {
+  clearTokens,
+  getAuthUrl,
+  isAuthenticated,
+  saveOAuthReturn,
+  saveTokens,
+  takeOAuthReturn,
+  validateOAuthState,
+  clearOAuthState,
+} from '@/api/yahoo';
 import { credentialsForSeason } from '@/api';
 import type { LeagueCredentials, SeasonOption } from '@/types';
 import { logger } from '@/utils/logger';
@@ -30,6 +41,13 @@ function App() {
   // effect from re-firing on the same value (e.g. after a manual load completes
   // and updates league.season, which would otherwise look like a "change").
   const handledYearRef = useRef<number | null>(null);
+  // OAuth callback runs once per browser navigation. StrictMode would otherwise
+  // double-invoke the effect and the second pass would see no stored state
+  // (validateOAuthState consumes it) and report a bogus CSRF failure.
+  const oauthHandledRef = useRef(false);
+  // Yahoo login status for the header control. The OAuth redirect is a full
+  // page load, so a fresh mount always reads the latest token state.
+  const [yahooConnected, setYahooConnected] = useState(isAuthenticated);
 
   // Play sounds on league load success/error
   useEffect(() => {
@@ -42,9 +60,16 @@ function App() {
     prevLeagueRef.current = league;
   }, [league, error, playLoadComplete, playError]);
 
-  // Handle Yahoo OAuth callback
+  // Handle Yahoo OAuth callback. Guarded by oauthHandledRef so React 18
+  // StrictMode's double-invoke (and any subsequent location changes) don't
+  // re-run the handler — validateOAuthState consumes the stored state, so a
+  // second pass would always report a bogus CSRF failure.
   useEffect(() => {
     const path = location.pathname;
+    if (path !== '/yahoo-success' && path !== '/yahoo-error') return;
+    if (oauthHandledRef.current) return;
+    oauthHandledRef.current = true;
+
     const search = new URLSearchParams(location.search);
 
     if (path === '/yahoo-success') {
@@ -63,30 +88,62 @@ function App() {
         try {
           const tokens = JSON.parse(decodeURIComponent(tokensParam));
           saveTokens(tokens);
-          // Clear URL to prevent token exposure in browser history
-          window.history.replaceState({}, '', '/');
-          // Navigate to home to show league selection
-          navigate('/', { replace: true });
+          setYahooConnected(true);
         } catch (e) {
           logger.error('Failed to parse Yahoo tokens:', e);
-          navigate('/', { replace: true });
         }
-      } else {
-        navigate('/', { replace: true });
       }
+      // A header-initiated login stashed where the user was: reload that
+      // league (instant on a cache hit) and put them back on the same page.
+      const ret = takeOAuthReturn();
+      if (ret?.credentials) {
+        load(ret.credentials)
+          .then(() => navigate(ret.path || '/draft', { replace: true }))
+          .catch(err => {
+            logger.error('Failed to restore league after Yahoo login:', err);
+            navigate('/', { replace: true });
+          });
+        return;
+      }
+      // Use react-router navigate so HashRouter's basename is preserved.
+      // A raw window.history.replaceState('/') would strip the GitHub Pages
+      // basename and leave the user on a 404.
+      navigate('/', { replace: true });
     } else if (path === '/yahoo-error') {
       const errorMsg = search.get('error');
       logger.error('Yahoo OAuth error:', errorMsg);
       clearOAuthState();
+      takeOAuthReturn(); // discard the stash; the login never completed
       navigate('/', { replace: true });
     }
-  }, [location, navigate]);
+  }, [location, navigate, load]);
 
   const handleLoadLeague = async (credentials: LeagueCredentials) => {
     await load(credentials);
     // Navigate to draft page after successful load
     navigate('/draft');
   };
+
+  // Header Yahoo control: connect from anywhere in the app (the login powers
+  // the draft board's live Yahoo prices even for Sleeper/ESPN leagues).
+  const handleYahooConnect = useCallback(async () => {
+    try {
+      const authUrl = await getAuthUrl();
+      saveOAuthReturn({
+        path: location.pathname + location.search,
+        credentials: credentials ?? undefined,
+      });
+      window.location.href = authUrl;
+    } catch (err) {
+      logger.error('Failed to start Yahoo login:', err);
+    }
+  }, [credentials, location.pathname, location.search]);
+
+  const handleYahooDisconnect = useCallback(() => {
+    if (!window.confirm('Disconnect Yahoo? Live auction prices will stop loading.')) return;
+    clearTokens();
+    setYahooConnected(false);
+  }, []);
 
   // Dropdown click → load the picked season and reflect it in the URL so back
   // / forward and shareable links work. The URL update fires the watch effect
@@ -146,6 +203,9 @@ function App() {
         onChangeLeague={clear}
         onRefresh={league ? refresh : undefined}
         isRefreshing={isLoading && !!league}
+        yahooConnected={yahooConnected}
+        onYahooConnect={handleYahooConnect}
+        onYahooDisconnect={handleYahooDisconnect}
         yearSelector={league && credentials ? (
           <YearSelector
             league={league}
@@ -180,6 +240,28 @@ function App() {
             element={
               league ? (
                 <DraftPage league={league} />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+
+          <Route
+            path="/draft-room"
+            element={
+              league ? (
+                <DraftRoomPage league={league} />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+
+          <Route
+            path="/rankings"
+            element={
+              league ? (
+                <RankingsPage league={league} />
               ) : (
                 <Navigate to="/" replace />
               )
@@ -278,21 +360,25 @@ function App() {
         </div>
       </footer>
 
-      {/* Build version indicator */}
-      <div style={{
-        position: 'fixed',
-        bottom: '8px',
-        left: '8px',
-        fontSize: '11px',
-        letterSpacing: '0.15em',
-        textTransform: 'uppercase',
-        color: 'var(--bone-dim)',
-        fontFamily: 'var(--font-mono)',
-        pointerEvents: 'none',
-        zIndex: 9999,
-      }}>
-        v{import.meta.env.VITE_BUILD_TIME || 'dev'}
-      </div>
+      {/* Build version indicator. Only render in deployed builds where
+          VITE_BUILD_TIME is injected; in `vite dev` the env var is undefined
+          and showing "vdev" is just noise. */}
+      {import.meta.env.VITE_BUILD_TIME && (
+        <div style={{
+          position: 'fixed',
+          bottom: '8px',
+          left: '8px',
+          fontSize: '11px',
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          color: 'var(--bone-dim)',
+          fontFamily: 'var(--font-mono)',
+          pointerEvents: 'none',
+          zIndex: 9999,
+        }}>
+          v{import.meta.env.VITE_BUILD_TIME}
+        </div>
+      )}
     </div>
   );
 }

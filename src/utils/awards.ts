@@ -7,6 +7,7 @@
 
 import type { League, Team, Trade } from '@/types';
 import type { LuckMetrics } from './luck';
+import { gradeAllPicks, type GradedPick } from './grading';
 
 export interface Award {
   id: string;
@@ -242,36 +243,49 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       }
     }
 
-    // All-Play Champion (best all-play record)
-    const allPlayChamp = luckMetrics.reduce((best, curr) =>
-      curr.allPlayWins > best.allPlayWins ? curr : best
-    );
-    if (allPlayChamp.allPlayWins > 0) {
-      awards.push({
-        id: 'allplay_champ',
-        name: 'All-Play Champion',
-        category: 'luck',
-        winner: { teamId: allPlayChamp.teamId, teamName: allPlayChamp.teamName },
-        value: `${allPlayChamp.allPlayWins}-${allPlayChamp.allPlayLosses}`,
-        description: 'Best record vs entire league each week',
-        detail: `${((allPlayChamp.allPlayWins / (allPlayChamp.allPlayWins + allPlayChamp.allPlayLosses)) * 100).toFixed(0)}% win rate`,
-        icon: '👊',
-      });
-    }
+    // All-Play awards only make sense once at least one week has been played.
+    // Skip both if every team is 0-0 in the all-play column (preseason cache,
+    // brand new league).
+    const anyAllPlayGames = luckMetrics.some(m => (m.allPlayWins + m.allPlayLosses + m.allPlayTies) > 0);
+    if (anyAllPlayGames) {
+      // All-Play Champion (best all-play record)
+      const allPlayChamp = luckMetrics.reduce((best, curr) =>
+        curr.allPlayWins > best.allPlayWins ? curr : best
+      );
+      if (allPlayChamp.allPlayWins > 0) {
+        const champGames = allPlayChamp.allPlayWins + allPlayChamp.allPlayLosses;
+        awards.push({
+          id: 'allplay_champ',
+          name: 'All-Play Champion',
+          category: 'luck',
+          winner: { teamId: allPlayChamp.teamId, teamName: allPlayChamp.teamName },
+          value: `${allPlayChamp.allPlayWins}-${allPlayChamp.allPlayLosses}`,
+          description: 'Best record vs entire league each week',
+          detail: champGames > 0
+            ? `${((allPlayChamp.allPlayWins / champGames) * 100).toFixed(0)}% win rate`
+            : undefined,
+          icon: '👊',
+        });
+      }
 
-    // All-Play Loser (worst all-play record)
-    const allPlayLoser = luckMetrics.reduce((worst, curr) =>
-      curr.allPlayWins < worst.allPlayWins ? curr : worst
-    );
-    awards.push({
-      id: 'allplay_loser',
-      name: 'All-Play Punching Bag',
-      category: 'luck',
-      winner: { teamId: allPlayLoser.teamId, teamName: allPlayLoser.teamName },
-      value: `${allPlayLoser.allPlayWins}-${allPlayLoser.allPlayLosses}`,
-      description: 'Worst record vs entire league each week',
-      icon: '😵',
-    });
+      // All-Play Loser (worst all-play record)
+      const allPlayLoser = luckMetrics.reduce((worst, curr) =>
+        curr.allPlayWins < worst.allPlayWins ? curr : worst
+      );
+      // Only award when there's an actual loss to point at — a tied 0-0
+      // "loser" is just the alphabetically-first team.
+      if (allPlayLoser.allPlayLosses > 0) {
+        awards.push({
+          id: 'allplay_loser',
+          name: 'All-Play Punching Bag',
+          category: 'luck',
+          winner: { teamId: allPlayLoser.teamId, teamName: allPlayLoser.teamName },
+          value: `${allPlayLoser.allPlayWins}-${allPlayLoser.allPlayLosses}`,
+          description: 'Worst record vs entire league each week',
+          icon: '😵',
+        });
+      }
+    }
 
     // Best Single Week Score
     let bestWeek: { team: LuckMetrics; score: number; week: number } | undefined;
@@ -420,9 +434,15 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   }
 
   // ============ DRAFT AWARDS ============
+  // Grade picks once here so draft awards work regardless of whether the
+  // loader pre-populated grading fields on team.draftPicks (it doesn't).
+  // For auctions, gradeAllPicks already overrides round and expectedRank
+  // based on cost, so the round-based filters below stay meaningful.
+  const gradedPicks = gradeAllPicks(league);
+  const teamMap = new Map(league.teams.map(t => [t.id, t]));
 
   // Best Draft
-  const bestDraft = getBestDraft(league.teams);
+  const bestDraft = getBestDraft(gradedPicks, teamMap);
   if (bestDraft) {
     awards.push({
       id: 'best_draft',
@@ -437,7 +457,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   }
 
   // Worst Draft
-  const worstDraft = getWorstDraft(league.teams);
+  const worstDraft = getWorstDraft(gradedPicks, teamMap);
   if (worstDraft) {
     awards.push({
       id: 'worst_draft',
@@ -452,7 +472,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   }
 
   // Draft Steal (single best pick)
-  const draftSteal = getDraftSteal(league.teams);
+  const draftSteal = getDraftSteal(gradedPicks);
   if (draftSteal) {
     awards.push({
       id: 'draft_steal',
@@ -467,7 +487,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   }
 
   // Draft Bust (single worst pick)
-  const draftBust = getDraftBust(league.teams);
+  const draftBust = getDraftBust(gradedPicks);
   if (draftBust) {
     awards.push({
       id: 'draft_bust',
@@ -482,7 +502,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   }
 
   // Late Round Hero (best pick from rounds 8+)
-  const lateRoundHero = getLateRoundHero(league.teams);
+  const lateRoundHero = getLateRoundHero(gradedPicks);
   if (lateRoundHero) {
     awards.push({
       id: 'late_round_hero',
@@ -749,17 +769,27 @@ function getLowestScorer(teams: Team[]): Team | undefined {
   }, undefined as Team | undefined);
 }
 
-function getBestDraft(teams: Team[]): { team: Team; avgValue: number; greatPicks: number } | undefined {
+function groupPicksByTeam(picks: GradedPick[]): Map<string, GradedPick[]> {
+  const byTeam = new Map<string, GradedPick[]>();
+  picks.forEach(pick => {
+    const list = byTeam.get(pick.teamId) || [];
+    list.push(pick);
+    byTeam.set(pick.teamId, list);
+  });
+  return byTeam;
+}
+
+function getBestDraft(
+  gradedPicks: GradedPick[],
+  teamMap: Map<string, Team>
+): { team: Team; avgValue: number; greatPicks: number } | undefined {
   let best: { team: Team; avgValue: number; greatPicks: number } | undefined;
 
-  teams.forEach(team => {
-    const picks = team.draftPicks || [];
-    if (picks.length === 0) return;
+  groupPicksByTeam(gradedPicks).forEach((picks, teamId) => {
+    const team = teamMap.get(teamId);
+    if (!team || picks.length === 0) return;
 
-    const validPicks = picks.filter(p => p.valueOverExpected !== undefined);
-    if (validPicks.length === 0) return;
-
-    const avgValue = validPicks.reduce((sum, p) => sum + (p.valueOverExpected || 0), 0) / validPicks.length;
+    const avgValue = picks.reduce((sum, p) => sum + p.valueOverExpected, 0) / picks.length;
     const greatPicks = picks.filter(p => p.grade === 'great').length;
 
     if (!best || avgValue > best.avgValue) {
@@ -770,17 +800,17 @@ function getBestDraft(teams: Team[]): { team: Team; avgValue: number; greatPicks
   return best;
 }
 
-function getWorstDraft(teams: Team[]): { team: Team; avgValue: number; terriblePicks: number } | undefined {
+function getWorstDraft(
+  gradedPicks: GradedPick[],
+  teamMap: Map<string, Team>
+): { team: Team; avgValue: number; terriblePicks: number } | undefined {
   let worst: { team: Team; avgValue: number; terriblePicks: number } | undefined;
 
-  teams.forEach(team => {
-    const picks = team.draftPicks || [];
-    if (picks.length === 0) return;
+  groupPicksByTeam(gradedPicks).forEach((picks, teamId) => {
+    const team = teamMap.get(teamId);
+    if (!team || picks.length === 0) return;
 
-    const validPicks = picks.filter(p => p.valueOverExpected !== undefined);
-    if (validPicks.length === 0) return;
-
-    const avgValue = validPicks.reduce((sum, p) => sum + (p.valueOverExpected || 0), 0) / validPicks.length;
+    const avgValue = picks.reduce((sum, p) => sum + p.valueOverExpected, 0) / picks.length;
     const terriblePicks = picks.filter(p => p.grade === 'terrible').length;
 
     if (!worst || avgValue < worst.avgValue) {
@@ -791,69 +821,72 @@ function getWorstDraft(teams: Team[]): { team: Team; avgValue: number; terribleP
   return worst;
 }
 
-function getDraftSteal(teams: Team[]): { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined {
+function getDraftSteal(
+  gradedPicks: GradedPick[]
+): { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined {
   let best: { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined;
 
-  teams.forEach(team => {
-    (team.draftPicks || []).forEach(pick => {
-      const value = pick.valueOverExpected || 0;
-      // Only consider picks with positive value (actual steals)
-      if (value > 0 && (!best || value > best.value)) {
-        best = {
-          teamId: team.id,
-          teamName: team.name,
-          playerName: pick.player.name,
-          value,
-          round: pick.round,
-        };
-      }
-    });
+  gradedPicks.forEach(pick => {
+    const value = pick.valueOverExpected;
+    // Only consider picks with positive value (actual steals)
+    if (value > 0 && (!best || value > best.value)) {
+      best = {
+        teamId: pick.teamId,
+        teamName: pick.teamName,
+        playerName: pick.player.name,
+        value,
+        round: pick.round,
+      };
+    }
   });
 
   return best;
 }
 
-function getDraftBust(teams: Team[]): { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined {
+function getDraftBust(
+  gradedPicks: GradedPick[]
+): { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined {
   let worst: { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined;
 
-  teams.forEach(team => {
-    (team.draftPicks || []).forEach(pick => {
-      const value = pick.valueOverExpected || 0;
-      // Only consider early picks (rounds 1-7) with negative value (actual busts)
-      if (pick.round <= 7 && value < 0 && (!worst || value < worst.value)) {
-        worst = {
-          teamId: team.id,
-          teamName: team.name,
-          playerName: pick.player.name,
-          value,
-          round: pick.round,
-        };
-      }
-    });
+  gradedPicks.forEach(pick => {
+    const value = pick.valueOverExpected;
+    // Only consider early picks (rounds 1-7) with negative value (actual busts).
+    // For auctions, `round` is the cost-tier bucket from gradeAllPicks, so
+    // rounds 1-7 still means "the priciest tiers" here.
+    if (pick.round <= 7 && value < 0 && (!worst || value < worst.value)) {
+      worst = {
+        teamId: pick.teamId,
+        teamName: pick.teamName,
+        playerName: pick.player.name,
+        value,
+        round: pick.round,
+      };
+    }
   });
 
   return worst;
 }
 
-function getLateRoundHero(teams: Team[]): { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined {
+function getLateRoundHero(
+  gradedPicks: GradedPick[]
+): { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined {
   let best: { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined;
 
-  teams.forEach(team => {
-    (team.draftPicks || []).forEach(pick => {
-      // Only consider late picks (round 8+) with positive value
-      if (pick.round >= 8) {
-        const value = pick.valueOverExpected || 0;
-        if (value > 0 && (!best || value > best.value)) {
-          best = {
-            teamId: team.id,
-            teamName: team.name,
-            playerName: pick.player.name,
-            value,
-            round: pick.round,
-          };
-        }
+  gradedPicks.forEach(pick => {
+    // Only consider late picks (round 8+) with positive value. For auctions,
+    // round 8+ corresponds to the cheapest cost tiers.
+    if (pick.round >= 8) {
+      const value = pick.valueOverExpected;
+      if (value > 0 && (!best || value > best.value)) {
+        best = {
+          teamId: pick.teamId,
+          teamName: pick.teamName,
+          playerName: pick.player.name,
+          value,
+          round: pick.round,
+        };
       }
-    });
+    }
   });
 
   return best;

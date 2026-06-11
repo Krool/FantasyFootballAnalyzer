@@ -23,10 +23,20 @@ interface PlayerWithJourney {
   totalSeasonPoints?: number;
 }
 
+// Yahoo placeholder names look like "Player 449.p.12345" — strip those out.
+// The previous regex (/^Player\s+-?\d+$/) also matched a real player with the
+// unusual name "Player 12" so we now require the dotted Yahoo key shape.
+const YAHOO_PLACEHOLDER_NAME = /^Player\s+\d+\.[a-z]\.\d+$/i;
+
+const PAGE_SIZE = 100;
+
 export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [positionFilter, setPositionFilter] = useState<string>('all');
+  // How many of the filtered list to actually render. Restart when the filters
+  // change so the user lands at the top of the new result set.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const playersWithJourneys = useMemo(() => {
     const playerMap = new Map<string, PlayerWithJourney>();
@@ -152,8 +162,8 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
   const filteredPlayers = useMemo(() => {
     return playersWithJourneys
       .filter(p => {
-        // Filter out "Player XXXX" placeholder names
-        if (p.player.name.match(/^Player\s+-?\d+$/)) return false;
+        // Filter out Yahoo placeholder names like "Player 449.p.12345".
+        if (YAHOO_PLACEHOLDER_NAME.test(p.player.name)) return false;
 
         // Search filter
         if (searchQuery) {
@@ -193,6 +203,13 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
     const stillVisible = filteredPlayers.some(p => p.player.id === selectedPlayerId);
     if (!stillVisible) setSelectedPlayerId(null);
   }, [filteredPlayers, selectedPlayerId]);
+
+  // Whenever the filters change the result set, snap the visible window back
+  // to the first page. Otherwise typing a search that returns 5 players would
+  // still try to render whatever count the user had expanded to.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, positionFilter]);
 
   const getEventIcon = (type: PlayerJourneyEvent['type']) => {
     switch (type) {
@@ -273,7 +290,7 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
               </span>
             </div>
             <div className={styles.listItems}>
-              {filteredPlayers.slice(0, 100).map(p => (
+              {filteredPlayers.slice(0, visibleCount).map(p => (
                 <button
                   key={p.player.id}
                   className={`${styles.playerItem} ${selectedPlayerId === p.player.id ? styles.selected : ''}`}
@@ -295,10 +312,15 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
                   </div>
                 </button>
               ))}
-              {filteredPlayers.length > 100 && (
-                <div className={styles.moreResults}>
-                  +{filteredPlayers.length - 100} more players (refine search)
-                </div>
+              {filteredPlayers.length > visibleCount && (
+                <button
+                  type="button"
+                  className={styles.moreResults}
+                  onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+                >
+                  Show {Math.min(PAGE_SIZE, filteredPlayers.length - visibleCount)} more
+                  {' '}({filteredPlayers.length - visibleCount} remaining)
+                </button>
               )}
               {filteredPlayers.length === 0 && (
                 <div className={styles.noResults}>

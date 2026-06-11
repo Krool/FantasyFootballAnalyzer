@@ -1,4 +1,4 @@
-import type { League, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade } from '@/types';
+import type { League, LeagueCredentials, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade } from '@/types';
 import { logger } from '@/utils/logger';
 
 // Backend API URL - Vercel deployment
@@ -12,8 +12,35 @@ const STORAGE_KEYS = {
   OAUTH_STATE: 'yahoo_oauth_state'
 };
 
-// Yahoo game keys by season - use 'nfl' for current season
-// Historical game keys for past seasons
+// Tokens live in localStorage so the login survives closing the tab: the
+// long-lived refresh token silently mints new access tokens (yahooFetch
+// refreshes on expiry), so one login carries through draft season. The
+// OAuth state stays in sessionStorage on purpose — CSRF protection should
+// be scoped to the tab that started the flow.
+//
+// Earlier builds kept tokens in sessionStorage; migrate any that are still
+// there so an in-flight session isn't logged out by the upgrade.
+function migrateLegacyTokens(): void {
+  try {
+    for (const key of [
+      STORAGE_KEYS.ACCESS_TOKEN,
+      STORAGE_KEYS.REFRESH_TOKEN,
+      STORAGE_KEYS.TOKEN_EXPIRY,
+    ]) {
+      const legacy = sessionStorage.getItem(key);
+      if (legacy && !localStorage.getItem(key)) localStorage.setItem(key, legacy);
+      sessionStorage.removeItem(key);
+    }
+  } catch {
+    // Storage unavailable (private mode quirks): tokens just won't persist.
+  }
+}
+migrateLegacyTokens();
+
+// Yahoo game keys by season. Each NFL season is a distinct "game" in
+// Yahoo's universe and gets its own numeric key. Add the new key here
+// when a season ends — until then we lean on the 'nfl' alias for the
+// current year. Reference: https://developer.yahoo.com/fantasysports/
 const NFL_GAME_KEYS: Record<number, string> = {
   2024: '449',
   2023: '423',
@@ -37,7 +64,13 @@ function getGameKey(season: number): string {
   // For past seasons, use the known game key
   const gameKey = NFL_GAME_KEYS[season];
   if (!gameKey) {
-    throw new Error(`Season ${season} not supported`);
+    // Most likely cause: the calendar has rolled over but NFL_GAME_KEYS
+    // wasn't backfilled for the now-past season. Surface that explicitly
+    // instead of the vague "not supported" we used to throw.
+    throw new Error(
+      `Yahoo game key for season ${season} is not configured. ` +
+      `Add it to NFL_GAME_KEYS in src/api/yahoo.ts.`
+    );
   }
   return gameKey;
 }
@@ -51,42 +84,53 @@ interface YahooTokens {
 
 // Token management
 export function saveTokens(tokens: YahooTokens): void {
-  sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
-  sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
-  sessionStorage.setItem(
+  localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
+  // A refresh response may omit the refresh token; keep the one we have.
+  if (tokens.refresh_token) {
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
+  }
+  localStorage.setItem(
     STORAGE_KEYS.TOKEN_EXPIRY,
     String(Date.now() + tokens.expires_in * 1000)
   );
 }
 
 export function getAccessToken(): string | null {
-  return sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
 }
 
 export function getRefreshToken(): string | null {
-  return sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
 }
 
 export function isTokenExpired(): boolean {
-  const expiry = sessionStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY);
+  const expiry = localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY);
   if (!expiry) return true;
   // Add 5 minute buffer
   return Date.now() > parseInt(expiry) - 5 * 60 * 1000;
 }
 
 export function clearTokens(): void {
-  sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-  sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-  sessionStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
+  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
 }
 
+// A stored refresh token counts as logged in: the next API call mints a
+// fresh access token through yahooFetch's expiry check.
 export function isAuthenticated(): boolean {
-  return !!getAccessToken();
+  return !!(getAccessToken() || getRefreshToken());
 }
 
 // Get auth URL to start OAuth flow
 export async function getAuthUrl(): Promise<string> {
-  const response = await fetch(`${API_BASE}/api/yahoo-auth`);
+  // Tell the server where to send the browser back after Yahoo: production
+  // is the GitHub Pages URL, dev is the vite server. The server allowlists
+  // the value, so a bad one just falls back to production.
+  const returnBase = `${window.location.origin}${import.meta.env.BASE_URL}`.replace(/\/+$/, '');
+  const response = await fetch(
+    `${API_BASE}/api/yahoo-auth?return_base=${encodeURIComponent(returnBase)}`,
+  );
   if (!response.ok) {
     throw new Error('Failed to get auth URL');
   }
@@ -118,28 +162,76 @@ export function clearOAuthState(): void {
   sessionStorage.removeItem(STORAGE_KEYS.OAUTH_STATE);
 }
 
+// The OAuth round trip is a full page load, so the route and league the user
+// was on are stashed before the redirect and replayed by App's
+// /yahoo-success handler. Without this, connecting Yahoo from the header
+// mid-session would dump the user back on the league picker.
+const RETURN_KEY = 'yahoo_oauth_return';
+
+export interface OAuthReturn {
+  path: string;
+  credentials?: LeagueCredentials;
+}
+
+export function saveOAuthReturn(ret: OAuthReturn): void {
+  try {
+    localStorage.setItem(RETURN_KEY, JSON.stringify(ret));
+  } catch {
+    // Best effort: losing this only costs a trip back through the picker.
+  }
+}
+
+// Read-and-consume, so a stale stash can't redirect some later login.
+export function takeOAuthReturn(): OAuthReturn | null {
+  try {
+    const raw = localStorage.getItem(RETURN_KEY);
+    localStorage.removeItem(RETURN_KEY);
+    if (!raw) return null;
+    const ret = JSON.parse(raw) as OAuthReturn;
+    return typeof ret?.path === 'string' ? ret : null;
+  } catch {
+    return null;
+  }
+}
+
+// Singleton in-flight refresh promise. Without this, two concurrent
+// yahooFetch calls that both see an expired token would both POST to
+// /yahoo-refresh, and the slower response would overwrite the newer
+// tokens — leaving the user authenticated with the wrong session.
+let refreshInFlight: Promise<void> | null = null;
+
 // Refresh the access token
-async function refreshAccessToken(): Promise<void> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
-  }
+function refreshAccessToken(): Promise<void> {
+  if (refreshInFlight) return refreshInFlight;
 
-  const response = await fetch(`${API_BASE}/api/yahoo-refresh`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ refresh_token: refreshToken })
-  });
+  refreshInFlight = (async () => {
+    try {
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
 
-  if (!response.ok) {
-    clearTokens();
-    throw new Error('Token refresh failed - please re-authenticate');
-  }
+      const response = await fetch(`${API_BASE}/api/yahoo-refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
 
-  const tokens = await response.json();
-  saveTokens(tokens);
+      if (!response.ok) {
+        clearTokens();
+        throw new Error('Token refresh failed - please re-authenticate');
+      }
+
+      const tokens = await response.json();
+      saveTokens(tokens);
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
 }
 
 // Make authenticated API request
@@ -852,4 +944,50 @@ export async function enrichPlayersWithStats(
       }
     }
   }
+}
+
+// --- Draft analysis: Yahoo market ADP and auction cost ---
+// Game-scoped (no league needed): what players actually go for across all
+// Yahoo drafts this season. Routed through the same proxy, which converts
+// Yahoo's XML to JSON.
+
+export interface YahooDraftAnalysis {
+  name: string;
+  pos: string;
+  team: string;
+  averageCost: number | null;
+  averagePick: number | null;
+}
+
+function positiveNumber(value: unknown): number | null {
+  const n = typeof value === 'number' ? value : parseFloat(String(value));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+export async function getDraftAnalysis(maxPlayers = 300): Promise<YahooDraftAnalysis[]> {
+  const results: YahooDraftAnalysis[] = [];
+  for (let start = 0; start < maxPlayers; start += 25) {
+    // sort=AR (actual rank) keeps the pages on fantasy-relevant players;
+    // the default collection order is by player id, i.e. career veterans.
+    const data = await yahooFetch<any>(
+      `/game/nfl/players;sort=AR;start=${start};count=25/draft_analysis`,
+    );
+    const node = data?.fantasy_content?.game?.players?.player;
+    if (!node) break;
+    const page = Array.isArray(node) ? node : [node];
+    for (const player of page) {
+      const analysis = player?.draft_analysis ?? {};
+      const name = String(player?.name?.full ?? '');
+      if (!name) continue;
+      results.push({
+        name,
+        pos: String(player?.display_position ?? ''),
+        team: String(player?.editorial_team_abbr ?? '').toUpperCase(),
+        averageCost: positiveNumber(analysis.average_cost),
+        averagePick: positiveNumber(analysis.average_pick),
+      });
+    }
+    if (page.length < 25) break;
+  }
+  return results;
 }

@@ -1,0 +1,74 @@
+# Keeps draft rankings and auction values fresh: fetches FantasyPros, ESPN,
+# and Sleeper data, rebuilds the bundled pool, and redeploys the site when
+# the data actually changed. Runs daily and on demand (Actions tab -> Update
+# rankings -> Run workflow).
+
+name: Update rankings
+
+on:
+  schedule:
+    # Daily at 11:00 UTC (early morning US). Rankings move most July-September;
+    # the fetch is three cheap requests, so daily year-round is fine.
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-rankings
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Fetch latest rankings
+        run: npm run fetch:rankings
+
+      - name: Rebuild draft pool
+        run: npm run build:draft-data
+
+      - name: Detect real changes (ignore fetch timestamps)
+        id: diff
+        run: |
+          if git diff --quiet -I '"(generatedAt|fetchedAt)"' -- data/raw src/data; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            git checkout -- .
+            echo "No ranking changes since last run."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run tests
+        if: steps.diff.outputs.changed == 'true'
+        run: npm run test:run
+
+      - name: Commit updated data
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/raw src/data
+          git commit -m "Update draft rankings data"
+          git push
+
+      - name: Build site
+        if: steps.diff.outputs.changed == 'true'
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        if: steps.diff.outputs.changed == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist

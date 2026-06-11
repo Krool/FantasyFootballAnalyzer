@@ -263,6 +263,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
       player: convertPlayer(pick.player_id, players),
       teamId: String(pick.roster_id),
       teamName: '', // Will be set later
+      isKeeper: pick.is_keeper === true,
       seasonPoints: seasonStats[pick.player_id]?.pts_ppr ??
                     seasonStats[pick.player_id]?.pts_half_ppr ??
                     seasonStats[pick.player_id]?.pts_std ?? 0,

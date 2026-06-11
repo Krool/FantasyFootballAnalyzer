@@ -1,0 +1,118 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.column {
+  border: 2px solid var(--bone);
+  box-shadow: 5px 5px 0 var(--bone);
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 280px);
+  min-height: 420px;
+  overflow-y: auto;
+}
+
+.columnHeader {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--ink);
+  border-bottom: 2px solid var(--bone);
+}
+
+.columnPos {
+  font-family: var(--font-headline);
+  font-size: 1.15rem;
+  text-transform: uppercase;
+  color: var(--bone);
+  line-height: 0.95;
+}
+
+.columnMeta {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  text-align: right;
+}
+
+.tierGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.tierLabel,
+.tierLabelHot {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.45rem 0.75rem 0.3rem;
+  border-bottom: 1px dashed var(--rule);
+  color: var(--bone-dim);
+}
+
+.tierLabelHot {
+  color: var(--ink);
+  background: var(--lime);
+  border-bottom: none;
+}
+
+.player,
+.playerOn {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.1rem;
+  padding: 0.4rem 0.75rem;
+  border: none;
+  border-bottom: 1px dashed var(--rule);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.player:hover {
+  background: var(--ink-2);
+  box-shadow: inset 4px 0 0 var(--lime);
+}
+
+.playerOn {
+  background: var(--ink-2);
+  box-shadow: inset 4px 0 0 var(--lime);
+}
+
+.playerName {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.92rem;
+  color: var(--bone);
+}
+
+.playerMeta {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.empty {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
+  padding: 1.5rem 0.75rem;
+  text-align: center;
+}

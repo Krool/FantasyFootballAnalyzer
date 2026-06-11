@@ -1,23 +1,32 @@
+import { applyCors, isAllowedFrontend } from './_cors.js';
+
 const YAHOO_TOKEN_URL = 'https://api.login.yahoo.com/oauth2/get_token';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://krool.github.io/FantasyFootballAnalyzer';
-const ALLOWED_ORIGIN = new URL(FRONTEND_URL).origin;
+const FRONTEND_FALLBACK = process.env.FRONTEND_URL || 'https://krool.github.io/FantasyFootballAnalyzer';
+
+// The frontend base rides inside the state after the CSRF nonce (see
+// yahoo-auth.js). Validate it against the allowlist before redirecting -
+// the state came back through Yahoo's URL, so treat it as untrusted input.
+function frontendFromState(state) {
+  if (typeof state !== 'string') return FRONTEND_FALLBACK;
+  const encoded = state.split('.')[1];
+  if (!encoded) return FRONTEND_FALLBACK;
+  try {
+    const url = Buffer.from(encoded, 'base64url').toString('utf8');
+    return isAllowedFrontend(url) ? url : FRONTEND_FALLBACK;
+  } catch {
+    return FRONTEND_FALLBACK;
+  }
+}
 
 export default async function handler(req, res) {
-  // Enable CORS with specific origin
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (applyCors(req, res, { methods: 'GET, OPTIONS', headers: 'Content-Type' })) return;
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { code, state, error, error_description } = req.query;
+  const FRONTEND_URL = frontendFromState(state);
 
   // Validate state parameter for CSRF protection
   // The state should be validated against a stored value on the client side

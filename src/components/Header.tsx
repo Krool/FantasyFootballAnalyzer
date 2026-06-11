@@ -15,6 +15,11 @@ interface HeaderProps {
   // Header doesn't construct YearSelector itself so it stays decoupled from
   // credentials and the seasons cache. App.tsx renders it and hands it in.
   yearSelector?: ReactNode;
+  // Yahoo login control: connecting anywhere in the app feeds live Yahoo
+  // auction prices into the draft board, whatever platform the league is on.
+  yahooConnected?: boolean;
+  onYahooConnect?: () => void;
+  onYahooDisconnect?: () => void;
 }
 
 function formatLoadedAt(ts: number): string {
@@ -28,10 +33,23 @@ function formatLoadedAt(ts: number): string {
   return `${days}d ago`;
 }
 
-export function Header({ leagueName, platform, league, onChangeLeague, onRefresh, isRefreshing, yearSelector }: HeaderProps) {
+export function Header({
+  leagueName,
+  platform,
+  league,
+  onChangeLeague,
+  onRefresh,
+  isRefreshing,
+  yearSelector,
+  yahooConnected,
+  onYahooConnect,
+  onYahooDisconnect,
+}: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { playClick, playExport, playPageTransition, isMuted, toggleMute } = useSounds();
+  // Draft prep routes share a focused nav (Draft + Rankings only).
+  const isDraftPrep = location.pathname === '/draft-room' || location.pathname === '/rankings';
 
   const handleExportPdf = () => {
     if (league) {
@@ -107,7 +125,33 @@ export function Header({ leagueName, platform, league, onChangeLeague, onRefresh
         )}
 
         {location.pathname !== '/' && (
-          <nav className={styles.nav} aria-label="Main navigation">
+          <nav
+            className={`${styles.nav} ${isDraftPrep ? styles.navFull : ''}`}
+            aria-label="Main navigation"
+          >
+            {isDraftPrep ? (
+              /* Draft prep is its own focused mode: just the draft-state
+                 tabs, no season-analysis noise. */
+              <>
+                <Link
+                  to="/draft-room"
+                  className={`${styles.navLink} ${location.pathname === '/draft-room' ? styles.active : ''}`}
+                  onClick={handleNavClick}
+                  aria-current={location.pathname === '/draft-room' ? 'page' : undefined}
+                >
+                  Draft
+                </Link>
+                <Link
+                  to="/rankings"
+                  className={`${styles.navLink} ${location.pathname === '/rankings' ? styles.active : ''}`}
+                  onClick={handleNavClick}
+                  aria-current={location.pathname === '/rankings' ? 'page' : undefined}
+                >
+                  Rankings
+                </Link>
+              </>
+            ) : (
+              <>
             <Link
               to="/draft"
               className={`${styles.navLink} ${location.pathname === '/draft' ? styles.active : ''}`}
@@ -116,6 +160,19 @@ export function Header({ leagueName, platform, league, onChangeLeague, onRefresh
             >
               Draft
             </Link>
+            {/* Draft prep is for the upcoming season; on a completed season
+                the tab is noise. The year dropdown's "draft prep" entry stays
+                as the path into the Draft Room. */}
+            {league?.status !== 'final' && (
+              <Link
+                to="/draft-room"
+                className={`${styles.navLink} ${location.pathname === '/draft-room' ? styles.active : ''}`}
+                onClick={handleNavClick}
+                aria-current={location.pathname === '/draft-room' ? 'page' : undefined}
+              >
+                Draft Room
+              </Link>
+            )}
             <Link
               to="/trades"
               className={`${styles.navLink} ${location.pathname === '/trades' ? styles.active : ''}`}
@@ -179,6 +236,27 @@ export function Header({ leagueName, platform, league, onChangeLeague, onRefresh
               </svg>
               PDF
             </button>
+              </>
+            )}
+            {onYahooConnect && onYahooDisconnect && (
+              <button
+                onClick={() => {
+                  playClick();
+                  if (yahooConnected) onYahooDisconnect();
+                  else onYahooConnect();
+                }}
+                className={yahooConnected ? styles.yahooButtonOn : styles.yahooButton}
+                title={
+                  yahooConnected
+                    ? 'Yahoo connected: live auction prices load into the draft board. Click to disconnect.'
+                    : 'Connect Yahoo to pull live auction prices into the draft board'
+                }
+                aria-label={yahooConnected ? 'Disconnect Yahoo' : 'Connect Yahoo'}
+                aria-pressed={!!yahooConnected}
+              >
+                Y!
+              </button>
+            )}
             <button
               onClick={toggleMute}
               className={styles.soundButton}

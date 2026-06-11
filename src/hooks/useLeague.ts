@@ -5,6 +5,7 @@ import { logger } from '@/utils/logger';
 import {
   cacheLeague,
   clearCachedLeague,
+  isStale,
   loadCachedLeagueForCredentials,
 } from '@/utils/leagueCache';
 import { espnCredsKey, persistESPNCredentials } from '@/utils/espnCredentials';
@@ -66,10 +67,16 @@ export function useLeague(): UseLeagueReturn {
 
     // Cache-first: hydrate instantly when we have a snapshot for this exact
     // platform/leagueId/year. Refresh button bypasses via forceRefresh.
+    // When the cached snapshot is stale (TTL by lifecycle phase — see
+    // leagueCache.FRESHNESS_MS), still render it for instant feedback, then
+    // kick off a background refresh so the user gets fresh data without a
+    // blank loading screen.
+    let isBackgroundRefresh = false;
     if (!options?.forceRefresh) {
       const cached = loadCachedLeagueForCredentials(credentials);
       if (cached) {
-        logger.debug('[useLeague] Hydrated from cache:', cached.name);
+        const stale = isStale(cached);
+        logger.debug('[useLeague] Hydrated from cache:', cached.name, stale ? '(stale, refreshing)' : '');
         if (isMountedRef.current && requestId === currentRequestRef.current) {
           setLeague(cached);
           setError(null);
@@ -79,19 +86,26 @@ export function useLeague(): UseLeagueReturn {
         // Persist creds on cache hits too so /history and /rivalries don't have
         // to re-prompt when navigating into an already-cached league.
         persistESPNCredentials(credentials);
-        return;
+        if (!stale) return;
+        // Fall through to network fetch. Don't surface the spinner or wipe
+        // out the visible data on error — the cached snapshot is still on
+        // screen and stale data beats no data.
+        isBackgroundRefresh = true;
       }
     }
 
-    setIsLoading(true);
-    setError(null);
-    setProgress(null);
+    if (!isBackgroundRefresh) {
+      setIsLoading(true);
+      setError(null);
+      setProgress(null);
+    }
 
     try {
       logger.debug('[useLeague] Calling loadLeague...');
       const loadedLeague = await loadLeague(credentials, (prog) => {
-        // Only update progress if this is still the current request and component is mounted
-        if (isMountedRef.current && requestId === currentRequestRef.current) {
+        // Only update progress if this is still the current request and component is mounted.
+        // Background refreshes don't update progress — the user already has data on screen.
+        if (isMountedRef.current && requestId === currentRequestRef.current && !isBackgroundRefresh) {
           logger.debug('[useLeague] Progress:', prog);
           setProgress(prog);
         }
@@ -108,6 +122,11 @@ export function useLeague(): UseLeagueReturn {
       // Only update state if this is still the current request and component is mounted
       if (isMountedRef.current && requestId === currentRequestRef.current) {
         logger.error('[useLeague] Error loading league:', err);
+        if (isBackgroundRefresh) {
+          // Silent failure: keep the stale data visible rather than wiping it
+          // for an error banner.
+          return;
+        }
         let message = 'Failed to load league. Please try again.';
 
         if (err instanceof Error) {
@@ -131,7 +150,7 @@ export function useLeague(): UseLeagueReturn {
       }
     } finally {
       // Only update loading state if this is still the current request and component is mounted
-      if (isMountedRef.current && requestId === currentRequestRef.current) {
+      if (isMountedRef.current && requestId === currentRequestRef.current && !isBackgroundRefresh) {
         setIsLoading(false);
         setProgress(null);
       }

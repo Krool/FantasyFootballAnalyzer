@@ -194,6 +194,23 @@
   color: var(--bone-dim);
 }
 
+/* moreResults is rendered as a <button> for pagination. Override default
+   button chrome and add a subtle hover so it reads as clickable. */
+button.moreResults {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-top: 1px dashed var(--bone-dim);
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+button.moreResults:hover {
+  color: var(--bone);
+  background: rgba(255, 255, 255, 0.04);
+}
+
 /* ── Player detail ── */
 .playerDetail {
   background: var(--ink);

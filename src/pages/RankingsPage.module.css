@@ -1,0 +1,235 @@
+.page {
+  padding: 3rem 0 5rem;
+}
+
+.header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 3px solid var(--bone);
+}
+
+.title {
+  font-family: var(--font-headline);
+  font-size: clamp(56px, 9vw, 140px);
+  line-height: 0.82;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  color: var(--bone);
+  margin: 0 0 0.75rem;
+}
+
+.subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin: 0;
+}
+
+.subtitle::before {
+  content: '◆ ';
+}
+
+.settingsBar {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  border: 2px solid var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  background: var(--ink);
+}
+
+.settingsItem,
+.settingsDim {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+
+.settingsDim {
+  color: var(--bone-dim);
+}
+
+.settingsSpacer {
+  flex: 1;
+}
+
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.search {
+  flex: 1;
+  min-width: 220px;
+  padding: 0.75rem 0.9rem;
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.search:focus {
+  outline: none;
+  border-color: var(--lime);
+  box-shadow: 4px 4px 0 var(--lime);
+}
+
+.search::placeholder {
+  color: var(--bone-dim);
+  font-style: italic;
+  font-family: var(--font-body);
+}
+
+.chips {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.chip,
+.chipOn {
+  padding: 0.35rem 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 2px solid var(--bone-dim);
+  background: transparent;
+  color: var(--bone-dim);
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--bone);
+  border-color: var(--bone);
+}
+
+.chipOn {
+  background: var(--lime);
+  color: var(--ink);
+  border-color: var(--lime);
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 280px);
+  min-height: 420px;
+  border: 2px solid var(--bone);
+  box-shadow: 5px 5px 0 var(--bone);
+  background: var(--ink);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--ink);
+  font-weight: 700;
+  color: var(--bone-dim);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  border-bottom: 2px solid var(--bone);
+  padding: 0.6rem 0.65rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  color: var(--lime);
+}
+
+.sorted {
+  color: var(--lime);
+}
+
+.table td {
+  border-bottom: 1px dashed var(--rule);
+  padding: 0.45rem 0.65rem;
+  color: var(--bone);
+}
+
+.row:hover {
+  background: var(--ink-2);
+}
+
+.row:hover td:first-child {
+  box-shadow: inset 4px 0 0 var(--lime);
+}
+
+.player {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.dim {
+  color: var(--bone-dim);
+}
+
+.num {
+  text-align: right;
+}
+
+.avg {
+  font-weight: 700;
+}
+
+.value {
+  color: var(--lime);
+  font-weight: 700;
+}
+
+.deltaGood {
+  color: var(--lime);
+  font-weight: 700;
+}
+
+.deltaBad {
+  color: var(--blood);
+}
+
+.emptyRow {
+  text-align: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
+  padding: 2rem 1rem !important;
+}
+
+.truncated {
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  border-top: 2px solid var(--rule);
+}

@@ -1,18 +1,10 @@
 import { XMLParser } from 'fast-xml-parser';
+import { applyCors } from './_cors.js';
 
 const YAHOO_API_BASE = 'https://fantasysports.yahooapis.com/fantasy/v2';
-const ALLOWED_ORIGIN = new URL(process.env.FRONTEND_URL || 'https://krool.github.io').origin;
 
 export default async function handler(req, res) {
-  // Enable CORS with specific origin
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (applyCors(req, res, { methods: 'GET, POST, OPTIONS' })) return;
 
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -31,8 +23,9 @@ export default async function handler(req, res) {
   }
 
   // SSRF prevention: validate endpoint against allowlist pattern
-  // Valid Yahoo Fantasy endpoints: /league/..., /users/..., /team/..., /player/...
-  const ENDPOINT_PATTERN = /^\/(?:league|users|team|player|games)[\/;][\w.;=,\/@_+-]+$/;
+  // Valid Yahoo Fantasy endpoints: /league/..., /users/..., /team/...,
+  // /player/..., /game/... (game-scoped player lists power draft analysis)
+  const ENDPOINT_PATTERN = /^\/(?:league|users|team|player|games|game)[\/;][\w.;=,\/@_+-]+$/;
   if (!ENDPOINT_PATTERN.test(endpoint.startsWith('/') ? endpoint : '/' + endpoint)) {
     return res.status(400).json({ error: 'Invalid endpoint parameter' });
   }

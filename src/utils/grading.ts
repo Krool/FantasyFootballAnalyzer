@@ -68,6 +68,56 @@ export function calculateExpectedRank(
   return positionPicksBefore + 1;
 }
 
+// For auctions, nomination order is meaningless. Rank within position by cost
+// descending instead: the most expensive RB is "expected RB1", next is RB2,
+// and so on. Ties broken by pickNumber so ordering is deterministic.
+export function calculateExpectedRanksByCost(allPicks: DraftPick[]): Map<string, number> {
+  const rankMap = new Map<string, number>();
+  const byPosition = new Map<string, DraftPick[]>();
+
+  allPicks.forEach(pick => {
+    const list = byPosition.get(pick.player.position) || [];
+    list.push(pick);
+    byPosition.set(pick.player.position, list);
+  });
+
+  byPosition.forEach(players => {
+    const sorted = [...players].sort((a, b) => {
+      const costDiff = (b.auctionValue || 0) - (a.auctionValue || 0);
+      if (costDiff !== 0) return costDiff;
+      return a.pickNumber - b.pickNumber;
+    });
+    sorted.forEach((pick, index) => {
+      rankMap.set(`${pick.player.position}-${pick.player.id}`, index + 1);
+    });
+  });
+
+  return rankMap;
+}
+
+// For auctions, a "round" is a cost tier: the top `totalTeams` most expensive
+// players league-wide are round 1, the next batch round 2, and so on. Ties
+// broken by pickNumber.
+export function calculateAuctionRounds(
+  allPicks: DraftPick[],
+  totalTeams: number
+): Map<string, number> {
+  const roundMap = new Map<string, number>();
+  if (totalTeams <= 0) return roundMap;
+
+  const sorted = [...allPicks].sort((a, b) => {
+    const costDiff = (b.auctionValue || 0) - (a.auctionValue || 0);
+    if (costDiff !== 0) return costDiff;
+    return a.pickNumber - b.pickNumber;
+  });
+
+  sorted.forEach((pick, index) => {
+    roundMap.set(`${pick.teamId}-${pick.pickNumber}`, Math.floor(index / totalTeams) + 1);
+  });
+
+  return roundMap;
+}
+
 // Grade a single pick using position-aware thresholds
 // Early picks (1st-3rd at position) are graded on hitting - did you get a top performer?
 // Later picks are graded on value - did you beat expectations?
@@ -209,16 +259,26 @@ export function gradeAllPicks(league: League): GradedPick[] {
   // Detect if this is an auction draft
   const isAuction = league.draftType === 'auction' || allPicks.some(p => p.auctionValue !== undefined && p.auctionValue > 0);
 
+  // For auctions, expected rank and round come from cost, not nomination order.
+  const auctionExpectedRanks = isAuction ? calculateExpectedRanksByCost(allPicks) : null;
+  const auctionRounds = isAuction
+    ? calculateAuctionRounds(allPicks, league.totalTeams || league.teams.length || 0)
+    : null;
+
   // Grade each pick
   return allPicks.map(pick => {
     const positionRank = positionRanks.get(`${pick.player.position}-${pick.player.id}`) || 999;
-    const expectedRank = calculateExpectedRank(pick, allPicks);
+    const expectedRank = auctionExpectedRanks
+      ? auctionExpectedRanks.get(`${pick.player.position}-${pick.player.id}`) || 999
+      : calculateExpectedRank(pick, allPicks);
     const valueOverExpected = expectedRank - positionRank;
 
     if (isAuction) {
       const { grade, auctionValueGrade } = gradeAuctionPick(pick, positionRank, allPicks);
+      const auctionRound = auctionRounds?.get(`${pick.teamId}-${pick.pickNumber}`);
       return {
         ...pick,
+        round: auctionRound ?? pick.round,
         grade,
         positionRank,
         expectedRank,

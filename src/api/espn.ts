@@ -73,7 +73,14 @@ async function fetchESPN<T>(
 
     if (!response.ok) {
       if (response.status === 401) {
-        throw new Error('ESPN: League is private. Please check your espn_s2 and SWID cookies.');
+        // Cookies were provided but ESPN rejected them. The most common cause
+        // is an expired espn_s2 — they roll over when you sign out / sign in
+        // again on espn.com. Tell the user that specifically so they don't
+        // re-copy the same cookies and try again.
+        throw new Error(
+          'ESPN: cookies were rejected (401). Your espn_s2 likely expired. ' +
+          'Log into espn.com again and re-copy both cookies.'
+        );
       }
       const errorData = await response.json().catch(() => ({}));
       logger.error('[ESPN] Proxy error:', errorData);
@@ -100,7 +107,8 @@ async function fetchESPN<T>(
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error('ESPN: League is private. Please provide espn_s2 and SWID cookies.');
+      // No cookies supplied — direct ESPN call hit a private league.
+      throw new Error('ESPN: this looks like a private league. Provide your espn_s2 and SWID cookies to access it.');
     }
     throw new Error(`ESPN API error: ${response.status} ${response.statusText}`);
   }
@@ -844,8 +852,12 @@ export async function loadLeague(
 
             if (allTeamsMatch && proposal.proposedDate && acceptTx.proposedDate) {
               const timeDiff = Math.abs(acceptTx.proposedDate - proposal.proposedDate);
-              // Use 60 days tolerance for team matching (more lenient since teams match)
-              const tolerance = 60 * 24 * 60 * 60 * 1000;
+              // 14-day tolerance for team-based fallback. The previous 60-day
+              // window let a week-2 proposal pair with a week-10 accept just
+              // because two teams happened to match, mislabeling unrelated
+              // trades. Two weeks is generous for "proposed Sunday, accepted
+              // after Monday Night" without crossing real trade boundaries.
+              const tolerance = 14 * 24 * 60 * 60 * 1000;
               if (timeDiff < tolerance && (!bestTeamMatch || timeDiff < bestTeamMatch.timeDiff)) {
                 bestTeamMatch = { proposal, timeDiff };
               }

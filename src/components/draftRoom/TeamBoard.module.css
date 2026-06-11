@@ -1,0 +1,160 @@
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.title {
+  font-family: var(--font-headline);
+  font-size: 1.35rem;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  margin: 0;
+  color: var(--bone);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.card {
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+  padding: 0.8rem 0.9rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cardMine {
+  border-color: var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+}
+
+.cardOnClock {
+  border-color: var(--lime);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.teamName {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--bone);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upBadge {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  padding: 0.15rem 0.4rem;
+  background: var(--lime);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.money {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.moneyLeft {
+  font-family: var(--font-headline);
+  font-size: 1.3rem;
+  color: var(--lime);
+  line-height: 1;
+}
+
+.moneyMeta {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.slotRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.slot {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid var(--rule);
+  color: var(--bone-dim);
+  white-space: nowrap;
+}
+
+.slotDone {
+  color: var(--bone);
+  border-color: var(--bone-dim);
+}
+
+.slotFull {
+  background: var(--ink-3);
+  color: var(--blood);
+  border-color: var(--blood);
+}
+
+.roster {
+  border-top: 1px dashed var(--rule);
+  padding-top: 0.4rem;
+}
+
+.rosterSummary {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  cursor: pointer;
+}
+
+.rosterSummary:hover {
+  color: var(--lime);
+}
+
+.rosterList {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--bone);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.rosterPos {
+  color: var(--bone-dim);
+  display: inline-block;
+  min-width: 3ch;
+}
+
+.rosterPrice {
+  color: var(--lime);
+}

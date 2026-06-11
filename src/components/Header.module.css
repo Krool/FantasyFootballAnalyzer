@@ -125,6 +125,13 @@
   flex-wrap: wrap;
 }
 
+/* With only one tab (draft-room mode) the nav is narrow enough to share the
+   top row with the league group; force it onto its own row so the tab bar
+   sits where it does in every other view. */
+.navFull {
+  width: 100%;
+}
+
 .navLink {
   padding: 0.55rem 0.9rem;
   font-family: var(--font-mono);
@@ -186,6 +193,50 @@
 }
 
 .exportIcon, .soundIcon { width: 16px; height: 16px; }
+
+.yahooButton,
+.yahooButtonOn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 0.7rem;
+  margin-left: 0.5rem;
+  background: transparent;
+  border: 2px solid var(--bone-dim);
+  color: var(--bone-dim);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all .15s ease;
+  box-shadow: 3px 3px 0 var(--bone-dim);
+}
+
+.yahooButton:hover {
+  background: var(--lime);
+  color: var(--ink);
+  border-color: var(--lime);
+  transform: translate(-1px,-1px);
+  box-shadow: 4px 4px 0 var(--lime);
+}
+
+.yahooButtonOn {
+  background: var(--lime);
+  color: var(--ink);
+  border-color: var(--lime);
+  box-shadow: 3px 3px 0 var(--bone);
+}
+
+.yahooButtonOn:hover {
+  background: var(--blood);
+  color: var(--bone);
+  border-color: var(--blood);
+  transform: translate(-1px,-1px);
+  box-shadow: 4px 4px 0 var(--blood);
+}
 
 @media (max-width: 880px) {
   .headerContent { flex-direction: column; align-items: flex-start; }

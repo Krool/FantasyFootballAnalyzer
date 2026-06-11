@@ -36,28 +36,35 @@ function createTone(
 ): void {
   if (isMuted) return;
 
-  const ctx = getAudioContext();
-  const gain = getMasterGain();
-  const now = ctx.currentTime;
+  // Web Audio can be unavailable (test environments) or blocked by the
+  // browser. Sound is decoration; it must never break the interaction that
+  // triggered it.
+  try {
+    const ctx = getAudioContext();
+    const gain = getMasterGain();
+    const now = ctx.currentTime;
 
-  const oscillator = ctx.createOscillator();
-  const envelope = ctx.createGain();
+    const oscillator = ctx.createOscillator();
+    const envelope = ctx.createGain();
 
-  oscillator.type = type;
-  oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    oscillator.frequency.value = frequency;
 
-  // Exponential ramps feel softer than linear for both attack and release
-  const peak = Math.max(0.0001, level);
-  envelope.gain.setValueAtTime(0.0001, now);
-  envelope.gain.exponentialRampToValueAtTime(peak, now + fadeIn);
-  envelope.gain.setValueAtTime(peak, now + Math.max(fadeIn, duration - fadeOut));
-  envelope.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    // Exponential ramps feel softer than linear for both attack and release
+    const peak = Math.max(0.0001, level);
+    envelope.gain.setValueAtTime(0.0001, now);
+    envelope.gain.exponentialRampToValueAtTime(peak, now + fadeIn);
+    envelope.gain.setValueAtTime(peak, now + Math.max(fadeIn, duration - fadeOut));
+    envelope.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-  oscillator.connect(envelope);
-  envelope.connect(gain);
+    oscillator.connect(envelope);
+    envelope.connect(gain);
 
-  oscillator.start(now);
-  oscillator.stop(now + duration + 0.02);
+    oscillator.start(now);
+    oscillator.stop(now + duration + 0.02);
+  } catch {
+    // No audio available: stay silent.
+  }
 }
 
 // Navigation click - soft, short blip
@@ -157,5 +164,9 @@ export function setMuted(muted: boolean): void {
 
 // Initialize audio context on first user interaction
 export function initAudio(): void {
-  getAudioContext();
+  try {
+    getAudioContext();
+  } catch {
+    // No audio available: stay silent.
+  }
 }
