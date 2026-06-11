@@ -177,3 +177,32 @@
   font-weight: 700;
   letter-spacing: 0.15em;
 }
+
+/* Selected-player variant: headshot beside the text block. */
+.playerCard {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.playerCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.headshot {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  object-position: top;
+  border: 2px solid var(--rule);
+  background: var(--ink-2);
+  flex-shrink: 0;
+}
+
+.cardInjury {
+  color: var(--blood);
+  font-weight: 700;
+}

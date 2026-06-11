@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
+import { nflLogoUrl, nflTeamInfo } from '@/data/nflTeams';
 import { normalizeName } from '@/utils/playerNames';
 import styles from './NflTeams.module.css';
 
@@ -69,10 +70,19 @@ export function NflTeams({ room, selectedId, onSelect }: NflTeamsProps) {
           const left = players.filter(
             p => !derived.draftedPlayerIds.has(p.id) && !derived.reservedPlayerIds.has(p.id),
           ).length;
+          const info = nflTeamInfo(team);
+          const logo = nflLogoUrl(team);
           return (
-            <div key={team} className={styles.card}>
+            <div
+              key={team}
+              className={styles.card}
+              style={info ? { borderTop: `3px solid ${info.primary}` } : undefined}
+            >
               <div className={styles.cardHeader}>
-                <span className={styles.cardTeam}>{team || 'FA'}</span>
+                <span className={styles.cardTeam}>
+                  {logo && <img src={logo} alt="" loading="lazy" className={styles.cardLogo} />}
+                  {info?.name ?? (team || 'FA')}
+                </span>
                 <span className={styles.cardMeta}>
                   {bye !== null ? `Bye ${bye} · ` : ''}
                   {left} of {players.length} left
@@ -101,7 +111,9 @@ export function NflTeams({ room, selectedId, onSelect }: NflTeamsProps) {
                         }}
                         title={gone ? undefined : `Select ${p.name} for the pick logger`}
                       >
-                        <span className={styles.playerPos}>
+                        <span
+                          className={`${styles.playerPos} ${styles[`pos${p.pos}`] ?? ''}`}
+                        >
                           {p.pos}
                           {p.posRank}
                         </span>

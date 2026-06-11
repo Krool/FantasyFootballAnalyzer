@@ -4,6 +4,7 @@ import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import type { UseDraftSimReturn } from '@/hooks/useDraftSim';
 import { useSounds } from '@/hooks/useSounds';
 import { inflateValue } from '@/utils/inflation';
+import { SelectedPlayerCard } from './SelectedPlayerCard';
 import styles from './Logger.module.css';
 
 interface MockBidPanelProps {
@@ -30,20 +31,10 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
     return (
       <div className={styles.logger}>
         <h2 className={styles.title}>Your Nomination</h2>
-        {selected ? (
-          <div className={styles.clockMine}>
-            <span className={styles.clockKicker}>
-              {selected.pos}
-              {selected.posRank} · {selected.team} · Exp ${scaledValues.get(selected.id) ?? 1}
-            </span>
-            <span className={styles.clockTeam}>{selected.name}</span>
-          </div>
-        ) : (
-          <div className={styles.clock}>
-            <span className={styles.clockKicker}>No player selected</span>
-            <span className={styles.clockTeam}>Pick a player from the board</span>
-          </div>
-        )}
+        <SelectedPlayerCard
+          player={selected}
+          detail={selected ? `Exp $${scaledValues.get(selected.id) ?? 1}` : undefined}
+        />
         <button
           type="button"
           className={styles.submit}
@@ -91,13 +82,7 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
   return (
     <div className={styles.logger}>
       <h2 className={styles.title}>On The Block</h2>
-      <div className={styles.clockMine}>
-        <span className={styles.clockKicker}>Nominated by {nominatorName}</span>
-        <span className={styles.clockTeam}>
-          {player.name} · {player.pos}
-          {player.posRank} {player.team}
-        </span>
-      </div>
+      <SelectedPlayerCard player={player} detail={`Nominated by ${nominatorName}`} />
       <div className={styles.priceRow}>
         <div className={styles.field}>
           <span className={styles.label}>Your Max Bid {myCap > 0 ? `(cap $${myCap})` : '(full)'}</span>

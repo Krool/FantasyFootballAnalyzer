@@ -1,0 +1,35 @@
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  font-family: var(--font-mono);
+  color: var(--bone-dim);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.logo {
+  display: block;
+  /* Idle in grayscale so 32 brand palettes don't fight the app's own;
+     containers can opt into color on hover via :hover .logo overrides. */
+  filter: grayscale(1) contrast(1.15) brightness(1.1);
+  transition: filter 0.15s ease;
+}
+
+.label:hover .logo {
+  filter: none;
+}
+
+.xs .logo {
+  width: 14px;
+  height: 14px;
+}
+
+.sm .logo {
+  width: 18px;
+  height: 18px;
+}
+
+.abbr {
+  letter-spacing: 0.04em;
+}

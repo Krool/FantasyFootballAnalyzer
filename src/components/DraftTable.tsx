@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import type { Team } from '@/types';
 import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected } from '@/utils/grading';
 import { useSounds } from '@/hooks/useSounds';
+import { NflTeamLabel } from './NflTeamLabel';
+import { PosBadge } from './PosBadge';
 import styles from './DraftTable.module.css';
 
 interface DraftTableProps {
@@ -250,11 +252,11 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
                 <td>
                   <div className={styles.playerCell}>
                     <span className={styles.playerName}>{pick.player.name}</span>
-                    <span className={styles.nflTeam}>{pick.player.team}</span>
+                    <NflTeamLabel team={pick.player.team} />
                   </div>
                 </td>
                 <td>
-                  <span className={styles.positionBadge}>{pick.player.position}</span>
+                  <PosBadge pos={pick.player.position} />
                 </td>
                 <td className={styles.fantasyTeam}>{pick.teamName}</td>
                 <td className="font-mono text-right">

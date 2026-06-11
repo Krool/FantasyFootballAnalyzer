@@ -1,0 +1,25 @@
+.badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  padding: 0 0.35em;
+  border-left: 3px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--bone-dim);
+}
+
+.rank {
+  font-weight: 400;
+  font-size: 0.85em;
+  color: var(--bone-dim);
+}
+
+.qb { border-left-color: var(--pos-qb); color: var(--pos-qb); }
+.rb { border-left-color: var(--pos-rb); color: var(--pos-rb); }
+.wr { border-left-color: var(--pos-wr); color: var(--pos-wr); }
+.te { border-left-color: var(--pos-te); color: var(--pos-te); }
+.k { border-left-color: var(--pos-k); color: var(--pos-k); }
+.dst { border-left-color: var(--pos-dst); color: var(--pos-dst); }

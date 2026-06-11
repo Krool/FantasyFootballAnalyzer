@@ -2,9 +2,11 @@ import { useMemo, useState, type RefObject } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
+import { NflTeamLabel, PosBadge } from '@/components';
 import { sleeperAdpFor } from '@/utils/consensus';
 import { inflateValue } from '@/utils/inflation';
 import { normalizeName } from '@/utils/playerNames';
+import { injuryAbbrev } from '@/utils/injury';
 import styles from './AvailablePlayers.module.css';
 
 interface AvailablePlayersProps {
@@ -196,13 +198,20 @@ export function AvailablePlayers({
                 <td className={`${styles.num} ${styles.dim}`}>{p.tier}</td>
                 <td className={styles.player}>
                   {p.name}
+                  {p.rookie && <span className={styles.rookieTag} title="Rookie">R</span>}
+                  {p.injuryStatus && (
+                    <span className={styles.injuryTag} title={p.injuryStatus}>
+                      {injuryAbbrev(p.injuryStatus)}
+                    </span>
+                  )}
                   {tierBreaks(p) && <span className={styles.tierBreak}>LAST IN TIER</span>}
                 </td>
                 <td>
-                  {p.pos}
-                  <span className={styles.dim}>{p.posRank}</span>
+                  <PosBadge pos={p.pos} posRank={p.posRank} />
                 </td>
-                <td className={styles.dim}>{p.team}</td>
+                <td>
+                  <NflTeamLabel team={p.team} />
+                </td>
                 <td className={`${styles.num} ${styles.dim}`}>{p.bye ?? '-'}</td>
                 <td className={`${styles.num} ${styles.dim}`}>{adp(p) ?? '-'}</td>
                 {isAuction && (

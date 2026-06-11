@@ -56,6 +56,16 @@
   --espn-color:    #d00;
   --yahoo-color:   #6001d2;
 
+  /* Position colors: desaturated takes on the industry palette (every
+     draft tool color-codes positions; the eye scans color before text).
+     Accent-only — stripes, badges, dots — never body text. */
+  --pos-qb:  #d66a6a;
+  --pos-rb:  #6fbf8f;
+  --pos-wr:  #6a9fd6;
+  --pos-te:  #d6a25e;
+  --pos-k:   #b08fd6;
+  --pos-dst: #8fa3ad;
+
   /* ── Type system ── */
   --font-headline: "Bowlby One", Impact, "Arial Black", sans-serif;
   --font-display:  "Fraunces", Georgia, "Times New Roman", serif;

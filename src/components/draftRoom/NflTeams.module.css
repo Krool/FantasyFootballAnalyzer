@@ -51,12 +51,29 @@
 }
 
 .cardTeam {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   font-family: var(--font-headline);
-  font-size: 1.15rem;
+  font-size: 1rem;
   text-transform: uppercase;
   color: var(--bone);
   line-height: 0.95;
 }
+
+.cardLogo {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+/* Position color accents on the pos column. */
+.posQB { color: var(--pos-qb); }
+.posRB { color: var(--pos-rb); }
+.posWR { color: var(--pos-wr); }
+.posTE { color: var(--pos-te); }
+.posK { color: var(--pos-k); }
+.posDST { color: var(--pos-dst); }
 
 .cardMeta {
   font-family: var(--font-mono);

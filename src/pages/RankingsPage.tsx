@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { POOL } from '@/data/draftPool';
+import { NflTeamLabel, PosBadge } from '@/components';
+import { injuryAbbrev } from '@/utils/injury';
 import type { League } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
 import { DEFAULT_BUDGET, DEFAULT_ROSTER_SLOTS } from '@/hooks/useDraftRoom';
@@ -226,12 +228,21 @@ export function RankingsPage({ league }: RankingsPageProps) {
                     </td>
                     <td className={`${styles.num} ${styles.dim}`}>{p.overallRank}</td>
                     <td className={`${styles.num} ${styles.dim}`}>{p.tier}</td>
-                    <td className={styles.player}>{p.name}</td>
-                    <td>
-                      {p.pos}
-                      <span className={styles.dim}>{p.posRank}</span>
+                    <td className={styles.player}>
+                      {p.name}
+                      {p.rookie && <span className={styles.rookieTag} title="Rookie">R</span>}
+                      {p.injuryStatus && (
+                        <span className={styles.injuryTag} title={p.injuryStatus}>
+                          {injuryAbbrev(p.injuryStatus)}
+                        </span>
+                      )}
                     </td>
-                    <td className={styles.dim}>{p.team}</td>
+                    <td>
+                      <PosBadge pos={p.pos} posRank={p.posRank} />
+                    </td>
+                    <td>
+                      <NflTeamLabel team={p.team} />
+                    </td>
                     <td className={`${styles.num} ${styles.dim}`}>{p.bye ?? '-'}</td>
                     <td className={`${styles.num} ${styles.dim}`}>{p.espnAdp ?? '-'}</td>
                     <td className={`${styles.num} ${styles.dim}`}>

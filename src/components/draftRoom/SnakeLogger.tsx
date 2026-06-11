@@ -3,6 +3,7 @@ import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
 import { roundForPick } from '@/utils/snakeOrder';
+import { SelectedPlayerCard } from './SelectedPlayerCard';
 import styles from './Logger.module.css';
 
 interface SnakeLoggerProps {
@@ -52,20 +53,7 @@ export function SnakeLogger({ room, selected, onLogged }: SnakeLoggerProps) {
         </div>
       )}
 
-      {selected ? (
-        <div className={styles.clockMine}>
-          <span className={styles.clockKicker}>
-            {selected.pos}
-            {selected.posRank} · {selected.team} · #{selected.overallRank} · Tier {selected.tier}
-          </span>
-          <span className={styles.clockTeam}>{selected.name}</span>
-        </div>
-      ) : (
-        <div className={styles.clock}>
-          <span className={styles.clockKicker}>No player selected</span>
-          <span className={styles.clockTeam}>Pick a player from the board</span>
-        </div>
-      )}
+      <SelectedPlayerCard player={selected} />
 
       <div className={styles.field}>
         <span className={styles.label}>Drafted By</span>

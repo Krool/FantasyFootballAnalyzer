@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
+import { NflTeamLabel, PosBadge } from '@/components';
 import styles from './PickLog.module.css';
 
 interface PickLogProps {
@@ -140,9 +141,11 @@ export function PickLog({ room }: PickLogProps) {
                 <tr key={row.pick} className={row.pick === rows.length ? styles.latestRow : ''}>
                   <td className={styles.dim}>{row.pick}</td>
                   <td className={styles.player}>
-                    {row.playerName} <span className={styles.dim}>{row.nflTeam}</span>
+                    {row.playerName} <NflTeamLabel team={row.nflTeam} />
                   </td>
-                  <td>{row.pos}</td>
+                  <td>
+                    <PosBadge pos={row.pos} />
+                  </td>
                   {isAuction && <td className={styles.dim}>{row.nominator}</td>}
                   <td>{row.team}</td>
                   {isAuction && (

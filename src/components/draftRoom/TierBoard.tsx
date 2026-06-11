@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
+import { NflTeamLabel } from '@/components';
 import { sleeperAdpFor } from '@/utils/consensus';
 import { inflateValue } from '@/utils/inflation';
 import type { StarterPos } from '@/utils/draftEngine';
@@ -73,7 +74,7 @@ export function TierBoard({ room, selectedId, onSelect }: TierBoardProps) {
                 >
                   <span className={styles.playerName}>{p.name}</span>
                   <span className={styles.playerMeta}>
-                    {p.team} · {detail(p)}
+                    <NflTeamLabel team={p.team} /> · {detail(p)}
                   </span>
                 </button>
               ))}

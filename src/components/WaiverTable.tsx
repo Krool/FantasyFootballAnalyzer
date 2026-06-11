@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { Team, Platform, Transaction } from '@/types';
+import { NflTeamLabel } from './NflTeamLabel';
+import { PosBadge } from './PosBadge';
 import styles from './WaiverTable.module.css';
 
 interface WaiverTableProps {
@@ -326,7 +328,7 @@ export function WaiverTable({ teams, platform }: WaiverTableProps) {
                       )}
                     </span>
                     <span className={styles.playerMeta}>
-                      {pickup.position} - {pickup.nflTeam}
+                      <PosBadge pos={pickup.position} /> <NflTeamLabel team={pickup.nflTeam} />
                     </span>
                   </div>
                 </td>

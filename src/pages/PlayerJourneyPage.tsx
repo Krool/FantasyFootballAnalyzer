@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { League, Player, DraftPick } from '@/types';
+import { NflTeamLabel, PosBadge } from '@/components';
+import { nflTeamInfo } from '@/data/nflTeams';
 import styles from './PlayerJourneyPage.module.css';
 
 interface PlayerJourneyPageProps {
@@ -299,7 +301,7 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
                   <div className={styles.playerInfo}>
                     <span className={styles.playerName}>{p.player.name}</span>
                     <span className={styles.playerMeta}>
-                      {p.player.position} - {p.player.team}
+                      <PosBadge pos={p.player.position} /> <NflTeamLabel team={p.player.team} />
                     </span>
                   </div>
                   <div className={styles.playerStats}>
@@ -334,11 +336,19 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
           <div className={styles.playerDetail}>
             {selectedPlayer ? (
               <>
-                <div className={styles.detailHeader}>
+                <div
+                  className={styles.detailHeader}
+                  style={
+                    nflTeamInfo(selectedPlayer.player.team)
+                      ? { borderLeft: `4px solid ${nflTeamInfo(selectedPlayer.player.team)!.primary}`, paddingLeft: '0.9rem' }
+                      : undefined
+                  }
+                >
                   <div className={styles.detailInfo}>
                     <h2 className={styles.detailName}>{selectedPlayer.player.name}</h2>
                     <span className={styles.detailMeta}>
-                      {selectedPlayer.player.position} - {selectedPlayer.player.team}
+                      <PosBadge pos={selectedPlayer.player.position} />{' '}
+                      <NflTeamLabel team={selectedPlayer.player.team} size="sm" />
                     </span>
                   </div>
                   {selectedPlayer.currentTeam && (

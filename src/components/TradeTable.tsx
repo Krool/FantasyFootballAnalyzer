@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { Trade, Team } from '@/types';
+import { NflTeamLabel } from './NflTeamLabel';
+import { PosBadge } from './PosBadge';
 import styles from './TradeTable.module.css';
 
 interface TradeTableProps {
@@ -140,7 +142,9 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
                           {teamSide.playersReceived.map(player => (
                             <div key={player.id} className={styles.player}>
                               <span className={styles.playerName}>{player.name}</span>
-                              <span className={styles.playerMeta}>{player.position} - {player.team}</span>
+                              <span className={styles.playerMeta}>
+                                <PosBadge pos={player.position} /> <NflTeamLabel team={player.team} />
+                              </span>
                             </div>
                           ))}
                           {teamSide.playersReceived.length === 0 && (
@@ -155,7 +159,9 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
                           {teamSide.playersSent.map(player => (
                             <div key={player.id} className={styles.player}>
                               <span className={styles.playerName}>{player.name}</span>
-                              <span className={styles.playerMeta}>{player.position} - {player.team}</span>
+                              <span className={styles.playerMeta}>
+                                <PosBadge pos={player.position} /> <NflTeamLabel team={player.team} />
+                              </span>
                             </div>
                           ))}
                           {teamSide.playersSent.length === 0 && (

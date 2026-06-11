@@ -153,7 +153,7 @@
 .tierBreak {
   font-family: var(--font-mono);
   font-style: normal;
-  font-size: 0.56rem;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--ink);
@@ -162,6 +162,29 @@
   margin-left: 0.5rem;
   vertical-align: middle;
   white-space: nowrap;
+}
+
+.rookieTag,
+.injuryTag {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.08rem 0.25rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.rookieTag {
+  color: var(--gold);
+  border: 1px solid var(--gold);
+}
+
+.injuryTag {
+  color: var(--blood);
+  border: 1px solid var(--blood);
 }
 
 .dim {
