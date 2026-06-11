@@ -12,6 +12,7 @@ import { deriveDraftState, draftableSlotCount, validateEvent } from '@/utils/dra
 import type { DerivedDraftState } from '@/utils/draftEngine';
 import { roundForPick } from '@/utils/snakeOrder';
 import {
+  archiveDraftRoom,
   clearDraftRoom,
   loadDraftRoom,
   saveDraftRoom,
@@ -156,6 +157,8 @@ export interface UseDraftRoomReturn {
   undo: () => void;
   reset: () => void;
   resume: () => void;
+  // Load an archived (completed) session, e.g. to revisit its recap.
+  resumeSession: (session: DraftRoomSession) => void;
 }
 
 export function useDraftRoom(league: League): UseDraftRoomReturn {
@@ -221,6 +224,14 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
     saveDraftRoom({ config: state.config, events: state.events, phase: state.phase });
   }, [state]);
 
+  // A finished draft is archived immutably the moment it completes, so
+  // Reset can no longer destroy the only record of a real draft (the
+  // archive dedupes identical event logs).
+  useEffect(() => {
+    if (state.phase !== 'complete') return;
+    archiveDraftRoom({ config: state.config, events: state.events, phase: 'complete' });
+  }, [state.phase, state.config, state.events]);
+
   const logEvent = useCallback(
     (partial: DraftEventInput): string | null => {
       const event = { ...partial, seq: state.events.length, ts: Date.now() } as DraftEvent;
@@ -282,5 +293,8 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
       const session = loadDraftRoom(leagueKeyFor(league));
       if (session) dispatch({ type: 'RESUME', session });
     }, [league]),
+    resumeSession: useCallback((session: DraftRoomSession) => {
+      dispatch({ type: 'RESUME', session });
+    }, []),
   };
 }

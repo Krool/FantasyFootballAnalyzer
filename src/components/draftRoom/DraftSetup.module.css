@@ -360,3 +360,11 @@
   display: block;
   margin-bottom: 0.3rem;
 }
+
+.archiveLabel {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: var(--bone-dim);
+}

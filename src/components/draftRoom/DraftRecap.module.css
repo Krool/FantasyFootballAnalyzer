@@ -1,0 +1,238 @@
+.recap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--bone);
+  padding-bottom: 0.5rem;
+}
+
+.title {
+  font-family: var(--font-headline);
+  font-size: 1.6rem;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  margin: 0;
+  color: var(--lime);
+}
+
+.kicker {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 0.9rem;
+  color: var(--bone-dim);
+}
+
+.mineRow {
+  display: flex;
+}
+
+.mineCard {
+  flex: 1;
+  border: 2px solid var(--lime);
+  box-shadow: 5px 5px 0 var(--lime);
+  background: var(--ink);
+  padding: 1rem 1.2rem;
+}
+
+.mineHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.mineGrade {
+  font-family: var(--font-headline);
+  font-size: 3rem;
+  line-height: 0.9;
+  color: var(--lime);
+}
+
+.mineHeadText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.mineName {
+  font-family: var(--font-headline);
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+
+.mineMeta {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.mineWarn {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--blood);
+}
+
+.mineRoster {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 2;
+  column-gap: 2rem;
+}
+
+.mineRosterRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px dashed var(--rule);
+  break-inside: avoid;
+}
+
+.minePlayer {
+  flex: 1;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.92rem;
+  color: var(--bone);
+}
+
+.priceGood,
+.priceBad {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.priceGood {
+  color: var(--lime);
+}
+
+.priceBad {
+  color: var(--blood);
+}
+
+.btn {
+  padding: 0.5rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 2px solid var(--bone-dim);
+  color: var(--bone-dim);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:hover {
+  color: var(--lime);
+  border-color: var(--lime);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 2px solid var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  background: var(--ink);
+  padding: 0.8rem 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cardMine {
+  border-color: var(--lime);
+  box-shadow: 4px 4px 0 var(--lime);
+}
+
+.cardHead {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.cardGrade {
+  font-family: var(--font-headline);
+  font-size: 1.5rem;
+  line-height: 0.9;
+  color: var(--lime);
+}
+
+.cardName {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--bone);
+}
+
+.cardStats {
+  display: flex;
+  gap: 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.cardLine {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  color: var(--bone-dim);
+}
+
+.statGood {
+  color: var(--lime);
+}
+
+.statBad {
+  color: var(--blood);
+}
+
+.spendBar {
+  display: flex;
+  height: 8px;
+  border: 1px solid var(--rule);
+  overflow: hidden;
+}
+
+.spendSeg {
+  display: block;
+  height: 100%;
+}
+
+@media (max-width: 640px) {
+  .mineRoster {
+    columns: 1;
+  }
+}

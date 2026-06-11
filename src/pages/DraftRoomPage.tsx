@@ -7,6 +7,7 @@ import { useSounds } from '@/hooks/useSounds';
 import { useYahooValues } from '@/hooks/useYahooValues';
 import { AuctionLogger } from '@/components/draftRoom/AuctionLogger';
 import { AvailablePlayers } from '@/components/draftRoom/AvailablePlayers';
+import { DraftRecap } from '@/components/draftRoom/DraftRecap';
 import { DraftSetup } from '@/components/draftRoom/DraftSetup';
 import { LeagueNeeds } from '@/components/draftRoom/LeagueNeeds';
 import { MockBidPanel } from '@/components/draftRoom/MockBidPanel';
@@ -199,12 +200,7 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
           <DraftSetup room={room} league={league} />
         ) : (
           <>
-            {phase === 'complete' && (
-              <div className={styles.completeBanner}>
-                Draft complete. {derived.totalPicks} picks logged. Export the log below or reset to
-                run it again.
-              </div>
-            )}
+            {phase === 'complete' && <DraftRecap room={room} />}
 
             <div className={`${styles.statusBar} ${myTurn ? styles.statusBarMine : ''}`}>
               <span className={styles.statusItem}>

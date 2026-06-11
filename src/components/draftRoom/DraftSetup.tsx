@@ -1,8 +1,10 @@
-import { useId, useMemo } from 'react';
+import { useId, useMemo, useState } from 'react';
 import type { League, RosterSlots } from '@/types';
 import type { DraftRoomTeam, KeeperAssignment } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
+import { leagueKeyFor } from '@/hooks/useDraftRoom';
 import { guessKeepers, keeperCandidates } from '@/utils/keeperGuess';
+import { loadDraftArchive, removeFromDraftArchive } from '@/utils/draftRoomCache';
 import styles from './DraftSetup.module.css';
 
 interface DraftSetupProps {
@@ -13,8 +15,9 @@ interface DraftSetupProps {
 const SLOT_KEYS: Array<keyof RosterSlots> = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DST', 'BENCH'];
 
 export function DraftSetup({ room, league }: DraftSetupProps) {
-  const { config, updateConfig, start, resumable, resume, reset } = room;
+  const { config, updateConfig, start, resumable, resume, reset, resumeSession } = room;
   const meGroup = useId();
+  const [archive, setArchive] = useState(() => loadDraftArchive(leagueKeyFor(league)));
 
   // Keeper guesses come from last season's draft results, valued against
   // this year's rankings.
@@ -344,6 +347,51 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
         </button>
         {startBlocked && <p className={styles.hint}>{startBlocked}</p>}
       </div>
+
+      {archive.length > 0 && (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            Past Drafts <span className={styles.sectionCount}>{archive.length}</span>
+          </h2>
+          <p className={styles.hint}>
+            Every completed draft is kept here. Open one to revisit its recap and pick log.
+          </p>
+          <div className={styles.teamList}>
+            {archive.map(session => (
+              <div key={session.savedAt} className={styles.teamRow}>
+                <span className={styles.teamIndex}>
+                  {session.config.draftType === 'auction' ? '$' : 'S'}
+                </span>
+                <span className={styles.archiveLabel}>
+                  {new Date(session.savedAt).toLocaleString()} ·{' '}
+                  {session.config.mode === 'mock' ? 'mock' : 'live'} ·{' '}
+                  {session.events.length} picks
+                </span>
+                <div className={styles.teamButtons}>
+                  <button
+                    type="button"
+                    className={styles.btn}
+                    onClick={() => resumeSession(session)}
+                  >
+                    Open
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.iconBtn}
+                    onClick={() => {
+                      removeFromDraftArchive(leagueKeyFor(league), session.savedAt);
+                      setArchive(loadDraftArchive(leagueKeyFor(league)));
+                    }}
+                    aria-label="Delete this archived draft"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
