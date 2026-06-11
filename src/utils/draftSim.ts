@@ -192,6 +192,56 @@ export interface AuctionResult {
   price: number;
 }
 
+// One AI team's private ceiling for a player: expected price with noise,
+// need bump, persona, and budget pacing. Shared by the sealed-bid resolver
+// and the live-bidding loop so both modes price identically.
+export function aiWillingness(
+  player: PoolPlayer,
+  expectedPrice: number,
+  team: TeamDraftState,
+  opponentsAvgRemaining: number,
+  rng: () => number,
+  persona?: AiPersona,
+): number {
+  let willingness = expectedPrice * (0.8 + 0.4 * rng());
+  if (team.starterNeeds[player.pos as StarterPos] > 0) willingness *= 1.15;
+  if (persona) {
+    willingness *= persona.aggression;
+    if (expectedPrice >= 20) willingness *= persona.starsBias;
+  }
+  if (opponentsAvgRemaining > 0) {
+    const parity = team.remaining / opponentsAvgRemaining;
+    willingness *= Math.min(1.3, Math.max(0.85, 0.9 + 0.25 * (parity - 1) + 0.1));
+  }
+  return Math.min(Math.round(willingness), team.maxBid);
+}
+
+// Private ceilings for every eligible AI team, for live bidding.
+export function computeWillingnessMap(
+  player: PoolPlayer,
+  expectedPrice: number,
+  teams: TeamDraftState[],
+  available: PoolPlayer[],
+  myTeamId: string,
+  rng: () => number,
+  personas?: Map<string, AiPersona>,
+): Map<string, number> {
+  const scarce = scarcePositions(available, teams);
+  const opponents = teams.filter(t => t.teamId !== myTeamId && t.openSlots > 0);
+  const avgRemaining =
+    opponents.length > 0
+      ? opponents.reduce((sum, t) => sum + t.remaining, 0) / opponents.length
+      : 0;
+  const map = new Map<string, number>();
+  for (const team of teams) {
+    if (team.teamId === myTeamId) continue;
+    if (!aiWillBid(team, player.pos, scarce)) continue;
+    const amount = aiWillingness(player, expectedPrice, team, avgRemaining, rng, personas?.get(team.teamId));
+    if (amount >= 1) map.set(team.teamId, amount);
+  }
+  return map;
+}
+
 // Sealed-bid second-price stand-in for live bidding: each AI team computes a
 // private willingness near the expected price (bumped for open starter
 // needs, clamped to its max bid); the user's team enters with myMaxBid
@@ -208,37 +258,24 @@ export function simAuctionResult(
 ): AuctionResult {
   const scarce = scarcePositions(available, teams);
 
-  // Budget pacing: a team sitting on cash relative to the room should bid
-  // up (the money has to go somewhere); a drained team tightens.
-  const opponents = teams.filter(t => t.teamId !== myTeamId && t.openSlots > 0);
-  const avgRemaining =
-    opponents.length > 0
-      ? opponents.reduce((sum, t) => sum + t.remaining, 0) / opponents.length
-      : 0;
-
   const bids: Array<{ teamId: string; amount: number }> = [];
-  for (const team of teams) {
-    if (team.teamId === myTeamId) {
-      // The user's bid is only legality-checked; what to bid on is their call.
-      if (team.openSlots <= 0 || team.fullAt[player.pos as StarterPos]) continue;
-      const mine = Math.min(myMaxBid, team.maxBid);
-      if (mine >= 1) bids.push({ teamId: team.teamId, amount: mine });
-      continue;
-    }
-    if (!aiWillBid(team, player.pos, scarce)) continue;
-    let willingness = expectedPrice * (0.8 + 0.4 * rng());
-    if (team.starterNeeds[player.pos as StarterPos] > 0) willingness *= 1.15;
-    const persona = personas?.get(team.teamId);
-    if (persona) {
-      willingness *= persona.aggression;
-      if (expectedPrice >= 20) willingness *= persona.starsBias;
-    }
-    if (avgRemaining > 0) {
-      const parity = team.remaining / avgRemaining;
-      willingness *= Math.min(1.3, Math.max(0.85, 0.9 + 0.25 * (parity - 1) + 0.1));
-    }
-    const amount = Math.min(Math.round(willingness), team.maxBid);
-    if (amount >= 1) bids.push({ teamId: team.teamId, amount });
+  const willingness = computeWillingnessMap(
+    player,
+    expectedPrice,
+    teams,
+    available,
+    myTeamId,
+    rng,
+    personas,
+  );
+  for (const [teamId, amount] of willingness) {
+    bids.push({ teamId, amount });
+  }
+  const me = teams.find(t => t.teamId === myTeamId);
+  if (me && me.openSlots > 0 && !me.fullAt[player.pos as StarterPos]) {
+    // The user's bid is only legality-checked; what to bid on is their call.
+    const mine = Math.min(myMaxBid, me.maxBid);
+    if (mine >= 1) bids.push({ teamId: me.teamId, amount: mine });
   }
 
   if (bids.length === 0) {

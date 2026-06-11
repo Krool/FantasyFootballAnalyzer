@@ -82,6 +82,66 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
     setMaxBid('');
   };
 
+  // Live-bidding mode: a running auction instead of a sealed max.
+  if (config.liveBidding && sim.liveBid) {
+    const { highBid, highBidderId } = sim.liveBid;
+    const iAmHigh = highBidderId === config.myTeamId;
+    const bidderName = highBidderId
+      ? config.teams.find(t => t.id === highBidderId)?.name ?? '?'
+      : 'nobody yet';
+    const nextBid = highBid + 1;
+    return (
+      <div className={styles.logger}>
+        <h2 className={styles.title}>On The Block</h2>
+        <SelectedPlayerCard player={player} detail={`Exp $${expected} · nominated by ${nominatorName}`} />
+        <div className={iAmHigh ? styles.clockMine : styles.clock}>
+          <span className={styles.clockKicker}>
+            {highBid > 0 ? `$${highBid} to` : 'Opening bid:'}
+          </span>
+          <span className={styles.clockTeam}>{iAmHigh ? 'YOU' : bidderName}</span>
+        </div>
+        {myComfort !== null && (
+          <div className={styles.expected}>
+            <span
+              className={styles.label}
+              title="Your highest bid that still leaves market price for every open starter slot plus $1 per bench spot"
+            >
+              Your comfort
+            </span>
+            <span className={styles.expectedValue}>${myComfort}</span>
+          </div>
+        )}
+        <div className={styles.priceRow}>
+          <button
+            type="button"
+            className={styles.submit}
+            disabled={iAmHigh || myCap < nextBid}
+            onClick={() => {
+              playSuccess();
+              sim.placeBid(nextBid);
+            }}
+          >
+            Bid ${nextBid}
+          </button>
+          <button
+            type="button"
+            className={styles.submit}
+            disabled={iAmHigh || myCap < highBid + 5}
+            onClick={() => {
+              playSuccess();
+              sim.placeBid(highBid + 5);
+            }}
+          >
+            Bid ${highBid + 5}
+          </button>
+        </div>
+        <p className={styles.liveHint}>
+          Say nothing and the hammer falls{iAmHigh ? ' — he is yours' : ''}.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.logger}>
       <h2 className={styles.title}>On The Block</h2>

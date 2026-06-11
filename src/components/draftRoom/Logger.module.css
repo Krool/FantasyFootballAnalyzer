@@ -206,3 +206,12 @@
   color: var(--blood);
   font-weight: 700;
 }
+
+.liveHint {
+  margin: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 0.82rem;
+  color: var(--bone-dim);
+}

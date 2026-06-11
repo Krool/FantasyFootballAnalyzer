@@ -288,3 +288,29 @@
   padding: 0.05rem 0.3rem;
   background: var(--ink-2);
 }
+
+.syncBtn,
+.syncBtnOn {
+  padding: 0.3rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 2px solid var(--bone-dim);
+  background: transparent;
+  color: var(--bone-dim);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.syncBtn:hover {
+  color: var(--lime);
+  border-color: var(--lime);
+}
+
+.syncBtnOn {
+  background: var(--lime);
+  color: var(--ink);
+  border-color: var(--lime);
+}

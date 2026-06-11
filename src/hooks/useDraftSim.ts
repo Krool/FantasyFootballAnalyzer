@@ -4,6 +4,7 @@ import { inflateValue } from '@/utils/inflation';
 import { roundForPick } from '@/utils/snakeOrder';
 import { sleeperAdpFor } from '@/utils/consensus';
 import {
+  computeWillingnessMap,
   makePersonas,
   mulberry32,
   simAuctionResult,
@@ -19,14 +20,24 @@ export interface PendingNomination {
   player: PoolPlayer;
 }
 
+export interface LiveBidState {
+  highBid: number;
+  highBidderId: string | null;
+  // True while AI teams are still thinking (sale not settled).
+  open: boolean;
+}
+
 export interface UseDraftSimReturn {
   // Auction mock: the nomination currently up for bidding.
   pending: PendingNomination | null;
   // Auction mock: it's the user's turn to nominate and nothing is pending.
   awaitingMyNomination: boolean;
   nominate: (player: PoolPlayer) => void;
-  // Run the bidding for the pending nomination. 0 = pass.
+  // Sealed-bid mode: run the bidding for the pending nomination. 0 = pass.
   resolve: (myMaxBid: number) => void;
+  // Live-bidding mode: the running auction state and the user's bid action.
+  liveBid: LiveBidState | null;
+  placeBid: (amount: number) => void;
   // One-shot feedback from the last resolution (e.g. "no eligible buyers"),
   // cleared when the next nomination goes up.
   notice: string | null;
@@ -133,6 +144,128 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
     [active, pending, config.myTeamId],
   );
 
+  // ---- Live bidding (config.liveBidding) ----
+  // The nomination opens at $1 to the highest-willing AI (or nobody); every
+  // beat, some AI team with headroom raises by $1; two quiet beats settle
+  // the sale. The user raises via placeBid, which makes price enforcing
+  // possible — push a bidder to their ceiling without ever sealing a max.
+  const [liveBid, setLiveBid] = useState<LiveBidState | null>(null);
+  const willingnessRef = useRef<Map<string, number>>(new Map());
+  const quietBeatsRef = useRef(0);
+
+  const liveMode = !!config.liveBidding;
+
+  // A new nomination (re)opens the floor with fresh private ceilings.
+  useEffect(() => {
+    if (!active || !liveMode || config.draftType !== 'auction') {
+      setLiveBid(null);
+      return;
+    }
+    if (!pending) {
+      setLiveBid(null);
+      return;
+    }
+    const expected = inflateValue(scaledValues.get(pending.player.id) ?? 1, inflation.rate);
+    willingnessRef.current = computeWillingnessMap(
+      pending.player,
+      expected,
+      [...derived.teams.values()],
+      derived.available,
+      config.myTeamId,
+      rng,
+      personas,
+    );
+    quietBeatsRef.current = 0;
+    setLiveBid({ highBid: 0, highBidderId: null, open: true });
+    // Deliberately keyed on the nomination only: willingness must not
+    // re-roll while the bidding runs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending, active, liveMode, config.draftType]);
+
+  // The auction heartbeat.
+  useEffect(() => {
+    if (!liveMode || !liveBid?.open || !pending) return;
+    const timer = setTimeout(() => {
+      const nextBid = liveBid.highBid + 1;
+      // AI raisers: anyone (not already high bidder) whose private ceiling
+      // covers the next bid and whose budget legally allows it.
+      const raisers = [...willingnessRef.current.entries()].filter(([teamId, ceiling]) => {
+        if (teamId === liveBid.highBidderId) return false;
+        if (ceiling < nextBid) return false;
+        const team = derived.teams.get(teamId);
+        return !!team && team.maxBid >= nextBid;
+      });
+      if (raisers.length > 0) {
+        // Highest ceiling speaks first; ties break toward the earlier team.
+        raisers.sort((a, b) => b[1] - a[1]);
+        quietBeatsRef.current = 0;
+        setLiveBid({ highBid: nextBid, highBidderId: raisers[0][0], open: true });
+        return;
+      }
+      quietBeatsRef.current += 1;
+      if (quietBeatsRef.current < 2) {
+        // "Going once..." — re-render via a state identity change.
+        setLiveBid({ ...liveBid });
+        return;
+      }
+      // Going twice: settle.
+      if (liveBid.highBidderId && liveBid.highBid >= 1) {
+        const expected = inflateValue(scaledValues.get(pending.player.id) ?? 1, inflation.rate);
+        logEvent({
+          kind: 'auction_sale',
+          playerId: pending.player.id,
+          nominatedById: pending.nominatorId,
+          wonById: liveBid.highBidderId,
+          price: liveBid.highBid,
+          expectedValue: expected,
+        });
+        setNotice(null);
+      } else {
+        // Nobody opened: hand off to the sealed resolver's $1 fallback.
+        const expected = inflateValue(scaledValues.get(pending.player.id) ?? 1, inflation.rate);
+        const result = simAuctionResult(
+          pending.player,
+          expected,
+          [...derived.teams.values()],
+          derived.available,
+          config.myTeamId,
+          0,
+          rng,
+          personas,
+        );
+        if (result.winnerId) {
+          logEvent({
+            kind: 'auction_sale',
+            playerId: pending.player.id,
+            nominatedById: pending.nominatorId,
+            wonById: result.winnerId,
+            price: result.price,
+            expectedValue: expected,
+          });
+        } else {
+          setNotice(`No eligible buyers for ${pending.player.name}. He stays on the board.`);
+        }
+      }
+      setLiveBid(null);
+      setPending(null);
+    }, 1100);
+    return () => clearTimeout(timer);
+  }, [liveMode, liveBid, pending, derived.teams, derived.available, scaledValues, inflation.rate, config.myTeamId, logEvent, rng, personas]);
+
+  const placeBid = useCallback(
+    (amount: number) => {
+      if (!liveMode || !liveBid?.open || !pending) return;
+      const me = derived.teams.get(config.myTeamId);
+      if (!me) return;
+      const legal = Math.min(amount, me.maxBid);
+      if (legal <= liveBid.highBid) return;
+      if (me.fullAt[pending.player.pos as keyof typeof me.fullAt]) return;
+      quietBeatsRef.current = 0;
+      setLiveBid({ highBid: legal, highBidderId: config.myTeamId, open: true });
+    },
+    [liveMode, liveBid, pending, derived.teams, config.myTeamId],
+  );
+
   const resolve = useCallback(
     (myMaxBid: number) => {
       if (!pending) return;
@@ -174,6 +307,8 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
     awaitingMyNomination: active && config.draftType === 'auction' && !pending && isMyTurn,
     nominate,
     resolve,
+    liveBid,
+    placeBid,
     notice,
     seed: seedRef.current,
   };

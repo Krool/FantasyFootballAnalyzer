@@ -40,6 +40,9 @@ export interface DraftRoomConfig {
   // Mock-draft RNG seed. Set it to replay the same AI script after changing
   // strategy; left empty, each mock rolls fresh.
   simSeed?: number;
+  // Mock auctions only: call bids out one at a time (you can price-enforce)
+  // instead of submitting one sealed max bid.
+  liveBidding?: boolean;
 }
 
 export type DraftEvent =

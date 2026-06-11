@@ -183,6 +183,17 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
             <p className={styles.hint}>
               Mock mode: the other teams draft automatically so you can practice.
             </p>
+            {config.draftType === 'auction' && (
+              <label className={styles.keeperToggle}>
+                <input
+                  type="checkbox"
+                  checked={!!config.liveBidding}
+                  onChange={e => updateConfig({ liveBidding: e.target.checked })}
+                />
+                Live bidding: bids are called one at a time so you can price-enforce,
+                instead of submitting one sealed max bid
+              </label>
+            )}
             <div className={styles.field}>
               <span className={styles.label}>Sim Seed (optional)</span>
               <input

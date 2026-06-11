@@ -3,6 +3,7 @@ import type { League } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
 import { useDraftRoom } from '@/hooks/useDraftRoom';
 import { useDraftSim } from '@/hooks/useDraftSim';
+import { useLiveDraftSync } from '@/hooks/useLiveDraftSync';
 import { useSounds } from '@/hooks/useSounds';
 import { useYahooValues } from '@/hooks/useYahooValues';
 import { AuctionLogger } from '@/components/draftRoom/AuctionLogger';
@@ -58,6 +59,7 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
   const room = useDraftRoom(league);
   const sim = useDraftSim(room);
   const yahoo = useYahooValues(room.pool);
+  const liveSync = useLiveDraftSync(league, room);
   const searchRef = useRef<HTMLInputElement>(null);
   // The board is the selection surface: clicking a row feeds the logger.
   const [selected, setSelected] = useState<PoolPlayer | null>(null);
@@ -311,6 +313,24 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
                   <PickTimer lastEventTs={lastEventTs} />
                 </span>
               )}
+              {liveSync.available && (
+                <button
+                  type="button"
+                  className={liveSync.enabled ? styles.syncBtnOn : styles.syncBtn}
+                  onClick={liveSync.toggle}
+                  title={
+                    liveSync.enabled
+                      ? 'Auto-ingesting picks from the Sleeper draft every 10 seconds. Click to go back to manual logging.'
+                      : 'Pull picks straight from the Sleeper draft so nobody has to type them'
+                  }
+                >
+                  {liveSync.enabled
+                    ? liveSync.status === 'syncing'
+                      ? '● LIVE SYNC'
+                      : '○ CONNECTING'
+                    : 'Live Sync'}
+                </button>
+              )}
               <span className={styles.statusSpacer} />
               <button
                 type="button"
@@ -337,6 +357,12 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
                 {resetArmed ? 'Confirm Reset?' : 'Reset Draft'}
               </button>
             </div>
+
+            {liveSync.error && (
+              <p className={styles.shortcutLegend} role="alert">
+                Live sync stopped: {liveSync.error}
+              </p>
+            )}
 
             {phase === 'drafting' && (
               <p className={styles.shortcutLegend}>
