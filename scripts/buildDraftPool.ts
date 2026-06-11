@@ -72,6 +72,9 @@ interface PoolPlayer {
   // From the Sleeper players dump.
   sleeperId?: string;
   injuryStatus?: string; // Questionable / Out / IR / PUP / Sus...
+  injuryBodyPart?: string; // e.g. "Hamstring" — only when injuryStatus is set
+  injuryNotes?: string; // Sleeper's latest injury blurb, often absent
+  injuryStartDate?: string; // YYYY-MM-DD
   rookie?: boolean;
   depthChartOrder?: number;
 }
@@ -340,6 +343,8 @@ joinSource('Sleeper', sleeperSnapshot?.players, (player, row) => {
 interface SleeperPlayerRow {
   sleeperId: string; name: string; pos: string; team: string;
   status: string | null; injuryStatus: string | null;
+  injuryBodyPart?: string | null; injuryNotes?: string | null;
+  injuryStartDate?: string | null;
   yearsExp: number | null; depthChartOrder: number | null;
 }
 const sleeperPlayers = loadRawSnapshot<{ players: SleeperPlayerRow[] }>('sleeper-players.json');
@@ -359,7 +364,13 @@ if (sleeperPlayers) {
       continue;
     }
     player.sleeperId = row.sleeperId;
-    if (row.injuryStatus) player.injuryStatus = row.injuryStatus;
+    if (row.injuryStatus) {
+      player.injuryStatus = row.injuryStatus;
+      // Detail fields only mean anything alongside a status.
+      if (row.injuryBodyPart) player.injuryBodyPart = row.injuryBodyPart;
+      if (row.injuryNotes) player.injuryNotes = row.injuryNotes;
+      if (row.injuryStartDate) player.injuryStartDate = row.injuryStartDate;
+    }
     if (row.yearsExp === 0) player.rookie = true;
     if (row.depthChartOrder != null) player.depthChartOrder = row.depthChartOrder;
     hits++;

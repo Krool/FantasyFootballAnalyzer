@@ -7,7 +7,7 @@ import { NflTeamLabel, PosBadge } from '@/components';
 import { sleeperAdpFor } from '@/utils/consensus';
 import { inflateValue } from '@/utils/inflation';
 import { normalizeName } from '@/utils/playerNames';
-import { injuryAbbrev } from '@/utils/injury';
+import { injuryAbbrev, injuryTitle } from '@/utils/injury';
 import styles from './AvailablePlayers.module.css';
 
 interface AvailablePlayersProps {
@@ -17,6 +17,14 @@ interface AvailablePlayersProps {
   // When set, each row gets a one-click draft button that logs the player
   // straight to the on-the-clock team (snake catch-up mode).
   onQuickDraft?: (player: PoolPlayer) => void;
+  // Positions dropped from the board entirely. Mock snake drafts pass the
+  // positions the user's roster is full at: nobody else drafts by hand, so
+  // those players are dead rows the user can only mis-click.
+  excludedPositions?: Set<string>;
+  // Positions the on-the-clock team can't roster. The rows stay listed
+  // (another team may still take the player) but the one-click Draft button
+  // hides, since the pick would only bounce off validation.
+  clockFullPositions?: Set<string>;
   // Yahoo auction market prices by pool player id (present when the user
   // has a Yahoo session).
   yahooCosts?: Map<string, number> | null;
@@ -34,6 +42,8 @@ export function AvailablePlayers({
   selectedId,
   onSelect,
   onQuickDraft,
+  excludedPositions,
+  clockFullPositions,
   yahooCosts,
   inputRef,
 }: AvailablePlayersProps) {
@@ -89,6 +99,7 @@ export function AvailablePlayers({
   const rows = useMemo(() => {
     const q = normalizeName(deferredQuery);
     const filtered = derived.available
+      .filter(p => !excludedPositions?.has(p.pos))
       .filter(p => posFilter === 'ALL' || p.pos === posFilter)
       .filter(p => q === '' || normalizeName(p.name).includes(q));
     if (sortBy === 'value' || sortBy === 'adj') {
@@ -111,7 +122,7 @@ export function AvailablePlayers({
       filtered.sort((a, b) => (adp(a) ?? 9999) - (adp(b) ?? 9999));
     }
     return filtered;
-  }, [derived.available, deferredQuery, posFilter, sortBy, scaledValues, yahooCosts, adp]);
+  }, [derived.available, excludedPositions, deferredQuery, posFilter, sortBy, scaledValues, yahooCosts, adp]);
 
   // Last available player at their position in their tier: once they're
   // gone, that position drops a tier.
@@ -311,7 +322,7 @@ export function AvailablePlayers({
                   {p.name}
                   {p.rookie && <span className={styles.rookieTag} title="Rookie">R</span>}
                   {p.injuryStatus && (
-                    <span className={styles.injuryTag} title={p.injuryStatus}>
+                    <span className={styles.injuryTag} title={injuryTitle(p)}>
                       {injuryAbbrev(p.injuryStatus)}
                     </span>
                   )}
@@ -351,17 +362,19 @@ export function AvailablePlayers({
                 )}
                 {onQuickDraft && (
                   <td className={styles.quickCell}>
-                    <button
-                      type="button"
-                      className={styles.quickBtn}
-                      onClick={e => {
-                        e.stopPropagation();
-                        onQuickDraft(p);
-                      }}
-                      title="Draft to the team on the clock"
-                    >
-                      Draft
-                    </button>
+                    {!clockFullPositions?.has(p.pos) && (
+                      <button
+                        type="button"
+                        className={styles.quickBtn}
+                        onClick={e => {
+                          e.stopPropagation();
+                          onQuickDraft(p);
+                        }}
+                        title="Draft to the team on the clock"
+                      >
+                        Draft
+                      </button>
+                    )}
                   </td>
                 )}
               </tr>

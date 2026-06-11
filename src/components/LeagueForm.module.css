@@ -66,20 +66,6 @@
 .platformButton:nth-child(2) .platformIcon { background: var(--espn-color);    color: #fff; }
 .platformButton:nth-child(3) .platformIcon { background: var(--yahoo-color);   color: #fff; }
 
-.comingSoon {
-  position: absolute;
-  top: 0.3rem;
-  right: 0.3rem;
-  font-family: var(--font-mono);
-  font-size: 0.55rem;
-  padding: 0.2rem 0.45rem;
-  background: var(--ink);
-  border: 1px solid var(--bone-dim);
-  color: var(--bone-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-}
-
 /* ── Fields ── */
 .fields {
   display: grid;
@@ -88,7 +74,12 @@
 }
 @media (min-width: 640px) {
   .fields { grid-template-columns: 2fr 1fr; }
+  /* Yahoo orders Season before League, and the league names are the long
+     content, so that block flips the ratio. */
+  .fieldsYahoo { grid-template-columns: 1fr 2fr; }
 }
+/* Sleeper has no season field; let its lone field take the whole row. */
+.fields > .field:only-child { grid-column: 1 / -1; }
 
 .field {
   display: flex;
@@ -112,6 +103,22 @@
   font-size: 0.78rem;
   color: var(--bone-dim);
 }
+
+/* ── Sleeper league finder ── */
+.finder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1.1rem;
+  border-top: 1px dashed var(--rule);
+}
+
+.finderRow {
+  display: flex;
+  gap: 0.6rem;
+}
+.finderRow input { flex: 1; min-width: 0; }
+.finderRow button { white-space: nowrap; }
 
 /* ── ESPN Auth ── */
 .espnAuth {
@@ -227,7 +234,7 @@
 }
 
 .warning {
-  color: var(--color-bad);
+  color: var(--blood);
   margin-top: 0.75rem;
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -239,7 +246,9 @@
   width: 16px;
   height: 16px;
   border: 2px solid rgba(241,236,225,0.25);
-  border-top-color: var(--ink);
+  /* currentColor keeps the arc visible everywhere: ink inside the lime
+     primary button, bone-dim in the dark "loading leagues" row. */
+  border-top-color: currentColor;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin-right: 0.5rem;
@@ -358,7 +367,7 @@
   border-color: var(--lime) !important;
 }
 .inputInvalid {
-  border-color: var(--color-bad) !important;
+  border-color: var(--blood) !important;
 }
 
 .fieldOk {
@@ -374,7 +383,7 @@
   font-family: var(--font-mono);
   font-size: 0.68rem;
   letter-spacing: 0.08em;
-  color: var(--color-bad);
+  color: var(--blood);
 }
 .fieldError::before { content: '! '; }
 

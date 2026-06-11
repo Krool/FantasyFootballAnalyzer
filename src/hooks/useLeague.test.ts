@@ -155,6 +155,65 @@ describe('useLeague.load - cache behavior', () => {
   });
 });
 
+describe('useLeague.load - return value', () => {
+  // Callers route on what load() resolves with (e.g. a freshly renewed
+  // preseason league goes to the Draft Room), so the contract matters.
+  it('resolves with the cached league on a fresh cache hit', async () => {
+    const cached = makeLeague({ name: 'From Cache' });
+    mockedLoadCachedLeague.mockReturnValue(cached);
+
+    const { result } = renderHook(() => useLeague());
+    let returned: League | null = null;
+    await act(async () => {
+      returned = await result.current.load(sleeperCreds);
+    });
+
+    expect(returned).toEqual(cached);
+  });
+
+  it('resolves with the fetched league on a cache miss', async () => {
+    mockedLoadCachedLeague.mockReturnValue(null);
+    const fresh = makeLeague({ name: 'Fresh' });
+    mockedLoadLeague.mockResolvedValue(fresh);
+
+    const { result } = renderHook(() => useLeague());
+    let returned: League | null = null;
+    await act(async () => {
+      returned = await result.current.load(sleeperCreds);
+    });
+
+    expect(returned).toEqual(fresh);
+  });
+
+  it('resolves null when the load fails with nothing cached', async () => {
+    mockedLoadCachedLeague.mockReturnValue(null);
+    mockedLoadLeague.mockRejectedValue(new Error('network down'));
+
+    const { result } = renderHook(() => useLeague());
+    let returned: League | null = makeLeague();
+    await act(async () => {
+      returned = await result.current.load(sleeperCreds);
+    });
+
+    expect(returned).toBeNull();
+  });
+
+  it('resolves with the cached league when a background refresh fails', async () => {
+    const cached = makeLeague({ name: 'Stale Cached' });
+    mockedLoadCachedLeague.mockReturnValue(cached);
+    mockedIsStale.mockReturnValue(true);
+    mockedLoadLeague.mockRejectedValue(new Error('network down'));
+
+    const { result } = renderHook(() => useLeague());
+    let returned: League | null = null;
+    await act(async () => {
+      returned = await result.current.load(sleeperCreds);
+    });
+
+    expect(returned).toEqual(cached);
+  });
+});
+
 describe('useLeague.load - error mapping', () => {
   beforeEach(() => {
     mockedLoadCachedLeague.mockReturnValue(null);
@@ -178,6 +237,28 @@ describe('useLeague.load - error mapping', () => {
     expect(result.current.error).toMatch(expected);
     expect(result.current.league).toBeNull();
     expect(result.current.isLoading).toBe(false);
+  });
+
+  it('points ESPN 401s at cookies, not passwords', async () => {
+    mockedLoadLeague.mockRejectedValue(new Error('Request failed: 401'));
+
+    const { result } = renderHook(() => useLeague());
+    await act(async () => {
+      await result.current.load({ platform: 'espn', leagueId: 'L1', season: 2024 });
+    });
+
+    expect(result.current.error).toMatch(/espn_s2 and SWID/);
+  });
+
+  it('points Yahoo 401s at logging in again', async () => {
+    mockedLoadLeague.mockRejectedValue(new Error('Request failed: 401'));
+
+    const { result } = renderHook(() => useLeague());
+    await act(async () => {
+      await result.current.load({ platform: 'yahoo', leagueId: 'L1', season: 2024 });
+    });
+
+    expect(result.current.error).toMatch(/Log in with Yahoo again/);
   });
 
   it('falls back to a generic message for non-Error throws', async () => {

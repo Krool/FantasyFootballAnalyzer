@@ -1,0 +1,50 @@
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 18vh 1rem 0;
+  background: rgba(10, 10, 10, 0.72);
+}
+
+.panel {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--ink-2);
+  border: 1px solid var(--bone);
+  box-shadow: var(--shadow-offset);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.title {
+  color: var(--bone);
+}
+
+.detail {
+  color: var(--bone-dim);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.bar {
+  width: 220px;
+  height: 6px;
+  margin-top: 0.25rem;
+  background: var(--rule);
+  border: 1px solid var(--bone-dim);
+}
+
+.fill {
+  height: 100%;
+  background: var(--lime);
+  transition: width 0.3s ease;
+}

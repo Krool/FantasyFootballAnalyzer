@@ -29,7 +29,9 @@ interface UseLeagueReturn {
   isLoading: boolean;
   error: string | null;
   progress: LoadingProgress | null;
-  load: (credentials: LeagueCredentials, options?: LoadOptions) => Promise<void>;
+  // Resolves with the league that ended up loaded (cached or fresh), or null
+  // when the load failed or was superseded - callers route on the result.
+  load: (credentials: LeagueCredentials, options?: LoadOptions) => Promise<League | null>;
   refresh: () => Promise<void>;
   clear: () => void;
 }
@@ -72,6 +74,7 @@ export function useLeague(): UseLeagueReturn {
     // kick off a background refresh so the user gets fresh data without a
     // blank loading screen.
     let isBackgroundRefresh = false;
+    let hydrated: League | null = null;
     if (!options?.forceRefresh) {
       const cached = loadCachedLeagueForCredentials(credentials);
       if (cached) {
@@ -86,7 +89,8 @@ export function useLeague(): UseLeagueReturn {
         // Persist creds on cache hits too so /history and /rivalries don't have
         // to re-prompt when navigating into an already-cached league.
         persistESPNCredentials(credentials);
-        if (!stale) return;
+        if (!stale) return cached;
+        hydrated = cached;
         // Fall through to network fetch. Don't surface the spinner or wipe
         // out the visible data on error — the cached snapshot is still on
         // screen and stale data beats no data.
@@ -118,7 +122,10 @@ export function useLeague(): UseLeagueReturn {
         cacheLeague(loadedLeague);
         persistESPNCredentials(credentials);
         Analytics.leagueConnected(credentials.platform, credentials.leagueId);
+        return loadedLeague;
       }
+      // Superseded by a newer request: the screen reflects that one, not this.
+      return null;
     } catch (err) {
       // Only update state if this is still the current request and component is mounted
       if (isMountedRef.current && requestId === currentRequestRef.current) {
@@ -126,7 +133,7 @@ export function useLeague(): UseLeagueReturn {
         if (isBackgroundRefresh) {
           // Silent failure: keep the stale data visible rather than wiping it
           // for an error banner.
-          return;
+          return hydrated;
         }
         let message = 'Failed to load league. Please try again.';
 
@@ -134,7 +141,15 @@ export function useLeague(): UseLeagueReturn {
           // Provide user-friendly error messages
           const errorText = err.message.toLowerCase();
           if (errorText.includes('401') || errorText.includes('unauthorized')) {
-            message = 'Authentication failed. Please check your login credentials.';
+            // Point each platform at its actual fix: ESPN 401s mean missing or
+            // expired cookies, Yahoo 401s mean the OAuth session lapsed.
+            if (credentials.platform === 'espn') {
+              message = 'This league is private. Add your espn_s2 and SWID cookies to load it.';
+            } else if (credentials.platform === 'yahoo') {
+              message = 'Yahoo session expired. Log in with Yahoo again.';
+            } else {
+              message = 'Authentication failed. Please check your login credentials.';
+            }
           } else if (errorText.includes('404') || errorText.includes('not found')) {
             message = 'League not found. Please verify your league ID is correct.';
           } else if (errorText.includes('network') || errorText.includes('fetch')) {
@@ -149,6 +164,7 @@ export function useLeague(): UseLeagueReturn {
         setError(message);
         setLeague(null);
       }
+      return null;
     } finally {
       // Only update loading state if this is still the current request and component is mounted
       if (isMountedRef.current && requestId === currentRequestRef.current && !isBackgroundRefresh) {

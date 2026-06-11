@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { Header, YearSelector } from '@/components';
+import { Header, YearSelector, SeasonLoadingOverlay } from '@/components';
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import { HomePage } from '@/pages';
 
@@ -30,6 +30,7 @@ import { credentialsForSeason } from '@/api';
 import type { LeagueCredentials, SeasonOption } from '@/types';
 import { logger } from '@/utils/logger';
 import { loadSeasons } from '@/utils/seasonsCache';
+import { isEmptyPreseason } from '@/utils/leaguePhase';
 
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Connect Your League',
@@ -121,7 +122,10 @@ function App() {
       const ret = takeOAuthReturn();
       if (ret?.credentials) {
         load(ret.credentials)
-          .then(() => navigate(ret.path || '/draft', { replace: true }))
+          .then(loaded => navigate(
+            ret.path || (isEmptyPreseason(loaded) ? '/draft-room' : '/draft'),
+            { replace: true },
+          ))
           .catch(err => {
             logger.error('Failed to restore league after Yahoo login:', err);
             navigate('/', { replace: true });
@@ -142,9 +146,10 @@ function App() {
   }, [location, navigate, load]);
 
   const handleLoadLeague = async (credentials: LeagueCredentials) => {
-    await load(credentials);
-    // Navigate to draft page after successful load
-    navigate('/draft');
+    const loaded = await load(credentials);
+    // Stay on the form when the load failed; the error renders there.
+    if (!loaded) return;
+    navigate(isEmptyPreseason(loaded) ? '/draft-room' : '/draft');
   };
 
   // Header Yahoo control: connect from anywhere in the app (the login powers
@@ -180,8 +185,15 @@ function App() {
       params.set('year', String(option.year));
       return params;
     }, { replace: false });
-    await load(next);
-  }, [credentials, load, setSearchParams]);
+    const loaded = await load(next);
+    // Picking the not-yet-played season (platforms create it at renewal)
+    // lands in the Draft Room; every other page would be empty. Replace the
+    // ?year entry just pushed above (and keep the param) so Back skips the
+    // empty page and returns to the season the user came from.
+    if (isEmptyPreseason(loaded)) {
+      navigate(`/draft-room?year=${option.year}`, { replace: true });
+    }
+  }, [credentials, load, setSearchParams, navigate]);
 
   // Back/forward (or direct link) changes ?year= → resolve year → load. We
   // use the seasons cache so this doesn't refetch the chain on every nav.
@@ -239,7 +251,17 @@ function App() {
         ) : undefined}
       />
 
-      <main id="main-content" style={{ flex: 1 }}>
+      <main id="main-content" style={{ flex: 1, position: 'relative' }}>
+        {isLoading && league && (
+          <SeasonLoadingOverlay
+            season={
+              credentials?.season && credentials.season !== league.season
+                ? credentials.season
+                : undefined
+            }
+            progress={progress}
+          />
+        )}
         <RouteErrorBoundary resetKey={location.pathname}>
         <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="spinner" /></div>}>
         <Routes>
@@ -247,7 +269,7 @@ function App() {
             path="/"
             element={
               league ? (
-                <Navigate to="/draft" replace />
+                <Navigate to={isEmptyPreseason(league) ? '/draft-room' : '/draft'} replace />
               ) : (
                 <HomePage
                   onLoadLeague={handleLoadLeague}

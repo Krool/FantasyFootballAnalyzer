@@ -58,7 +58,7 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
         <p className={styles.subtitle}>
           Draft grades, a live draft room, trade verdicts, waiver receipts,
           luck scores, and a trophy case for your league. Bring your league
-          id; leave with the receipts.
+          ID. Settle the group chat.
         </p>
       </header>
 
@@ -113,8 +113,8 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
           )}
 
           {error && (
-            <div className={styles.error}>
-              <strong>Error:</strong> {error}
+            <div className={styles.error} role="alert">
+              {error}
             </div>
           )}
         </div>

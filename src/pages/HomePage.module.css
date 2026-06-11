@@ -12,8 +12,8 @@
 /* ── HERO ── */
 .hero {
   position: relative;
-  margin-bottom: 3.5rem;
-  padding: 3rem 0 3.5rem;
+  margin-bottom: 2.5rem;
+  padding: 1.5rem 0 2.25rem;
   border-bottom: 3px solid var(--bone);
   overflow: hidden;
 }
@@ -45,7 +45,7 @@
 
 .title {
   font-family: var(--font-headline);
-  font-size: clamp(64px, 11vw, 168px);
+  font-size: clamp(56px, 9vw, 140px);
   font-weight: 400;
   line-height: 0.82;
   text-transform: uppercase;
@@ -160,13 +160,6 @@
   font-size: 0.85rem;
   box-shadow: 4px 4px 0 var(--blood);
 }
-.error strong {
-  color: var(--blood);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
 /* ── PROGRESS ── */
 .progressContainer {
   margin-top: 1.5rem;
@@ -296,39 +289,6 @@
   line-height: 1.45;
   color: var(--bone);
   opacity: 0.78;
-}
-
-/* Platform list (legacy, kept for completeness) */
-.platforms { text-align: center; }
-.platformsTitle {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--bone-dim);
-  margin-bottom: 1rem;
-}
-.platformList { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
-.platform {
-  display: flex; align-items: center; gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: var(--ink);
-  border: 2px solid var(--bone-dim);
-}
-.platform.supported { border-color: var(--lime); }
-.platform.partial { border-color: var(--color-good); }
-.platform.coming { opacity: 0.5; }
-.platformBadge {
-  width: 28px; height: 28px;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 0.875rem; color: white;
-}
-.platformStatus {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--bone-dim);
 }
 
 /* ── SECRET BUTTON (kept) ── */

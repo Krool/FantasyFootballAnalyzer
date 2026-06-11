@@ -205,14 +205,18 @@ export function Header({
             >
               Teams
             </Link>
-            <Link
-              to="/history"
-              className={`${styles.navLink} ${location.pathname === '/history' ? styles.active : ''}`}
-              onClick={handleNavClick}
-              aria-current={location.pathname === '/history' ? 'page' : undefined}
-            >
-              History
-            </Link>
+            {/* History needs multi-season APIs that only Sleeper and ESPN
+                offer; for Yahoo the tab would be a dead end. */}
+            {(league?.platform === 'sleeper' || league?.platform === 'espn') && (
+              <Link
+                to="/history"
+                className={`${styles.navLink} ${location.pathname === '/history' ? styles.active : ''}`}
+                onClick={handleNavClick}
+                aria-current={location.pathname === '/history' ? 'page' : undefined}
+              >
+                History
+              </Link>
+            )}
             <Link
               to="/awards"
               className={`${styles.navLink} ${location.pathname === '/awards' ? styles.active : ''}`}

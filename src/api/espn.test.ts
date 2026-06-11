@@ -116,7 +116,7 @@ const mainLeagueBody = {
     drafted: true,
     picks: [
       { overallPickNumber: 1, roundId: 1, roundPickNumber: 1, playerId: 201, teamId: 1, bidAmount: 60 },
-      { overallPickNumber: 2, roundId: 1, roundPickNumber: 2, playerId: 202, teamId: 2, bidAmount: 55 },
+      { overallPickNumber: 2, roundId: 1, roundPickNumber: 2, playerId: 202, teamId: 2, bidAmount: 55, keeper: true },
       { overallPickNumber: 3, roundId: 2, roundPickNumber: 1, playerId: 203, teamId: 1, bidAmount: 40 },
       { overallPickNumber: 4, roundId: 2, roundPickNumber: 2, playerId: 204, teamId: 2, bidAmount: 38 },
     ],
@@ -281,6 +281,19 @@ describe('espn loadLeague', () => {
     expect(first.player.team).toBe('BUF');
     expect(first.seasonPoints).toBe(380);
     expect(first.teamName).toBe('Team Hammer');
+    expect(first.isKeeper).toBe(false);
+    // mDraftDetail flags kept players; pick 2 is the fixture's keeper
+    const team2 = league.teams.find(t => t.id === '2')!;
+    expect(team2.draftPicks!.find(p => p.pickNumber === 2)!.isKeeper).toBe(true);
+  });
+
+  it('harvests per-player weekly points from the weekly roster fetches', () => {
+    // Every fixture roster entry scores 10 in each rostered week
+    expect(league.playerWeeklyPoints).toBeDefined();
+    expect(league.playerWeeklyPoints!['201']![1]).toBe(10);
+    // Waiver pickup 301 only appears from week 5 on
+    expect(league.playerWeeklyPoints!['301']![4]).toBeUndefined();
+    expect(league.playerWeeklyPoints!['301']![5]).toBe(10);
   });
 
   it('builds matchups from played regular-season games only', () => {

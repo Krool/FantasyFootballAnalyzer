@@ -22,7 +22,11 @@ export function WaiversPage({ league }: WaiversPageProps) {
         </div>
 
         {hasTransactions ? (
-          <WaiverTable teams={league.teams} platform={league.platform} />
+          <WaiverTable
+            teams={league.teams}
+            platform={league.platform}
+            pointsBasis={league.waiverPointsBasis}
+          />
         ) : (
           <div className={styles.empty}>
             <h2>No Transaction Data Available</h2>

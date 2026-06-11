@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { playerHeadshotUrl } from '@/data/nflTeams';
-import { injuryAbbrev } from '@/utils/injury';
+import { injuryAbbrev, injuryTitle } from '@/utils/injury';
 import styles from './Logger.module.css';
 
 interface SelectedPlayerCardProps {
@@ -44,7 +44,7 @@ export function SelectedPlayerCard({ player, detail }: SelectedPlayerCardProps) 
           <NflTeamLabel team={player.team} /> ·{' '}
           {detail ?? `#${player.overallRank} · Tier ${player.tier}`}
           {player.injuryStatus && (
-            <span className={styles.cardInjury} title={player.injuryStatus}>
+            <span className={styles.cardInjury} title={injuryTitle(player)}>
               {' '}{injuryAbbrev(player.injuryStatus)}
             </span>
           )}

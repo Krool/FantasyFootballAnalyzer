@@ -1,12 +1,13 @@
 import { Fragment, useDeferredValue, useMemo, useState } from 'react';
 import { POOL } from '@/data/draftPool';
 import { NflTeamLabel, PosBadge } from '@/components';
-import { injuryAbbrev } from '@/utils/injury';
+import { injuryAbbrev, injuryTitle } from '@/utils/injury';
 import type { League } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
 import { DEFAULT_BUDGET, DEFAULT_ROSTER_SLOTS } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
 import { useTargets } from '@/hooks/useTargets';
+import { useYahooValues } from '@/hooks/useYahooValues';
 import { consensusAvg, platformDelta, platformRankSource, sleeperAdpFor } from '@/utils/consensus';
 import { draftableSlotCount } from '@/utils/draftEngine';
 import { normalizeName } from '@/utils/playerNames';
@@ -16,7 +17,21 @@ import styles from './RankingsPage.module.css';
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST'];
 const MAX_ROWS = 300;
 
-type SortKey = 'avg' | 'delta' | 'rank' | 'espnAdp' | 'sleeperAdp' | 'fpValue' | 'espnValue';
+type SortKey =
+  | 'avg'
+  | 'delta'
+  | 'rank'
+  | 'espnAdp'
+  | 'sleeperAdp'
+  | 'fpValue'
+  | 'espnValue'
+  | 'yahooValue';
+
+// Per-site columns swap with the view: snake shows each site's ADP, auction
+// shows each site's dollars. Sorts on a hidden column fall back to consensus.
+type ViewTab = 'snake' | 'auction';
+const SNAKE_ONLY_SORTS: SortKey[] = ['espnAdp', 'sleeperAdp'];
+const AUCTION_ONLY_SORTS: SortKey[] = ['fpValue', 'espnValue', 'yahooValue'];
 
 interface RankingsPageProps {
   league: League;
@@ -33,8 +48,11 @@ export function RankingsPage({ league }: RankingsPageProps) {
   const { starred, avoided, cycle } = useTargets(POOL.season);
 
   const isAuction = league.draftType === 'auction';
+  const [viewTab, setViewTab] = useState<ViewTab>(isAuction ? 'auction' : 'snake');
+  const auctionView = viewTab === 'auction';
   const scoring = league.scoringType;
   const source = platformRankSource(league.platform, scoring);
+  const yahoo = useYahooValues(POOL);
 
   // Same league shape the Draft Room setup starts from, so FP $ here matches
   // what the draft board will show.
@@ -61,6 +79,15 @@ export function RankingsPage({ league }: RankingsPageProps) {
   const setSort = (key: SortKey) => {
     playSort();
     setSortBy(key);
+  };
+
+  // Switching views hides the columns the other view sorts by; a sort on a
+  // hidden column would look like a frozen random order, so reset it.
+  const setView = (tab: ViewTab) => {
+    playFilter();
+    setViewTab(tab);
+    const hidden = tab === 'auction' ? SNAKE_ONLY_SORTS : AUCTION_ONLY_SORTS;
+    if (hidden.includes(sortBy)) setSortBy(tab === 'auction' ? 'fpValue' : 'avg');
   };
 
   const deferredQuery = useDeferredValue(query);
@@ -106,9 +133,16 @@ export function RankingsPage({ league }: RankingsPageProps) {
       case 'espnValue':
         filtered.sort((a, b) => (b.espnValue ?? 0) - (a.espnValue ?? 0) || a.overallRank - b.overallRank);
         break;
+      case 'yahooValue':
+        filtered.sort(
+          (a, b) =>
+            (yahoo.costs?.get(b.id) ?? 0) - (yahoo.costs?.get(a.id) ?? 0) ||
+            a.overallRank - b.overallRank,
+        );
+        break;
     }
     return filtered;
-  }, [deferredQuery, posFilter, sortBy, avgById, scaledValues, source, scoring]);
+  }, [deferredQuery, posFilter, sortBy, avgById, scaledValues, source, scoring, yahoo.costs]);
 
   const visible = rows.slice(0, MAX_ROWS);
 
@@ -136,10 +170,9 @@ export function RankingsPage({ league }: RankingsPageProps) {
 
         <div className={styles.settingsBar}>
           <span className={styles.settingsItem}>{shape.teams} teams</span>
-          {isAuction && <span className={styles.settingsItem}>${shape.budget} budget</span>}
+          {auctionView && <span className={styles.settingsItem}>${shape.budget} budget</span>}
           <span className={styles.settingsItem}>{shape.rounds} spots</span>
           <span className={styles.settingsItem}>{league.scoringType.replace('_', ' ')}</span>
-          <span className={styles.settingsItem}>{isAuction ? 'auction' : 'snake'}</span>
           <span className={styles.settingsSpacer} />
           <span
             className={styles.settingsDim}
@@ -147,6 +180,35 @@ export function RankingsPage({ league }: RankingsPageProps) {
           >
             Updated {updated.toLocaleDateString()}
           </span>
+        </div>
+
+        <div className={styles.tabs}>
+          <button
+            type="button"
+            className={viewTab === 'snake' ? styles.tabOn : styles.tab}
+            onClick={() => setView('snake')}
+            title="Pick-position view: each site's ADP side by side"
+          >
+            Snake
+          </button>
+          <button
+            type="button"
+            className={viewTab === 'auction' ? styles.tabOn : styles.tab}
+            onClick={() => setView('auction')}
+            title="Dollar view: each site's auction price side by side"
+          >
+            Auction
+          </button>
+          {auctionView && (
+            <span className={styles.yahooStatus}>
+              {yahoo.status === 'ready' &&
+                `Yahoo prices on (${yahoo.costs?.size ?? 0} players matched)`}
+              {yahoo.status === 'loading' && 'Loading Yahoo prices...'}
+              {yahoo.status === 'unavailable' &&
+                'Connect Yahoo (Y! in the header) to add real draft prices'}
+              {yahoo.status === 'error' && 'Yahoo prices failed to load. Reconnect and reload.'}
+            </span>
+          )}
         </div>
 
         <div className={styles.controls}>
@@ -195,13 +257,17 @@ export function RankingsPage({ league }: RankingsPageProps) {
                 <th>Pos</th>
                 <th>Team</th>
                 <th className={styles.num}>Bye</th>
-                {sortableTh('espnAdp', 'ESPN ADP', 'ESPN average draft position')}
-                {sortableTh(
-                  'sleeperAdp',
-                  'SLPR ADP',
-                  `Sleeper average draft position (${scoring.replace('_', ' ')} scoring)`,
+                {!auctionView && (
+                  <>
+                    {sortableTh('espnAdp', 'ESPN ADP', 'ESPN average draft position')}
+                    {sortableTh(
+                      'sleeperAdp',
+                      'SLPR ADP',
+                      `Sleeper average draft position (${scoring.replace('_', ' ')} scoring)`,
+                    )}
+                  </>
                 )}
-                {isAuction && (
+                {auctionView && (
                   <>
                     {sortableTh(
                       'fpValue',
@@ -212,6 +278,13 @@ export function RankingsPage({ league }: RankingsPageProps) {
                       'espnValue',
                       'ESPN $',
                       'Live ESPN auction market price (ESPN default league, unscaled)',
+                    )}
+                    {sortableTh(
+                      'yahooValue',
+                      'YHO $',
+                      yahoo.status === 'ready'
+                        ? 'Average price in real Yahoo auction drafts (unscaled)'
+                        : 'Average price in real Yahoo auction drafts. Connect Yahoo in the header to load.',
                     )}
                   </>
                 )}
@@ -229,7 +302,7 @@ export function RankingsPage({ league }: RankingsPageProps) {
                   <Fragment key={p.id}>
                   {showTierBreak && (
                     <tr className={styles.tierBreakRow} aria-hidden="true">
-                      <td colSpan={isAuction ? 13 : 11}>TIER {p.tier}</td>
+                      <td colSpan={auctionView ? 12 : 11}>TIER {p.tier}</td>
                     </tr>
                   )}
                   <tr className={styles.row}>
@@ -274,7 +347,7 @@ export function RankingsPage({ league }: RankingsPageProps) {
                       {p.name}
                       {p.rookie && <span className={styles.rookieTag} title="Rookie">R</span>}
                       {p.injuryStatus && (
-                        <span className={styles.injuryTag} title={p.injuryStatus}>
+                        <span className={styles.injuryTag} title={injuryTitle(p)}>
                           {injuryAbbrev(p.injuryStatus)}
                         </span>
                       )}
@@ -286,16 +359,23 @@ export function RankingsPage({ league }: RankingsPageProps) {
                       <NflTeamLabel team={p.team} />
                     </td>
                     <td className={`${styles.num} ${styles.dim}`}>{p.bye ?? '-'}</td>
-                    <td className={`${styles.num} ${styles.dim}`}>{p.espnAdp ?? '-'}</td>
-                    <td className={`${styles.num} ${styles.dim}`}>
-                      {sleeperAdpFor(p, scoring) ?? '-'}
-                    </td>
-                    {isAuction && (
+                    {!auctionView && (
+                      <>
+                        <td className={`${styles.num} ${styles.dim}`}>{p.espnAdp ?? '-'}</td>
+                        <td className={`${styles.num} ${styles.dim}`}>
+                          {sleeperAdpFor(p, scoring) ?? '-'}
+                        </td>
+                      </>
+                    )}
+                    {auctionView && (
                       <>
                         <td className={`${styles.num} ${styles.value}`}>
                           ${scaledValues.get(p.id) ?? 1}
                         </td>
                         <td className={styles.num}>{p.espnValue ? `$${p.espnValue}` : '-'}</td>
+                        <td className={styles.num}>
+                          {yahoo.costs?.get(p.id) ? `$${yahoo.costs.get(p.id)}` : '-'}
+                        </td>
                       </>
                     )}
                   </tr>
@@ -304,7 +384,7 @@ export function RankingsPage({ league }: RankingsPageProps) {
               })}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={isAuction ? 13 : 11} className={styles.emptyRow}>
+                  <td colSpan={auctionView ? 12 : 11} className={styles.emptyRow}>
                     No players match.
                   </td>
                 </tr>

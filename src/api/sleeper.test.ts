@@ -151,6 +151,7 @@ function routeSleeper(url: string): unknown {
 
   if (path === '/state/nfl') return { week: 18, season: '2025', season_type: 'regular' };
   if (path === '/players/nfl') return playersFixture;
+  if (path === `/draft/${DRAFT_ID}`) return { draft_id: DRAFT_ID, type: 'snake', status: 'complete' };
   if (path === `/draft/${DRAFT_ID}/picks`) return draftPicksFixture;
   if (path.startsWith('/stats/nfl/regular/')) return seasonStatsFixture;
   if (path === `/league/${LEAGUE_ID}/users`) return usersFixture;

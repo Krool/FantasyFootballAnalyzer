@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-06-11T09:16:46.002Z",
+ "fetchedAt": "2026-06-11T18:15:34.613Z",
  "data": {
   "scoring": "HALF",
   "players": [
@@ -362,7 +362,7 @@
     "bye": 14,
     "rankMin": 17,
     "rankMax": 64,
-    "rankStd": 10.42
+    "rankStd": 10.63
    },
    {
     "name": "DeVonta Smith",
@@ -374,7 +374,7 @@
     "bye": 10,
     "rankMin": 21,
     "rankMax": 59,
-    "rankStd": 9.07
+    "rankStd": 9.08
    },
    {
     "name": "Tee Higgins",
@@ -386,7 +386,7 @@
     "bye": 6,
     "rankMin": 28,
     "rankMax": 46,
-    "rankStd": 4.77
+    "rankStd": 4.74
    },
    {
     "name": "Lamar Jackson",
@@ -506,7 +506,7 @@
     "bye": 14,
     "rankMin": 14,
     "rankMax": 57,
-    "rankStd": 9.29
+    "rankStd": 9.35
    },
    {
     "name": "Terry McLaurin",
@@ -612,9 +612,9 @@
     "rank": 51,
     "tier": 6,
     "bye": 10,
-    "rankMin": 33,
+    "rankMin": 37,
     "rankMax": 67,
-    "rankStd": 7.63
+    "rankStd": 7.42
    },
    {
     "name": "Cam Skattebo",
@@ -881,28 +881,28 @@
     "rankStd": 10.05
    },
    {
-    "name": "Harold Fannin Jr.",
-    "team": "CLE",
-    "pos": "TE",
-    "posRank": 6,
-    "rank": 74,
-    "tier": 7,
-    "bye": 11,
-    "rankMin": 51,
-    "rankMax": 96,
-    "rankStd": 10.01
-   },
-   {
     "name": "Chuba Hubbard",
     "team": "CAR",
     "pos": "RB",
     "posRank": 28,
-    "rank": 75,
+    "rank": 74,
     "tier": 7,
     "bye": 5,
     "rankMin": 51,
     "rankMax": 116,
     "rankStd": 13.39
+   },
+   {
+    "name": "Harold Fannin Jr.",
+    "team": "CLE",
+    "pos": "TE",
+    "posRank": 6,
+    "rank": 75,
+    "tier": 7,
+    "bye": 11,
+    "rankMin": 51,
+    "rankMax": 96,
+    "rankStd": 9.99
    },
    {
     "name": "Courtland Sutton",
@@ -1022,7 +1022,7 @@
     "bye": 6,
     "rankMin": 65,
     "rankMax": 100,
-    "rankStd": 5.36
+    "rankStd": 5.37
    },
    {
     "name": "Brian Thomas Jr.",
@@ -1382,7 +1382,7 @@
     "bye": 8,
     "rankMin": 34,
     "rankMax": 208,
-    "rankStd": 25.96
+    "rankStd": 26.53
    },
    {
     "name": "Rachaad White",
@@ -2105,23 +2105,11 @@
     "rankStd": 22.59
    },
    {
-    "name": "Brandon Aiyuk",
-    "team": "SF",
-    "pos": "WR",
-    "posRank": 66,
-    "rank": 176,
-    "tier": 11,
-    "bye": 8,
-    "rankMin": 127,
-    "rankMax": 288,
-    "rankStd": 28.62
-   },
-   {
     "name": "Kenyon Sadiq",
     "team": "NYJ",
     "pos": "TE",
     "posRank": 22,
-    "rank": 177,
+    "rank": 176,
     "tier": 11,
     "bye": 13,
     "rankMin": 130,
@@ -2132,8 +2120,8 @@
     "name": "Tre' Harris",
     "team": "LAC",
     "pos": "WR",
-    "posRank": 67,
-    "rank": 178,
+    "posRank": 66,
+    "rank": 177,
     "tier": 11,
     "bye": 7,
     "rankMin": 132,
@@ -2144,13 +2132,25 @@
     "name": "Deebo Samuel Sr.",
     "team": "FA",
     "pos": "WR",
-    "posRank": 68,
-    "rank": 179,
+    "posRank": 67,
+    "rank": 178,
     "tier": 11,
     "bye": null,
     "rankMin": 122,
     "rankMax": 321,
     "rankStd": 34.42
+   },
+   {
+    "name": "Brandon Aiyuk",
+    "team": "SF",
+    "pos": "WR",
+    "posRank": 68,
+    "rank": 179,
+    "tier": 11,
+    "bye": 8,
+    "rankMin": 127,
+    "rankMax": 296,
+    "rankStd": 34.04
    },
    {
     "name": "Philadelphia Eagles",
@@ -2342,7 +2342,7 @@
     "bye": 14,
     "rankMin": 163,
     "rankMax": 325,
-    "rankStd": 30.06
+    "rankStd": 28.79
    },
    {
     "name": "Calvin Ridley",
@@ -2354,7 +2354,7 @@
     "bye": 9,
     "rankMin": 139,
     "rankMax": 304,
-    "rankStd": 28.86
+    "rankStd": 28.89
    },
    {
     "name": "Pat Bryant",
@@ -2546,7 +2546,7 @@
     "bye": 9,
     "rankMin": 153,
     "rankMax": 304,
-    "rankStd": 39.75
+    "rankStd": 39.72
    },
    {
     "name": "Kansas City Chiefs",
@@ -2654,7 +2654,7 @@
     "bye": 8,
     "rankMin": 174,
     "rankMax": 349,
-    "rankStd": 36.26
+    "rankStd": 36.22
    },
    {
     "name": "Cairo Santos",
@@ -2714,7 +2714,7 @@
     "bye": 8,
     "rankMin": 177,
     "rankMax": 290,
-    "rankStd": 25.43
+    "rankStd": 25.27
    },
    {
     "name": "Ollie Gordon II",
@@ -2798,7 +2798,7 @@
     "bye": 13,
     "rankMin": 202,
     "rankMax": 287,
-    "rankStd": 19.69
+    "rankStd": 19.63
    },
    {
     "name": "Chase McLaughlin",
@@ -3038,7 +3038,7 @@
     "bye": 13,
     "rankMin": 155,
     "rankMax": 365,
-    "rankStd": 32.2
+    "rankStd": 32.17
    },
    {
     "name": "Christian Kirk",
@@ -3050,7 +3050,7 @@
     "bye": 8,
     "rankMin": 177,
     "rankMax": 340,
-    "rankStd": 33.74
+    "rankStd": 33.72
    },
    {
     "name": "Kendre Miller",
@@ -3074,7 +3074,7 @@
     "bye": 11,
     "rankMin": 191,
     "rankMax": 314,
-    "rankStd": 23.53
+    "rankStd": 23.47
    },
    {
     "name": "Demond Claiborne",
@@ -3158,7 +3158,7 @@
     "bye": 7,
     "rankMin": 201,
     "rankMax": 314,
-    "rankStd": 28
+    "rankStd": 27.91
    },
    {
     "name": "Malik Davis",
@@ -3317,28 +3317,28 @@
     "rankStd": 28.87
    },
    {
+    "name": "Kyle Williams",
+    "team": "NE",
+    "pos": "WR",
+    "posRank": 99,
+    "rank": 277,
+    "tier": 13,
+    "bye": 11,
+    "rankMin": 196,
+    "rankMax": 383,
+    "rankStd": 36.91
+   },
+   {
     "name": "Najee Harris",
     "team": "LAC",
     "pos": "RB",
     "posRank": 81,
-    "rank": 277,
+    "rank": 278,
     "tier": 13,
     "bye": 7,
     "rankMin": 186,
     "rankMax": 306,
     "rankStd": 29.25
-   },
-   {
-    "name": "Kyle Williams",
-    "team": "NE",
-    "pos": "WR",
-    "posRank": 99,
-    "rank": 278,
-    "tier": 13,
-    "bye": 11,
-    "rankMin": 196,
-    "rankMax": 383,
-    "rankStd": 36.96
    },
    {
     "name": "Will Reichard",
@@ -3458,7 +3458,7 @@
     "bye": 5,
     "rankMin": 175,
     "rankMax": 330,
-    "rankStd": 30.83
+    "rankStd": 30.8
    },
    {
     "name": "Xavier Legette",
@@ -3470,7 +3470,7 @@
     "bye": 5,
     "rankMin": 222,
     "rankMax": 314,
-    "rankStd": 27.66
+    "rankStd": 27.57
    },
    {
     "name": "Tua Tagovailoa",
@@ -3530,7 +3530,7 @@
     "bye": 7,
     "rankMin": 217,
     "rankMax": 298,
-    "rankStd": 21.99
+    "rankStd": 22
    },
    {
     "name": "Indianapolis Colts",
@@ -3890,7 +3890,7 @@
     "bye": 11,
     "rankMin": 261,
     "rankMax": 318,
-    "rankStd": 19.27
+    "rankStd": 19.37
    },
    {
     "name": "Chicago Bears",
@@ -4142,7 +4142,7 @@
     "bye": 8,
     "rankMin": 217,
     "rankMax": 375,
-    "rankStd": 45.71
+    "rankStd": 45.78
    },
    {
     "name": "Michael Carter",

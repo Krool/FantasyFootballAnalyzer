@@ -1,5 +1,7 @@
-import type { League, LeagueCredentials, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade } from '@/types';
+import type { League, LeagueCredentials, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, WeeklyMatchup } from '@/types';
 import { logger } from '@/utils/logger';
+import { decideTradeWinner } from '@/utils/tradeVerdict';
+import { calculateGamesPAR } from '@/utils/par';
 
 // Backend API URL - Vercel deployment
 const API_BASE = import.meta.env.VITE_YAHOO_API_URL || 'https://fantasy-football-analyzer-mu.vercel.app';
@@ -214,7 +216,7 @@ function refreshAccessToken(): Promise<void> {
         throw new Error('No refresh token available');
       }
 
-      const response = await fetch(`${API_BASE}/api/yahoo-refresh`, {
+      const post = () => fetch(`${API_BASE}/api/yahoo-refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -222,9 +224,29 @@ function refreshAccessToken(): Promise<void> {
         body: JSON.stringify({ refresh_token: refreshToken })
       });
 
+      // A cold proxy (first hit after idle) or a network blip is not an
+      // auth failure. Retry once before judging the token, so we don't
+      // sign the user out over a 500 that fixes itself. 429 is the same
+      // story: a rate limit says nothing about the refresh token.
+      let response: Response | null = null;
+      try {
+        response = await post();
+      } catch {
+        response = null;
+      }
+      if (!response || (!response.ok && (response.status >= 500 || response.status === 429))) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        response = await post();
+      }
+
       if (!response.ok) {
-        clearTokens();
-        throw new Error('Token refresh failed - please re-authenticate');
+        if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+          // The refresh token itself was rejected; only then is signing
+          // the user out the right call.
+          clearTokens();
+          throw new Error('Token refresh failed - please re-authenticate');
+        }
+        throw new Error(`Token refresh failed (${response.status}) - please try again`);
       }
 
       const tokens = await response.json();
@@ -362,27 +384,33 @@ export async function getAvailableSeasons(
 }
 
 // Parse roster settings to get position slot counts
-function parseRosterSettings(settings: any): { QB: number; RB: number; WR: number; TE: number; FLEX: number; K: number; DST: number; hasSuperflex: boolean } {
+function parseRosterSettings(settings: any): { QB: number; RB: number; WR: number; TE: number; FLEX: number; K: number; DST: number; BENCH: number; IR: number; hasSuperflex: boolean } {
   const rosterPositions = settings?.roster_positions?.roster_position || [];
   const posList = Array.isArray(rosterPositions) ? rosterPositions : [rosterPositions];
 
-  const slots = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, K: 0, DST: 0, hasSuperflex: false };
+  const slots = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, K: 0, DST: 0, BENCH: 0, IR: 0, hasSuperflex: false };
+  let parsedAny = false;
 
   for (const pos of posList) {
-    const posType = pos.position || pos.position_type || '';
+    const posType = String(pos.position || pos.position_type || '');
     const count = parseInt(pos.count || '1');
 
     switch (posType) {
-      case 'QB': slots.QB += count; break;
-      case 'RB': slots.RB += count; break;
-      case 'WR': slots.WR += count; break;
-      case 'TE': slots.TE += count; break;
-      case 'W/R/T': case 'W/R': case 'FLEX': slots.FLEX += count; break;
+      case 'QB': slots.QB += count; parsedAny = true; break;
+      case 'RB': slots.RB += count; parsedAny = true; break;
+      case 'WR': slots.WR += count; parsedAny = true; break;
+      case 'TE': slots.TE += count; parsedAny = true; break;
+      case 'W/R/T': case 'W/R': case 'FLEX': slots.FLEX += count; parsedAny = true; break;
       // Superflex: counted as FLEX for slot math, but flagged so the Draft
       // Room can warn that 1QB values badly underprice QBs here.
-      case 'Q/W/R/T': slots.FLEX += count; slots.hasSuperflex = true; break;
-      case 'K': slots.K += count; break;
-      case 'DEF': case 'D/ST': case 'DST': slots.DST += count; break;
+      case 'Q/W/R/T': slots.FLEX += count; slots.hasSuperflex = true; parsedAny = true; break;
+      case 'K': slots.K += count; parsedAny = true; break;
+      case 'DEF': case 'D/ST': case 'DST': slots.DST += count; parsedAny = true; break;
+      case 'BN': slots.BENCH += count; parsedAny = true; break;
+      default:
+        // Yahoo spells injured reserve 'IR' but also ships variants like
+        // 'IR+' depending on league settings.
+        if (posType.startsWith('IR')) { slots.IR += count; parsedAny = true; }
     }
   }
 
@@ -393,6 +421,11 @@ function parseRosterSettings(settings: any): { QB: number; RB: number; WR: numbe
   if (slots.TE === 0) slots.TE = 1;
   if (slots.K === 0) slots.K = 1;
   if (slots.DST === 0) slots.DST = 1;
+  // Bench/IR default only when the settings response gave us nothing at
+  // all; a parsed league with a real 0 IR keeps its 0 (a real bench of 0
+  // does not exist on Yahoo).
+  if (slots.BENCH === 0) slots.BENCH = 6;
+  if (!parsedAny && slots.IR === 0) slots.IR = 1;
 
   return slots;
 }
@@ -415,7 +448,12 @@ export async function loadLeague(leagueKey: string): Promise<League> {
 
   // Parse league info
   const season = parseInt(leagueInfo.season);
-  const draftType = leagueInfo.settings?.draft_type === 'auction' ? 'auction' : 'snake';
+  // Yahoo's draft_type means live/self/offline, NOT snake-vs-auction; the
+  // auction flag is is_auction_draft. Accept the legacy value too just in
+  // case old responses carried it.
+  const isAuction = String(leagueInfo.settings?.is_auction_draft) === '1' ||
+    leagueInfo.settings?.draft_type === 'auction';
+  const draftType = isAuction ? 'auction' : 'snake';
 
   // Parse roster settings for PAR calculation
   const rosterSlots = parseRosterSettings(leagueInfo.settings);
@@ -514,8 +552,8 @@ export async function loadLeague(leagueKey: string): Promise<League> {
       FLEX: rosterSlots.FLEX,
       K: rosterSlots.K,
       DST: rosterSlots.DST,
-      BENCH: 6, // Default
-      IR: 1, // Default
+      BENCH: rosterSlots.BENCH,
+      IR: rosterSlots.IR,
     },
     hasSuperflex: rosterSlots.hasSuperflex,
     status,
@@ -702,6 +740,161 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
   return { transactions, trades };
 }
 
+// --- Weekly data (matchups + per-player weekly points) ---------------------
+// Yahoo serves weekly, league-scored data, but only through specific URL
+// shapes (see docs/API_REFERENCE.md, Yahoo > Weekly player stats):
+//   scoreboard;week={n}                               -> team totals per matchup
+//   players;player_keys=.../stats;type=week;week={n}  -> player_points.total
+// The `;out=stats` collection shape silently ignores week filters and returns
+// season totals, which is why earlier builds believed weekly data didn't exist.
+
+// The NFL regular season has run 18 weeks since 2021; leagues that end
+// earlier are capped by their own current_week, so 18 only adds the final
+// week for leagues that actually play it.
+const SEASON_MAX_WEEK = 18;
+
+// Run tasks a few at a time: a burst of ~12 concurrent calls trips Yahoo's
+// per-user rate limit (same constraint as getAvailableSeasons).
+async function runBatched<T>(tasks: Array<() => Promise<T>>, batchSize = 3): Promise<T[]> {
+  const results: T[] = [];
+  for (let i = 0; i < tasks.length; i += batchSize) {
+    const settled = await Promise.all(tasks.slice(i, i + batchSize).map(t => t()));
+    results.push(...settled);
+  }
+  return results;
+}
+
+interface GameWeekRange { week: number; startMs: number; endMs: number }
+
+// Yahoo transactions carry only a Unix timestamp, no week number. The game's
+// week calendar (one cheap call per load) lets us place every transaction and
+// trade in its real week - the since-pickup and post-trade math depend on it.
+async function getGameWeekRanges(gameKey: string): Promise<GameWeekRange[]> {
+  const data = await yahooFetch<any>(`/game/${gameKey}/game_weeks`);
+  const node = data?.fantasy_content?.game?.game_weeks?.game_week;
+  if (!node) return [];
+  const list = Array.isArray(node) ? node : [node];
+  const ranges: GameWeekRange[] = [];
+  for (const gw of list) {
+    const week = parseInt(gw.week);
+    const startMs = Date.parse(`${gw.start}T00:00:00Z`);
+    // end date is inclusive: cover through the end of that calendar day
+    const endMs = Date.parse(`${gw.end}T23:59:59Z`);
+    if (Number.isFinite(week) && Number.isFinite(startMs) && Number.isFinite(endMs)) {
+      ranges.push({ week, startMs, endMs });
+    }
+  }
+  return ranges.sort((a, b) => a.week - b.week);
+}
+
+// Earlier-than-week-1 timestamps (offseason pickups) clamp to week 1;
+// later-than-final-week timestamps clamp to the last week.
+function weekForTimestamp(ranges: GameWeekRange[], timestamp: number): number | null {
+  if (!ranges.length) return null;
+  for (const r of ranges) {
+    if (timestamp <= r.endMs) return r.week;
+  }
+  return ranges[ranges.length - 1].week;
+}
+
+// Weekly matchup scores for luck analysis. Regular season only: luck metrics
+// compare against regular-season records, so playoff/consolation weeks would
+// bias scores against playoff teams. Unplayed 0-0 weeks are skipped too.
+async function getWeeklyMatchups(
+  leagueKey: string,
+  maxWeek: number,
+  onCallDone?: () => void,
+): Promise<WeeklyMatchup[]> {
+  const tasks = Array.from({ length: maxWeek }, (_, i) => async () => {
+    const week = i + 1;
+    try {
+      const data = await yahooFetch<any>(`/league/${leagueKey}/scoreboard;week=${week}`);
+      return { week, data };
+    } catch (e) {
+      logger.warn(`[Yahoo] scoreboard week ${week} failed:`, e);
+      return { week, data: null as any };
+    } finally {
+      onCallDone?.();
+    }
+  });
+
+  const weeks = await runBatched(tasks);
+  const matchups: WeeklyMatchup[] = [];
+  for (const { week, data } of weeks) {
+    const node = data?.fantasy_content?.league?.scoreboard?.matchups?.matchup;
+    if (!node) continue;
+    for (const m of Array.isArray(node) ? node : [node]) {
+      if (String(m.is_playoffs) === '1' || String(m.is_consolation) === '1') continue;
+      const teamsNode = m.teams?.team;
+      const pair = Array.isArray(teamsNode) ? teamsNode : [teamsNode];
+      if (pair.length !== 2 || !pair[0]?.team_key || !pair[1]?.team_key) continue;
+      const p1 = parseFloat(pair[0]?.team_points?.total ?? '0') || 0;
+      const p2 = parseFloat(pair[1]?.team_points?.total ?? '0') || 0;
+      if (p1 === 0 && p2 === 0) continue; // future/unplayed week
+      matchups.push({
+        week,
+        team1Id: pair[0].team_key,
+        team1Points: p1,
+        team2Id: pair[1].team_key,
+        team2Points: p2,
+      });
+    }
+  }
+  return matchups;
+}
+
+// Per-player weekly fantasy points, scored by the league's own settings
+// (player_points.total comes back league-scored on the league-scoped URL).
+// failedKeys collects every player whose fetch errored at least once, so the
+// caller can fall back to season totals for them instead of summing a hole.
+async function getWeeklyPlayerPoints(
+  leagueKey: string,
+  playerKeys: string[],
+  maxWeek: number,
+  onCallDone?: () => void,
+): Promise<{ points: Record<string, Record<number, number>>; failedKeys: Set<string> }> {
+  const result: Record<string, Record<number, number>> = {};
+  const failedKeys = new Set<string>();
+  const batches: string[][] = [];
+  for (let i = 0; i < playerKeys.length; i += 25) {
+    batches.push(playerKeys.slice(i, i + 25));
+  }
+
+  const tasks: Array<() => Promise<void>> = [];
+  for (let week = 1; week <= maxWeek; week++) {
+    for (const batch of batches) {
+      tasks.push(async () => {
+        try {
+          const data = await yahooFetch<any>(
+            `/league/${leagueKey}/players;player_keys=${batch.join(',')}/stats;type=week;week=${week}`
+          );
+          const node = data?.fantasy_content?.league?.players?.player;
+          if (!node) return;
+          for (const player of Array.isArray(node) ? node : [node]) {
+            const total = parseFloat(player?.player_points?.total ?? '');
+            // total !== 0 doubles as the bye filter: Yahoo returns a row for
+            // every requested week, byes included, all reading 0. The cost is
+            // that a real played-but-scoreless week is dropped too (games
+            // undercounts slightly, nudging per-game PAR up); telling the two
+            // apart would need per-player bye weeks, which this URL lacks.
+            if (Number.isFinite(total) && total !== 0 && player.player_key) {
+              (result[player.player_key] ??= {})[week] = total;
+            }
+          }
+        } catch (e) {
+          logger.warn(`[Yahoo] weekly player stats week ${week} failed:`, e);
+          for (const key of batch) failedKeys.add(key);
+        } finally {
+          onCallDone?.();
+        }
+      });
+    }
+  }
+
+  await runBatched(tasks);
+  return { points: result, failedKeys };
+}
+
 // Progress callback type
 type ProgressCallback = (progress: { stage: string; current: number; total: number; detail?: string }) => void;
 
@@ -873,6 +1066,120 @@ export async function enrichPlayersWithStats(
 
   // ========== END PAR CALCULATION ==========
 
+  // ========== WEEKLY DATA (matchups, weekly player points) ==========
+  // Three fetch phases, each individually best-effort: a failure just leaves
+  // that capability degraded to the old season-totals behavior.
+  const replacementMap = new Map(Object.entries(replacementBaseline));
+  let weeklyPoints: Record<string, Record<number, number>> | null = null;
+  // Players whose weekly fetch actually landed (requested, no errored batch).
+  // Everyone else - capped out, batch failed, or never requested - falls back
+  // to season totals per player.
+  let weeklyCoveredKeys = new Set<string>();
+  let weeksResolved = false;
+
+  const maxWeek = Math.min(league.currentWeek || SEASON_MAX_WEEK, SEASON_MAX_WEEK);
+  if (league.status !== 'preseason' && maxWeek >= 1) {
+    // 1. Game week calendar: place transactions and trades in their real
+    //    week (Yahoo gives only timestamps, and the parser defaulted to 1).
+    try {
+      const gameKey = String(league.id).split('.')[0];
+      const ranges = await getGameWeekRanges(gameKey);
+      if (ranges.length > 0) {
+        weeksResolved = true;
+        for (const team of league.teams) {
+          for (const tx of team.transactions || []) {
+            tx.week = weekForTimestamp(ranges, tx.timestamp) ?? tx.week;
+          }
+        }
+        for (const trade of league.trades || []) {
+          trade.week = weekForTimestamp(ranges, trade.timestamp) ?? trade.week;
+        }
+      }
+    } catch (e) {
+      logger.warn('[Yahoo] game_weeks fetch failed, transaction weeks stay approximate:', e);
+    }
+
+    // 2. Weekly matchup scores: lights up luck analysis, awards, and
+    //    manager score, which all guard on league.matchups.
+    let scoreboardDone = 0;
+    onProgress?.({ stage: 'Fetching weekly scores', current: 0, total: maxWeek });
+    const weeklyMatchups = await getWeeklyMatchups(league.id, maxWeek, () => {
+      scoreboardDone++;
+      onProgress?.({
+        stage: 'Fetching weekly scores',
+        current: scoreboardDone,
+        total: maxWeek,
+        detail: `Week ${scoreboardDone} of ${maxWeek}`,
+      });
+    });
+    if (weeklyMatchups.length > 0) {
+      league.matchups = weeklyMatchups;
+    }
+
+    // 3. Weekly points for players who changed teams midseason (waiver/FA
+    //    adds and traded players). That set is what real since-pickup math
+    //    and Player Journey stint scoring need; fetching every drafted
+    //    player would multiply the call count for little gain.
+    const movedKeys = new Set<string>();
+    for (const team of league.teams) {
+      for (const tx of team.transactions || []) {
+        for (const p of tx.adds || []) movedKeys.add(p.id);
+      }
+    }
+    for (const trade of league.trades || []) {
+      for (const side of trade.teams) {
+        for (const p of side.playersReceived) movedKeys.add(p.id);
+        for (const p of side.playersSent) movedKeys.add(p.id);
+      }
+    }
+
+    if (weeksResolved && movedKeys.size > 0) {
+      // Cap the fetch so a hyperactive league can't queue hundreds of calls;
+      // uncovered players fall back to season totals below (weeklyCovered).
+      const keys = Array.from(movedKeys).slice(0, 150);
+      if (keys.length < movedKeys.size) {
+        logger.warn(`[Yahoo] weekly stats capped at 150 of ${movedKeys.size} moved players`);
+      }
+      const totalStatCalls = Math.ceil(keys.length / 25) * maxWeek;
+      let statCallsDone = 0;
+      onProgress?.({ stage: 'Fetching weekly player stats', current: 0, total: totalStatCalls });
+      const fetched = await getWeeklyPlayerPoints(league.id, keys, maxWeek, () => {
+        statCallsDone++;
+        onProgress?.({
+          stage: 'Fetching weekly player stats',
+          current: statCallsDone,
+          total: totalStatCalls,
+        });
+      });
+      weeklyPoints = fetched.points;
+      weeklyCoveredKeys = new Set(keys.filter(k => !fetched.failedKeys.has(k)));
+      if (Object.keys(weeklyPoints).length > 0) {
+        league.playerWeeklyPoints = weeklyPoints;
+      }
+    }
+  }
+
+  // Weekly data is usable per player, and only when the week calendar landed
+  // too; otherwise since-pickup math would run from a wrong week. A total
+  // fetch outage leaves weeklyCoveredKeys empty, so everyone falls back.
+  const weeklyCovered = (playerId: string): boolean =>
+    weeksResolved && weeklyCoveredKeys.has(playerId);
+  const sumWeeksSince = (playerId: string, fromWeek: number): { points: number; games: number } => {
+    const weekly = weeklyPoints?.[playerId];
+    let points = 0;
+    let games = 0;
+    if (weekly) {
+      for (const [w, pts] of Object.entries(weekly)) {
+        if (Number(w) >= fromWeek) {
+          points += pts;
+          games++;
+        }
+      }
+    }
+    return { points, games };
+  };
+  // ========== END WEEKLY DATA ==========
+
   // Update draft picks with enriched data
   for (const team of league.teams) {
     for (const pick of team.draftPicks || []) {
@@ -887,11 +1194,13 @@ export async function enrichPlayersWithStats(
       }
     }
 
-    // Update transactions with player stats
-    // NOTE: Yahoo's weekly stats API doesn't work properly (returns season totals)
-    // So we use season points and PAR instead of "points since pickup"
+    // Update transactions with player stats. With weekly data the points
+    // column is real "since pickup" (all games from the pickup week on -
+    // Yahoo doesn't report lineup starts, so we can't narrow to started
+    // games the way Sleeper/ESPN do). Without it, season totals as before.
     for (const tx of team.transactions || []) {
       let txTotalPAR = 0;
+      let txTotalPoints = 0;
 
       for (const player of tx.adds || []) {
         const playerInfo = playerMap.get(player.id);
@@ -900,47 +1209,76 @@ export async function enrichPlayersWithStats(
           player.position = playerInfo.position;
           player.team = playerInfo.team;
 
-          // Store season points and PAR on the player
           const seasonPoints = playerInfo.points || 0;
-          const par = getPlayerPAR(player.id);
+          player.seasonPoints = Math.round(seasonPoints * 10) / 10;
 
-          (player as any).seasonPoints = Math.round(seasonPoints * 10) / 10;
-          (player as any).pointsAboveReplacement = Math.round(par * 10) / 10;
-          // For display compatibility, use PAR as the "points since pickup"
-          (player as any).pointsSincePickup = Math.round(par * 10) / 10;
-          // Games is not available via Yahoo API, set to undefined
-          (player as any).gamesSincePickup = undefined;
-
-          txTotalPAR += par;
+          if (weeklyCovered(player.id)) {
+            const { points, games } = sumWeeksSince(player.id, tx.week);
+            const par = calculateGamesPAR(points, playerInfo.position, games, replacementMap);
+            player.pointsSincePickup = Math.round(points * 10) / 10;
+            player.pointsAboveReplacement = Math.round(par * 10) / 10;
+            txTotalPAR += par;
+            txTotalPoints += points;
+          } else {
+            const par = getPlayerPAR(player.id);
+            player.pointsAboveReplacement = Math.round(par * 10) / 10;
+            // Season totals standing in for since-pickup (weekly fetch
+            // unavailable); the UI labels the column accordingly.
+            player.pointsSincePickup = Math.round(seasonPoints * 10) / 10;
+            txTotalPAR += par;
+            txTotalPoints += seasonPoints;
+          }
+          // Weekly points say a player PLAYED, not that this team STARTED
+          // him - so games-since-pickup stays unavailable on Yahoo.
+          player.gamesSincePickup = undefined;
         }
       }
 
-      // Store transaction-level totals using PAR
-      tx.totalPointsGenerated = Math.round(txTotalPAR * 10) / 10;
+      // Transaction-level totals: PAR and raw points kept apart so the
+      // PDF/team rollups don't conflate them.
+      tx.totalPAR = Math.round(txTotalPAR * 10) / 10;
+      tx.totalPointsGenerated = Math.round(txTotalPoints * 10) / 10;
       // Games started not available for Yahoo
       tx.gamesStarted = undefined;
     }
   }
 
-  // Also calculate PAR for trades
+  // Also calculate PAR for trades. With weekly data the verdict covers only
+  // the weeks after the trade (like Sleeper); otherwise it falls back to
+  // full-season totals with the wider threshold. The basis is decided per
+  // trade: mixing since-trade points on one side with season totals on the
+  // other would compare apples to oranges, so one uncovered player drops the
+  // whole trade to the season-totals basis.
   for (const trade of league.trades || []) {
+    const tradeUseWeekly = trade.teams.every(side =>
+      [...side.playersReceived, ...side.playersSent].every(p => weeklyCovered(p.id)));
     for (const tradeTeam of trade.teams) {
-      const parGained = tradeTeam.playersReceived.reduce((sum, p) => {
-        return sum + getPlayerPAR(p.id);
-      }, 0);
-      const parLost = tradeTeam.playersSent.reduce((sum, p) => {
-        return sum + getPlayerPAR(p.id);
-      }, 0);
+      let parGained = 0;
+      let parLost = 0;
+      let rawGained = 0;
+      let rawLost = 0;
 
-      // Also calculate raw season points (for reference)
-      const rawGained = tradeTeam.playersReceived.reduce((sum, p) => {
-        const info = playerMap.get(p.id);
-        return sum + (info?.points || 0);
-      }, 0);
-      const rawLost = tradeTeam.playersSent.reduce((sum, p) => {
-        const info = playerMap.get(p.id);
-        return sum + (info?.points || 0);
-      }, 0);
+      if (tradeUseWeekly) {
+        for (const p of tradeTeam.playersReceived) {
+          const { points, games } = sumWeeksSince(p.id, trade.week);
+          rawGained += points;
+          parGained += calculateGamesPAR(
+            points, playerMap.get(p.id)?.position || p.position, games, replacementMap,
+          );
+        }
+        for (const p of tradeTeam.playersSent) {
+          const { points, games } = sumWeeksSince(p.id, trade.week);
+          rawLost += points;
+          parLost += calculateGamesPAR(
+            points, playerMap.get(p.id)?.position || p.position, games, replacementMap,
+          );
+        }
+      } else {
+        parGained = tradeTeam.playersReceived.reduce((sum, p) => sum + getPlayerPAR(p.id), 0);
+        parLost = tradeTeam.playersSent.reduce((sum, p) => sum + getPlayerPAR(p.id), 0);
+        rawGained = tradeTeam.playersReceived.reduce((sum, p) => sum + (playerMap.get(p.id)?.points || 0), 0);
+        rawLost = tradeTeam.playersSent.reduce((sum, p) => sum + (playerMap.get(p.id)?.points || 0), 0);
+      }
 
       tradeTeam.parGained = Math.round(parGained * 10) / 10;
       tradeTeam.parLost = Math.round(parLost * 10) / 10;
@@ -950,16 +1288,17 @@ export async function enrichPlayersWithStats(
       tradeTeam.netValue = Math.round((rawGained - rawLost) * 10) / 10;
     }
 
-    // Determine winner based on PAR
-    if (trade.teams.length === 2) {
-      const [team1, team2] = trade.teams;
-      const diff = team1.netPAR - team2.netPAR;
-      if (Math.abs(diff) > 20) {
-        trade.winner = diff > 0 ? team1.teamId : team2.teamId;
-        trade.winnerMargin = Math.abs(diff);
-      }
-    }
+    const basis = tradeUseWeekly ? 'post-trade' : 'full-season';
+    const { winner, winnerMargin } = decideTradeWinner(trade.teams, basis);
+    trade.winner = winner;
+    trade.winnerMargin = winnerMargin;
+    trade.verdictBasis = basis;
   }
+
+  // Tell the UI which number landed in pointsSincePickup, so the waiver
+  // column can label itself honestly when the weekly fetch didn't happen.
+  league.waiverPointsBasis =
+    weeksResolved && weeklyCoveredKeys.size > 0 ? 'since-pickup' : 'season';
 }
 
 // --- Draft analysis: Yahoo market ADP and auction cost ---

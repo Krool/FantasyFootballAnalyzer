@@ -63,6 +63,37 @@ export function handcuffPartner(candidate: PoolPlayer, roster: PoolPlayer[]): Po
   return roster.find(p => p.pos === 'RB' && p.id !== candidate.id && canonicalTeam(p.team) === team) ?? null;
 }
 
+export interface HandcuffWatch {
+  // The rostered lead back (drafted pick or reserved keeper).
+  starter: PoolPlayer;
+  // His best still-available backup.
+  handcuff: PoolPlayer;
+}
+
+// The available direct backup for every rostered lead RB, for the
+// suggestions panel's handcuff watch. Skips backs whose insurance is already
+// in hand; the best remaining same-team RB is picked by depth chart order,
+// then positional rank.
+export function availableHandcuffs(roster: PoolPlayer[], available: PoolPlayer[]): HandcuffWatch[] {
+  const watch: HandcuffWatch[] = [];
+  for (const starter of roster) {
+    if (starter.pos !== 'RB') continue;
+    const team = canonicalTeam(starter.team);
+    if (!team || team === 'FA') continue;
+    if (roster.some(p => p.pos === 'RB' && p.id !== starter.id && canonicalTeam(p.team) === team)) {
+      continue;
+    }
+    const backup = available
+      .filter(p => p.pos === 'RB' && p.posRank > starter.posRank && canonicalTeam(p.team) === team)
+      .sort(
+        (a, b) =>
+          (a.depthChartOrder ?? 99) - (b.depthChartOrder ?? 99) || a.posRank - b.posRank,
+      )[0];
+    if (backup) watch.push({ starter, handcuff: backup });
+  }
+  return watch.sort((a, b) => a.starter.overallRank - b.starter.overallRank);
+}
+
 // Pool-wide: is this RB the direct backup on his NFL team? Used to tag
 // handcuffs on the NFL Teams board. Prefers Sleeper depth chart order;
 // falls back to "second-best RB on the team by rank".

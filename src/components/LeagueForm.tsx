@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Platform, LeagueCredentials } from '@/types';
-import { isAuthenticated, getAuthUrl, getUserLeagues, clearTokens } from '@/api/yahoo';
+import { isAuthenticated, getAuthUrl, getUserLeagues, clearTokens, NFL_GAME_KEYS } from '@/api/yahoo';
+import { findLeaguesByUsername } from '@/api/sleeper';
+import { normalizeLeagueId } from '@/utils/leagueId';
 import { logger } from '@/utils/logger';
 import styles from './LeagueForm.module.css';
 
-// Yahoo supported seasons - current year uses 'nfl' game key which auto-resolves
+// Yahoo seasons we can query: the current year resolves through the 'nfl'
+// alias game key; past years come from the known game keys, so the list
+// rolls forward as NFL_GAME_KEYS is backfilled (a hardcoded list here once
+// went stale and silently dropped a year from the dropdown).
 const currentYear = new Date().getFullYear();
-const YAHOO_SUPPORTED_SEASONS = [currentYear, 2024, 2023, 2022, 2021, 2020, 2019].filter(
-  (year, index, arr) => arr.indexOf(year) === index // Remove duplicates if currentYear is 2024
-);
+const YAHOO_SUPPORTED_SEASONS = Array.from(
+  new Set([currentYear, ...Object.keys(NFL_GAME_KEYS).map(Number)])
+).sort((a, b) => b - a);
 
 // Companion extension ID (Chrome Web Store / Firefox AMO). Override with VITE_ESPN_EXTENSION_ID
 // once published; defaults to an unpublished placeholder so detection silently fails in dev.
@@ -52,10 +57,23 @@ function isSwidValid(v: string): boolean {
   return SWID_REGEX.test(v);
 }
 
+// Set right before the form's Yahoo redirect so the post-OAuth remount lands
+// back on the Yahoo tab instead of the Sleeper default.
+const YAHOO_RETURN_FLAG = 'yahoo_login_from_form';
+
 type ExtensionState = 'unknown' | 'detected' | 'missing';
 
-// Probe the companion extension. Returns cookies if installed and user is logged into ESPN.
-function probeExtension(): Promise<{ espnS2: string; swid: string } | null> {
+interface ExtensionProbe {
+  installed: true;
+  espnS2?: string;
+  swid?: string;
+}
+
+// Probe the companion extension. Resolves null when the extension isn't
+// installed (or can't be reached); resolves installed-with-no-cookies when it
+// responds but the user isn't logged into espn.com. The distinction matters:
+// an installed extension should still show the auto-fill panel.
+function probeExtension(): Promise<ExtensionProbe | null> {
   return new Promise((resolve) => {
     const chrome = (window as unknown as {
       chrome?: {
@@ -86,10 +104,10 @@ function probeExtension(): Promise<{ espnS2: string; swid: string } | null> {
           settled = true;
           clearTimeout(timer);
           // chrome.runtime.lastError is set when the extension isn't installed
-          if (chrome.runtime?.lastError || !response?.espnS2 || !response?.swid) {
+          if (chrome.runtime?.lastError || !response) {
             resolve(null);
           } else {
-            resolve({ espnS2: response.espnS2, swid: response.swid });
+            resolve({ installed: true, espnS2: response.espnS2, swid: response.swid });
           }
         }
       );
@@ -113,6 +131,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     onPlatformChange?.(p);
   };
   const [leagueId, setLeagueId] = useState('');
+  const [leagueIdError, setLeagueIdError] = useState<string | null>(null);
   // Default to current year for all platforms
   const [season, setSeason] = useState(currentYear);
   const [espnS2, setEspnS2] = useState('');
@@ -126,49 +145,33 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
   const [loadingYahooLeagues, setLoadingYahooLeagues] = useState(false);
   const [yahooError, setYahooError] = useState<string | null>(null);
 
+  // Sleeper league finder (username → leagues, no auth needed)
+  const [sleeperUsername, setSleeperUsername] = useState('');
+  const [sleeperLeagues, setSleeperLeagues] = useState<Array<{ id: string; name: string; season: string }>>([]);
+  const [sleeperLookupBusy, setSleeperLookupBusy] = useState(false);
+  const [sleeperLookupError, setSleeperLookupError] = useState<string | null>(null);
+
   // ESPN companion extension detection
   const [extensionState, setExtensionState] = useState<ExtensionState>('unknown');
   const [extensionBusy, setExtensionBusy] = useState(false);
   const [extensionError, setExtensionError] = useState<string | null>(null);
 
-  // Load Yahoo leagues when authenticated
+  // Returning from a Yahoo login that started on this form: reopen the Yahoo
+  // tab. The OAuth redirect remounts the whole app, which would otherwise
+  // land the user back on the Sleeper default with no sign their login worked.
   useEffect(() => {
-    if (platform === 'yahoo' && yahooAuthenticated) {
-      loadYahooLeagues();
-    }
-  }, [platform, yahooAuthenticated, season]);
-
-  // Probe for the companion extension when ESPN is selected (once per platform change).
-  useEffect(() => {
-    if (platform !== 'espn' || extensionState !== 'unknown') return;
-    let cancelled = false;
-    probeExtension().then((cookies) => {
-      if (cancelled) return;
-      // We only care whether the extension responded at all here; a "no cookies" response
-      // still means the extension is installed (user just isn't logged into espn.com).
-      setExtensionState(cookies ? 'detected' : 'missing');
-    });
-    return () => { cancelled = true; };
-  }, [platform, extensionState]);
-
-  const handleExtensionFill = async () => {
-    setExtensionBusy(true);
-    setExtensionError(null);
     try {
-      const cookies = await probeExtension();
-      if (!cookies) {
-        setExtensionError('Could not read cookies. Make sure you are logged into espn.com in this browser.');
-        return;
+      if (sessionStorage.getItem(YAHOO_RETURN_FLAG)) {
+        sessionStorage.removeItem(YAHOO_RETURN_FLAG);
+        setPlatform('yahoo');
       }
-      setEspnS2(cookies.espnS2);
-      setSwid(cookies.swid);
-      setExtensionState('detected');
-    } finally {
-      setExtensionBusy(false);
+    } catch {
+      // Storage blocked: stay on the default tab.
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const loadYahooLeagues = async () => {
+  const loadYahooLeagues = useCallback(async () => {
     setLoadingYahooLeagues(true);
     setYahooError(null);
     try {
@@ -183,7 +186,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
       }
     } catch (err) {
       logger.error('Failed to load Yahoo leagues:', err);
-      setYahooError('Failed to load leagues. Please try logging in again.');
+      setYahooError('Could not load your leagues. Log in with Yahoo again.');
       if (String(err).includes('re-authenticate')) {
         clearTokens();
         setYahooAuthenticated(false);
@@ -191,15 +194,92 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     } finally {
       setLoadingYahooLeagues(false);
     }
+  }, [season]);
+
+  // Load Yahoo leagues when authenticated
+  useEffect(() => {
+    if (platform === 'yahoo' && yahooAuthenticated) {
+      loadYahooLeagues();
+    }
+  }, [platform, yahooAuthenticated, loadYahooLeagues]);
+
+  // Probe for the companion extension when ESPN is selected (once per platform change).
+  useEffect(() => {
+    if (platform !== 'espn' || extensionState !== 'unknown') return;
+    let cancelled = false;
+    probeExtension().then((probe) => {
+      if (cancelled) return;
+      // Installed counts as detected even with no cookies in the response:
+      // the user may just not be logged into espn.com yet, and the panel
+      // tells them to do exactly that.
+      setExtensionState(probe ? 'detected' : 'missing');
+    });
+    return () => { cancelled = true; };
+  }, [platform, extensionState]);
+
+  const handleExtensionFill = async () => {
+    setExtensionBusy(true);
+    setExtensionError(null);
+    try {
+      const probe = await probeExtension();
+      if (!probe) {
+        setExtensionError('Could not reach the extension. Reinstall it or use the manual steps in the help.');
+        return;
+      }
+      if (!probe.espnS2 || !probe.swid) {
+        setExtensionError('Extension found, but no ESPN login. Log into espn.com in this browser, then try again.');
+        return;
+      }
+      setEspnS2(normalizeEspnS2(probe.espnS2));
+      setSwid(normalizeSwid(probe.swid));
+    } finally {
+      setExtensionBusy(false);
+    }
+  };
+
+  const handleSleeperLookup = async () => {
+    const username = sleeperUsername.trim();
+    if (!username) return;
+    setSleeperLookupBusy(true);
+    setSleeperLookupError(null);
+    try {
+      const leagues = await findLeaguesByUsername(username);
+      if (leagues === null) {
+        setSleeperLeagues([]);
+        setSleeperLookupError('No Sleeper user with that username.');
+        return;
+      }
+      setSleeperLeagues(leagues);
+      if (leagues.length === 0) {
+        setSleeperLookupError('That user has no leagues this season or last.');
+      } else {
+        setLeagueId(leagues[0].id);
+        setLeagueIdError(null);
+      }
+    } catch (err) {
+      logger.error('Sleeper league lookup failed:', err);
+      setSleeperLookupError(
+        String(err).includes('404')
+          ? 'No Sleeper user with that username.'
+          : 'Could not reach Sleeper. Try again.'
+      );
+    } finally {
+      setSleeperLookupBusy(false);
+    }
   };
 
   const handleYahooLogin = async () => {
     try {
       const authUrl = await getAuthUrl();
+      try {
+        sessionStorage.setItem(YAHOO_RETURN_FLAG, '1');
+      } catch {
+        // Storage blocked: the login still works, the tab just won't restore.
+      }
       window.location.href = authUrl;
     } catch (err) {
       logger.error('Failed to get Yahoo auth URL:', err);
-      setYahooError('Failed to start Yahoo login. Please try again.');
+      setYahooError('Could not start Yahoo login. Try again.');
     }
   };
 
@@ -226,8 +306,8 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     const trimmedId = leagueId.trim();
     if (!trimmedId) return;
 
-    // Validate league ID is numeric
     if (!/^\d+$/.test(trimmedId)) {
+      setLeagueIdError('League IDs are numbers only. Paste the league URL or the numeric ID.');
       return;
     }
 
@@ -251,6 +331,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
         <button
           type="button"
           className={`${styles.platformButton} ${platform === 'sleeper' ? styles.active : ''}`}
+          aria-pressed={platform === 'sleeper'}
           onClick={() => setPlatform('sleeper')}
         >
           <span className={styles.platformIcon}>S</span>
@@ -259,6 +340,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
         <button
           type="button"
           className={`${styles.platformButton} ${platform === 'espn' ? styles.active : ''}`}
+          aria-pressed={platform === 'espn'}
           onClick={() => setPlatform('espn')}
         >
           <span className={styles.platformIcon}>E</span>
@@ -267,6 +349,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
         <button
           type="button"
           className={`${styles.platformButton} ${platform === 'yahoo' ? styles.active : ''}`}
+          aria-pressed={platform === 'yahoo'}
           onClick={() => setPlatform('yahoo')}
         >
           <span className={styles.platformIcon}>Y</span>
@@ -290,7 +373,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                 <span className={styles.yahooLogo}>Y!</span>
                 Log in with Yahoo
               </button>
-              {yahooError && <p className={styles.error}>{yahooError}</p>}
+              {yahooError && <p className={styles.error} role="alert">{yahooError}</p>}
             </div>
           ) : (
             <div className={styles.yahooLeagueSelect}>
@@ -305,7 +388,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                 </button>
               </div>
 
-              <div className={styles.fields}>
+              <div className={`${styles.fields} ${styles.fieldsYahoo}`}>
                 <div className={styles.field}>
                   <label htmlFor="yahooSeason" className={styles.label}>
                     Season
@@ -326,7 +409,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
 
                 <div className={styles.field}>
                   <label htmlFor="yahooLeague" className={styles.label}>
-                    Select League
+                    League
                   </label>
                   {loadingYahooLeagues ? (
                     <div className={styles.loadingLeagues}>
@@ -354,7 +437,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                 </div>
               </div>
 
-              {yahooError && <p className={styles.error}>{yahooError}</p>}
+              {yahooError && <p className={styles.error} role="alert">{yahooError}</p>}
             </div>
           )}
         </div>
@@ -372,19 +455,23 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
               type="text"
               className="input"
               value={leagueId}
-              onChange={(e) => setLeagueId(e.target.value)}
+              onChange={(e) => {
+                setLeagueId(normalizeLeagueId(e.target.value));
+                setLeagueIdError(null);
+              }}
               placeholder={platform === 'sleeper' ? 'e.g., 123456789012345678' : 'e.g., 12345678'}
+              aria-describedby={leagueIdError ? 'leagueId-error leagueId-hint' : 'leagueId-hint'}
               required
             />
-            <span className={styles.hint}>
+            {leagueIdError && (
+              <span id="leagueId-error" className={styles.fieldError} role="alert">
+                {leagueIdError}
+              </span>
+            )}
+            <span id="leagueId-hint" className={styles.hint}>
               {platform === 'sleeper'
-                ? 'Found in your league URL: sleeper.com/leagues/[LEAGUE_ID]'
-                : 'Found in your league URL: fantasy.espn.com/football/league?leagueId=[LEAGUE_ID]'}
-            </span>
-            <span className={styles.hint}>
-              {platform === 'sleeper'
-                ? 'Each season generates a new league ID. Make sure you use the ID for the season you want to analyze.'
-                : 'Your league ID stays the same across seasons. Use the season dropdown to pick which year to analyze.'}
+                ? 'Paste your league URL or ID. Sleeper makes a new ID each season, so grab it from the season you want.'
+                : 'Paste your league URL or ID. One ID covers every season; pick the year in the Season box.'}
             </span>
           </div>
 
@@ -411,16 +498,79 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
         </div>
       )}
 
+      {/* Sleeper league finder: username → leagues, no auth needed. Easier
+          than digging the 18-digit ID out of a URL. */}
+      {platform === 'sleeper' && (
+        <div className={styles.finder}>
+          <label htmlFor="sleeperUsername" className={styles.label}>
+            No ID handy? Find it by username
+          </label>
+          <div className={styles.finderRow}>
+            <input
+              id="sleeperUsername"
+              type="text"
+              className="input"
+              value={sleeperUsername}
+              onChange={(e) => {
+                setSleeperUsername(e.target.value);
+                setSleeperLookupError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSleeperLookup();
+                }
+              }}
+              placeholder="Your Sleeper username"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <button
+              type="button"
+              className="btn"
+              onClick={handleSleeperLookup}
+              disabled={sleeperLookupBusy || !sleeperUsername.trim()}
+            >
+              {sleeperLookupBusy ? 'Searching...' : 'Find leagues'}
+            </button>
+          </div>
+          {sleeperLookupError && <p className={styles.error} role="alert">{sleeperLookupError}</p>}
+          {sleeperLeagues.length > 0 && (
+            <div className={styles.field}>
+              <label htmlFor="sleeperLeague" className={styles.label}>
+                League
+              </label>
+              <select
+                id="sleeperLeague"
+                className="input"
+                value={leagueId}
+                onChange={(e) => {
+                  setLeagueId(e.target.value);
+                  setLeagueIdError(null);
+                }}
+              >
+                {sleeperLeagues.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.season} · {l.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
       {platform === 'espn' && (
         <div className={styles.espnAuth}>
           <div className={styles.espnAuthHeader}>
-            <span className={styles.label}>Private League Authentication (Optional)</span>
+            <span className={styles.label}>Private league cookies (optional)</span>
             <button
               type="button"
               className={styles.helpButton}
+              aria-expanded={showEspnHelp}
               onClick={() => setShowEspnHelp(!showEspnHelp)}
             >
-              {showEspnHelp ? 'Hide Help' : 'How to get cookies?'}
+              {showEspnHelp ? 'Hide help' : 'How to get cookies?'}
             </button>
           </div>
 
@@ -439,7 +589,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
               >
                 {extensionBusy ? 'Reading cookies...' : 'Auto-fill from extension'}
               </button>
-              {extensionError && <p className={styles.error}>{extensionError}</p>}
+              {extensionError && <p className={styles.error} role="alert">{extensionError}</p>}
             </div>
           )}
 
@@ -520,12 +670,13 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                 placeholder="Leave empty for public leagues"
                 spellCheck={false}
                 autoComplete="off"
+                aria-describedby={espnS2 ? 'espnS2-status' : undefined}
               />
               {espnS2 && !isEspnS2Valid(espnS2) && (
-                <span className={styles.fieldError}>Looks too short. Copy the entire espn_s2 value, not just the start.</span>
+                <span id="espnS2-status" className={styles.fieldError}>Looks too short. Copy the entire espn_s2 value, not just the start.</span>
               )}
               {espnS2 && isEspnS2Valid(espnS2) && (
-                <span className={styles.fieldOk}>Looks good ({espnS2.length} chars)</span>
+                <span id="espnS2-status" className={styles.fieldOk}>Looks good ({espnS2.length} chars)</span>
               )}
             </div>
             <div className={styles.field}>
@@ -541,31 +692,36 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                 placeholder="e.g., {XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}"
                 spellCheck={false}
                 autoComplete="off"
+                aria-describedby={swid ? 'swid-status' : undefined}
               />
               {swid && !isSwidValid(swid) && (
-                <span className={styles.fieldError}>Should be a UUID wrapped in braces like {'{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}'}.</span>
+                <span id="swid-status" className={styles.fieldError}>Should be a UUID wrapped in braces like {'{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}'}.</span>
               )}
               {swid && isSwidValid(swid) && (
-                <span className={styles.fieldOk}>Looks good</span>
+                <span id="swid-status" className={styles.fieldOk}>Looks good</span>
               )}
             </div>
           </div>
 
           {/* Show inconsistency warning if only one cookie is filled */}
           {((espnS2 && !swid) || (!espnS2 && swid)) && (
-            <p className={styles.warning}>Private leagues need both cookies. Add the other one too.</p>
+            <p className={styles.warning} role="alert">Private leagues need both cookies. Add the other one too.</p>
           )}
         </div>
       )}
 
-      {/* Submit button - show only when appropriate */}
-      {(platform !== 'yahoo' || (yahooAuthenticated && selectedYahooLeague)) && (
+      {/* Submit button. Hidden for a logged-out Yahoo (the login button is the
+          CTA there); once authenticated it stays mounted and just disables, so
+          the layout doesn't jump as leagues load. */}
+      {(platform !== 'yahoo' || yahooAuthenticated) && (
         <button
           type="submit"
           className="btn btn-primary"
           disabled={
             isLoading ||
-            (platform === 'yahoo' ? !selectedYahooLeague : !leagueId.trim())
+            (platform === 'yahoo'
+              ? !selectedYahooLeague || loadingYahooLeagues
+              : !leagueId.trim())
           }
         >
           {isLoading ? (

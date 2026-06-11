@@ -16,11 +16,13 @@ import { MyTeamPanel } from '@/components/draftRoom/MyTeamPanel';
 import { NflTeams } from '@/components/draftRoom/NflTeams';
 import { NominationPanel } from '@/components/draftRoom/NominationPanel';
 import { PickLog } from '@/components/draftRoom/PickLog';
+import { PickStrip } from '@/components/draftRoom/PickStrip';
 import { SnakeLogger } from '@/components/draftRoom/SnakeLogger';
 import { SuggestionsPanel } from '@/components/draftRoom/SuggestionsPanel';
 import { TeamBoard } from '@/components/draftRoom/TeamBoard';
 import { TierBoard } from '@/components/draftRoom/TierBoard';
 import { detectRun, tierAlerts } from '@/utils/draftAlerts';
+import { fullPositions } from '@/utils/draftEngine';
 import { nextPickFor } from '@/utils/snakeOrder';
 import styles from './DraftRoomPage.module.css';
 
@@ -67,6 +69,13 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
 
   const { phase, config, derived, undo, reset } = room;
 
+  // Each phase swaps the whole view (setup form -> draft board -> recap),
+  // but the browser keeps the old scroll position: hitting Start at the
+  // bottom of the setup form would land you at the bottom of the board.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [phase]);
+
   // Clear a selection that got drafted out from under us (mock AI picks).
   useEffect(() => {
     if (selected && derived.draftedPlayerIds.has(selected.id)) setSelected(null);
@@ -105,7 +114,20 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
   const { playClick, playSuccess, playError, playOnTheClock } = useSounds();
 
   const isSnake = config.draftType === 'snake';
+  const isAuction = config.draftType === 'auction';
+  const isMock = config.mode === 'mock';
   const myTurn = phase === 'drafting' && derived.onTheClockId === config.myTeamId;
+
+  // Positions a roster can't take another player at. My team drives mock
+  // board filtering; the on-the-clock team drives the quick-draft button.
+  const myFullPositions = useMemo(
+    () => fullPositions(derived.teams.get(config.myTeamId)),
+    [derived.teams, config.myTeamId],
+  );
+  const clockFullPositions = useMemo(
+    () => fullPositions(derived.onTheClockId ? derived.teams.get(derived.onTheClockId) : undefined),
+    [derived.teams, derived.onTheClockId],
+  );
 
   // The one alert that must not be missed: a horn the moment it becomes
   // the user's pick (snake) or nomination (auction).
@@ -193,12 +215,15 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
   };
 
   // Falling behind on draft day: keep the best available pre-selected so
-  // "Drafted" (or the D key) is always one action away.
+  // "Drafted" (or the D key) is always one action away. Skip positions the
+  // drafting team can't roster (mine in a mock, the clock's in a live room):
+  // that pick would only bounce off validation.
   useEffect(() => {
-    if (phase === 'drafting' && isSnake && !selected && derived.available.length > 0) {
-      setSelected(derived.available[0]);
-    }
-  }, [phase, isSnake, selected, derived.available]);
+    if (phase !== 'drafting' || !isSnake || selected) return;
+    const full = isMock ? myFullPositions : clockFullPositions;
+    const best = derived.available.find(p => !full.has(p.pos));
+    if (best) setSelected(best);
+  }, [phase, isSnake, selected, derived.available, isMock, myFullPositions, clockFullPositions]);
 
   // Two-step inline confirm (no window.confirm): first click arms, second
   // click within 4s resets.
@@ -219,8 +244,6 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
     reset();
   };
 
-  const isAuction = config.draftType === 'auction';
-  const isMock = config.mode === 'mock';
   const clearSelection = () => setSelected(null);
 
   return (
@@ -372,6 +395,8 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
               </p>
             )}
 
+            {isSnake && phase === 'drafting' && <PickStrip room={room} />}
+
             <div className={styles.grid}>
               <div className={styles.colSide}>
                 {phase === 'drafting' &&
@@ -413,6 +438,8 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
                     selectedId={selected?.id ?? null}
                     onSelect={setSelected}
                     onQuickDraft={canQuickDraft ? quickDraft : undefined}
+                    excludedPositions={isSnake && isMock ? myFullPositions : undefined}
+                    clockFullPositions={clockFullPositions}
                     yahooCosts={yahoo.costs}
                     inputRef={searchRef}
                   />

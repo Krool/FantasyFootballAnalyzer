@@ -116,6 +116,59 @@ describe('suggestPicks', () => {
     expect(top[0].reasons.join(' ')).toMatch(/20 picks past ADP/);
   });
 
+  it('uses simulated odds for the gone-by-next-pick reason when provided', () => {
+    const pool = [
+      player({ id: 'wr1', pos: 'WR', sleeperAdp: 5 }),
+      player({ id: 'wr2', pos: 'WR', sleeperAdp: 6 }),
+    ];
+    const top = suggestPicks(
+      pool,
+      team(),
+      SLOTS,
+      values(pool, { wr1: 20, wr2: 20 }),
+      opts({
+        nextPickNumber: 20,
+        takenOdds: new Map([
+          ['wr1', 0.8],
+          ['wr2', 0.1],
+        ]),
+      }),
+    );
+    const wr1 = top.find(s => s.player.id === 'wr1')!;
+    const wr2 = top.find(s => s.player.id === 'wr2')!;
+    // The odds replace the ADP guess: wr2's ADP says gone, the sims say safe.
+    expect(wr1.reasons).toContain('80% gone by your next pick (#20)');
+    expect(wr2.reasons.join(' ')).not.toMatch(/gone/);
+    expect(wr1.score).toBeGreaterThan(wr2.score);
+  });
+
+  it('falls back to ADP for the next-pick warning without odds', () => {
+    const pool = [player({ id: 'wr1', pos: 'WR', sleeperAdp: 10 })];
+    const top = suggestPicks(
+      pool,
+      team(),
+      SLOTS,
+      values(pool, { wr1: 20 }),
+      opts({ nextPickNumber: 20 }),
+    );
+    expect(top[0].reasons).toContain('likely gone before your next pick (#20)');
+  });
+
+  it('treats reserved keepers as roster for handcuff advice', () => {
+    const keptLead = player({ id: 'rb-lead', pos: 'RB', team: 'DEN', posRank: 5, overallRank: 10 });
+    const pool = [player({ id: 'rb-cuff', pos: 'RB', team: 'DEN', posRank: 30 })];
+    // Late enough that the cuff nudge is in play.
+    const me = team({ openSlots: 9 });
+    const top = suggestPicks(
+      pool,
+      me,
+      SLOTS,
+      values(pool, { 'rb-cuff': 3 }),
+      opts({ keeperPlayers: [keptLead] }),
+    );
+    expect(top[0].reasons).toContain('handcuffs your RB rb-lead');
+  });
+
   it('skips positions the team cannot roster', () => {
     const pool = [player({ id: 'qb1', pos: 'QB' }), player({ id: 'rb1', pos: 'RB' })];
     const me = team({ fullAt: { QB: true, RB: false, WR: false, TE: false, K: false, DST: false } });

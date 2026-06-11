@@ -1,5 +1,6 @@
 import { TradeTable } from '@/components/TradeTable';
 import type { League } from '@/types';
+import { VERDICT_BASIS_NOTE } from '@/utils/tradeVerdict';
 import styles from './TradesPage.module.css';
 
 interface TradesPageProps {
@@ -8,6 +9,8 @@ interface TradesPageProps {
 
 export function TradesPage({ league }: TradesPageProps) {
   const hasTrades = league.trades && league.trades.length > 0;
+  // Uniform per platform, so the first trade speaks for all of them.
+  const verdictBasis = league.trades?.[0]?.verdictBasis;
 
   return (
     <div className={styles.page}>
@@ -17,6 +20,9 @@ export function TradesPage({ league }: TradesPageProps) {
           <p className={styles.subtitle}>
             Analyze trades from the {league.season} season
           </p>
+          {verdictBasis && (
+            <p className={styles.subtitle}>{VERDICT_BASIS_NOTE[verdictBasis]}</p>
+          )}
         </div>
 
         {hasTrades ? (

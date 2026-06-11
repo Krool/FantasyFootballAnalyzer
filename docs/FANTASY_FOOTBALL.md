@@ -124,6 +124,10 @@ replacement level and value scaling.
 
 ## Platform API behaviors
 
+Endpoint-level reality (CORS, auth, verified data availability, what the app
+uses vs leaves on the table) lives in `docs/API_REFERENCE.md`, reality-checked
+June 2026. This section keeps only the domain-level traps.
+
 ### Identity models (three different ones)
 
 - **Sleeper**: new `league_id` every season; chain backward via
@@ -135,7 +139,9 @@ replacement level and value scaling.
   `draft_status`: `predraft` / `postdraft`; `is_finished` flags completion.
 - **ESPN**: same `leagueId` forever; pick the season with `seasonId`.
   Pre/post-draft from `draftDetail.drafted` / `inProgress`;
-  `status.previousSeasons` lists available history.
+  `status.previousSeasons` lists available history. Since Aug 2025 historical
+  seasons require `espn_s2` cookies even for public leagues; no-auth reads
+  cover roughly the current season plus one prior.
 
 ### Draft settings exposure
 
@@ -159,3 +165,13 @@ replacement level and value scaling.
    teams/slots seed the setup form and are editable).
 3. Yahoo keeper data via API is unreliable; do not assume kept players appear
    in draft results.
+4. Yahoo DOES serve weekly player points and weekly matchup scores - via the
+   stats sub-resource (`/stats;type=week;week={n}`) and `scoreboard;week={n}`;
+   the Yahoo adapter consumes both since June 2026 (luck analysis, real
+   points-since-pickup, post-trade verdicts). The trap that hid this for so
+   long: the `;out=stats` collection shape silently ignores week filters and
+   returns season totals. Yahoo still doesn't report lineup starts, so
+   games-started metrics remain unavailable there.
+5. Live draft sync is a Sleeper-only capability, period: ESPN and Yahoo have
+   no public draft feed. Sleeper even exposes live auction nomination state
+   (current nominee, high bid) on the draft object.

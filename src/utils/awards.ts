@@ -923,8 +923,11 @@ function getWorstWaiverPickup(teams: Team[]): { teamId: string; teamName: string
   teams.forEach(team => {
     (team.transactions || []).forEach(tx => {
       (tx.adds || []).forEach(player => {
-        const games = (player as any).gamesSincePickup || 0;
-        if (games < 2) return; // Skip players with less than 2 games
+        // Skip small samples, but only when the platform reports games at
+        // all - Yahoo doesn't, and a hard gate would disqualify every
+        // Yahoo pickup from this award.
+        const games = (player as any).gamesSincePickup;
+        if (games !== undefined && games < 2) return;
 
         const par = (player as any).pointsAboveReplacement || 0;
         if (!worst || par < worst.par) {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { findStacks, handcuffPartner, isHandcuff, stackPartner } from './stacks';
+import { availableHandcuffs, findStacks, handcuffPartner, isHandcuff, stackPartner } from './stacks';
 import type { PoolPlayer } from '@/types/draft';
 
 let nextId = 0;
@@ -65,6 +65,27 @@ describe('handcuffPartner', () => {
   it('pairs same-team RBs', () => {
     expect(handcuffPartner(rbDen2, [rbDen1, sutton])).toBe(rbDen1);
     expect(handcuffPartner(rbDen2, [sutton])).toBeNull();
+  });
+});
+
+describe('availableHandcuffs', () => {
+  it('finds the best available backup for a rostered lead RB', () => {
+    const cuff = player({ name: 'Cuff', pos: 'RB', team: 'DEN', posRank: 38, depthChartOrder: 2 });
+    const third = player({ name: 'Third', pos: 'RB', team: 'DEN', posRank: 30, depthChartOrder: 3 });
+    const watch = availableHandcuffs([rbDen1, sutton], [third, cuff, mims]);
+    expect(watch).toHaveLength(1);
+    expect(watch[0].starter).toBe(rbDen1);
+    // Depth chart order beats positional rank: the listed RB2 is the cuff.
+    expect(watch[0].handcuff).toBe(cuff);
+  });
+
+  it('skips leads whose insurance is already rostered', () => {
+    const third = player({ name: 'Third', pos: 'RB', team: 'DEN', posRank: 60 });
+    expect(availableHandcuffs([rbDen1, rbDen2], [third])).toHaveLength(0);
+  });
+
+  it('never offers a better-ranked teammate as the cuff', () => {
+    expect(availableHandcuffs([rbDen2], [rbDen1])).toHaveLength(0);
   });
 });
 

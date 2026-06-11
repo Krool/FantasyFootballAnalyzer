@@ -95,6 +95,9 @@ export interface Trade {
   // Trade winner determination (based on PAR)
   winner?: string; // teamId of winner
   winnerMargin?: number;
+  // What the PAR numbers cover: 'post-trade' (Sleeper, real weekly starts)
+  // or 'full-season' (ESPN/Yahoo, season totals only).
+  verdictBasis?: 'post-trade' | 'full-season';
 }
 
 export interface TradedDraftPick {
@@ -175,6 +178,10 @@ export interface League {
   // each stint of a player's season ("6.2 ppg for you, 18.4 after the
   // trade"). Absent on platforms that don't expose weekly player points.
   playerWeeklyPoints?: Record<string, Record<number, number>>;
+  // What pointsSincePickup actually holds for this load: real since-pickup
+  // sums, or season totals standing in because the weekly fetch failed.
+  // Set by the Yahoo adapter; the waiver column labels itself from this.
+  waiverPointsBasis?: 'since-pickup' | 'season';
   // Lifecycle phase for this season. Derived per platform from completion
   // signals + NFL state. Pages use this to choose summary vs. live views.
   status?: LeagueStatus;
@@ -312,6 +319,19 @@ export namespace SleeperAPI {
       last_name: string;
       position: string;
       team: string;
+      // Auction drafts: sale price as a string (e.g. "42").
+      amount?: string;
+    };
+  }
+
+  // Draft object from /draft/{draft_id} (also embedded in /league/{id}/drafts).
+  export interface Draft {
+    draft_id: string;
+    type: string; // 'snake' | 'auction' | 'linear'
+    status: string;
+    settings?: {
+      budget?: number;
+      [key: string]: number | undefined;
     };
   }
 
@@ -458,6 +478,10 @@ export namespace ESPNAPI {
     playerId: number;
     teamId: number;
     bidAmount?: number;
+    // True when the slot was a kept player rather than a live pick.
+    keeper?: boolean;
+    // For auction drafts: which team nominated the player.
+    nominatingTeamId?: number;
   }
 
   export interface Transaction {

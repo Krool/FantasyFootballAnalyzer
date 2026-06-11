@@ -116,6 +116,12 @@ export interface PoolPlayer {
   sleeperId?: string;
   // Questionable / Out / IR / PUP / Sus — absent when healthy.
   injuryStatus?: string;
+  // Why: body part (e.g. "Hamstring"), Sleeper's latest blurb, and when it
+  // started (YYYY-MM-DD). Only present alongside injuryStatus; body part is
+  // the most reliably populated of the three.
+  injuryBodyPart?: string;
+  injuryNotes?: string;
+  injuryStartDate?: string;
   rookie?: boolean;
   // 1 = listed starter at the position on Sleeper's depth chart.
   depthChartOrder?: number;

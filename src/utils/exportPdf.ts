@@ -56,7 +56,7 @@ function getWaiverPickups(league: League) {
     week: number;
     points: number;
     par: number;
-    games: number;
+    games: number | undefined;
   }> = [];
 
   league.teams.forEach(team => {
@@ -65,7 +65,9 @@ function getWaiverPickups(league: League) {
         tx.adds.forEach(player => {
           const points = player.pointsSincePickup ?? 0;
           const par = player.pointsAboveReplacement ?? 0;
-          const games = player.gamesSincePickup ?? 0;
+          // undefined (not 0) when the platform doesn't report games; Yahoo
+          // pickups must not look like "0 games started".
+          const games = player.gamesSincePickup;
           pickups.push({
             playerName: player.name,
             position: player.position,
@@ -395,7 +397,7 @@ export async function exportLeagueReport(league: League) {
       pickup.teamName.length > 12 ? pickup.teamName.substring(0, 11) + '.' : pickup.teamName,
       `Wk ${pickup.week}`,
       pickup.points.toFixed(0),
-      pickup.games > 0 ? (pickup.points / pickup.games).toFixed(1) : '-',
+      pickup.games && pickup.games > 0 ? (pickup.points / pickup.games).toFixed(1) : '-',
       `+${pickup.par.toFixed(1)}`,
     ]);
 
@@ -410,14 +412,17 @@ export async function exportLeagueReport(league: League) {
 
   yPos = lastTableFinalY(doc, yPos) + 10;
 
-  // Worst Waiver Pickups (with at least 2 games)
+  // Worst Waiver Pickups. The min-starts gate only applies when the
+  // platform reports games; Yahoo doesn't, and gating on it would leave
+  // this section empty for every Yahoo league.
+  const hasGamesData = waiverPickups.some(p => p.games !== undefined);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('Worst Waiver Pickups (by PAR, min 2 starts)', 14, yPos);
+  doc.text(`Worst Waiver Pickups (by PAR${hasGamesData ? ', min 2 starts' : ''})`, 14, yPos);
   yPos += 3;
 
   const worstWaivers = [...waiverPickups]
-    .filter(p => p.games >= 2)
+    .filter(p => p.games === undefined || p.games >= 2)
     .sort((a, b) => a.par - b.par)
     .slice(0, 10)
     .map((pickup, index) => [
@@ -427,7 +432,7 @@ export async function exportLeagueReport(league: League) {
       pickup.teamName.length > 12 ? pickup.teamName.substring(0, 11) + '.' : pickup.teamName,
       `Wk ${pickup.week}`,
       pickup.points.toFixed(0),
-      pickup.games > 0 ? (pickup.points / pickup.games).toFixed(1) : '-',
+      pickup.games && pickup.games > 0 ? (pickup.points / pickup.games).toFixed(1) : '-',
       pickup.par.toFixed(1),
     ]);
 

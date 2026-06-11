@@ -1,5 +1,6 @@
 import type { ESPNAPI, League, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, RosterSlots, WeeklyMatchup, SeasonSummary, HeadToHeadRecord, MatchupResult } from '@/types';
 import { logger } from '@/utils/logger';
+import { decideTradeWinner } from '@/utils/tradeVerdict';
 
 // Direct ESPN API for public leagues
 const ESPN_DIRECT_URL = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons';
@@ -191,6 +192,11 @@ export async function loadLeague(
   // Key: `${teamId}-${playerId}`, Value: Map<week, points>
   const playerStartsByTeamAndWeek = new Map<string, Map<number, number>>();
 
+  // Per-player weekly fantasy points, any roster slot (starters AND bench):
+  // Player Journey scores stints with these. The weekly roster fetches below
+  // already carry the data; this just stops throwing it away.
+  const playerWeeklyPoints: Record<string, Record<number, number>> = {};
+
   // Track FULL rosters for each week to detect trades via roster changes
   // Key: week, Value: Map<playerId, teamId>
   const rostersByWeek = new Map<number, Map<number, number>>();
@@ -261,17 +267,22 @@ export async function loadLeague(
           allPlayersFromWeeklyRosters.set(playerId, entry.playerPoolEntry.player);
         }
 
+        const weekStat = entry.playerPoolEntry?.player?.stats?.find(
+          s => s.scoringPeriodId === week && s.statSourceId === 0
+        );
+        const weekPoints = weekStat?.appliedTotal || 0;
+        // Record played weeks by entry presence, not by points: a played
+        // 0.0 week is a real game (bye weeks have no actuals entry), and
+        // skipping it would inflate per-game stints in Player Journey. The
+        // in-progress week still requires points, since a not-yet-played
+        // game can carry a 0.0 actuals entry.
+        if (weekStat && (week < currentWeek || weekPoints !== 0)) {
+          (playerWeeklyPoints[String(playerId)] ??= {})[week] = weekPoints;
+        }
+
         if (STARTER_SLOTS.has(entry.lineupSlotId)) {
           const key = `${team.id}-${String(playerId)}`;
           const weekMap = playerStartsByTeamAndWeek.get(key) || new Map<number, number>();
-          let weekPoints = 0;
-          const playerStats = entry.playerPoolEntry?.player?.stats;
-          if (playerStats) {
-            const weekStat = playerStats.find(
-              s => s.scoringPeriodId === week && s.statSourceId === 0
-            );
-            weekPoints = weekStat?.appliedTotal || 0;
-          }
           weekMap.set(week, weekPoints);
           playerStartsByTeamAndWeek.set(key, weekMap);
         }
@@ -403,6 +414,7 @@ export async function loadLeague(
         player,
         teamId: String(pick.teamId),
         teamName: '', // Will be set later
+        isKeeper: pick.keeper === true,
         auctionValue: pick.bidAmount,
         seasonPoints,
       };
@@ -1186,18 +1198,9 @@ export async function loadLeague(
         });
       });
 
-      // Determine winner based on PAR
-      let winner: string | undefined;
-      let winnerMargin = 0;
-      if (tradeTeams.length === 2) {
-        const [team1, team2] = tradeTeams;
-        const diff = team1.netPAR - team2.netPAR;
-        // Use PAR thresholds: 20+ PAR difference = clear winner
-        if (Math.abs(diff) > 20) {
-          winner = diff > 0 ? team1.teamId : team2.teamId;
-          winnerMargin = Math.abs(diff);
-        }
-      }
+      // Determine winner based on PAR. ESPN only exposes season totals, so
+      // the verdict spans the full season rather than post-trade weeks.
+      const { winner, winnerMargin } = decideTradeWinner(tradeTeams, 'full-season');
 
       const trade: Trade = {
         id: tradeTx.id,
@@ -1207,6 +1210,7 @@ export async function loadLeague(
         teams: tradeTeams,
         winner,
         winnerMargin,
+        verdictBasis: 'full-season',
       };
 
       // Add incomplete flag if trade data is missing
@@ -1352,6 +1356,7 @@ export async function loadLeague(
     isLoaded: true,
     rosterSlots,
     hasSuperflex,
+    playerWeeklyPoints: Object.keys(playerWeeklyPoints).length > 0 ? playerWeeklyPoints : undefined,
     status,
     loadedAt: Date.now(),
   };

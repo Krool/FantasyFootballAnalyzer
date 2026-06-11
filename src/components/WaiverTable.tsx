@@ -8,6 +8,9 @@ import styles from './WaiverTable.module.css';
 interface WaiverTableProps {
   teams: Team[];
   platform?: Platform;
+  // What pointsSincePickup holds for this load (Yahoo only): real
+  // since-pickup sums, or season totals standing in after a failed fetch.
+  pointsBasis?: 'since-pickup' | 'season';
 }
 
 type SortField = 'week' | 'team' | 'player' | 'type' | 'points' | 'games' | 'ppg' | 'par';
@@ -29,15 +32,26 @@ interface WaiverPickup {
 // FLEX positions (RB/WR/TE)
 const FLEX_POSITIONS = ['RB', 'WR', 'TE'];
 
-export function WaiverTable({ teams, platform }: WaiverTableProps) {
+export function WaiverTable({ teams, platform, pointsBasis }: WaiverTableProps) {
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
   const [selectedPosition, setSelectedPosition] = useState<string>('all');
   // Default to PAR sorting since it's the most meaningful cross-position metric
   const [sortField, setSortField] = useState<SortField>('par');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-  // For Yahoo, games started data isn't available (API limitation)
+  // Yahoo reports weekly scoring but not lineup starts, so the games/PPG
+  // columns stay hidden there, and its points count every game from the
+  // pickup week on (other platforms count only games the team started him).
+  // When the weekly fetch failed, Yahoo's column holds season totals
+  // instead, and the header says so rather than claiming since-pickup data.
   const hasGamesData = platform !== 'yahoo';
+  const seasonFallback = pointsBasis === 'season';
+  const pointsLabel = seasonFallback ? 'Season Pts' : 'Pickup Pts';
+  const pointsTitle = seasonFallback
+    ? 'Full-season points (weekly data was unavailable for this league)'
+    : hasGamesData
+      ? 'Points scored in games started after the pickup'
+      : 'Points scored from the pickup week on (Yahoo does not report lineup starts)';
 
   // Flatten and consolidate waiver pickups (merge multiple pickups of same player by same team)
   const allPickups = useMemo(() => {
@@ -299,8 +313,8 @@ export function WaiverTable({ teams, platform }: WaiverTableProps) {
               <th onClick={() => handleSort('par')} className={styles.sortable} role="button" aria-label="Sort by PAR">
                 PAR{getSortIndicator('par')}
               </th>
-              <th onClick={() => handleSort('points')} className={styles.sortable} role="button" aria-label="Sort by Points">
-                Season Pts{getSortIndicator('points')}
+              <th onClick={() => handleSort('points')} className={styles.sortable} role="button" aria-label="Sort by Points" title={pointsTitle}>
+                {pointsLabel}{getSortIndicator('points')}
               </th>
               {hasGamesData && (
                 <>

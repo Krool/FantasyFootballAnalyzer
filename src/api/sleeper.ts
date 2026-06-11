@@ -1,5 +1,6 @@
 import type { SleeperAPI, League, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, SeasonSummary, HeadToHeadRecord, RosterSlots, WeeklyMatchup } from '@/types';
 import { logger } from '@/utils/logger';
+import { decideTradeWinner } from '@/utils/tradeVerdict';
 import {
   parseSleeperRosterPositions,
   calculateReplacementLevels,
@@ -34,6 +35,40 @@ export async function getAllPlayers(): Promise<Record<string, SleeperAPI.Player>
 
 export async function getLeague(leagueId: string): Promise<SleeperAPI.League> {
   return fetchJSON<SleeperAPI.League>(`/league/${leagueId}`);
+}
+
+export async function getDraft(draftId: string): Promise<SleeperAPI.Draft> {
+  return fetchJSON<SleeperAPI.Draft>(`/draft/${draftId}`);
+}
+
+// Username → that user's leagues, for the connect form's league finder.
+// Returns null when no Sleeper user matches the username. Spans the current
+// and previous seasons: each Sleeper season is its own league id, and during
+// the offseason the league a user wants is usually last year's.
+export async function findLeaguesByUsername(
+  username: string,
+): Promise<Array<{ id: string; name: string; season: string }> | null> {
+  const user = await fetchJSON<{ user_id?: string } | null>(
+    `/user/${encodeURIComponent(username)}`,
+  );
+  if (!user?.user_id) return null;
+  const year = new Date().getFullYear();
+  const perSeason = await Promise.all(
+    [year, year - 1].map(async (season) => {
+      try {
+        const leagues = await fetchJSON<SleeperAPI.League[] | null>(
+          `/user/${user.user_id}/leagues/nfl/${season}`,
+        );
+        return leagues ?? [];
+      } catch {
+        // One missing season shouldn't sink the lookup.
+        return [];
+      }
+    }),
+  );
+  return perSeason
+    .flat()
+    .map((l) => ({ id: l.league_id, name: l.name, season: l.season }));
 }
 
 export async function getLeagueUsers(leagueId: string): Promise<SleeperAPI.User[]> {
@@ -147,11 +182,21 @@ export async function loadLeague(leagueId: string): Promise<League> {
     getAllPlayers(),
   ]);
 
-  // Fetch draft picks if draft exists
+  // Fetch draft picks and the draft object (for the real draft type) if a
+  // draft exists. Sleeper's type is 'snake' | 'auction' | 'linear'; linear
+  // collapses to snake (same board mechanics for our purposes).
   let draftPicks: SleeperAPI.DraftPick[] = [];
+  let draftType: League['draftType'] = 'snake';
   if (leagueData.draft_id) {
     try {
-      draftPicks = await getDraftPicks(leagueData.draft_id);
+      const [draft, picks] = await Promise.all([
+        getDraft(leagueData.draft_id).catch(() => null),
+        getDraftPicks(leagueData.draft_id),
+      ]);
+      draftPicks = picks;
+      if (draft?.type === 'auction') {
+        draftType = 'auction';
+      }
     } catch (error) {
       logger.warn('Could not fetch draft picks:', error instanceof Error ? error.message : error);
     }
@@ -264,6 +309,8 @@ export async function loadLeague(leagueId: string): Promise<League> {
       teamId: String(pick.roster_id),
       teamName: '', // Will be set later
       isKeeper: pick.is_keeper === true,
+      // Auction sale price rides in pick metadata as a string.
+      auctionValue: pick.metadata?.amount ? parseInt(pick.metadata.amount, 10) || undefined : undefined,
       seasonPoints: seasonStats[pick.player_id]?.pts_ppr ??
                     seasonStats[pick.player_id]?.pts_half_ppr ??
                     seasonStats[pick.player_id]?.pts_std ?? 0,
@@ -435,16 +482,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
       });
 
       // Determine winner based on PAR (not raw points)
-      let winner: string | undefined;
-      let winnerMargin = 0;
-      if (tradeTeams.length === 2) {
-        const [team1, team2] = tradeTeams;
-        const diff = team1.netPAR - team2.netPAR;
-        if (Math.abs(diff) > 5) { // PAR margin threshold (lower than raw points since PAR is smaller)
-          winner = diff > 0 ? team1.teamId : team2.teamId;
-          winnerMargin = Math.abs(diff);
-        }
-      }
+      const { winner, winnerMargin } = decideTradeWinner(tradeTeams, 'post-trade');
 
       const trade: Trade = {
         id: tx.transaction_id,
@@ -454,6 +492,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
         teams: tradeTeams,
         winner,
         winnerMargin,
+        verdictBasis: 'post-trade',
       };
 
       allTrades.push(trade);
@@ -583,7 +622,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
     platform: 'sleeper',
     name: leagueData.name,
     season,
-    draftType: 'snake', // Sleeper primarily supports snake drafts
+    draftType,
     teams,
     trades: tradesWithNames,
     matchups: weeklyMatchups,

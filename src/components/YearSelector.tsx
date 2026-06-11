@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import type { League, LeagueCredentials, LeagueStatus, SeasonOption } from '@/types';
 import { useSounds } from '@/hooks/useSounds';
 import { getCachedSeasons, loadSeasons } from '@/utils/seasonsCache';
+import { isEmptyPreseason } from '@/utils/leaguePhase';
 import { logger } from '@/utils/logger';
 import styles from './YearSelector.module.css';
 
@@ -100,8 +101,9 @@ export function YearSelector({ league, credentials, onPick, disabled }: YearSele
     setOpen(false);
     if (option.year === league.season && option.leagueId === league.id) {
       // Already-loaded season: nothing to load, but from the Draft Room this
-      // is how you get back to the season view.
-      if (inDraftRoom) {
+      // is how you get back to the season view. An empty preseason league
+      // has no season view to go back to, so stay put.
+      if (inDraftRoom && !isEmptyPreseason(league)) {
         playPageTransition();
         navigate('/draft');
       }

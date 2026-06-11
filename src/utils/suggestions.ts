@@ -35,9 +35,16 @@ export interface SuggestOptions {
   // 1-based number of the user's pick after this one, when known (snake).
   // Candidates whose ADP falls inside the gap get a "won't last" reason.
   nextPickNumber?: number | null;
+  // Simulated probability each player is taken before the user's next pick
+  // (utils/survival.ts). When present it replaces the raw ADP "won't last"
+  // heuristic: the sims know who picks in between and what they need.
+  takenOdds?: Map<string, number>;
   // Pre-draft target/avoid lists (player ids).
   starred?: Set<string>;
   avoided?: Set<string>;
+  // The user's reserved keepers not yet auto-logged: they're roster for
+  // stack/handcuff/bye purposes long before their cost round arrives.
+  keeperPlayers?: PoolPlayer[];
 }
 
 export function suggestPicks(
@@ -61,7 +68,9 @@ export function suggestPicks(
     tierLeft.set(key, (tierLeft.get(key) ?? 0) + 1);
   }
 
-  const roster = team.picks.map(pick => pick.player);
+  // Reserved keepers count as roster: a keeper RB wants his cuff and a
+  // keeper QB wants his catchers well before the cost round logs the pick.
+  const roster = [...team.picks.map(pick => pick.player), ...(opts.keeperPlayers ?? [])];
   // Skill-position starters already sharing a bye week; a third is a
   // self-inflicted zero.
   const byeCounts = new Map<number, number>();
@@ -106,9 +115,17 @@ export function suggestPicks(
         score += Math.min(8, fall * 0.25);
         reasons.push(`${Math.round(fall)} picks past ADP`);
       }
-      // The actual between-picks question: will he still be there when it
-      // comes back around?
-      if (opts.nextPickNumber && adp < opts.nextPickNumber) {
+    }
+    // The actual between-picks question: will he still be there when it
+    // comes back around? Simulated odds when available; raw ADP otherwise.
+    if (opts.nextPickNumber) {
+      const gone = opts.takenOdds?.get(p.id);
+      if (gone !== undefined) {
+        if (gone >= 0.5) {
+          score += 1 + 3 * gone;
+          reasons.push(`${Math.round(gone * 100)}% gone by your next pick (#${opts.nextPickNumber})`);
+        }
+      } else if (adp !== undefined && adp < opts.nextPickNumber) {
         score += 2;
         reasons.push(`likely gone before your next pick (#${opts.nextPickNumber})`);
       }

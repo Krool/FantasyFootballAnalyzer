@@ -85,6 +85,21 @@ function assignSlot(filled: SlotsFilled, slots: RosterSlots, pos: string): void 
   }
 }
 
+// Advance one team's running tallies by a single pick, outside the full
+// deriveDraftState pass: the survival simulator steps cloned team states
+// forward pick by pick. Mutates the team; callers own the clone.
+export function applyPickToTeam(team: TeamDraftState, pos: string, slots: RosterSlots): void {
+  assignSlot(team.slotsFilled, slots, pos);
+  team.openSlots = Math.max(0, team.openSlots - 1);
+  for (const starter of STARTER_POSITIONS) {
+    team.starterNeeds[starter] = Math.max(0, slots[starter] - team.slotsFilled[starter]);
+    const dedicatedFull = team.slotsFilled[starter] >= slots[starter];
+    const flexFull = !FLEX_ELIGIBLE.has(starter) || team.slotsFilled.FLEX >= slots.FLEX;
+    const benchFull = team.slotsFilled.BENCH >= slots.BENCH;
+    team.fullAt[starter] = team.openSlots === 0 || (dedicatedFull && flexFull && benchFull);
+  }
+}
+
 export type LineupSlot = StarterPos | 'FLEX' | 'BENCH';
 
 export interface LineupAssignment {
@@ -213,6 +228,13 @@ export function deriveDraftState(
     onTheClockId,
     positionalDemand,
   };
+}
+
+// The positions a team can no longer roster, as a set for quick lookups.
+// UI surfaces use this to hide players who would only bounce off
+// validateEvent's fullAt rejection.
+export function fullPositions(team: TeamDraftState | undefined): Set<string> {
+  return new Set(team ? STARTER_POSITIONS.filter(pos => team.fullAt[pos]) : []);
 }
 
 // Returns a human-readable rejection, or null when the event is legal.

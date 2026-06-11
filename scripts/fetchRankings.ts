@@ -206,6 +206,9 @@ async function fetchSleeperPlayers(): Promise<void> {
     team?: string | null;
     status?: string | null;
     injury_status?: string | null;
+    injury_body_part?: string | null;
+    injury_notes?: string | null;
+    injury_start_date?: string | null;
     years_exp?: number | null;
     depth_chart_order?: number | null;
     full_name?: string;
@@ -220,6 +223,9 @@ async function fetchSleeperPlayers(): Promise<void> {
       team: p.team!,
       status: p.status ?? null,
       injuryStatus: p.injury_status ?? null,
+      injuryBodyPart: p.injury_body_part ?? null,
+      injuryNotes: p.injury_notes ?? null,
+      injuryStartDate: p.injury_start_date ?? null,
       yearsExp: p.years_exp ?? null,
       depthChartOrder: p.depth_chart_order ?? null,
     }));
