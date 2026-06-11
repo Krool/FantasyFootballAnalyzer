@@ -267,7 +267,11 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
           <>
             {phase === 'complete' && <DraftRecap room={room} />}
 
-            <div className={`${styles.statusBar} ${myTurn ? styles.statusBarMine : ''}`}>
+            <div
+              className={`${styles.statusBar} ${phase === 'drafting' ? styles.statusBarLive : ''} ${
+                myTurn ? styles.statusBarMine : ''
+              }`}
+            >
               <span className={styles.statusItem}>
                 Pick {Math.min(derived.pickCount + 1, derived.totalPicks)}/{derived.totalPicks}
               </span>

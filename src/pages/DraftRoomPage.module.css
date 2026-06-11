@@ -45,13 +45,23 @@
 .statusBar {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  align-content: center;
+  gap: 0.6rem 1.5rem;
   flex-wrap: wrap;
   border: 2px solid var(--bone);
   box-shadow: 4px 4px 0 var(--bone);
   padding: 0.75rem 1rem;
   margin-bottom: 1.5rem;
   background: var(--ink);
+}
+
+/* While drafting, reserve the bar's tallest common shape so alert badges
+   coming and going between picks don't shift the page. Sum: 1.5rem padding
+   + 4px border + ~1.3rem text/badge row + 0.6rem row gap + ~2rem button
+   row. align-content centers the rows in the slack. Screens narrow enough
+   to wrap to three rows can still exceed this. */
+.statusBarLive {
+  min-height: 5.75rem;
 }
 
 .statusItem {
@@ -256,6 +266,16 @@
   .statusBtnDanger,
   .statusUndoBtn {
     min-height: 44px;
+  }
+
+  /* Buttons are 44px here, so wrapped rows need more separation and the
+     reserved drafting height grows to match (44px button row). */
+  .statusBar {
+    row-gap: 0.75rem;
+  }
+
+  .statusBarLive {
+    min-height: 6.75rem;
   }
 }
 
