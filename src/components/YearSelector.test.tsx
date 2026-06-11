@@ -1,8 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import type { League, LeagueCredentials } from '@/types';
+import { getCachedSeasons } from '@/utils/seasonsCache';
 import { YearSelector } from './YearSelector';
+
+vi.mock('@/utils/seasonsCache', () => ({
+  getCachedSeasons: vi.fn(() => null),
+  loadSeasons: vi.fn(() => Promise.reject(new Error('offline'))),
+}));
+
+beforeEach(() => {
+  vi.mocked(getCachedSeasons).mockReturnValue(null);
+});
 
 const league: League = {
   id: '1240782642371104768',
@@ -87,6 +97,29 @@ describe('YearSelector draft prep entry', () => {
     // The dropdown always offers the draft prep entry; clicking it while
     // already in the draft room just closes the menu.
     fireEvent.click(screen.getByText('draft prep'));
+    expect(screen.getByTestId('location').textContent).toBe('/draft-room');
+  });
+
+  it('hands a non-current pick to onPick without navigating itself', () => {
+    vi.mocked(getCachedSeasons).mockReturnValue([
+      { year: 2025, leagueId: league.id, status: 'final', leagueName: league.name },
+      { year: 2024, leagueId: 'older-league-id', status: 'final', leagueName: league.name },
+    ]);
+    const onPick = vi.fn();
+    render(
+      <MemoryRouter initialEntries={['/draft-room']}>
+        <YearSelector league={league} credentials={credentials} onPick={onPick} />
+        <Routes>
+          <Route path="*" element={<LocationProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByTitle('Switch season'));
+    fireEvent.click(screen.getByText('2024'));
+
+    expect(onPick).toHaveBeenCalledWith(expect.objectContaining({ year: 2024 }));
+    // Leaving the Draft Room is App's job: a navigate here raced App's
+    // same-tick URL update and clobbered it, so picks looked dead.
     expect(screen.getByTestId('location').textContent).toBe('/draft-room');
   });
 });

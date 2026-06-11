@@ -110,7 +110,8 @@ export function YearSelector({ league, credentials, onPick, disabled }: YearSele
       return;
     }
     playPageTransition();
-    if (inDraftRoom) navigate('/draft');
+    // App's onPick owns the navigation, including leaving the Draft Room.
+    // Navigating here too would race its same-tick URL update and lose.
     onPick(option);
   };
 

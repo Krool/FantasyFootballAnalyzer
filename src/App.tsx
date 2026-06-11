@@ -48,7 +48,7 @@ const PAGE_TITLES: Record<string, string> = {
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const { league, credentials, isLoading, error, progress, load, refresh, clear } = useLeague();
   const { playLoadComplete, playError } = useSounds();
   const prevLeagueRef = useRef<typeof league>(null);
@@ -175,16 +175,21 @@ function App() {
 
   // Dropdown click → load the picked season and reflect it in the URL so back
   // / forward and shareable links work. The URL update fires the watch effect
-  // below, but handledYearRef short-circuits the double-load.
+  // below, but handledYearRef short-circuits the double-load. One navigate
+  // call owns both the pathname and the query: setSearchParams resolves its
+  // relative "?" against the location captured at render, so pairing it with
+  // a same-tick navigate elsewhere (the Draft Room exit) silently clobbered
+  // the path change.
   const handlePickSeason = useCallback(async (option: SeasonOption) => {
     if (!credentials) return;
     handledYearRef.current = option.year;
     const next = credentialsForSeason(credentials, option);
-    setSearchParams(prev => {
-      const params = new URLSearchParams(prev);
-      params.set('year', String(option.year));
-      return params;
-    }, { replace: false });
+    // A real season picked from the Draft Room lands on the season view;
+    // from any other page the pick stays put.
+    const pathname = location.pathname === '/draft-room' ? '/draft' : location.pathname;
+    const params = new URLSearchParams(location.search);
+    params.set('year', String(option.year));
+    navigate(`${pathname}?${params.toString()}`);
     const loaded = await load(next);
     // Picking the not-yet-played season (platforms create it at renewal)
     // lands in the Draft Room; every other page would be empty. Replace the
@@ -193,7 +198,7 @@ function App() {
     if (isEmptyPreseason(loaded)) {
       navigate(`/draft-room?year=${option.year}`, { replace: true });
     }
-  }, [credentials, load, setSearchParams, navigate]);
+  }, [credentials, load, navigate, location.pathname, location.search]);
 
   // Back/forward (or direct link) changes ?year= → resolve year → load. We
   // use the seasons cache so this doesn't refetch the chain on every nav.
