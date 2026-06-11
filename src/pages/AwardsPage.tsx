@@ -3,6 +3,7 @@ import type { League } from '@/types';
 import { calculateAllAwards, groupAwardsByCategory, getCategoryDisplayName, type Award } from '@/utils/awards';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
 import { seasonRecords, seasonTimeline } from '@/utils/seasonStory';
+import { exportAwardCard } from '@/utils/exportAwardCard';
 import { TeamLink } from '@/components';
 import styles from './AwardsPage.module.css';
 
@@ -83,7 +84,7 @@ export function AwardsPage({ league }: AwardsPageProps) {
               </h2>
               <div className={styles.awardsGrid}>
                 {categoryAwards.map(award => (
-                  <AwardCard key={award.id} award={award} />
+                  <AwardCard key={award.id} award={award} league={league} />
                 ))}
               </div>
             </section>
@@ -197,9 +198,18 @@ export function AwardsPage({ league }: AwardsPageProps) {
   );
 }
 
-function AwardCard({ award }: { award: Award }) {
+function AwardCard({ award, league }: { award: Award; league: League }) {
   return (
     <div className={styles.awardCard}>
+      <button
+        type="button"
+        className={styles.awardShareBtn}
+        onClick={() => exportAwardCard(award, league.name, league.season)}
+        title="Download this award as a shareable image"
+        aria-label={`Download ${award.name} as an image`}
+      >
+        ↓
+      </button>
       <div className={styles.awardIcon}>{award.icon || '🏆'}</div>
       <h3 className={styles.awardName}>{award.name}</h3>
       <div className={styles.awardWinner}>

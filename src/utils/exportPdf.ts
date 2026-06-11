@@ -1,7 +1,10 @@
 // jsPDF and jspdf-autotable are dynamically imported in exportLeagueReport()
 import type { jsPDF as JsPDFType } from 'jspdf';
-import type { League, Trade } from '@/types';
+import type { League } from '@/types';
 import { gradeAllPicks, calculateDraftSummary, getGradeDisplayText } from './grading';
+import { calculateAllAwards } from './awards';
+import { calculateLuckMetrics } from './luck';
+import { isPlaceholderPlayer } from './placeholders';
 
 // Import trophy images
 import BestWaiverPickup from '@/images/BestWaiverPickup.png';
@@ -37,8 +40,8 @@ function lastTableFinalY(doc: JsPDFType, fallback: number): number {
   return typeof finalY === 'number' ? finalY : fallback;
 }
 
-// Award types for the first page
-interface Award {
+// Award shape for the first-page grid
+interface PdfAward {
   title: string;
   winner: string;
   detail: string;
@@ -99,130 +102,41 @@ function getTeamWaiverStats(league: League) {
   });
 }
 
-// Generate all awards
-function generateAwards(league: League): Award[] {
-  const awards: Award[] = [];
-  const gradedPicks = gradeAllPicks(league);
-  const waiverPickups = getWaiverPickups(league);
-  const teamWaiverStats = getTeamWaiverStats(league);
+// Awards come from the same engine as the Awards page (calculateAllAwards),
+// so the PDF can never disagree with the site about who won what. The PDF
+// grid fits about a dozen; awards.ts orders them by category significance.
+const PDF_AWARD_CAP = 12;
 
-  // Best Waiver Pickup (by PAR)
-  const bestWaiver = [...waiverPickups].sort((a, b) => b.par - a.par)[0];
-  if (bestWaiver) {
-    awards.push({
-      title: 'Best Waiver Pickup',
-      winner: bestWaiver.playerName,
-      detail: `${bestWaiver.teamName} | +${bestWaiver.par.toFixed(1)} PAR`,
-    });
-  }
+function generateAwards(league: League): PdfAward[] {
+  const matchups = (league.matchups ?? []).map(m => ({
+    week: m.week,
+    team1Id: m.team1Id,
+    team1Points: m.team1Points,
+    team2Id: m.team2Id,
+    team2Points: m.team2Points,
+  }));
+  const luckMetrics =
+    matchups.length > 0
+      ? calculateLuckMetrics(
+          matchups,
+          league.teams.map(t => ({
+            id: t.id,
+            name: t.name,
+            wins: t.wins || 0,
+            losses: t.losses || 0,
+            ties: t.ties || 0,
+            pointsFor: t.pointsFor || 0,
+          })),
+        )
+      : undefined;
 
-  // Worst Waiver Pickup (by PAR, with games played)
-  const worstWaiver = [...waiverPickups]
-    .filter(p => p.games >= 2) // Must have started at least 2 games
-    .sort((a, b) => a.par - b.par)[0];
-  if (worstWaiver) {
-    awards.push({
-      title: 'Worst Waiver Pickup',
-      winner: worstWaiver.playerName,
-      detail: `${worstWaiver.teamName} | ${worstWaiver.par.toFixed(1)} PAR`,
-    });
-  }
-
-  // Best Trade (by net PAR)
-  if (league.trades && league.trades.length > 0) {
-    // Flatten all trade sides
-    const allTradeSides: Array<{ trade: Trade; teamName: string; received: string[]; netPAR: number }> = [];
-    for (const trade of league.trades) {
-      for (const teamSide of trade.teams) {
-        allTradeSides.push({
-          trade,
-          teamName: teamSide.teamName,
-          received: teamSide.playersReceived.map(p => p.name),
-          netPAR: teamSide.netPAR ?? teamSide.netValue ?? 0,
-        });
-      }
-    }
-
-    if (allTradeSides.length > 0) {
-      const bestTradeInfo = allTradeSides.sort((a, b) => b.netPAR - a.netPAR)[0];
-      const receivedNames = bestTradeInfo.received.slice(0, 2).join(', ');
-      awards.push({
-        title: 'Best Trade',
-        winner: bestTradeInfo.teamName,
-        detail: `Got ${receivedNames} | +${bestTradeInfo.netPAR.toFixed(1)} PAR`,
-      });
-    }
-  }
-
-  // Best Draft (by average value)
-  const teamDraftStats = league.teams.map(team => {
-    const teamPicks = gradedPicks.filter(p => p.teamId === team.id);
-    const summary = calculateDraftSummary(teamPicks);
-    return { name: team.name, avgValue: summary.averageValue, great: summary.great };
-  }).sort((a, b) => b.avgValue - a.avgValue);
-
-  if (teamDraftStats.length > 0) {
-    const best = teamDraftStats[0];
-    awards.push({
-      title: 'Best Draft',
-      winner: best.name,
-      detail: `${best.great} great picks | +${best.avgValue.toFixed(1)} avg value`,
-    });
-  }
-
-  // Worst Draft
-  if (teamDraftStats.length > 0) {
-    const worst = teamDraftStats[teamDraftStats.length - 1];
-    awards.push({
-      title: 'Worst Draft',
-      winner: worst.name,
-      detail: `${worst.avgValue >= 0 ? '+' : ''}${worst.avgValue.toFixed(1)} avg value`,
-    });
-  }
-
-  // Most Waiver PAR
-  const sortedByPAR = [...teamWaiverStats].sort((a, b) => b.par - a.par);
-  if (sortedByPAR.length > 0) {
-    const best = sortedByPAR[0];
-    awards.push({
-      title: 'Waiver Wire King',
-      winner: best.name,
-      detail: `${best.pickups} pickups | +${best.par.toFixed(1)} PAR`,
-    });
-  }
-
-  // Least Waiver PAR
-  if (sortedByPAR.length > 0) {
-    const worst = sortedByPAR[sortedByPAR.length - 1];
-    awards.push({
-      title: 'Waiver Wire Slacker',
-      winner: worst.name,
-      detail: `${worst.pickups} pickups | ${worst.par >= 0 ? '+' : ''}${worst.par.toFixed(1)} PAR`,
-    });
-  }
-
-  // Most Transactions
-  const sortedByTx = [...teamWaiverStats].sort((a, b) => b.transactions - a.transactions);
-  if (sortedByTx.length > 0) {
-    const most = sortedByTx[0];
-    awards.push({
-      title: 'Most Active',
-      winner: most.name,
-      detail: `${most.transactions} transactions`,
-    });
-  }
-
-  // Least Transactions
-  if (sortedByTx.length > 0) {
-    const least = sortedByTx[sortedByTx.length - 1];
-    awards.push({
-      title: 'Least Active',
-      winner: least.name,
-      detail: `${least.transactions} transactions`,
-    });
-  }
-
-  return awards;
+  return calculateAllAwards({ league, luckMetrics })
+    .slice(0, PDF_AWARD_CAP)
+    .map(award => ({
+      title: award.name,
+      winner: award.winner.teamName,
+      detail: [award.value, award.detail].filter(Boolean).join(' | '),
+    }));
 }
 
 export async function exportLeagueReport(league: League) {
@@ -347,7 +261,9 @@ export async function exportLeagueReport(league: League) {
   doc.setFont('helvetica', 'bold');
   doc.text('Draft Grades', 14 + halfWidth + 4, yPos);
 
-  const gradedPicks = gradeAllPicks(league);
+  // Placeholder players ("Player 12345") would otherwise show up in the
+  // Top/Bottom 10 tables; the on-site tables filter them, so must we.
+  const gradedPicks = gradeAllPicks(league).filter(p => !isPlaceholderPlayer(p.player.name));
 
   const draftSummaryData = league.teams.map(team => {
     const teamPicks = gradedPicks.filter(p => p.teamId === team.id);
@@ -462,7 +378,7 @@ export async function exportLeagueReport(league: League) {
   yPos = 18;
 
   // Best Waiver Pickups
-  const waiverPickups = getWaiverPickups(league);
+  const waiverPickups = getWaiverPickups(league).filter(p => !isPlaceholderPlayer(p.playerName));
 
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');

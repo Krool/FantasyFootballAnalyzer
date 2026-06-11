@@ -2,6 +2,7 @@ import type { Team } from '@/types';
 import type { LuckMetrics } from '@/utils/luck';
 import { useMemo } from 'react';
 import { gradeAllPicks, calculateDraftSummary } from '@/utils/grading';
+import { isPlaceholderPlayer } from '@/utils/placeholders';
 import styles from './TeamCard.module.css';
 
 interface TeamCardProps {
@@ -28,10 +29,7 @@ export function TeamCard({ team, allTeams, totalTeams, onClick, luckMetrics }: T
     };
     const allGraded = gradeAllPicks(mockLeague);
     // Filter to this team's picks and exclude unknown players (e.g., "Player 12345")
-    return allGraded.filter(pick =>
-      pick.teamId === team.id &&
-      !pick.player.name.match(/^Player\s+-?\d+$/)
-    );
+    return allGraded.filter(pick => pick.teamId === team.id && !isPlaceholderPlayer(pick.player.name));
   }, [team, allTeams, totalTeams]);
 
   const summary = useMemo(() => calculateDraftSummary(gradedPicks), [gradedPicks]);
@@ -55,7 +53,7 @@ export function TeamCard({ team, allTeams, totalTeams, onClick, luckMetrics }: T
   // The actual humans on this roster: top three season scorers.
   const topScorers = useMemo(() => {
     return [...(team.roster ?? [])]
-      .filter(p => !p.name.match(/^Player\s+-?\d+$/))
+      .filter(p => !isPlaceholderPlayer(p.name))
       .sort((a, b) => (b.seasonPoints ?? 0) - (a.seasonPoints ?? 0))
       .slice(0, 3);
   }, [team.roster]);

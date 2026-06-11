@@ -6,6 +6,7 @@
 import type { League } from '@/types';
 import { gradeAllPicks } from './grading';
 import { calculateLuckMetrics } from './luck';
+import { isPlaceholderPlayer } from './placeholders';
 
 export interface ManagerScore {
   teamId: string;
@@ -33,7 +34,7 @@ function normalize(values: number[]): number[] {
 export function managerScores(league: League): ManagerScore[] {
   if (league.teams.length === 0) return [];
 
-  const graded = gradeAllPicks(league).filter(p => !p.player.name.match(/^Player\s+-?\d+$/));
+  const graded = gradeAllPicks(league).filter(p => !isPlaceholderPlayer(p.player.name));
   const luck = calculateLuckMetrics(
     (league.matchups ?? []).map(m => ({
       week: m.week,

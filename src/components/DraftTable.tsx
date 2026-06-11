@@ -5,6 +5,7 @@ import { useSounds } from '@/hooks/useSounds';
 import { NflTeamLabel } from './NflTeamLabel';
 import { PosBadge } from './PosBadge';
 import { TeamLink } from './TeamLink';
+import { isPlaceholderPlayer } from '@/utils/placeholders';
 import styles from './DraftTable.module.css';
 
 interface DraftTableProps {
@@ -43,9 +44,7 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
       isLoaded: true,
     };
     // Filter out unknown players (those with names like "Player 12345")
-    return gradeAllPicks(mockLeague).filter(pick =>
-      !pick.player.name.match(/^Player\s+-?\d+$/)
-    );
+    return gradeAllPicks(mockLeague).filter(pick => !isPlaceholderPlayer(pick.player.name));
   }, [teams, totalTeams, isAuction]);
 
   // Get unique positions

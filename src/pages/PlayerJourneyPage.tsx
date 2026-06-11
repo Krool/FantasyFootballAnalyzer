@@ -175,6 +175,8 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
     return playersWithJourneys
       .filter(p => {
         // Filter out Yahoo placeholder names like "Player 449.p.12345".
+        // Deliberately NOT the shared isPlaceholderPlayer: see the comment
+        // on YAHOO_PLACEHOLDER_NAME (the loose form once hid a real entry).
         if (YAHOO_PLACEHOLDER_NAME.test(p.player.name)) return false;
 
         // Search filter

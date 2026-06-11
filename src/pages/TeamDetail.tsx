@@ -4,6 +4,7 @@ import { NflTeamLabel, PosBadge } from '@/components';
 import { gradeAllPicks, getGradeDisplayText } from '@/utils/grading';
 import { calculateAllAwards } from '@/utils/awards';
 import { calculateLuckMetrics, type MatchupData } from '@/utils/luck';
+import { isPlaceholderPlayer } from '@/utils/placeholders';
 import styles from './TeamDetail.module.css';
 
 interface TeamDetailProps {
@@ -40,7 +41,7 @@ export function TeamDetail({ league, team, onBack }: TeamDetailProps) {
   const gradedPicks = useMemo(
     () =>
       gradeAllPicks(league).filter(
-        p => p.teamId === team.id && !p.player.name.match(/^Player\s+-?\d+$/),
+        p => p.teamId === team.id && !isPlaceholderPlayer(p.player.name),
       ),
     [league, team.id],
   );
@@ -55,7 +56,7 @@ export function TeamDetail({ league, team, onBack }: TeamDetailProps) {
       (team.transactions ?? [])
         .filter(tx => tx.type === 'waiver' || tx.type === 'free_agent')
         .flatMap(tx => tx.adds.map(player => ({ tx, player })))
-        .filter(({ player }) => !player.name.match(/^Player\s+-?\d+$/))
+        .filter(({ player }) => !isPlaceholderPlayer(player.name))
         .sort((a, b) => (b.player.pointsAboveReplacement ?? 0) - (a.player.pointsAboveReplacement ?? 0))
         .slice(0, 12),
     [team.transactions],
