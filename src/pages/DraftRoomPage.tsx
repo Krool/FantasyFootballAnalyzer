@@ -143,6 +143,30 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
   }, [config.draftType, config.teams.length, config.budget, derived.teams]);
 
   const lastEventTs = room.events.length > 0 ? room.events[room.events.length - 1].ts : null;
+
+  // Screen-reader announcement of the latest pick and whose turn it is.
+  // Sighted users get the status bar; this is the same signal for everyone.
+  const announcement = useMemo(() => {
+    if (phase !== 'drafting') return '';
+    const last = room.events[room.events.length - 1];
+    const parts: string[] = [];
+    if (last) {
+      const player = playerById.get(last.playerId);
+      const teamId = last.kind === 'auction_sale' ? last.wonById : last.teamId;
+      const team = config.teams.find(t => t.id === teamId);
+      if (player && team) {
+        parts.push(
+          last.kind === 'auction_sale'
+            ? `${player.name} sold to ${team.name} for $${last.price}.`
+            : `Pick ${room.events.length}: ${player.name} to ${team.name}.`,
+        );
+      }
+    }
+    if (myTurn) {
+      parts.push(config.draftType === 'auction' ? 'Your nomination.' : 'You are on the clock.');
+    }
+    return parts.join(' ');
+  }, [phase, room.events, playerById, config.teams, config.draftType, myTurn]);
   // Quick drafting: log a player straight to the on-the-clock team. Only for
   // snake drafts, and in mock mode only when it's actually the user's pick
   // (the AI handles the rest).
@@ -206,6 +230,10 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
             {league.name} · {config.season} {isAuction ? 'Auction' : 'Snake'}
             {isMock ? ' · Mock' : ''}
           </p>
+        </div>
+
+        <div aria-live="polite" className="visually-hidden">
+          {announcement}
         </div>
 
         {phase === 'setup' ? (

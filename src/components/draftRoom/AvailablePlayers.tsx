@@ -68,6 +68,17 @@ export function AvailablePlayers({
     setSortBy(key);
   };
 
+  // Sorts here are fixed-direction (rank/ADP ascending, money descending).
+  const ariaSortFor = (key: typeof sortBy): 'ascending' | 'descending' | undefined =>
+    sortBy === key ? (key === 'rank' || key === 'adp' ? 'ascending' : 'descending') : undefined;
+
+  const sortKeyDown = (key: typeof sortBy) => (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setSort(key);
+    }
+  };
+
   const rows = useMemo(() => {
     const q = normalizeName(query);
     const filtered = derived.available
@@ -163,6 +174,10 @@ export function AvailablePlayers({
               <th
                 className={`${styles.num} ${styles.sortable} ${sortBy === 'rank' ? styles.sorted : ''}`}
                 onClick={() => setSort('rank')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={sortKeyDown('rank')}
+                aria-sort={ariaSortFor('rank')}
               >
                 RK
               </th>
@@ -174,6 +189,10 @@ export function AvailablePlayers({
               <th
                 className={`${styles.num} ${styles.sortable} ${sortBy === 'adp' ? styles.sorted : ''}`}
                 onClick={() => setSort('adp')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={sortKeyDown('adp')}
+                aria-sort={ariaSortFor('adp')}
                 title={`ADP: Sleeper ${scoring.replace('_', ' ')} scoring, ESPN as fallback`}
               >
                 ADP
@@ -183,6 +202,10 @@ export function AvailablePlayers({
                   <th
                     className={`${styles.num} ${styles.sortable} ${sortBy === 'value' ? styles.sorted : ''}`}
                     onClick={() => setSort('value')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={sortKeyDown('value')}
+                aria-sort={ariaSortFor('value')}
                     title="FantasyPros value, scaled to this league's budget and size"
                   >
                     FP $
@@ -190,6 +213,10 @@ export function AvailablePlayers({
                   <th
                     className={`${styles.num} ${styles.sortable} ${sortBy === 'adj' ? styles.sorted : ''}`}
                     onClick={() => setSort('adj')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={sortKeyDown('adj')}
+                aria-sort={ariaSortFor('adj')}
                     title="FP $ corrected for this room's live inflation: what he should actually cost right now"
                   >
                     ADJ $
@@ -197,6 +224,10 @@ export function AvailablePlayers({
                   <th
                     className={`${styles.num} ${styles.sortable} ${sortBy === 'espn' ? styles.sorted : ''}`}
                     onClick={() => setSort('espn')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={sortKeyDown('espn')}
+                aria-sort={ariaSortFor('espn')}
                     title="Live ESPN auction market price (ESPN default league, unscaled)"
                   >
                     ESPN $
@@ -205,6 +236,10 @@ export function AvailablePlayers({
                     <th
                       className={`${styles.num} ${styles.sortable} ${sortBy === 'yahoo' ? styles.sorted : ''}`}
                       onClick={() => setSort('yahoo')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={sortKeyDown('yahoo')}
+                aria-sort={ariaSortFor('yahoo')}
                       title="Average price in real Yahoo auction drafts (unscaled)"
                     >
                       YHO $
@@ -225,6 +260,15 @@ export function AvailablePlayers({
                 onClick={() => {
                   playClick();
                   onSelect(p);
+                }}
+                tabIndex={0}
+                aria-selected={p.id === selectedId}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    playClick();
+                    onSelect(p);
+                  }
                 }}
                 title={`Select ${p.name} for the pick logger`}
               >

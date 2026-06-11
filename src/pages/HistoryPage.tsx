@@ -341,7 +341,11 @@ export function HistoryPage({ league }: HistoryPageProps) {
                           </td>
                           <td className="text-center">
                             {team.championships > 0 ? (
-                              <span className={styles.championship}>
+                              <span
+                                className={styles.championship}
+                                role="img"
+                                aria-label={`${team.championships} championship${team.championships === 1 ? '' : 's'}`}
+                              >
                                 {'🏆'.repeat(team.championships)}
                               </span>
                             ) : '-'}

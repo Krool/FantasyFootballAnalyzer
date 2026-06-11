@@ -301,3 +301,11 @@
   margin-left: 0.25rem;
   color: var(--gold);
 }
+
+@media (pointer: coarse) {
+  .chip,
+  .chipOn,
+  .quickBtn {
+    min-height: 44px;
+  }
+}

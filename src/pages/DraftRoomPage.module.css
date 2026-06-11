@@ -197,9 +197,18 @@
 .grid {
   display: grid;
   grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  grid-template-areas: 'side main';
   gap: 1.5rem;
   align-items: start;
   margin-bottom: 2rem;
+}
+
+.colSide {
+  grid-area: side;
+}
+
+.colMain {
+  grid-area: main;
 }
 
 .colSide,
@@ -221,9 +230,32 @@
   padding-top: 1.5rem;
 }
 
+/* Narrow the side column before stacking so the auction board keeps room. */
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
+  /* Phone at a live draft: the board comes first; logger and panels below.
+     Burying the player list under four side panels was the old layout. */
   .grid {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      'main'
+      'side';
+  }
+}
+
+/* Mis-taps cost picks: bump interactive targets on touch screens. */
+@media (pointer: coarse) {
+  .tab,
+  .tabOn,
+  .statusBtn,
+  .statusBtnDanger,
+  .statusUndoBtn {
+    min-height: 44px;
   }
 }
 

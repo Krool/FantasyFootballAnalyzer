@@ -45,14 +45,24 @@ export function YearSelector({ league, credentials, onPick, disabled }: YearSele
     setSeasons(getCachedSeasons(credentials));
   }, [credentials]);
 
-  // Click-outside to close.
+  // Click-outside or Escape to close; Escape returns focus to the trigger.
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
     };
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        rootRef.current?.querySelector('button')?.focus();
+      }
+    };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('keydown', keyHandler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('keydown', keyHandler);
+    };
   }, [open]);
 
   const fetchSeasons = useCallback(async () => {
@@ -109,7 +119,7 @@ export function YearSelector({ league, credentials, onPick, disabled }: YearSele
         className={styles.trigger}
         onClick={handleToggle}
         disabled={disabled}
-        aria-haspopup="listbox"
+        aria-haspopup="menu"
         aria-expanded={open}
         title="Switch season"
       >
@@ -119,7 +129,7 @@ export function YearSelector({ league, credentials, onPick, disabled }: YearSele
         </svg>
       </button>
       {open && (
-        <ul className={styles.menu} role="listbox" aria-label="Available seasons">
+        <ul className={styles.menu} role="menu" aria-label="Available seasons">
           {!hasDraftYear && (
             <li>
               <button
@@ -132,8 +142,8 @@ export function YearSelector({ league, credentials, onPick, disabled }: YearSele
                     navigate('/draft-room');
                   }
                 }}
-                role="option"
-                aria-selected={inDraftRoom}
+                role="menuitem"
+                aria-current={inDraftRoom || undefined}
                 title={`Prep for the ${draftYear} draft: rankings, values, and live draft tracking`}
               >
                 <span className={styles.optionYear}>{draftYear}</span>
@@ -158,8 +168,8 @@ export function YearSelector({ league, credentials, onPick, disabled }: YearSele
                   type="button"
                   className={`${styles.option} ${isCurrent ? styles.optionCurrent : ''}`}
                   onClick={() => handlePick(option)}
-                  role="option"
-                  aria-selected={isCurrent}
+                  role="menuitem"
+                  aria-current={isCurrent || undefined}
                 >
                   <span className={styles.optionYear}>{option.year}</span>
                   <span className={`${styles.optionStatus} ${styles[`status_${option.status}`]}`}>
