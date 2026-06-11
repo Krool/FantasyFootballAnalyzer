@@ -164,3 +164,92 @@
   .filter  { min-width: 100%; }
   .summary { margin-left: 0; justify-content: center; }
 }
+
+.keeperTag {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  padding: 0.05rem 0.3rem;
+  margin-left: 0.45rem;
+  vertical-align: middle;
+}
+
+.leaderboard {
+  margin-bottom: 1.25rem;
+}
+
+.leaderboardTitle {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  margin: 0 0 0.5rem;
+}
+
+.leaderboardGrid {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  background: var(--ink);
+}
+
+.leaderboardRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 0.45rem 0.8rem;
+  border: none;
+  border-bottom: 1px dashed var(--rule);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-mono);
+}
+
+.leaderboardRow:hover {
+  background: var(--ink-2);
+}
+
+.leaderboardRowOn {
+  background: var(--ink-2);
+  box-shadow: inset 4px 0 0 var(--lime);
+}
+
+.lbRank {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--bone-dim);
+  min-width: 1.4ch;
+}
+
+.lbName {
+  flex: 1;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--bone);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lbStat {
+  font-size: 0.7rem;
+  color: var(--bone-dim);
+  white-space: nowrap;
+}
+
+.lbRegret {
+  font-size: 0.7rem;
+  color: var(--blood);
+  white-space: nowrap;
+}

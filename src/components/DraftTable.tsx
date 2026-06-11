@@ -138,12 +138,54 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
     return sortDirection === 'asc' ? ' ↑' : ' ↓';
   };
 
-  // Calculate summary stats
+  // Calculate summary stats. Keepers are excluded: a kept league-winner is
+  // last year's skill, not this draft's.
   const summary = useMemo(() => {
     const counts = { great: 0, good: 0, bad: 0, terrible: 0 };
-    displayPicks.forEach(pick => counts[pick.grade]++);
+    displayPicks.filter(p => !p.isKeeper).forEach(pick => counts[pick.grade]++);
     return counts;
   }, [displayPicks]);
+
+  // Whose draft won? One row per team: hit rate, production, and the classic
+  // regret stat — points left on the board (for each live pick, how much
+  // better the best same-position player drafted LATER turned out).
+  const leaderboard = useMemo(() => {
+    const byTeam = new Map<string, typeof gradedPicks>();
+    for (const pick of gradedPicks) {
+      const list = byTeam.get(pick.teamId) ?? [];
+      list.push(pick);
+      byTeam.set(pick.teamId, list);
+    }
+
+    const ordered = [...gradedPicks].sort((a, b) => a.pickNumber - b.pickNumber);
+    const leftOnBoard = (pick: (typeof gradedPicks)[number]): number => {
+      if (pick.isKeeper) return 0;
+      const later = ordered.filter(
+        p => p.pickNumber > pick.pickNumber && p.player.position === pick.player.position,
+      );
+      const best = Math.max(0, ...later.map(p => p.seasonPoints ?? 0));
+      return Math.max(0, best - (pick.seasonPoints ?? 0));
+    };
+
+    return [...byTeam.entries()]
+      .map(([teamId, picks]) => {
+        const live = picks.filter(p => !p.isKeeper);
+        const hits = live.filter(p => p.grade === 'great' || p.grade === 'good').length;
+        const points = picks.reduce((sum, p) => sum + (p.seasonPoints ?? 0), 0);
+        const spent = picks.reduce((sum, p) => sum + (p.auctionValue ?? 0), 0);
+        const regret = live.reduce((sum, p) => sum + leftOnBoard(p), 0);
+        return {
+          teamId,
+          teamName: picks[0]?.teamName ?? teamId,
+          hitRate: live.length > 0 ? hits / live.length : 0,
+          points,
+          spent,
+          costPerPoint: points > 0 && spent > 0 ? spent / points : null,
+          regret,
+        };
+      })
+      .sort((a, b) => b.points - a.points);
+  }, [gradedPicks]);
 
   return (
     <div className={styles.container}>
@@ -194,6 +236,43 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
           <span className={`grade-badge terrible`}>{summary.terrible} Terrible</span>
         </div>
       </div>
+
+      {leaderboard.length > 1 && (
+        <div className={styles.leaderboard}>
+          <h3 className={styles.leaderboardTitle}>Whose draft won?</h3>
+          <div className={styles.leaderboardGrid}>
+            {leaderboard.map((row, i) => (
+              <button
+                key={row.teamId}
+                type="button"
+                className={`${styles.leaderboardRow} ${selectedTeam === row.teamId ? styles.leaderboardRowOn : ''}`}
+                onClick={() => handleTeamFilter(selectedTeam === row.teamId ? 'all' : row.teamId)}
+                title="Filter the table to this team's picks"
+              >
+                <span className={styles.lbRank}>{i + 1}</span>
+                <span className={styles.lbName}>{row.teamName}</span>
+                <span className={styles.lbStat} title="Points scored by drafted players">
+                  {row.points.toFixed(0)} pts
+                </span>
+                <span className={styles.lbStat} title="Share of live picks graded great or good">
+                  {Math.round(row.hitRate * 100)}% hits
+                </span>
+                {row.costPerPoint !== null && (
+                  <span className={styles.lbStat} title="Auction dollars paid per point scored">
+                    ${row.costPerPoint.toFixed(2)}/pt
+                  </span>
+                )}
+                <span
+                  className={styles.lbRegret}
+                  title="Points left on the board: how much better the best same-position player drafted later turned out, summed over this team's picks"
+                >
+                  −{row.regret.toFixed(0)} left
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className={styles.tableWrapper}>
         <table className={`table ${styles.table}`}>
@@ -251,7 +330,14 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
                 )}
                 <td>
                   <div className={styles.playerCell}>
-                    <span className={styles.playerName}>{pick.player.name}</span>
+                    <span className={styles.playerName}>
+                      {pick.player.name}
+                      {pick.isKeeper && (
+                        <span className={styles.keeperTag} title="Keeper: kept from last season, not a live pick">
+                          K
+                        </span>
+                      )}
+                    </span>
                     <NflTeamLabel team={pick.player.team} />
                   </div>
                 </td>

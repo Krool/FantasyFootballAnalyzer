@@ -280,3 +280,13 @@
   .awardValue { font-size: 2rem; }
   .luckTable th, .luckTable td { padding: 0.55rem 0.65rem; font-size: 0.75rem; }
 }
+
+.rankLucky {
+  color: var(--color-good);
+  font-weight: 700;
+}
+
+.rankUnlucky {
+  color: var(--blood);
+  font-weight: 700;
+}

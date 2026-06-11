@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { League, Player, DraftPick } from '@/types';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { nflTeamInfo } from '@/data/nflTeams';
@@ -34,7 +35,21 @@ const PAGE_SIZE = 100;
 
 export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Deep-linkable selection: ?player=<id> survives refresh and can be
+  // pasted into the group chat.
+  const [selectedPlayerId, setSelectedPlayerIdState] = useState<string | null>(
+    () => searchParams.get('player'),
+  );
+  const setSelectedPlayerId = (id: string | null) => {
+    setSelectedPlayerIdState(id);
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      if (id) params.set('player', id);
+      else params.delete('player');
+      return params;
+    }, { replace: true });
+  };
   const [positionFilter, setPositionFilter] = useState<string>('all');
   // How many of the filtered list to actually render. Restart when the filters
   // change so the user lands at the top of the new result set.
@@ -103,10 +118,15 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
       });
     });
 
-    // 3. Process trades
+    // 3. Process trades. One merged "A → B" event per player per trade:
+    // the old separate traded_from/traded_to pair showed the same trade as
+    // two timeline entries.
     league.trades?.forEach(trade => {
       trade.teams.forEach(team => {
         team.playersReceived.forEach(player => {
+          const sender = trade.teams.find(t =>
+            t.teamId !== team.teamId && t.playersSent.some(p => p.id === player.id),
+          );
           const entry = getPlayer(player);
           entry.events.push({
             type: 'traded_to',
@@ -114,17 +134,7 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
             week: trade.week,
             teamId: team.teamId,
             teamName: team.teamName,
-          });
-        });
-
-        team.playersSent.forEach(player => {
-          const entry = getPlayer(player);
-          entry.events.push({
-            type: 'traded_from',
-            timestamp: trade.timestamp,
-            week: trade.week,
-            teamId: team.teamId,
-            teamName: team.teamName,
+            details: sender ? `from ${sender.teamName}` : undefined,
           });
         });
       });

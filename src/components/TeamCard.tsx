@@ -36,19 +36,47 @@ export function TeamCard({ team, allTeams, totalTeams, onClick, luckMetrics }: T
 
   const summary = useMemo(() => calculateDraftSummary(gradedPicks), [gradedPicks]);
 
-  // Calculate waiver stats
+  // Calculate waiver stats. PAR, not raw points: every other waiver surface
+  // standardized on points above replacement.
   const waiverStats = useMemo(() => {
     const transactions = team.transactions || [];
     const waiverPickups = transactions.filter(tx => tx.type === 'waiver' || tx.type === 'free_agent');
-    const totalPoints = waiverPickups.reduce((sum, tx) => sum + (tx.totalPointsGenerated || 0), 0);
+    const totalPAR = waiverPickups.reduce(
+      (sum, tx) =>
+        sum + tx.adds.reduce((s, player) => s + (player.pointsAboveReplacement ?? 0), 0),
+      0,
+    );
     return {
       count: waiverPickups.reduce((sum, tx) => sum + tx.adds.length, 0),
-      totalPoints,
+      totalPAR,
     };
   }, [team]);
 
+  // The actual humans on this roster: top three season scorers.
+  const topScorers = useMemo(() => {
+    return [...(team.roster ?? [])]
+      .filter(p => !p.name.match(/^Player\s+-?\d+$/))
+      .sort((a, b) => (b.seasonPoints ?? 0) - (a.seasonPoints ?? 0))
+      .slice(0, 3);
+  }, [team.roster]);
+
   return (
-    <div className={styles.card} onClick={onClick} role={onClick ? 'button' : undefined}>
+    <div
+      className={styles.card}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+    >
       <div className={styles.header}>
         {team.avatarUrl ? (
           <img src={team.avatarUrl} alt="" className={styles.avatar} />
@@ -137,11 +165,30 @@ export function TeamCard({ team, allTeams, totalTeams, onClick, luckMetrics }: T
               <span className={styles.waiverLabel}>Pickups</span>
             </div>
             <div className={styles.waiverStat}>
-              <span className={styles.waiverValue}>{waiverStats.totalPoints.toFixed(0)}</span>
-              <span className={styles.waiverLabel}>Points Added</span>
+              <span className={styles.waiverValue}>
+                {waiverStats.totalPAR >= 0 ? '+' : ''}
+                {waiverStats.totalPAR.toFixed(0)}
+              </span>
+              <span className={styles.waiverLabel}>PAR Added</span>
             </div>
           </div>
         </div>
+
+        {topScorers.length > 0 && (
+          <div className={styles.statSection}>
+            <h4 className={styles.sectionTitle}>Top Scorers</h4>
+            <ul className={styles.topScorers}>
+              {topScorers.map(player => (
+                <li key={player.id} className={styles.topScorer}>
+                  <span className={styles.topScorerName}>{player.name}</span>
+                  <span className={styles.topScorerPts}>
+                    {(player.seasonPoints ?? 0).toFixed(1)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className={styles.statSection}>
           <h4 className={styles.sectionTitle}>Season Totals</h4>

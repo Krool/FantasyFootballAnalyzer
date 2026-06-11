@@ -250,3 +250,35 @@
 .luckBadge.neutral     { color: var(--bone-dim); }
 .luckBadge.unlucky     { color: #ff8a3d; }
 .luckBadge.veryUnlucky { color: var(--blood); }
+
+.topScorers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.topScorer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.topScorerName {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.88rem;
+  color: var(--bone);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topScorerPts {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--bone-dim);
+}

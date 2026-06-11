@@ -287,3 +287,15 @@
 .starAvoid {
   color: var(--blood);
 }
+
+.tierBreakRow td {
+  border-bottom: 2px dashed var(--lime);
+  padding: 0.15rem 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lime);
+  background: var(--ink-2);
+}

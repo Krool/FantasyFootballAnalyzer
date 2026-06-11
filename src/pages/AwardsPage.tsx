@@ -96,6 +96,9 @@ export function AwardsPage({ league }: AwardsPageProps) {
                     <th>Record</th>
                     <th>Expected</th>
                     <th>Luck</th>
+                    <th title="Points-for rank vs wins rank: scoring like the #2 team while sitting #7 in wins is the schedule's fault">
+                      PF vs W
+                    </th>
                     <th>All-Play</th>
                     <th>Close Games</th>
                   </tr>
@@ -114,6 +117,18 @@ export function AwardsPage({ league }: AwardsPageProps) {
                         <td className={getLuckClass(metrics.luckScore)}>
                           {metrics.luckScore >= 0 ? '+' : ''}{metrics.luckScore.toFixed(1)}
                           {' '}{getLuckEmoji(metrics.luckRating)}
+                        </td>
+                        <td
+                          title={`Ranked #${metrics.pointsForRank} in scoring, #${metrics.winsRank} in wins`}
+                        >
+                          #{metrics.pointsForRank} / #{metrics.winsRank}
+                          {metrics.rankDifference !== 0 && (
+                            <span className={metrics.rankDifference > 0 ? styles.rankLucky : styles.rankUnlucky}>
+                              {' '}
+                              {metrics.rankDifference > 0 ? '▲' : '▼'}
+                              {Math.abs(metrics.rankDifference)}
+                            </span>
+                          )}
                         </td>
                         <td>
                           {metrics.allPlayWins}-{metrics.allPlayLosses}

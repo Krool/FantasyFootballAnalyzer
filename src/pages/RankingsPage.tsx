@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { POOL } from '@/data/draftPool';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { injuryAbbrev } from '@/utils/injury';
@@ -216,11 +216,21 @@ export function RankingsPage({ league }: RankingsPageProps) {
               </tr>
             </thead>
             <tbody>
-              {visible.map(p => {
+              {visible.map((p, i) => {
                 const avg = avgById.get(p.id) ?? p.overallRank;
                 const delta = platformDelta(p, source, scoring);
+                // Tier separators only when the order follows the tiers
+                // (FantasyPros rank sort); drafting hinges on these breaks.
+                const showTierBreak =
+                  sortBy === 'rank' && i > 0 && p.tier > 0 && visible[i - 1].tier !== p.tier;
                 return (
-                  <tr key={p.id} className={styles.row}>
+                  <Fragment key={p.id}>
+                  {showTierBreak && (
+                    <tr className={styles.tierBreakRow} aria-hidden="true">
+                      <td colSpan={isAuction ? 13 : 11}>TIER {p.tier}</td>
+                    </tr>
+                  )}
+                  <tr className={styles.row}>
                     <td className={styles.starCell}>
                       <button
                         type="button"
@@ -287,6 +297,7 @@ export function RankingsPage({ league }: RankingsPageProps) {
                       </>
                     )}
                   </tr>
+                  </Fragment>
                 );
               })}
               {visible.length === 0 && (

@@ -191,14 +191,15 @@ export function WaiverTable({ teams, platform }: WaiverTableProps) {
 
   // Calculate team totals
   const teamTotals = useMemo(() => {
-    const totals = new Map<string, { points: number; par: number; pickups: number }>();
+    const totals = new Map<string, { points: number; par: number; pickups: number; faab: number }>();
 
     allPickups.forEach(pickup => {
-      const current = totals.get(pickup.transaction.teamId) || { points: 0, par: 0, pickups: 0 };
+      const current = totals.get(pickup.transaction.teamId) || { points: 0, par: 0, pickups: 0, faab: 0 };
       totals.set(pickup.transaction.teamId, {
         points: current.points + pickup.totalPoints,
         par: current.par + pickup.par,
         pickups: current.pickups + 1,
+        faab: current.faab + (pickup.transaction.waiverBudgetSpent ?? 0),
       });
     });
 
@@ -390,6 +391,15 @@ export function WaiverTable({ teams, platform }: WaiverTableProps) {
                     <span className={styles.rank}>#{index + 1}</span>
                     <span className={styles.teamName}>{team?.name || teamId}</span>
                     <span className={styles.pickupCount}>{data.pickups} pickups</span>
+                    {data.faab > 0 && (
+                      <span
+                        className={styles.pickupCount}
+                        title={`$${data.faab} FAAB spent — ${data.par > 0 ? `$${(data.faab / data.par).toFixed(2)} per PAR` : 'no PAR return yet'}`}
+                      >
+                        ${data.faab} FAAB
+                        {data.par > 0 ? ` ($${(data.faab / data.par).toFixed(2)}/PAR)` : ''}
+                      </span>
+                    )}
                     <span className={styles.pointsTotal}>{data.par >= 0 ? '+' : ''}{data.par.toFixed(1)} PAR</span>
                   </div>
                 );

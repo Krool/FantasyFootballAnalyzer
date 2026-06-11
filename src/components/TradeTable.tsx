@@ -26,13 +26,10 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
     return [...filtered].sort((a, b) => b.week - a.week);
   }, [trades, selectedTeam]);
 
-  // Calculate team trade stats (using PAR)
+  // Calculate team trade stats (using PAR). Only teams that actually traded
+  // belong on the leaderboard; a row of zeros is noise, not a record.
   const teamStats = useMemo(() => {
     const stats = new Map<string, { wins: number; losses: number; fair: number; netPAR: number }>();
-
-    teams.forEach(team => {
-      stats.set(team.id, { wins: 0, losses: 0, fair: 0, netPAR: 0 });
-    });
 
     trades.forEach(trade => {
       trade.teams.forEach(t => {
@@ -52,7 +49,7 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
     });
 
     return stats;
-  }, [trades, teams]);
+  }, [trades]);
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -117,6 +114,14 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
               <div className={styles.tradeHeader}>
                 <span className={styles.tradeWeek}>Week {trade.week}</span>
                 <span className={styles.tradeDate}>{formatDate(trade.timestamp)}</span>
+                {trade.status === 'vetoed' && (
+                  <span className={styles.vetoedTag}>Vetoed</span>
+                )}
+                {trade.winner && trade.winnerMargin !== undefined && trade.winnerMargin > 0 && (
+                  <span className={styles.marginTag} title="Net points-above-replacement separating the two sides">
+                    decided by {trade.winnerMargin.toFixed(1)} PAR
+                  </span>
+                )}
                 {isIncomplete && (
                   <span className={styles.incompleteTag}>Player data unavailable</span>
                 )}
@@ -147,9 +152,18 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
                               </span>
                             </div>
                           ))}
-                          {teamSide.playersReceived.length === 0 && (
-                            <span className={styles.noPlayers}>No players</span>
-                          )}
+                          {(teamSide.draftPicksReceived ?? []).map((pick, i) => (
+                            <div key={`pick-${i}`} className={styles.player}>
+                              <span className={styles.playerName}>
+                                {pick.season} Round {pick.round} pick
+                              </span>
+                              <span className={styles.playerMeta}>draft pick</span>
+                            </div>
+                          ))}
+                          {teamSide.playersReceived.length === 0 &&
+                            (teamSide.draftPicksReceived ?? []).length === 0 && (
+                              <span className={styles.noPlayers}>Nothing</span>
+                            )}
                         </div>
                       </div>
 
@@ -164,9 +178,18 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
                               </span>
                             </div>
                           ))}
-                          {teamSide.playersSent.length === 0 && (
-                            <span className={styles.noPlayers}>No players</span>
-                          )}
+                          {(teamSide.draftPicksSent ?? []).map((pick, i) => (
+                            <div key={`pick-${i}`} className={styles.player}>
+                              <span className={styles.playerName}>
+                                {pick.season} Round {pick.round} pick
+                              </span>
+                              <span className={styles.playerMeta}>draft pick</span>
+                            </div>
+                          ))}
+                          {teamSide.playersSent.length === 0 &&
+                            (teamSide.draftPicksSent ?? []).length === 0 && (
+                              <span className={styles.noPlayers}>Nothing</span>
+                            )}
                         </div>
                       </div>
                     </div>
