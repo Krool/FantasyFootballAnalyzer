@@ -3,6 +3,7 @@ import type { League } from '@/types';
 import { calculateAllAwards, groupAwardsByCategory, getCategoryDisplayName, type Award } from '@/utils/awards';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
 import { seasonRecords, seasonTimeline } from '@/utils/seasonStory';
+import { TeamLink } from '@/components';
 import styles from './AwardsPage.module.css';
 
 interface AwardsPageProps {
@@ -201,7 +202,9 @@ function AwardCard({ award }: { award: Award }) {
     <div className={styles.awardCard}>
       <div className={styles.awardIcon}>{award.icon || '🏆'}</div>
       <h3 className={styles.awardName}>{award.name}</h3>
-      <div className={styles.awardWinner}>{award.winner.teamName}</div>
+      <div className={styles.awardWinner}>
+        <TeamLink teamId={award.winner.teamId} name={award.winner.teamName} />
+      </div>
       <div className={styles.awardValue}>{award.value}</div>
       {award.detail && (
         <div className={styles.awardDetail}>{award.detail}</div>

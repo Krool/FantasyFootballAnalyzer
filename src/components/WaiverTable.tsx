@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import type { Team, Platform, Transaction } from '@/types';
 import { NflTeamLabel } from './NflTeamLabel';
 import { PosBadge } from './PosBadge';
+import { TeamLink } from './TeamLink';
 import styles from './WaiverTable.module.css';
 
 interface WaiverTableProps {
@@ -317,7 +318,9 @@ export function WaiverTable({ teams, platform }: WaiverTableProps) {
             {displayPickups.map((pickup) => (
               <tr key={`${pickup.transaction.teamId}-${pickup.playerId}`}>
                 <td className="font-mono text-center">{pickup.transaction.week}</td>
-                <td className={styles.fantasyTeam}>{pickup.transaction.teamName}</td>
+                <td className={styles.fantasyTeam}>
+                  <TeamLink teamId={pickup.transaction.teamId} name={pickup.transaction.teamName} />
+                </td>
                 <td>
                   <div className={styles.playerCell}>
                     <span className={styles.playerName}>

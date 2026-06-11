@@ -4,6 +4,7 @@ import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected } from '@/u
 import { useSounds } from '@/hooks/useSounds';
 import { NflTeamLabel } from './NflTeamLabel';
 import { PosBadge } from './PosBadge';
+import { TeamLink } from './TeamLink';
 import styles from './DraftTable.module.css';
 
 interface DraftTableProps {
@@ -344,7 +345,9 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
                 <td>
                   <PosBadge pos={pick.player.position} />
                 </td>
-                <td className={styles.fantasyTeam}>{pick.teamName}</td>
+                <td className={styles.fantasyTeam}>
+                  <TeamLink teamId={pick.teamId} name={pick.teamName} />
+                </td>
                 <td className="font-mono text-right">
                   {pick.seasonPoints !== undefined ? pick.seasonPoints.toFixed(1) : '-'}
                 </td>

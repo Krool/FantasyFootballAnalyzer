@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { TeamCard } from '@/components';
 import type { League } from '@/types';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
 import { managerScores } from '@/utils/managerScore';
+import { TeamDetail } from './TeamDetail';
 import styles from './TeamsPage.module.css';
 
 interface TeamsPageProps {
@@ -10,6 +12,21 @@ interface TeamsPageProps {
 }
 
 export function TeamsPage({ league }: TeamsPageProps) {
+  // ?team=<id> opens the team hub; team names across the app link here.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const detailTeam = useMemo(() => {
+    const id = searchParams.get('team');
+    return id ? league.teams.find(t => t.id === id) ?? null : null;
+  }, [searchParams, league.teams]);
+
+  const openTeam = (id: string | null) => {
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      if (id) params.set('team', id);
+      else params.delete('team');
+      return params;
+    });
+  };
   // Calculate luck metrics
   const luckByTeam = useMemo((): Map<string, LuckMetrics> => {
     if (!league.matchups || league.matchups.length === 0) {
@@ -80,6 +97,16 @@ export function TeamsPage({ league }: TeamsPageProps) {
   const shortName = (name: string) =>
     name.length > 10 ? `${name.slice(0, 9)}…` : name;
 
+  if (detailTeam) {
+    return (
+      <div className={styles.page}>
+        <div className="container">
+          <TeamDetail league={league} team={detailTeam} onBack={() => openTeam(null)} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.page}>
       <div className="container">
@@ -126,6 +153,7 @@ export function TeamsPage({ league }: TeamsPageProps) {
               allTeams={league.teams}
               totalTeams={league.totalTeams}
               luckMetrics={luckByTeam.get(team.id)}
+              onClick={() => openTeam(team.id)}
             />
           ))}
         </div>

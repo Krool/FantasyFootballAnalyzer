@@ -8,3 +8,4 @@ export { TeamCard } from './TeamCard';
 export { RivalryCard } from './RivalryCard';
 export { NflTeamLabel } from './NflTeamLabel';
 export { PosBadge } from './PosBadge';
+export { TeamLink } from './TeamLink';

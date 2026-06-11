@@ -1,0 +1,229 @@
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.backBtn {
+  align-self: flex-start;
+  padding: 0.45rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 2px solid var(--bone-dim);
+  color: var(--bone-dim);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.backBtn:hover {
+  color: var(--lime);
+  border-color: var(--lime);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 2px solid var(--bone);
+  box-shadow: 5px 5px 0 var(--bone);
+  background: var(--ink);
+  padding: 1rem 1.2rem;
+}
+
+.avatar,
+.avatarPlaceholder {
+  width: 56px;
+  height: 56px;
+  border: 2px solid var(--rule);
+  flex-shrink: 0;
+}
+
+.avatarPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-headline);
+  font-size: 1.6rem;
+  color: var(--lime);
+  background: var(--ink-2);
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.teamName {
+  font-family: var(--font-headline);
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+  margin: 0;
+  color: var(--bone);
+}
+
+.meta {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.awardStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.awardChip {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  padding: 0.1rem 0.4rem;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sectionTitle {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  margin: 0;
+  border-bottom: 2px solid var(--rule);
+  padding-bottom: 0.3rem;
+}
+
+.sparkline {
+  width: 100%;
+  height: 80px;
+  border: 2px solid var(--rule);
+  background: var(--ink-2);
+}
+
+.weekRow {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.weekWin,
+.weekLoss {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  width: 1.4rem;
+  text-align: center;
+  padding: 0.1rem 0;
+}
+
+.weekWin {
+  color: var(--ink);
+  background: var(--lime);
+}
+
+.weekLoss {
+  color: var(--bone-dim);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.listRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.listName {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.92rem;
+  color: var(--bone);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.listMeta {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--bone-dim);
+  white-space: nowrap;
+}
+
+.recGood {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--lime);
+  white-space: nowrap;
+}
+
+.recBad {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--blood);
+  white-space: nowrap;
+}
+
+.keeperTag {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  padding: 0.03rem 0.25rem;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+@media (max-width: 900px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}

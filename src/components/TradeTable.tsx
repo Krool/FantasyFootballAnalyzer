@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import type { Trade, Team } from '@/types';
 import { NflTeamLabel } from './NflTeamLabel';
 import { PosBadge } from './PosBadge';
+import { TeamLink } from './TeamLink';
 import styles from './TradeTable.module.css';
 
 interface TradeTableProps {
@@ -134,7 +135,9 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
                     className={`${styles.tradeSide} ${trade.winner === teamSide.teamId ? styles.winner : ''}`}
                   >
                     <div className={styles.teamHeader}>
-                      <span className={styles.teamName}>{teamSide.teamName}</span>
+                      <span className={styles.teamName}>
+                        <TeamLink teamId={teamSide.teamId} name={teamSide.teamName} />
+                      </span>
                       <span className={`${styles.gradeTag} ${getTradeGradeClass(teamSide.netPAR ?? teamSide.netValue)}`}>
                         {getTradeGradeText(teamSide.netPAR ?? teamSide.netValue)}
                       </span>
