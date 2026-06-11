@@ -7,6 +7,30 @@
 
 const SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v']);
 
+// Sources disagree on team abbreviations (FantasyPros JAC vs Sleeper/ESPN
+// JAX, ESPN WSH vs WAS, relocations). Joins and tiebreakers must compare
+// canonical forms, never raw strings.
+const TEAM_ALIASES: Record<string, string> = {
+  JAX: 'JAC',
+  WSH: 'WAS',
+  LA: 'LAR',
+  STL: 'LAR',
+  SD: 'LAC',
+  OAK: 'LV',
+  LVR: 'LV',
+  GBP: 'GB',
+  KCC: 'KC',
+  NOS: 'NO',
+  NEP: 'NE',
+  SFO: 'SF',
+  TBB: 'TB',
+};
+
+export function canonicalTeam(team: string | null | undefined): string {
+  const upper = (team ?? '').toUpperCase().trim();
+  return TEAM_ALIASES[upper] ?? upper;
+}
+
 export function normalizeName(name: string): string {
   const tokens = name
     .toLowerCase()
@@ -51,7 +75,8 @@ export function matchPlayer<T extends NameCandidate>(
   }
   if (hits.length === 1) return hits[0];
   if (hits.length > 1 && query.team) {
-    const teamHits = hits.filter(c => c.team === query.team);
+    const queryTeam = canonicalTeam(query.team);
+    const teamHits = hits.filter(c => canonicalTeam(c.team) === queryTeam);
     if (teamHits.length === 1) return teamHits[0];
   }
   return null;
