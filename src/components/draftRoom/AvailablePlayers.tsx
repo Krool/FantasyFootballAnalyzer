@@ -1,7 +1,8 @@
-import { useMemo, useState, type RefObject } from 'react';
+import { useEffect, useMemo, useState, type RefObject } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
+import { useTargets } from '@/hooks/useTargets';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { sleeperAdpFor } from '@/utils/consensus';
 import { inflateValue } from '@/utils/inflation';
@@ -42,7 +43,23 @@ export function AvailablePlayers({
   const [query, setQuery] = useState('');
   const [posFilter, setPosFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState<'rank' | 'value' | 'adj' | 'espn' | 'yahoo' | 'adp'>('rank');
+  // Arrow-key cursor through the visible rows; Enter selects it.
+  const [cursor, setCursor] = useState(0);
   const { playClick, playFilter, playSort } = useSounds();
+  const { starred, avoided, cycle } = useTargets(config.season);
+
+  // Bye weeks where the user already has two or more skill starters: one
+  // more is a self-inflicted zero week.
+  const crowdedByes = useMemo(() => {
+    const me = derived.teams.get(config.myTeamId);
+    if (!me) return new Set<number>();
+    const counts = new Map<number, number>();
+    for (const { player } of me.picks) {
+      if (player.bye === null || player.pos === 'K' || player.pos === 'DST') continue;
+      counts.set(player.bye, (counts.get(player.bye) ?? 0) + 1);
+    }
+    return new Set([...counts.entries()].filter(([, n]) => n >= 2).map(([week]) => week));
+  }, [derived.teams, config.myTeamId]);
   const adp = (p: PoolPlayer) => sleeperAdpFor(p, scoring) ?? p.espnAdp;
   const adjValue = (p: PoolPlayer) => inflateValue(scaledValues.get(p.id) ?? 1, inflation.rate);
 
@@ -91,19 +108,33 @@ export function AvailablePlayers({
 
   const visible = rows.slice(0, MAX_ROWS);
 
+  // Keep the cursor in range whenever the visible list changes shape.
+  useEffect(() => {
+    setCursor(c => Math.min(c, Math.max(0, visible.length - 1)));
+  }, [visible.length]);
+
   return (
     <div className={styles.board}>
       <div className={styles.controls}>
         <input
           ref={inputRef}
           className={styles.search}
-          placeholder="Search available players... ( / )"
+          placeholder="Search available players... ( / then ↑↓ Enter )"
           value={query}
-          onChange={e => setQuery(e.target.value)}
+          onChange={e => {
+            setQuery(e.target.value);
+            setCursor(0);
+          }}
           onKeyDown={e => {
-            if (e.key === 'Enter' && visible.length > 0) {
+            if (e.key === 'ArrowDown') {
               e.preventDefault();
-              onSelect(visible[0]);
+              setCursor(c => Math.min(c + 1, visible.length - 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setCursor(c => Math.max(c - 1, 0));
+            } else if (e.key === 'Enter' && visible.length > 0) {
+              e.preventDefault();
+              onSelect(visible[Math.min(cursor, visible.length - 1)]);
             }
           }}
         />
@@ -128,6 +159,7 @@ export function AvailablePlayers({
         <table className={styles.table}>
           <thead>
             <tr>
+              <th className={styles.starCell} aria-label="Target list" />
               <th
                 className={`${styles.num} ${styles.sortable} ${sortBy === 'rank' ? styles.sorted : ''}`}
                 onClick={() => setSort('rank')}
@@ -184,16 +216,44 @@ export function AvailablePlayers({
             </tr>
           </thead>
           <tbody>
-            {visible.map(p => (
+            {visible.map((p, i) => (
               <tr
                 key={p.id}
-                className={p.id === selectedId ? styles.rowSelected : styles.row}
+                className={`${p.id === selectedId ? styles.rowSelected : styles.row} ${
+                  i === cursor ? styles.rowCursor : ''
+                } ${avoided.has(p.id) ? styles.rowAvoided : ''}`}
                 onClick={() => {
                   playClick();
                   onSelect(p);
                 }}
                 title={`Select ${p.name} for the pick logger`}
               >
+                <td className={styles.starCell}>
+                  <button
+                    type="button"
+                    className={
+                      starred.has(p.id)
+                        ? styles.starOn
+                        : avoided.has(p.id)
+                          ? styles.starAvoid
+                          : styles.star
+                    }
+                    onClick={e => {
+                      e.stopPropagation();
+                      cycle(p.id);
+                    }}
+                    title={
+                      starred.has(p.id)
+                        ? 'Targeted. Click again to avoid, again to clear.'
+                        : avoided.has(p.id)
+                          ? 'Avoided. Click to clear.'
+                          : 'Click to target this player'
+                    }
+                    aria-label={`Toggle target status for ${p.name}`}
+                  >
+                    {avoided.has(p.id) ? '✕' : '★'}
+                  </button>
+                </td>
                 <td className={`${styles.num} ${styles.dim}`}>{p.overallRank}</td>
                 <td className={`${styles.num} ${styles.dim}`}>{p.tier}</td>
                 <td className={styles.player}>
@@ -212,7 +272,17 @@ export function AvailablePlayers({
                 <td>
                   <NflTeamLabel team={p.team} />
                 </td>
-                <td className={`${styles.num} ${styles.dim}`}>{p.bye ?? '-'}</td>
+                <td className={`${styles.num} ${styles.dim}`}>
+                  {p.bye ?? '-'}
+                  {p.bye !== null && crowdedByes.has(p.bye) && (
+                    <span
+                      className={styles.byeWarn}
+                      title={`You already have two skill starters on the week ${p.bye} bye`}
+                    >
+                      ⚠
+                    </span>
+                  )}
+                </td>
                 <td className={`${styles.num} ${styles.dim}`}>{adp(p) ?? '-'}</td>
                 {isAuction && (
                   <>
@@ -248,7 +318,7 @@ export function AvailablePlayers({
             {visible.length === 0 && (
               <tr>
                 <td
-                  colSpan={(isAuction ? 10 : 7) + (showYahoo ? 1 : 0) + (onQuickDraft ? 1 : 0)}
+                  colSpan={(isAuction ? 11 : 8) + (showYahoo ? 1 : 0) + (onQuickDraft ? 1 : 0)}
                   className={styles.emptyRow}
                 >
                   No available players match.

@@ -362,11 +362,11 @@ export async function getAvailableSeasons(
 }
 
 // Parse roster settings to get position slot counts
-function parseRosterSettings(settings: any): { QB: number; RB: number; WR: number; TE: number; FLEX: number; K: number; DST: number } {
+function parseRosterSettings(settings: any): { QB: number; RB: number; WR: number; TE: number; FLEX: number; K: number; DST: number; hasSuperflex: boolean } {
   const rosterPositions = settings?.roster_positions?.roster_position || [];
   const posList = Array.isArray(rosterPositions) ? rosterPositions : [rosterPositions];
 
-  const slots = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, K: 0, DST: 0 };
+  const slots = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, K: 0, DST: 0, hasSuperflex: false };
 
   for (const pos of posList) {
     const posType = pos.position || pos.position_type || '';
@@ -378,6 +378,9 @@ function parseRosterSettings(settings: any): { QB: number; RB: number; WR: numbe
       case 'WR': slots.WR += count; break;
       case 'TE': slots.TE += count; break;
       case 'W/R/T': case 'W/R': case 'FLEX': slots.FLEX += count; break;
+      // Superflex: counted as FLEX for slot math, but flagged so the Draft
+      // Room can warn that 1QB values badly underprice QBs here.
+      case 'Q/W/R/T': slots.FLEX += count; slots.hasSuperflex = true; break;
       case 'K': slots.K += count; break;
       case 'DEF': case 'D/ST': case 'DST': slots.DST += count; break;
     }
@@ -514,6 +517,7 @@ export async function loadLeague(leagueKey: string): Promise<League> {
       BENCH: 6, // Default
       IR: 1, // Default
     },
+    hasSuperflex: rosterSlots.hasSuperflex,
     status,
     loadedAt: Date.now(),
   };

@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
-import { STARTER_POSITIONS } from '@/utils/draftEngine';
+import { assignLineup, STARTER_POSITIONS } from '@/utils/draftEngine';
+import type { LineupSlot } from '@/utils/draftEngine';
+import { starterPlanCost } from '@/utils/auctionMath';
 import { findStacks } from '@/utils/stacks';
 import styles from './Panels.module.css';
 
@@ -16,17 +18,35 @@ export function MyTeamPanel({ room }: MyTeamPanelProps) {
   // Cost of filling each remaining starter slot with the best available
   // player there, at current expected prices. Compared against remaining
   // budget to show how much is free for upgrades and bench.
-  const planCost = useMemo(() => {
-    if (!me || !isAuction) return 0;
-    let total = 0;
-    for (const pos of STARTER_POSITIONS) {
-      const need = me.starterNeeds[pos];
-      if (need === 0) continue;
-      const best = derived.available.filter(p => p.pos === pos).slice(0, need);
-      for (const p of best) total += scaledValues.get(p.id) ?? 1;
+  const planCost = useMemo(
+    () => (me && isAuction ? starterPlanCost(me, derived.available, scaledValues) : 0),
+    [me, isAuction, derived.available, scaledValues],
+  );
+
+  // Roster rendered lineup-shaped: every starting slot visible (filled or
+  // open), bench below. Holes jump out in a way pick order never shows.
+  const lineup = useMemo(() => {
+    if (!me) return [];
+    const assignments = assignLineup(me.picks, config.rosterSlots);
+    const bySlot = new Map<LineupSlot, typeof assignments>();
+    for (const a of assignments) {
+      const group = bySlot.get(a.slot) ?? [];
+      group.push(a);
+      bySlot.set(a.slot, group);
     }
-    return total;
-  }, [me, isAuction, derived.available, scaledValues]);
+    const rows: Array<{ key: string; label: string; pick: (typeof assignments)[number]['pick'] | null }> = [];
+    const slotOrder: LineupSlot[] = [...STARTER_POSITIONS.filter(p => p !== 'K' && p !== 'DST'), 'FLEX', 'K', 'DST'];
+    for (const slot of slotOrder) {
+      const total = config.rosterSlots[slot];
+      const filled = bySlot.get(slot) ?? [];
+      for (let i = 0; i < total; i++) {
+        rows.push({ key: `${slot}-${i}`, label: slot === 'FLEX' ? 'FLX' : slot, pick: filled[i]?.pick ?? null });
+      }
+    }
+    const bench = bySlot.get('BENCH') ?? [];
+    bench.forEach((a, i) => rows.push({ key: `BN-${i}`, label: 'BN', pick: a.pick }));
+    return rows;
+  }, [me, config.rosterSlots]);
 
   // QB + pass-catcher pairs on the roster: correlated scoring worth seeing
   // (and worth finishing: a one-catcher stack invites adding the QB's TE).
@@ -82,14 +102,21 @@ export function MyTeamPanel({ room }: MyTeamPanelProps) {
         <p className={styles.needsLine}>All starting slots filled.</p>
       )}
       <ul className={styles.list}>
-        {me.picks.map(({ player, event }) => (
-          <li key={player.id} className={styles.row}>
-            <span className={styles.rowPos}>{player.pos}</span>
-            <span className={styles.rowName}>{player.name}</span>
-            {event.kind === 'auction_sale' && <span className={styles.rowValue}>${event.price}</span>}
+        {lineup.map(({ key, label, pick }) => (
+          <li key={key} className={styles.row}>
+            <span className={styles.rowPos}>{label}</span>
+            {pick ? (
+              <>
+                <span className={styles.rowName}>{pick.player.name}</span>
+                {pick.event.kind === 'auction_sale' && (
+                  <span className={styles.rowValue}>${pick.event.price}</span>
+                )}
+              </>
+            ) : (
+              <span className={styles.rowOpen}>open</span>
+            )}
           </li>
         ))}
-        {me.picks.length === 0 && <li className={styles.rowEmpty}>No players yet.</li>}
       </ul>
       {stacks.length > 0 && (
         <div className={styles.byeLine} title="QB + pass catcher on the same NFL team: their big weeks land together">

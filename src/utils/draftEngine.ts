@@ -85,6 +85,35 @@ function assignSlot(filled: SlotsFilled, slots: RosterSlots, pos: string): void 
   }
 }
 
+export type LineupSlot = StarterPos | 'FLEX' | 'BENCH';
+
+export interface LineupAssignment {
+  slot: LineupSlot;
+  pick: DraftedPlayer;
+}
+
+// The same greedy assignment, but returning which slot each pick landed in,
+// so panels can render a roster shaped like a lineup instead of pick order.
+export function assignLineup(picks: DraftedPlayer[], slots: RosterSlots): LineupAssignment[] {
+  const filled = emptySlotsFilled();
+  return picks.map(pick => {
+    const pos = pick.player.pos;
+    const starter = pos as StarterPos;
+    let slot: LineupSlot;
+    if (STARTER_POSITIONS.includes(starter) && filled[starter] < slots[starter]) {
+      filled[starter]++;
+      slot = starter;
+    } else if (FLEX_ELIGIBLE.has(pos) && filled.FLEX < slots.FLEX) {
+      filled.FLEX++;
+      slot = 'FLEX';
+    } else {
+      filled.BENCH++;
+      slot = 'BENCH';
+    }
+    return { slot, pick };
+  });
+}
+
 export function deriveDraftState(
   config: DraftRoomConfig,
   pool: PoolPlayer[],

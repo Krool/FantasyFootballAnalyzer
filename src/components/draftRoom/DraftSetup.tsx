@@ -86,6 +86,21 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
 
   return (
     <div className={styles.setup}>
+      {league.hasSuperflex && (
+        <div className={styles.warnBox}>
+          <strong>Superflex league detected.</strong> This room prices QBs off
+          1QB rankings, which badly underprices them in superflex: top QBs go
+          for first-round picks / $40+ there. Treat every QB value and
+          suggestion here as a floor, not a target.
+        </div>
+      )}
+      {config.draftType === 'auction' && anyKeeperCandidates && (
+        <p className={styles.hint}>
+          Keeper support is snake-only for now. For an auction keeper league,
+          log each kept player as a sale at their keeper price once the draft
+          starts.
+        </p>
+      )}
       {resumable && (
         <div className={styles.resume}>
           <div className={styles.resumeText}>

@@ -16,3 +16,19 @@ export function teamIndexForPick(pickIndex: number, teamCount: number): number {
 export function teamForPick(pickIndex: number, orderedTeamIds: string[]): string {
   return orderedTeamIds[teamIndexForPick(pickIndex, orderedTeamIds.length)];
 }
+
+// The next 0-based pick index belonging to teamId at or after fromPick, or
+// null when the team has no pick left before totalPicks. Snake math is
+// branchy enough that a small scan beats a closed form for clarity; drafts
+// top out at a few hundred picks.
+export function nextPickFor(
+  teamId: string,
+  orderedTeamIds: string[],
+  fromPick: number,
+  totalPicks: number,
+): number | null {
+  for (let pick = fromPick; pick < totalPicks; pick++) {
+    if (teamForPick(pick, orderedTeamIds) === teamId) return pick;
+  }
+  return null;
+}

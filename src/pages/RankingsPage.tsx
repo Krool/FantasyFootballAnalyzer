@@ -6,6 +6,7 @@ import type { League } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
 import { DEFAULT_BUDGET, DEFAULT_ROSTER_SLOTS } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
+import { useTargets } from '@/hooks/useTargets';
 import { consensusAvg, platformDelta, platformRankSource, sleeperAdpFor } from '@/utils/consensus';
 import { draftableSlotCount } from '@/utils/draftEngine';
 import { normalizeName } from '@/utils/playerNames';
@@ -29,6 +30,7 @@ export function RankingsPage({ league }: RankingsPageProps) {
   const [posFilter, setPosFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState<SortKey>('avg');
   const { playFilter, playSort } = useSounds();
+  const { starred, avoided, cycle } = useTargets(POOL.season);
 
   const isAuction = league.draftType === 'auction';
   const scoring = league.scoringType;
@@ -174,6 +176,11 @@ export function RankingsPage({ league }: RankingsPageProps) {
           <table className={styles.table}>
             <thead>
               <tr>
+                <th
+                  className={styles.starCell}
+                  aria-label="Target list"
+                  title="Star players here; they get highlighted and boosted in the Draft Room"
+                />
                 {sortableTh(
                   'avg',
                   'AVG',
@@ -214,6 +221,29 @@ export function RankingsPage({ league }: RankingsPageProps) {
                 const delta = platformDelta(p, source, scoring);
                 return (
                   <tr key={p.id} className={styles.row}>
+                    <td className={styles.starCell}>
+                      <button
+                        type="button"
+                        className={
+                          starred.has(p.id)
+                            ? styles.starOn
+                            : avoided.has(p.id)
+                              ? styles.starAvoid
+                              : styles.star
+                        }
+                        onClick={() => cycle(p.id)}
+                        title={
+                          starred.has(p.id)
+                            ? 'Targeted. Click again to avoid, again to clear.'
+                            : avoided.has(p.id)
+                              ? 'Avoided. Click to clear.'
+                              : 'Click to target this player for your draft'
+                        }
+                        aria-label={`Toggle target status for ${p.name}`}
+                      >
+                        {avoided.has(p.id) ? '✕' : '★'}
+                      </button>
+                    </td>
                     <td className={`${styles.num} ${styles.avg}`}>{avg.toFixed(1)}</td>
                     <td
                       className={`${styles.num} ${
@@ -261,7 +291,7 @@ export function RankingsPage({ league }: RankingsPageProps) {
               })}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={isAuction ? 12 : 10} className={styles.emptyRow}>
+                  <td colSpan={isAuction ? 13 : 11} className={styles.emptyRow}>
                     No players match.
                   </td>
                 </tr>

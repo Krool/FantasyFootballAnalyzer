@@ -2,7 +2,9 @@ import { useMemo } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
+import { useTargets } from '@/hooks/useTargets';
 import { suggestPicks } from '@/utils/suggestions';
+import { nextPickFor } from '@/utils/snakeOrder';
 import styles from './Panels.module.css';
 
 interface SuggestionsPanelProps {
@@ -16,17 +18,24 @@ interface SuggestionsPanelProps {
 export function SuggestionsPanel({ room, onSelect }: SuggestionsPanelProps) {
   const { config, derived, scaledValues, scoring } = room;
   const { playClick } = useSounds();
+  const { starred, avoided } = useTargets(config.season);
   const me = derived.teams.get(config.myTeamId);
 
   const suggestions = useMemo(() => {
     if (!me) return [];
+    // The pick after the one on the clock that belongs to the user, 1-based.
+    const orderedIds = config.teams.map(t => t.id);
+    const next = nextPickFor(config.myTeamId, orderedIds, derived.pickCount + 1, derived.totalPicks);
     return suggestPicks(derived.available, me, config.rosterSlots, scaledValues, {
       pickCount: derived.pickCount,
       teamCount: config.teams.length,
       scoring,
       positionalDemand: derived.positionalDemand,
+      nextPickNumber: next !== null ? next + 1 : null,
+      starred,
+      avoided,
     });
-  }, [me, derived, config.rosterSlots, config.teams.length, scaledValues, scoring]);
+  }, [me, derived, config.rosterSlots, config.teams, config.myTeamId, scaledValues, scoring, starred, avoided]);
 
   if (!me || suggestions.length === 0) return null;
 

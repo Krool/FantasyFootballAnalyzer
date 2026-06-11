@@ -336,3 +336,27 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+.warnBox {
+  border: 2px solid var(--gold);
+  box-shadow: 4px 4px 0 var(--gold);
+  background: var(--ink);
+  color: var(--bone);
+  padding: 0.8rem 1rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 0.92rem;
+}
+
+.warnBox strong {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  display: block;
+  margin-bottom: 0.3rem;
+}

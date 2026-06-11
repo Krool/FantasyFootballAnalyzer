@@ -232,3 +232,13 @@
   text-transform: uppercase;
   color: var(--lime);
 }
+
+.rowOpen {
+  flex: 1;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 0.85rem;
+  color: var(--bone-dim);
+  opacity: 0.6;
+}

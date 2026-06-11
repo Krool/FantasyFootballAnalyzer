@@ -1292,7 +1292,9 @@ export async function loadLeague(
     BENCH: posLimits[20] || 6,
     IR: posLimits[21] || 1,
   };
-  logger.debug('[ESPN] Roster slots:', rosterSlots);
+  // Slot 7 is OP (offensive player), ESPN's QB-eligible superflex.
+  const hasSuperflex = (posLimits[7] || 0) > 0;
+  logger.debug('[ESPN] Roster slots:', rosterSlots, hasSuperflex ? '(superflex)' : '');
 
   // Build weekly matchups for luck analysis from team records
   // ESPN provides schedule data in the mMatchup view
@@ -1343,6 +1345,7 @@ export async function loadLeague(
     currentWeek: leagueData.status?.currentMatchupPeriod,
     isLoaded: true,
     rosterSlots,
+    hasSuperflex,
     status,
     loadedAt: Date.now(),
   };

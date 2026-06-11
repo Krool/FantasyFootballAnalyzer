@@ -3,6 +3,7 @@ import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import type { UseDraftSimReturn } from '@/hooks/useDraftSim';
 import { useSounds } from '@/hooks/useSounds';
+import { comfortBid } from '@/utils/auctionMath';
 import { inflateValue } from '@/utils/inflation';
 import { SelectedPlayerCard } from './SelectedPlayerCard';
 import styles from './Logger.module.css';
@@ -73,6 +74,8 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
   // The AI bids around this same inflation-adjusted number.
   const expected = inflateValue(scaledValues.get(player.id) ?? 1, inflation.rate);
   const myCap = me?.fullAt[player.pos as keyof typeof me.fullAt] ? 0 : me?.maxBid ?? 0;
+  const myComfort =
+    me && myCap > 0 ? comfortBid(player, me, derived.available, scaledValues) : null;
   const submit = (amount: number) => {
     playSuccess();
     sim.resolve(amount);
@@ -103,6 +106,17 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
           <span className={styles.label}>Expected</span>
           <span className={styles.expectedValue}>${expected}</span>
         </div>
+        {myComfort !== null && (
+          <div className={styles.expected}>
+            <span
+              className={styles.label}
+              title="Your highest bid that still leaves market price for every open starter slot plus $1 per bench spot"
+            >
+              Your comfort
+            </span>
+            <span className={styles.expectedValue}>${myComfort}</span>
+          </div>
+        )}
       </div>
       <div className={styles.priceRow}>
         <button

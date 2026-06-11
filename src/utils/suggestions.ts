@@ -32,6 +32,12 @@ export interface SuggestOptions {
   // How many teams still need a starter at each position (tier-break urgency
   // only matters when someone else wants the tier too).
   positionalDemand: Record<StarterPos, number>;
+  // 1-based number of the user's pick after this one, when known (snake).
+  // Candidates whose ADP falls inside the gap get a "won't last" reason.
+  nextPickNumber?: number | null;
+  // Pre-draft target/avoid lists (player ids).
+  starred?: Set<string>;
+  avoided?: Set<string>;
 }
 
 export function suggestPicks(
@@ -100,6 +106,21 @@ export function suggestPicks(
         score += Math.min(8, fall * 0.25);
         reasons.push(`${Math.round(fall)} picks past ADP`);
       }
+      // The actual between-picks question: will he still be there when it
+      // comes back around?
+      if (opts.nextPickNumber && adp < opts.nextPickNumber) {
+        score += 2;
+        reasons.push(`likely gone before your next pick (#${opts.nextPickNumber})`);
+      }
+    }
+
+    if (opts.starred?.has(p.id)) {
+      score += 3;
+      reasons.push('on your target list');
+    }
+    if (opts.avoided?.has(p.id)) {
+      score -= 10;
+      reasons.push('on your avoid list');
     }
 
     // Correlation bonuses: completing a QB/catcher stack, or (late) cuffing

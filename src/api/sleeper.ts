@@ -571,6 +571,9 @@ export async function loadLeague(leagueId: string): Promise<League> {
     isLoaded: true,
     previousLeagueId: (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id,
     rosterSlots,
+    hasSuperflex: (leagueData.roster_positions || []).some(
+      p => p === 'SUPER_FLEX' || p === 'SUPERFLEX',
+    ),
     status,
     loadedAt: Date.now(),
   };

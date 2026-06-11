@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { League } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
 import { useDraftRoom } from '@/hooks/useDraftRoom';
@@ -12,12 +12,34 @@ import { LeagueNeeds } from '@/components/draftRoom/LeagueNeeds';
 import { MockBidPanel } from '@/components/draftRoom/MockBidPanel';
 import { MyTeamPanel } from '@/components/draftRoom/MyTeamPanel';
 import { NflTeams } from '@/components/draftRoom/NflTeams';
+import { NominationPanel } from '@/components/draftRoom/NominationPanel';
 import { PickLog } from '@/components/draftRoom/PickLog';
 import { SnakeLogger } from '@/components/draftRoom/SnakeLogger';
 import { SuggestionsPanel } from '@/components/draftRoom/SuggestionsPanel';
 import { TeamBoard } from '@/components/draftRoom/TeamBoard';
 import { TierBoard } from '@/components/draftRoom/TierBoard';
+import { detectRun, tierAlerts } from '@/utils/draftAlerts';
+import { nextPickFor } from '@/utils/snakeOrder';
 import styles from './DraftRoomPage.module.css';
+
+// Elapsed time since the last logged pick, ticking once a second. Helps
+// pace a live room ("we've been on this nomination for two minutes").
+function PickTimer({ lastEventTs }: { lastEventTs: number | null }) {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => force(n => n + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  if (lastEventTs === null) return null;
+  const secs = Math.max(0, Math.floor((Date.now() - lastEventTs) / 1000));
+  const mm = Math.floor(secs / 60);
+  const ss = String(secs % 60).padStart(2, '0');
+  return (
+    <span title="Time since the last logged pick">
+      ⏱ {mm}:{ss}
+    </span>
+  );
+}
 
 type BoardTab = 'board' | 'tiers' | 'nfl';
 
@@ -77,9 +99,49 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
     return () => window.removeEventListener('keydown', onKeyDown);
   });
 
-  const { playClick, playSuccess, playError } = useSounds();
+  const { playClick, playSuccess, playError, playOnTheClock } = useSounds();
 
   const isSnake = config.draftType === 'snake';
+  const myTurn = phase === 'drafting' && derived.onTheClockId === config.myTeamId;
+
+  // The one alert that must not be missed: a horn the moment it becomes
+  // the user's pick (snake) or nomination (auction).
+  const wasMyTurnRef = useRef(false);
+  useEffect(() => {
+    if (myTurn && !wasMyTurnRef.current) playOnTheClock();
+    wasMyTurnRef.current = myTurn;
+  }, [myTurn, playOnTheClock]);
+
+  const playerById = useMemo(
+    () => new Map(room.pool.players.map(p => [p.id, p])),
+    [room.pool.players],
+  );
+  const run = useMemo(
+    () => (phase === 'drafting' ? detectRun(room.events, playerById) : null),
+    [phase, room.events, playerById],
+  );
+  const breaks = useMemo(
+    () => (phase === 'drafting' ? tierAlerts(derived.available, derived.positionalDemand) : []),
+    [phase, derived.available, derived.positionalDemand],
+  );
+
+  // Snake: where the draft comes back around to the user.
+  const myNextPick = useMemo(() => {
+    if (config.draftType !== 'snake' || phase !== 'drafting') return null;
+    const orderedIds = config.teams.map(t => t.id);
+    const from = myTurn ? derived.pickCount + 1 : derived.pickCount;
+    return nextPickFor(config.myTeamId, orderedIds, from, derived.totalPicks);
+  }, [config.draftType, config.teams, config.myTeamId, phase, myTurn, derived.pickCount, derived.totalPicks]);
+
+  // Auction pacing: is the room's money going out faster than its picks?
+  const spentPct = useMemo(() => {
+    if (config.draftType !== 'auction') return null;
+    const totalMoney = config.teams.length * config.budget;
+    const spent = [...derived.teams.values()].reduce((sum, t) => sum + t.spent, 0);
+    return totalMoney > 0 ? Math.round((spent / totalMoney) * 100) : 0;
+  }, [config.draftType, config.teams.length, config.budget, derived.teams]);
+
+  const lastEventTs = room.events.length > 0 ? room.events[room.events.length - 1].ts : null;
   // Quick drafting: log a player straight to the on-the-clock team. Only for
   // snake drafts, and in mock mode only when it's actually the user's pick
   // (the AI handles the rest).
@@ -144,16 +206,29 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
               </div>
             )}
 
-            <div className={styles.statusBar}>
+            <div className={`${styles.statusBar} ${myTurn ? styles.statusBarMine : ''}`}>
               <span className={styles.statusItem}>
                 Pick {Math.min(derived.pickCount + 1, derived.totalPicks)}/{derived.totalPicks}
               </span>
               {derived.onTheClockId && (
                 <span className={styles.statusItem}>
-                  {isAuction ? 'Nominating: ' : 'On the clock: '}
-                  <strong className={styles.statusStrong}>
-                    {config.teams.find(t => t.id === derived.onTheClockId)?.name}
-                  </strong>
+                  {myTurn ? (
+                    <strong className={styles.statusYou}>
+                      {isAuction ? 'YOUR NOMINATION' : "YOU'RE UP"}
+                    </strong>
+                  ) : (
+                    <>
+                      {isAuction ? 'Nominating: ' : 'On the clock: '}
+                      <strong className={styles.statusStrong}>
+                        {config.teams.find(t => t.id === derived.onTheClockId)?.name}
+                      </strong>
+                    </>
+                  )}
+                </span>
+              )}
+              {isSnake && !myTurn && myNextPick !== null && (
+                <span className={styles.statusItem} title="Where the snake comes back to you">
+                  Your next: #{myNextPick + 1} ({myNextPick - derived.pickCount} away)
                 </span>
               )}
               {isAuction && derived.pickCount > 0 && (
@@ -170,6 +245,34 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
                     {room.inflation.rate >= 1 ? '+' : ''}
                     {Math.round((room.inflation.rate - 1) * 100)}%
                   </strong>
+                </span>
+              )}
+              {spentPct !== null && derived.pickCount > 0 && (
+                <span
+                  className={styles.statusItem}
+                  title="Share of the room's total money already spent vs share of picks made"
+                >
+                  Money: {spentPct}% spent · picks{' '}
+                  {Math.round((derived.pickCount / derived.totalPicks) * 100)}%
+                </span>
+              )}
+              {run && (
+                <span className={styles.statusAlert} title={`${run.count} of the last ${run.window} picks were ${run.pos}s`}>
+                  {run.pos} RUN
+                </span>
+              )}
+              {breaks.map(b => (
+                <span
+                  key={b.pos}
+                  className={styles.statusAlert}
+                  title={`${b.left} Tier ${b.tier} ${b.pos}${b.left === 1 ? '' : 's'} left and ${b.demand} teams still need ${b.pos}`}
+                >
+                  T{b.tier} {b.pos}: {b.left} LEFT
+                </span>
+              ))}
+              {phase === 'drafting' && (
+                <span className={styles.statusItem}>
+                  <PickTimer lastEventTs={lastEventTs} />
                 </span>
               )}
               <span className={styles.statusSpacer} />
@@ -209,6 +312,9 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
                   ))}
                 {isSnake && phase === 'drafting' && (
                   <SuggestionsPanel room={room} onSelect={setSelected} />
+                )}
+                {isAuction && phase === 'drafting' && (
+                  <NominationPanel room={room} onSelect={setSelected} />
                 )}
                 <MyTeamPanel room={room} />
                 <LeagueNeeds room={room} />

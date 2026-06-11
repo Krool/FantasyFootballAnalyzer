@@ -46,6 +46,7 @@ export function useSounds() {
   const playPageTransition = useCallback(() => sounds.playPageTransition(), []);
   const playLoadComplete = useCallback(() => sounds.playLoadComplete(), []);
   const playExport = useCallback(() => sounds.playExport(), []);
+  const playOnTheClock = useCallback(() => sounds.playOnTheClock(), []);
 
   const playGrade = useCallback((grade: 'great' | 'good' | 'bad' | 'terrible') => {
     switch (grade) {
@@ -76,6 +77,7 @@ export function useSounds() {
     playPageTransition,
     playLoadComplete,
     playExport,
+    playOnTheClock,
     playGrade,
   };
 }

@@ -72,6 +72,44 @@
   font-weight: 700;
 }
 
+/* The room should shout when it's your pick: lime flood, one pulse. */
+.statusBarMine {
+  border-color: var(--lime);
+  box-shadow: 4px 4px 0 var(--lime);
+  background: var(--ink-2);
+  animation: statusPulse 0.6s ease 1;
+}
+
+@keyframes statusPulse {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.012); }
+  100% { transform: scale(1); }
+}
+
+.statusYou {
+  color: var(--ink);
+  background: var(--lime);
+  padding: 0.15rem 0.5rem;
+  font-weight: 700;
+}
+
+.statusAlert {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--gold);
+  padding: 0.15rem 0.45rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statusBarMine {
+    animation: none;
+  }
+}
+
 .tabs {
   display: flex;
   gap: 0.35rem;

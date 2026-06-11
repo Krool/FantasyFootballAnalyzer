@@ -256,3 +256,34 @@
   color: var(--blood);
   border: 1px solid var(--blood);
 }
+
+.starCell {
+  width: 1.6rem;
+  text-align: center;
+  padding-left: 0.3rem;
+  padding-right: 0;
+}
+
+.star,
+.starOn,
+.starAvoid {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0.15rem;
+  color: var(--rule);
+}
+
+.star:hover {
+  color: var(--bone-dim);
+}
+
+.starOn {
+  color: var(--gold);
+}
+
+.starAvoid {
+  color: var(--blood);
+}

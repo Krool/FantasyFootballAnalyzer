@@ -136,6 +136,14 @@ export function playLoadComplete(): void {
   setTimeout(() => createTone(784, 0.24, 'sine', 0.02, 0.18, 0.55), 260); // G5
 }
 
+// You're on the clock - a two-note horn that cuts through a noisy room.
+// Slightly louder than the UI blips on purpose: this is the one sound the
+// user must not miss while looking at the TV.
+export function playOnTheClock(): void {
+  createTone(392, 0.22, 'square', 0.02, 0.14, 0.5); // G4
+  setTimeout(() => createTone(587, 0.34, 'square', 0.02, 0.24, 0.55), 180); // D5
+}
+
 // Export button click
 export function playExport(): void {
   createTone(660, 0.1, 'sine', 0.02, 0.08, 0.55);

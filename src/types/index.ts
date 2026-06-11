@@ -167,6 +167,9 @@ export interface League {
   isLoaded: boolean;
   previousLeagueId?: string;
   rosterSlots?: RosterSlots; // For PAR calculation
+  // League starts a QB-eligible flex (superflex / 2QB). 1QB rankings badly
+  // underprice QBs in these leagues; the Draft Room warns when set.
+  hasSuperflex?: boolean;
   // Lifecycle phase for this season. Derived per platform from completion
   // signals + NFL state. Pages use this to choose summary vs. live views.
   status?: LeagueStatus;
