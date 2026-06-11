@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Header, YearSelector } from '@/components';
+import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import { HomePage } from '@/pages';
 
 // Lazy-load data-heavy pages for smaller initial bundle
@@ -239,6 +240,7 @@ function App() {
       />
 
       <main id="main-content" style={{ flex: 1 }}>
+        <RouteErrorBoundary resetKey={location.pathname}>
         <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="spinner" /></div>}>
         <Routes>
           <Route
@@ -359,6 +361,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
+        </RouteErrorBoundary>
       </main>
 
       <footer className="site-footer">

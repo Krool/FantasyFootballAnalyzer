@@ -3,29 +3,32 @@ import * as sounds from '@/utils/sounds';
 
 const SOUND_PREFS_KEY = 'ff-analyzer-sounds-enabled';
 
+// Browsers refuse to start audio before a user gesture. One module-level
+// pair of listeners covers the whole app; previously every useSounds()
+// consumer (15+) registered its own and re-registered on each mute toggle.
+let interactionListenersInstalled = false;
+function installFirstInteractionInit(): void {
+  if (interactionListenersInstalled || typeof document === 'undefined') return;
+  interactionListenersInstalled = true;
+  const handleFirstInteraction = () => {
+    sounds.initAudio();
+    sounds.setMuted(localStorage.getItem(SOUND_PREFS_KEY) === 'false');
+    document.removeEventListener('click', handleFirstInteraction);
+    document.removeEventListener('keydown', handleFirstInteraction);
+  };
+  document.addEventListener('click', handleFirstInteraction);
+  document.addEventListener('keydown', handleFirstInteraction);
+}
+
 export function useSounds() {
   const [isMuted, setIsMuted] = useState(() => {
     const stored = localStorage.getItem(SOUND_PREFS_KEY);
     return stored === 'false';
   });
 
-  // Initialize audio context on first user interaction
   useEffect(() => {
-    const handleFirstInteraction = () => {
-      sounds.initAudio();
-      sounds.setMuted(isMuted);
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('keydown', handleFirstInteraction);
-    };
-
-    document.addEventListener('click', handleFirstInteraction);
-    document.addEventListener('keydown', handleFirstInteraction);
-
-    return () => {
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('keydown', handleFirstInteraction);
-    };
-  }, [isMuted]);
+    installFirstInteractionInit();
+  }, []);
 
   // Sync muted state with sounds utility
   useEffect(() => {

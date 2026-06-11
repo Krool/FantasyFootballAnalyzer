@@ -8,7 +8,8 @@ import {
   isStale,
   loadCachedLeagueForCredentials,
 } from '@/utils/leagueCache';
-import { espnCredsKey, persistESPNCredentials } from '@/utils/espnCredentials';
+import { persistESPNCredentials } from '@/utils/espnCredentials';
+import { Analytics } from '@/utils/analytics';
 
 export interface LoadingProgress {
   stage: string;
@@ -63,7 +64,6 @@ export function useLeague(): UseLeagueReturn {
     // so an in-flight network load can't clobber a more recent cache hit when
     // it finally resolves.
     const requestId = ++currentRequestRef.current;
-    void espnCredsKey; // keep the helper imported even when unused in this branch
 
     // Cache-first: hydrate instantly when we have a snapshot for this exact
     // platform/leagueId/year. Refresh button bypasses via forceRefresh.
@@ -117,6 +117,7 @@ export function useLeague(): UseLeagueReturn {
         setLeague(loadedLeague);
         cacheLeague(loadedLeague);
         persistESPNCredentials(credentials);
+        Analytics.leagueConnected(credentials.platform, credentials.leagueId);
       }
     } catch (err) {
       // Only update state if this is still the current request and component is mounted

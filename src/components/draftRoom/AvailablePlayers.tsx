@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type RefObject } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState, type RefObject } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
@@ -79,8 +79,12 @@ export function AvailablePlayers({
     }
   };
 
+  // Defer the filter so keystrokes stay snappy while a 250-row table
+  // re-renders behind them.
+  const deferredQuery = useDeferredValue(query);
+
   const rows = useMemo(() => {
-    const q = normalizeName(query);
+    const q = normalizeName(deferredQuery);
     const filtered = derived.available
       .filter(p => posFilter === 'ALL' || p.pos === posFilter)
       .filter(p => q === '' || normalizeName(p.name).includes(q));
@@ -104,7 +108,7 @@ export function AvailablePlayers({
       filtered.sort((a, b) => (adp(a) ?? 9999) - (adp(b) ?? 9999));
     }
     return filtered;
-  }, [derived.available, query, posFilter, sortBy, scaledValues, yahooCosts, scoring]);
+  }, [derived.available, deferredQuery, posFilter, sortBy, scaledValues, yahooCosts, scoring]);
 
   // Last available player at their position in their tier: once they're
   // gone, that position drops a tier.

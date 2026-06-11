@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useDeferredValue, useMemo, useState } from 'react';
 import { POOL } from '@/data/draftPool';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { injuryAbbrev } from '@/utils/injury';
@@ -63,8 +63,10 @@ export function RankingsPage({ league }: RankingsPageProps) {
     setSortBy(key);
   };
 
+  const deferredQuery = useDeferredValue(query);
+
   const rows = useMemo(() => {
-    const q = normalizeName(query);
+    const q = normalizeName(deferredQuery);
     const filtered = POOL.players
       .filter(p => posFilter === 'ALL' || p.pos === posFilter)
       .filter(p => q === '' || normalizeName(p.name).includes(q));
@@ -106,7 +108,7 @@ export function RankingsPage({ league }: RankingsPageProps) {
         break;
     }
     return filtered;
-  }, [query, posFilter, sortBy, avgById, scaledValues, source, scoring]);
+  }, [deferredQuery, posFilter, sortBy, avgById, scaledValues, source, scoring]);
 
   const visible = rows.slice(0, MAX_ROWS);
 

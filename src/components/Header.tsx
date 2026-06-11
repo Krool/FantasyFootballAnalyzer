@@ -4,6 +4,7 @@ import type { League } from '@/types';
 import { exportLeagueReport } from '@/utils/exportPdf';
 import { useSounds } from '@/hooks/useSounds';
 import { logger } from '@/utils/logger';
+import { Analytics } from '@/utils/analytics';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -57,6 +58,7 @@ export function Header({
       playExport();
       // The exporter dynamic-imports jspdf; a failed chunk load (offline, or
       // a stale deploy hash) would otherwise be a silent unhandled rejection.
+      Analytics.pdfExported('league_report');
       exportLeagueReport(league).catch(err => {
         logger.error('PDF export failed:', err);
         playError();

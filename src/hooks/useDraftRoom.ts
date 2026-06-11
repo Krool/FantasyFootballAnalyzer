@@ -39,7 +39,6 @@ interface DraftRoomState {
 
 type Action =
   | { type: 'UPDATE_CONFIG'; patch: Partial<DraftRoomConfig> }
-  | { type: 'RENAME_TEAM'; teamId: string; name: string }
   | { type: 'START' }
   | { type: 'LOG_EVENT'; event: DraftEvent }
   | { type: 'UNDO' }
@@ -80,19 +79,13 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
     case 'UPDATE_CONFIG': {
       // Config is frozen once the draft starts: budgets/slots/order drive
       // derived budgets and turn order, and editing them mid-draft would
-      // silently corrupt the log. Renames go through RENAME_TEAM.
+      // silently corrupt the log.
       if (state.phase !== 'setup') return state;
       const config = { ...state.config, ...action.patch };
       if (action.patch.rosterSlots) {
         config.rounds = draftableSlotCount(action.patch.rosterSlots);
       }
       return { ...state, config };
-    }
-    case 'RENAME_TEAM': {
-      const teams = state.config.teams.map(t =>
-        t.id === action.teamId ? { ...t, name: action.name } : t,
-      );
-      return { ...state, config: { ...state.config, teams } };
     }
     case 'START': {
       if (state.phase !== 'setup' || state.config.teams.length < 2) return state;
@@ -150,7 +143,6 @@ export interface UseDraftRoomReturn {
   // A previously saved session for this league, offered as "Resume".
   resumable: DraftRoomSession | null;
   updateConfig: (patch: Partial<DraftRoomConfig>) => void;
-  renameTeam: (teamId: string, name: string) => void;
   start: () => void;
   // Returns a rejection message, or null when the event was logged.
   logEvent: (event: DraftEventInput) => string | null;
@@ -284,7 +276,6 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
     pool: POOL,
     resumable,
     updateConfig: useCallback(patch => dispatch({ type: 'UPDATE_CONFIG', patch }), []),
-    renameTeam: useCallback((teamId, name) => dispatch({ type: 'RENAME_TEAM', teamId, name }), []),
     start: useCallback(() => dispatch({ type: 'START' }), []),
     logEvent,
     undo: useCallback(() => dispatch({ type: 'UNDO' }), []),

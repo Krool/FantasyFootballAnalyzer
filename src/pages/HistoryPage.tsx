@@ -119,7 +119,8 @@ export function HistoryPage({ league }: HistoryPageProps) {
   // Fall back to team.name only when ownerId is missing (older caches, Yahoo).
   // Championships are only awarded when the platform tells us who actually
   // won the playoffs (championTeamId), never inferred from standings.
-  const allTimeStats = history.length > 0 ? (() => {
+  const allTimeStats = useMemo(() => {
+    if (history.length === 0) return [];
     const stats = new Map<string, {
       key: string;
       name: string;
@@ -175,7 +176,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
       if (a.totalWins !== b.totalWins) return b.totalWins - a.totalWins;
       return b.totalPointsFor - a.totalPointsFor;
     });
-  })() : [];
+  }, [history]);
 
   // Get unique team names for the dropdown (from current season)
   const teamOptions = useMemo(() => {
