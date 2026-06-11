@@ -139,6 +139,41 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
         <div className={styles.feature}>
           <div className={styles.featureIcon}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="22" y1="12" x2="18" y2="12" />
+              <line x1="6" y1="12" x2="2" y2="12" />
+              <line x1="12" y1="6" x2="12" y2="2" />
+              <line x1="12" y1="22" x2="12" y2="18" />
+            </svg>
+          </div>
+          <h3 className={styles.featureTitle}>Live Draft Room</h3>
+          <p className={styles.featureDesc}>
+            Track your snake or auction draft as it happens.
+            Budget inflation, pick suggestions, and survival odds.
+          </p>
+        </div>
+
+        <div className={styles.feature}>
+          <div className={styles.featureIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <line x1="3" y1="6" x2="3.01" y2="6" />
+              <line x1="3" y1="12" x2="3.01" y2="12" />
+              <line x1="3" y1="18" x2="3.01" y2="18" />
+            </svg>
+          </div>
+          <h3 className={styles.featureTitle}>Draft Rankings</h3>
+          <p className={styles.featureDesc}>
+            FantasyPros, ESPN, Sleeper, and Yahoo boards side by side.
+            Sort by ADP or dollar value. Star your targets.
+          </p>
+        </div>
+
+        <div className={styles.feature}>
+          <div className={styles.featureIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M7 16l-4-4 4-4M17 8l4 4-4 4M3 12h18" />
             </svg>
           </div>
@@ -253,6 +288,23 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
           <p className={styles.featureDesc}>
             Full league report as a shareable PDF.
             Draft grades, awards, and analysis.
+          </p>
+        </div>
+
+        <div className={styles.feature}>
+          <div className={styles.featureIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+          </div>
+          <h3 className={styles.featureTitle}>Three Platforms</h3>
+          <p className={styles.featureDesc}>
+            Sleeper, ESPN, and Yahoo leagues all load here.
+            Same grades, same trophies, same analysis.
           </p>
         </div>
       </div>
