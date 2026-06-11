@@ -1,14 +1,20 @@
 // Builds the bundled draft pool JSON from the raw data exports in data/.
 // Run with: npm run build:draft-data
+// Optional: npm run build:draft-data -- --season=2027   (default: auto)
 //
 // Inputs:
-//   data/raw/fp-rankings.2026.json      (preferred rankings source, from npm run fetch:rankings)
-//   data/FantasyPros_2026_Draft_ALL_Rankings.csv  (fallback rankings when no fetched snapshot)
+//   data/raw/fp-rankings.<season>.json  (preferred rankings source, from npm run fetch:rankings)
+//   data/FantasyPros_<season>_Draft_ALL_Rankings.csv  (fallback rankings when no fetched snapshot)
 //   data/salary_cap_values.csv          (FantasyPros auction $ for the top ~178)
-//   data/raw/espn-values.2026.json      (optional: ESPN ADP + auction values)
-//   data/raw/sleeper-adp.2026.json      (optional: Sleeper ADP)
-// Output:
-//   src/data/draftPool.2026.json        (imported statically by the app)
+//   data/raw/espn-values.<season>.json  (optional: ESPN ADP + auction values)
+//   data/raw/sleeper-adp.<season>.json  (optional: Sleeper ADP + projections)
+//   data/raw/sleeper-players.json       (optional: injury/rookie/depth/ids)
+// Outputs:
+//   src/data/draftPool.<season>.json    (the pool data)
+//   src/data/draftPool.ts               (regenerated indirection module the
+//                                        app imports, so a season rollover
+//                                        never requires touching app code)
+//   data/raw/misses.<season>.json       (unmatched cross-source join report)
 //
 // Joins are by normalized name (team is a tiebreaker only). Salary rows that
 // fail to match a ranking row abort the build (same-source data should match
@@ -18,9 +24,16 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { matchPlayer } from '../src/utils/playerNames';
+import { canonicalTeam, matchPlayer, normalizeName } from '../src/utils/playerNames';
+import { currentDraftSeason } from './season';
 
-const SEASON = 2026;
+const seasonArg = process.argv.find(a => a.startsWith('--season='));
+const SEASON = seasonArg ? Number(seasonArg.split('=')[1]) : currentDraftSeason();
+if (!Number.isInteger(SEASON) || SEASON < 2020 || SEASON > 2100) {
+  console.error(`Bad season "${seasonArg}"`);
+  process.exit(1);
+}
+
 // The FantasyPros salary cap cheat sheet baseline these values assume.
 const BASELINE = { budget: 200, teams: 12, rounds: 14 };
 
@@ -28,6 +41,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const rankingsPath = join(root, 'data', `FantasyPros_${SEASON}_Draft_ALL_Rankings.csv`);
 const salaryPath = join(root, 'data', 'salary_cap_values.csv');
 const outPath = join(root, 'src', 'data', `draftPool.${SEASON}.json`);
+const indirectionPath = join(root, 'src', 'data', 'draftPool.ts');
+const missesPath = join(root, 'data', 'raw', `misses.${SEASON}.json`);
 
 interface PoolPlayer {
   id: string;
@@ -40,12 +55,25 @@ interface PoolPlayer {
   bye: number | null;
   // FantasyPros auction $ at BASELINE; null below the salary sheet's cutoff.
   baseValue: number | null;
+  // Expert disagreement band around the consensus rank.
+  rankMin?: number;
+  rankMax?: number;
+  rankStd?: number;
   // Cross-source market data (absent when the source has no entry).
   espnAdp?: number;
   espnValue?: number; // live ESPN auction market price (their default league shape)
   sleeperAdp?: number; // half-PPR ADP
   sleeperAdpPpr?: number;
   sleeperAdpStd?: number;
+  // Sleeper season-long projected points by scoring format.
+  projPts?: number; // half-PPR
+  projPtsPpr?: number;
+  projPtsStd?: number;
+  // From the Sleeper players dump.
+  sleeperId?: string;
+  injuryStatus?: string; // Questionable / Out / IR / PUP / Sus...
+  rookie?: boolean;
+  depthChartOrder?: number;
 }
 
 function parseCsv(text: string): string[][] {
@@ -92,27 +120,44 @@ function loadRawSnapshot<T>(name: string): T | null {
   return (JSON.parse(readFileSync(path, 'utf8')) as { data: T }).data;
 }
 
+// Stable player ids: rebuilding the pool after rankings move must not change
+// a player's id, because saved Draft Room sessions persist these ids (the
+// old `fp-<rank>` scheme silently remapped every logged pick after a daily
+// refresh). Slug of name+pos; DSTs key on the franchise.
+function playerId(name: string, pos: string, team: string): string {
+  if (pos === 'DST') return `dst-${canonicalTeam(team).toLowerCase()}`;
+  const slug = normalizeName(name).replace(/\s+/g, '-');
+  return `${slug}-${pos.toLowerCase()}`;
+}
+
 // --- Rankings: fetched FantasyPros snapshot preferred, CSV export fallback ---
 interface FpSnapshot {
   scoring: string;
   players: Array<{
     name: string; team: string; pos: string; posRank: number;
     rank: number; tier: number; bye: number | null;
+    rankMin?: number | null; rankMax?: number | null; rankStd?: number | null;
   }>;
 }
 
 function playersFromSnapshot(snapshot: FpSnapshot): PoolPlayer[] {
-  return snapshot.players.map(p => ({
-    id: `fp-${p.rank}`,
-    name: p.name,
-    team: p.team,
-    pos: p.pos.replace('/', ''),
-    posRank: p.posRank,
-    overallRank: p.rank,
-    tier: p.tier || 0,
-    bye: p.bye,
-    baseValue: null,
-  }));
+  return snapshot.players.map(p => {
+    const pos = p.pos.replace('/', '');
+    return {
+      id: playerId(p.name, pos, p.team),
+      name: p.name,
+      team: p.team,
+      pos,
+      posRank: p.posRank,
+      overallRank: p.rank,
+      tier: p.tier || 0,
+      bye: p.bye,
+      baseValue: null,
+      ...(p.rankMin != null ? { rankMin: p.rankMin } : {}),
+      ...(p.rankMax != null ? { rankMax: p.rankMax } : {}),
+      ...(p.rankStd != null ? { rankStd: Math.round(p.rankStd * 10) / 10 } : {}),
+    };
+  });
 }
 
 function playersFromCsv(): PoolPlayer[] {
@@ -142,11 +187,14 @@ function playersFromCsv(): PoolPlayer[] {
     }
     const overallRank = Number(row[cols.rank]);
     const bye = Number(row[cols.bye]);
+    const name = row[cols.name].trim();
+    const team = row[cols.team].trim();
+    const pos = posMatch[1].replace('/', '');
     result.push({
-      id: `fp-${overallRank}`,
-      name: row[cols.name].trim(),
-      team: row[cols.team].trim(),
-      pos: posMatch[1].replace('/', ''),
+      id: playerId(name, pos, team),
+      name,
+      team,
+      pos,
       posRank: Number(posMatch[2]),
       overallRank,
       tier: Number(row[cols.tier]) || 0,
@@ -161,9 +209,29 @@ const fpSnapshot = loadRawSnapshot<FpSnapshot>(`fp-rankings.${SEASON}.json`);
 const players: PoolPlayer[] = fpSnapshot ? playersFromSnapshot(fpSnapshot) : playersFromCsv();
 console.log(
   fpSnapshot
-    ? `Rankings from fetched snapshot (${fpSnapshot.scoring} scoring)`
-    : 'Rankings from CSV export (run npm run fetch:rankings for fresher data)',
+    ? `Rankings from fetched snapshot (${fpSnapshot.scoring} scoring), season ${SEASON}`
+    : `Rankings from CSV export, season ${SEASON} (run npm run fetch:rankings for fresher data)`,
 );
+
+// Two distinct players can share a normalized name+pos (it has happened:
+// Lamar Jackson, Mike Williams). Disambiguate by franchise, then bail loudly
+// rather than ship colliding ids.
+{
+  const seen = new Map<string, PoolPlayer>();
+  for (const player of players) {
+    const prior = seen.get(player.id);
+    if (prior) {
+      prior.id = `${prior.id}-${canonicalTeam(prior.team).toLowerCase()}`;
+      player.id = `${player.id}-${canonicalTeam(player.team).toLowerCase()}`;
+      if (prior.id === player.id) {
+        console.error(`FAILED: id collision ${player.id} (${prior.name} vs ${player.name})`);
+        process.exit(1);
+      }
+    } else {
+      seen.set(player.id, player);
+    }
+  }
+}
 
 // --- Salary values joined onto rankings ---
 const salaryRows = readRows(salaryPath).slice(1); // skip header
@@ -212,7 +280,11 @@ console.log(
 
 // --- Cross-source market data (optional snapshots) ---
 // Misses here are warned, not fatal: ESPN/Sleeper pools legitimately differ
-// from FantasyPros at the deep end.
+// from FantasyPros at the deep end. The full miss list lands in
+// data/raw/misses.<season>.json so join drift is visible in the repo, not
+// just in CI logs nobody reads.
+const missReport: Record<string, string[]> = {};
+
 function joinSource<T extends { name: string; pos: string; team: string }>(
   label: string,
   rows: T[] | undefined,
@@ -224,7 +296,7 @@ function joinSource<T extends { name: string; pos: string; team: string }>(
   for (const row of rows) {
     const player =
       row.pos === 'DST'
-        ? players.find(p => p.pos === 'DST' && p.team === row.team) ?? null
+        ? players.find(p => p.pos === 'DST' && canonicalTeam(p.team) === canonicalTeam(row.team)) ?? null
         : matchPlayer({ name: row.name, pos: row.pos, team: row.team }, players);
     if (!player) {
       misses.push(`${row.name} (${row.pos} ${row.team})`);
@@ -233,6 +305,7 @@ function joinSource<T extends { name: string; pos: string; team: string }>(
     apply(player, row);
     hits++;
   }
+  missReport[label] = misses;
   console.log(`${label}: ${hits}/${rows.length} matched${misses.length ? `, ${misses.length} unmatched` : ''}`);
   for (const miss of misses.slice(0, 8)) console.log(`  unmatched: ${miss}`);
   if (misses.length > 8) console.log(`  ... and ${misses.length - 8} more`);
@@ -252,13 +325,48 @@ joinSource('ESPN', espnSnapshot?.players, (player, row) => {
 interface SleeperRow {
   name: string; pos: string; team: string;
   adpHalfPpr: number | null; adpPpr: number | null; adpStd: number | null; adp2qb: number | null;
+  ptsHalfPpr?: number | null; ptsPpr?: number | null; ptsStd?: number | null;
 }
 const sleeperSnapshot = loadRawSnapshot<{ players: SleeperRow[] }>(`sleeper-adp.${SEASON}.json`);
 joinSource('Sleeper', sleeperSnapshot?.players, (player, row) => {
   if (row.adpHalfPpr !== null) player.sleeperAdp = Math.round(row.adpHalfPpr * 10) / 10;
   if (row.adpPpr !== null) player.sleeperAdpPpr = Math.round(row.adpPpr * 10) / 10;
   if (row.adpStd !== null) player.sleeperAdpStd = Math.round(row.adpStd * 10) / 10;
+  if (row.ptsHalfPpr != null && row.ptsHalfPpr > 0) player.projPts = Math.round(row.ptsHalfPpr * 10) / 10;
+  if (row.ptsPpr != null && row.ptsPpr > 0) player.projPtsPpr = Math.round(row.ptsPpr * 10) / 10;
+  if (row.ptsStd != null && row.ptsStd > 0) player.projPtsStd = Math.round(row.ptsStd * 10) / 10;
 });
+
+interface SleeperPlayerRow {
+  sleeperId: string; name: string; pos: string; team: string;
+  status: string | null; injuryStatus: string | null;
+  yearsExp: number | null; depthChartOrder: number | null;
+}
+const sleeperPlayers = loadRawSnapshot<{ players: SleeperPlayerRow[] }>('sleeper-players.json');
+if (sleeperPlayers) {
+  // Reverse join (pool -> dump) so a miss means "pool player not in the
+  // dump", which is the interesting direction here.
+  let hits = 0;
+  const misses: string[] = [];
+  for (const player of players) {
+    if (player.pos === 'DST') continue; // dump models DSTs differently; skip
+    const row = matchPlayer(
+      { name: player.name, pos: player.pos, team: player.team },
+      sleeperPlayers.players,
+    );
+    if (!row) {
+      misses.push(`${player.name} (${player.pos} ${player.team})`);
+      continue;
+    }
+    player.sleeperId = row.sleeperId;
+    if (row.injuryStatus) player.injuryStatus = row.injuryStatus;
+    if (row.yearsExp === 0) player.rookie = true;
+    if (row.depthChartOrder != null) player.depthChartOrder = row.depthChartOrder;
+    hits++;
+  }
+  missReport['SleeperPlayers'] = misses;
+  console.log(`Sleeper players: ${hits} enriched${misses.length ? `, ${misses.length} pool players not in dump` : ''}`);
+}
 
 const out = {
   season: SEASON,
@@ -269,11 +377,28 @@ const out = {
 
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, JSON.stringify(out, null, 2) + '\n');
+writeFileSync(missesPath, JSON.stringify(missReport, null, 2) + '\n');
+
+// Regenerate the indirection module so app code never hardcodes the season.
+writeFileSync(
+  indirectionPath,
+  [
+    '// GENERATED by scripts/buildDraftPool.ts — do not edit by hand.',
+    '// The app imports the current draft pool through this module so a season',
+    '// rollover only changes generated files.',
+    `import poolJson from './draftPool.${SEASON}.json';`,
+    "import type { DraftPoolFile } from '@/types/draft';",
+    '',
+    'export const POOL = poolJson as DraftPoolFile;',
+    '',
+  ].join('\n'),
+);
 
 const byPos = players.reduce<Record<string, number>>((acc, p) => {
   acc[p.pos] = (acc[p.pos] ?? 0) + 1;
   return acc;
 }, {});
 console.log(`Wrote ${outPath}`);
+console.log(`Wrote ${indirectionPath} (season ${SEASON})`);
 console.log(`  ${players.length} players (${Object.entries(byPos).map(([p, n]) => `${p}:${n}`).join(' ')})`);
 console.log(`  ${matched}/${salaryRows.length} salary values matched`);

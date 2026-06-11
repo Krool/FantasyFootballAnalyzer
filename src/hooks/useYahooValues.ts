@@ -22,6 +22,22 @@ function cacheKey(season: number): string {
   return `ffa:yahoovalues:v${CACHE_VERSION}:${season}`;
 }
 
+// Drop superseded entries (old versions, past seasons) so the cache holds at
+// most the one key we actually read.
+function sweepOtherKeys(season: number): void {
+  try {
+    const keep = cacheKey(season);
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('ffa:yahoovalues:') && key !== keep) toRemove.push(key);
+    }
+    toRemove.forEach(key => localStorage.removeItem(key));
+  } catch {
+    // Best effort only.
+  }
+}
+
 function readCache(season: number): CacheEntry | null {
   try {
     const raw = localStorage.getItem(cacheKey(season));
@@ -59,6 +75,7 @@ export function useYahooValues(pool: DraftPoolFile): UseYahooValuesReturn {
         setRows(players);
         setStatus('ready');
         try {
+          sweepOtherKeys(pool.season);
           localStorage.setItem(
             cacheKey(pool.season),
             JSON.stringify({ fetchedAt: Date.now(), players } satisfies CacheEntry),

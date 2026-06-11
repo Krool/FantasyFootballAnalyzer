@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import poolJson from '@/data/draftPool.2026.json';
+import { POOL } from '@/data/draftPool';
 import type { League } from '@/types';
-import type { DraftPoolFile, PoolPlayer } from '@/types/draft';
+import type { PoolPlayer } from '@/types/draft';
 import { DEFAULT_BUDGET, DEFAULT_ROSTER_SLOTS } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
 import { consensusAvg, platformDelta, platformRankSource, sleeperAdpFor } from '@/utils/consensus';
@@ -9,8 +9,6 @@ import { draftableSlotCount } from '@/utils/draftEngine';
 import { normalizeName } from '@/utils/playerNames';
 import { scaleValues } from '@/utils/valueScaling';
 import styles from './RankingsPage.module.css';
-
-const POOL = poolJson as DraftPoolFile;
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST'];
 const MAX_ROWS = 300;

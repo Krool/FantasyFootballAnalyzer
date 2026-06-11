@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { basePosition, matchKey, matchPlayer, normalizeName } from './playerNames';
+import { basePosition, canonicalTeam, matchKey, matchPlayer, normalizeName } from './playerNames';
 
 describe('normalizeName', () => {
   it('lowercases and collapses whitespace', () => {
@@ -81,5 +81,34 @@ describe('matchPlayer', () => {
 
   it('returns null on no match', () => {
     expect(matchPlayer({ name: 'Nobody Atall' }, pool)).toBeNull();
+  });
+});
+
+describe('canonicalTeam', () => {
+  it('maps cross-source aliases to one canonical form', () => {
+    expect(canonicalTeam('JAX')).toBe('JAC');
+    expect(canonicalTeam('JAC')).toBe('JAC');
+    expect(canonicalTeam('WSH')).toBe('WAS');
+    expect(canonicalTeam('LA')).toBe('LAR');
+    expect(canonicalTeam('OAK')).toBe('LV');
+  });
+
+  it('uppercases and passes through unknown values', () => {
+    expect(canonicalTeam('Jax')).toBe('JAC');
+    expect(canonicalTeam('kc')).toBe('KC');
+    expect(canonicalTeam('')).toBe('');
+    expect(canonicalTeam(null)).toBe('');
+  });
+});
+
+describe('matchPlayer team tiebreaker with aliases', () => {
+  it('breaks ties across abbreviation conventions', () => {
+    const candidates = [
+      { name: 'Josh Smith', pos: 'WR', team: 'JAC' },
+      { name: 'Josh Smith', pos: 'WR', team: 'KC' },
+    ];
+    // Query uses the Sleeper/ESPN convention; pool uses FantasyPros JAC.
+    expect(matchPlayer({ name: 'Josh Smith', pos: 'WR', team: 'JAX' }, candidates))
+      .toBe(candidates[0]);
   });
 });

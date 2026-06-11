@@ -333,22 +333,30 @@ export async function getAvailableSeasons(
   const years = [currentYear, ...Object.keys(NFL_GAME_KEYS).map(Number).sort((a, b) => b - a)];
   const uniqueYears = Array.from(new Set(years));
 
-  const results = await Promise.all(uniqueYears.map(async (year) => {
-    try {
-      const leagues = await getUserLeagues(year);
-      const matches = leagues.filter(l => l.name === currentLeagueName);
-      if (matches.length !== 1) return null;
-      const match = matches[0];
-      // Past years are necessarily final. Current year we leave as 'live'
-      // until the user actually loads it (cheap heuristic; pages re-derive
-      // from the real response on load).
-      const status: LeagueStatus = year < currentYear ? 'final' : 'live';
-      return { year, leagueId: match.id, status, leagueName: match.name } as SeasonOption;
-    } catch (err) {
-      logger.debug(`[Yahoo] getAvailableSeasons: year ${year} failed:`, err);
-      return null;
-    }
-  }));
+  // Three years at a time: a burst of ~12 concurrent calls trips Yahoo's
+  // per-user rate limit, and a throttled year silently vanishes from the
+  // dropdown.
+  const results: Array<SeasonOption | null> = [];
+  for (let i = 0; i < uniqueYears.length; i += 3) {
+    const batch = uniqueYears.slice(i, i + 3);
+    const settled = await Promise.all(batch.map(async (year) => {
+      try {
+        const leagues = await getUserLeagues(year);
+        const matches = leagues.filter(l => l.name === currentLeagueName);
+        if (matches.length !== 1) return null;
+        const match = matches[0];
+        // Past years are necessarily final. Current year we leave as 'live'
+        // until the user actually loads it (cheap heuristic; pages re-derive
+        // from the real response on load).
+        const status: LeagueStatus = year < currentYear ? 'final' : 'live';
+        return { year, leagueId: match.id, status, leagueName: match.name } as SeasonOption;
+      } catch (err) {
+        logger.debug(`[Yahoo] getAvailableSeasons: year ${year} failed:`, err);
+        return null;
+      }
+    }));
+    results.push(...settled);
+  }
 
   return results.filter((s): s is SeasonOption => s !== null);
 }

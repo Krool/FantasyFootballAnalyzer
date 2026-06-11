@@ -69,12 +69,66 @@ export function loadCachedLeagueForCredentials(
 }
 
 export function cacheLeague(league: League): void {
+  const entry: CacheEntry = { league, savedAt: Date.now() };
+  const payload = JSON.stringify(entry);
   try {
-    const entry: CacheEntry = { league, savedAt: Date.now() };
-    localStorage.setItem(keyForLeague(league), JSON.stringify(entry));
+    localStorage.setItem(keyForLeague(league), payload);
+  } catch {
+    // Quota hit (full ESPN seasons are megabytes): evict the oldest cached
+    // league and retry once, instead of silently never caching again.
+    try {
+      const oldest = findOldestEntryKey();
+      if (oldest) {
+        localStorage.removeItem(oldest);
+        localStorage.setItem(keyForLeague(league), payload);
+        logger.warn('[leagueCache] Evicted oldest cached league to make room:', oldest);
+        return;
+      }
+    } catch {
+      // fall through to the warning below
+    }
+    logger.warn('[leagueCache] Failed to persist league (quota), even after eviction');
+  }
+}
+
+function findOldestEntryKey(): string | null {
+  let oldestKey: string | null = null;
+  let oldestAt = Infinity;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith(KEY_PREFIX)) continue;
+    try {
+      const entry = JSON.parse(localStorage.getItem(key) ?? '') as CacheEntry;
+      const at = entry?.savedAt ?? 0;
+      if (at < oldestAt) {
+        oldestAt = at;
+        oldestKey = key;
+      }
+    } catch {
+      // Unparseable entry: best possible eviction candidate.
+      return key;
+    }
+  }
+  return oldestKey;
+}
+
+// Old cache versions are never read again but sit in localStorage forever,
+// crowding the quota. Sweep them once per app start.
+export function sweepStaleCacheVersions(): void {
+  try {
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('ffa:league:v') && !key.startsWith(KEY_PREFIX)) {
+        toRemove.push(key);
+      }
+    }
+    toRemove.forEach(key => localStorage.removeItem(key));
+    if (toRemove.length > 0) {
+      logger.debug('[leagueCache] Swept', toRemove.length, 'stale cache entries');
+    }
   } catch (err) {
-    // Quota errors are common with large rosters; surface but don't break load.
-    logger.warn('[leagueCache] Failed to persist league:', err);
+    logger.warn('[leagueCache] Sweep failed:', err);
   }
 }
 

@@ -179,9 +179,13 @@ export async function loadLeague(
     options
   );
 
-  // During offseason, currentMatchupPeriod might be 0 or low, so ensure we fetch all weeks
-  const currentWeek = Math.max(leagueData.status?.currentMatchupPeriod || 0, 17);
-  logger.debug('[ESPN] Current week (using max of reported or 17):', currentWeek);
+  // During offseason, currentMatchupPeriod might be 0 or low, so ensure we fetch all weeks.
+  // Exception: a league that hasn't drafted yet has no rosters or transactions
+  // at all — fetching 17 weeks of each (34 proxied calls for private leagues)
+  // is pure waste, so skip straight to processing.
+  const hasDrafted = leagueData.draftDetail?.drafted !== false;
+  const currentWeek = hasDrafted ? Math.max(leagueData.status?.currentMatchupPeriod || 0, 17) : 0;
+  logger.debug('[ESPN] Current week:', currentWeek, hasDrafted ? '' : '(pre-draft league, skipping weekly fetches)');
 
   // Fetch weekly roster data to track who was STARTED each week
   // Key: `${teamId}-${playerId}`, Value: Map<week, points>

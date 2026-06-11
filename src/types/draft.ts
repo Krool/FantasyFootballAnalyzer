@@ -95,6 +95,24 @@ export interface PoolPlayer {
   // market that matches their rules (see sleeperAdpFor in utils/consensus.ts).
   sleeperAdpPpr?: number;
   sleeperAdpStd?: number;
+  // Expert disagreement band around the consensus rank (FantasyPros
+  // rank_min/rank_max/rank_std): wide band = the experts can't agree.
+  rankMin?: number;
+  rankMax?: number;
+  rankStd?: number;
+  // Sleeper season-long projected points by scoring format (half-PPR is the
+  // unsuffixed default, matching sleeperAdp).
+  projPts?: number;
+  projPtsPpr?: number;
+  projPtsStd?: number;
+  // From Sleeper's players dump: id unlocks headshots
+  // (sleepercdn.com/content/nfl/players/thumb/<id>.jpg).
+  sleeperId?: string;
+  // Questionable / Out / IR / PUP / Sus — absent when healthy.
+  injuryStatus?: string;
+  rookie?: boolean;
+  // 1 = listed starter at the position on Sleeper's depth chart.
+  depthChartOrder?: number;
 }
 
 export interface DraftPoolFile {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
-import poolJson from '@/data/draftPool.2026.json';
+import { POOL } from '@/data/draftPool';
 import type { League, RosterSlots } from '@/types';
 import type {
   DraftEvent,
@@ -19,8 +19,6 @@ import {
 } from '@/utils/draftRoomCache';
 import { computeInflation, NEUTRAL_INFLATION, type InflationState } from '@/utils/inflation';
 import { scaleValues, type ScoringType } from '@/utils/valueScaling';
-
-const POOL = poolJson as DraftPoolFile;
 
 // Used when the platform didn't expose roster settings (Yahoo default shape).
 // Shared with the Rankings page so both surfaces price the pool identically.
@@ -167,9 +165,22 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
     events: [],
   }));
 
-  const [resumable, setResumable] = useState<DraftRoomSession | null>(() =>
-    loadDraftRoom(leagueKeyFor(league)),
-  );
+  const [resumable, setResumable] = useState<DraftRoomSession | null>(() => {
+    const session = loadDraftRoom(leagueKeyFor(league));
+    if (!session) return null;
+    // A session whose picks reference ids the current pool doesn't know is
+    // from an older pool build (ids were rank-based before they were made
+    // stable). Resuming it would map picks to the wrong players.
+    const known = new Set(POOL.players.map(p => p.id));
+    const stale =
+      session.events.some(e => !known.has(e.playerId)) ||
+      (session.config.keepers ?? []).some(k => !known.has(k.playerId));
+    if (stale) {
+      clearDraftRoom(leagueKeyFor(league));
+      return null;
+    }
+    return session;
+  });
 
   const derived = useMemo(
     () => deriveDraftState(state.config, POOL.players, state.events),
