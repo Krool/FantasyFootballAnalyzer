@@ -193,6 +193,11 @@
   font-weight: 700;
 }
 
+.stackChip {
+  color: var(--lime);
+  text-transform: none;
+}
+
 .suggestRow {
   display: flex;
   flex-direction: column;

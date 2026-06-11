@@ -10,6 +10,7 @@ import type { PoolPlayer } from '@/types/draft';
 import type { StarterPos, TeamDraftState } from './draftEngine';
 import { STARTER_POSITIONS } from './draftEngine';
 import { sleeperAdpFor } from './consensus';
+import { handcuffPartner, stackPartner } from './stacks';
 import type { ScoringType } from './valueScaling';
 
 const FLEX_ELIGIBLE = new Set<string>(['RB', 'WR', 'TE']);
@@ -54,6 +55,15 @@ export function suggestPicks(
     tierLeft.set(key, (tierLeft.get(key) ?? 0) + 1);
   }
 
+  const roster = team.picks.map(pick => pick.player);
+  // Skill-position starters already sharing a bye week; a third is a
+  // self-inflicted zero.
+  const byeCounts = new Map<number, number>();
+  for (const p of roster) {
+    if (p.bye === null || p.pos === 'K' || p.pos === 'DST') continue;
+    byeCounts.set(p.bye, (byeCounts.get(p.bye) ?? 0) + 1);
+  }
+
   const suggestions: PickSuggestion[] = [];
   for (const p of available.slice(0, CANDIDATE_DEPTH)) {
     const pos = p.pos as StarterPos;
@@ -90,6 +100,27 @@ export function suggestPicks(
         score += Math.min(8, fall * 0.25);
         reasons.push(`${Math.round(fall)} picks past ADP`);
       }
+    }
+
+    // Correlation bonuses: completing a QB/catcher stack, or (late) cuffing
+    // a rostered RB. Small nudges — they break ties, not rankings.
+    const partner = stackPartner(p, roster);
+    if (partner) {
+      score += 3;
+      reasons.push(`stacks with your ${partner.pos === 'QB' ? 'QB ' : ''}${partner.name}`);
+    }
+    if (lateFill) {
+      const cuffed = handcuffPartner(p, roster);
+      if (cuffed && cuffed.posRank < p.posRank) {
+        score += 2;
+        reasons.push(`handcuffs your RB ${cuffed.name}`);
+      }
+    }
+
+    // Bye pile-up penalty: warn before the third same-week skill starter.
+    if (p.bye !== null && p.pos !== 'K' && p.pos !== 'DST' && (byeCounts.get(p.bye) ?? 0) >= 2) {
+      score -= 2;
+      reasons.push(`third week-${p.bye} bye`);
     }
 
     suggestions.push({ player: p, score, reasons });

@@ -4,6 +4,7 @@ import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
 import { nflLogoUrl, nflTeamInfo } from '@/data/nflTeams';
 import { normalizeName } from '@/utils/playerNames';
+import { isHandcuff } from '@/utils/stacks';
 import styles from './NflTeams.module.css';
 
 interface NflTeamsProps {
@@ -117,7 +118,14 @@ export function NflTeams({ room, selectedId, onSelect }: NflTeamsProps) {
                           {p.pos}
                           {p.posRank}
                         </span>
-                        <span className={styles.playerName}>{p.name}</span>
+                        <span className={styles.playerName}>
+                          {p.name}
+                          {isHandcuff(p, players) && (
+                            <span className={styles.cuffTag} title="Direct backup to this team's starting RB">
+                              CUFF
+                            </span>
+                          )}
+                        </span>
                         <span className={styles.playerNote}>
                           {owner ?? (kept ? 'keeper' : `#${p.overallRank}`)}
                         </span>

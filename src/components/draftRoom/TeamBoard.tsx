@@ -1,5 +1,6 @@
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { STARTER_POSITIONS } from '@/utils/draftEngine';
+import { findStacks } from '@/utils/stacks';
 import styles from './TeamBoard.module.css';
 
 interface TeamBoardProps {
@@ -19,6 +20,9 @@ export function TeamBoard({ room }: TeamBoardProps) {
           const state = derived.teams.get(team.id)!;
           const isMe = team.id === config.myTeamId;
           const onClock = team.id === derived.onTheClockId;
+          // An opponent's completed stack is actionable in an auction: the
+          // Mahomes owner overpays for Mahomes's receivers. Nominate them.
+          const stacks = findStacks(state.picks.map(p => p.player));
           return (
             <div
               key={team.id}
@@ -71,6 +75,15 @@ export function TeamBoard({ room }: TeamBoardProps) {
                   BN {state.slotsFilled.BENCH}/{slots.BENCH}
                 </span>
               </div>
+              {stacks.length > 0 && (
+                <div className={styles.stackLine} title="QB + pass catcher from the same NFL team on this roster">
+                  {stacks.map(s => (
+                    <span key={s.nflTeam} className={styles.stackBadge}>
+                      ⚡ {s.nflTeam} stack
+                    </span>
+                  ))}
+                </div>
+              )}
               {state.picks.length > 0 && (
                 <details className={styles.roster}>
                   <summary className={styles.rosterSummary}>Roster</summary>

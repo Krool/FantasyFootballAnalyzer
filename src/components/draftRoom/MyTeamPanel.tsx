@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { STARTER_POSITIONS } from '@/utils/draftEngine';
+import { findStacks } from '@/utils/stacks';
 import styles from './Panels.module.css';
 
 interface MyTeamPanelProps {
@@ -26,6 +27,13 @@ export function MyTeamPanel({ room }: MyTeamPanelProps) {
     }
     return total;
   }, [me, isAuction, derived.available, scaledValues]);
+
+  // QB + pass-catcher pairs on the roster: correlated scoring worth seeing
+  // (and worth finishing: a one-catcher stack invites adding the QB's TE).
+  const stacks = useMemo(
+    () => (me ? findStacks(me.picks.map(p => p.player)) : []),
+    [me],
+  );
 
   // Bye-week clustering: stacking three starters on the same bye is a
   // self-inflicted 0-something week. K/DST are excluded (streamed anyway).
@@ -83,6 +91,16 @@ export function MyTeamPanel({ room }: MyTeamPanelProps) {
         ))}
         {me.picks.length === 0 && <li className={styles.rowEmpty}>No players yet.</li>}
       </ul>
+      {stacks.length > 0 && (
+        <div className={styles.byeLine} title="QB + pass catcher on the same NFL team: their big weeks land together">
+          <span>Stacks:</span>
+          {stacks.map(stack => (
+            <span key={stack.nflTeam} className={styles.stackChip}>
+              {stack.nflTeam}: {stack.qb.name.split(' ').pop()} + {stack.catchers.map(c => c.name.split(' ').pop()).join(' + ')}
+            </span>
+          ))}
+        </div>
+      )}
       {byes.length > 0 && (
         <div className={styles.byeLine} title="Skill-position byes on your roster (K/DST excluded)">
           <span>Byes:</span>

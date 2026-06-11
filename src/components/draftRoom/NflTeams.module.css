@@ -165,3 +165,16 @@
   padding: 2rem 1rem;
   text-align: center;
 }
+
+.cuffTag {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--bone-dim);
+  border: 1px solid var(--bone-dim);
+  padding: 0.04rem 0.25rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}

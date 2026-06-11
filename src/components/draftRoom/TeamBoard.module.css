@@ -158,3 +158,21 @@
 .rosterPrice {
   color: var(--lime);
 }
+
+.stackLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding-top: 0.35rem;
+}
+
+.stackBadge {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lime);
+  border: 1px solid var(--lime);
+  padding: 0.05rem 0.35rem;
+}
