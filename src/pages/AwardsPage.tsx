@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { League } from '@/types';
 import { calculateAllAwards, groupAwardsByCategory, getCategoryDisplayName, type Award } from '@/utils/awards';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
+import { seasonRecords, seasonTimeline } from '@/utils/seasonStory';
 import styles from './AwardsPage.module.css';
 
 interface AwardsPageProps {
@@ -51,6 +52,9 @@ export function AwardsPage({ league }: AwardsPageProps) {
   // Category order
   const categoryOrder = ['performance', 'luck', 'draft', 'waivers', 'trades', 'activity'];
 
+  const records = useMemo(() => seasonRecords(league), [league]);
+  const timeline = useMemo(() => seasonTimeline(league), [league]);
+
   return (
     <div className={styles.awardsPage}>
       <div className="container">
@@ -84,6 +88,38 @@ export function AwardsPage({ league }: AwardsPageProps) {
             </section>
           );
         })}
+
+        {records.length > 0 && (
+          <section className={styles.category}>
+            <h2 className={styles.categoryTitle}>Season Records</h2>
+            <div className={styles.recordsGrid}>
+              {records.map(record => (
+                <div key={record.label} className={styles.recordCard}>
+                  <span className={styles.recordLabel}>{record.label}</span>
+                  <span className={styles.recordHolder}>{record.holder}</span>
+                  <span className={styles.recordDetail}>
+                    {record.detail} · Week {record.week}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {timeline.length > 0 && (
+          <section className={styles.category}>
+            <h2 className={styles.categoryTitle}>Season Story</h2>
+            <ol className={styles.timeline}>
+              {timeline.map((entry, i) => (
+                <li key={`${entry.week}-${i}`} className={styles.timelineEntry}>
+                  <span className={styles.timelineWeek}>W{entry.week}</span>
+                  <span className={styles.timelineHeadline}>{entry.headline}</span>
+                  {entry.detail && <span className={styles.timelineDetail}>{entry.detail}</span>}
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
 
         {luckMetrics.length > 0 && (
           <section className={styles.luckSection}>

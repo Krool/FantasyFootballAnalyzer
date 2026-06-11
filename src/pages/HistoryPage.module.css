@@ -292,3 +292,60 @@
   .rivalriesGrid { grid-template-columns: 1fr; }
   .teamDropdown { max-width: 100%; }
 }
+
+.sectionQualifier {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  vertical-align: middle;
+}
+
+.championsWall {
+  display: flex;
+  gap: 0.9rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.championCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 130px;
+  padding: 0.8rem 0.9rem;
+  border: 2px solid var(--gold);
+  box-shadow: 4px 4px 0 var(--gold);
+  background: var(--ink);
+}
+
+.championYear {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--bone-dim);
+}
+
+.championTrophy {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.championName {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--bone);
+  text-align: center;
+}
+
+.championRecord {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--bone-dim);
+}

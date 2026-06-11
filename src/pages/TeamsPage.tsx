@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { TeamCard } from '@/components';
 import type { League } from '@/types';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
+import { managerScores } from '@/utils/managerScore';
 import styles from './TeamsPage.module.css';
 
 interface TeamsPageProps {
@@ -38,6 +39,33 @@ export function TeamsPage({ league }: TeamsPageProps) {
     return map;
   }, [league.matchups, league.teams]);
 
+  // One number to argue about: draft + waivers + trades + schedule-adjusted
+  // results, each normalized within the league.
+  const scores = useMemo(() => {
+    if (!league.matchups || league.matchups.length === 0) return [];
+    return managerScores(league);
+  }, [league]);
+
+  // Season head-to-head grid: every pairing's record this season.
+  const h2h = useMemo(() => {
+    const grid = new Map<string, Map<string, { w: number; l: number; t: number }>>();
+    for (const m of league.matchups ?? []) {
+      if (m.team1Points === 0 && m.team2Points === 0) continue;
+      const upd = (a: string, b: string, aPts: number, bPts: number) => {
+        const row = grid.get(a) ?? new Map();
+        const cell = row.get(b) ?? { w: 0, l: 0, t: 0 };
+        if (aPts > bPts) cell.w++;
+        else if (aPts < bPts) cell.l++;
+        else cell.t++;
+        row.set(b, cell);
+        grid.set(a, row);
+      };
+      upd(m.team1Id, m.team2Id, m.team1Points, m.team2Points);
+      upd(m.team2Id, m.team1Id, m.team2Points, m.team1Points);
+    }
+    return grid;
+  }, [league.matchups]);
+
   // Sort teams by record (wins desc, then points for desc)
   const sortedTeams = [...league.teams].sort((a, b) => {
     const aWins = a.wins || 0;
@@ -49,6 +77,9 @@ export function TeamsPage({ league }: TeamsPageProps) {
     return bPoints - aPoints;
   });
 
+  const shortName = (name: string) =>
+    name.length > 10 ? `${name.slice(0, 9)}…` : name;
+
   return (
     <div className={styles.page}>
       <div className="container">
@@ -58,6 +89,34 @@ export function TeamsPage({ league }: TeamsPageProps) {
             {league.totalTeams} teams in {league.name}
           </p>
         </div>
+
+        {scores.length > 0 && (
+          <section className={styles.skillSection}>
+            <h2 className={styles.sectionTitle}>Manager Skill Score</h2>
+            <p className={styles.sectionHint}>
+              Draft value (30%), waiver PAR (20%), trade PAR (15%), all-play results (35%) —
+              each scored 0-100 against this league.
+            </p>
+            <div className={styles.skillList}>
+              {scores.map((s, i) => (
+                <div key={s.teamId} className={styles.skillRow}>
+                  <span className={styles.skillRank}>{i + 1}</span>
+                  <span className={styles.skillName}>{s.teamName}</span>
+                  <span
+                    className={styles.skillParts}
+                    title={`Draft ${s.components.draft} · Waivers ${s.components.waivers} · Trades ${s.components.trades} · Results ${s.components.results}`}
+                  >
+                    D{s.components.draft} W{s.components.waivers} T{s.components.trades} R{s.components.results}
+                  </span>
+                  <div className={styles.skillBarTrack}>
+                    <div className={styles.skillBarFill} style={{ width: `${s.score}%` }} />
+                  </div>
+                  <span className={styles.skillScore}>{s.score}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className={styles.grid}>
           {sortedTeams.map((team) => (
@@ -70,6 +129,53 @@ export function TeamsPage({ league }: TeamsPageProps) {
             />
           ))}
         </div>
+
+        {h2h.size > 1 && (
+          <section className={styles.matrixSection}>
+            <h2 className={styles.sectionTitle}>Head-to-Head Grid</h2>
+            <p className={styles.sectionHint}>Season records, row vs column.</p>
+            <div className={styles.matrixWrapper}>
+              <table className={styles.matrix}>
+                <thead>
+                  <tr>
+                    <th />
+                    {sortedTeams.map(t => (
+                      <th key={t.id} title={t.name}>
+                        {shortName(t.name)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedTeams.map(row => (
+                    <tr key={row.id}>
+                      <th title={row.name}>{shortName(row.name)}</th>
+                      {sortedTeams.map(col => {
+                        if (row.id === col.id) {
+                          return <td key={col.id} className={styles.matrixSelf}>—</td>;
+                        }
+                        const cell = h2h.get(row.id)?.get(col.id);
+                        if (!cell) return <td key={col.id} className={styles.matrixEmpty} />;
+                        const cls =
+                          cell.w > cell.l
+                            ? styles.matrixWin
+                            : cell.l > cell.w
+                              ? styles.matrixLoss
+                              : styles.matrixEven;
+                        return (
+                          <td key={col.id} className={cls} title={`${row.name} ${cell.w}-${cell.l}${cell.t ? `-${cell.t}` : ''} vs ${col.name}`}>
+                            {cell.w}-{cell.l}
+                            {cell.t > 0 ? `-${cell.t}` : ''}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

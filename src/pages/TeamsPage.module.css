@@ -42,3 +42,150 @@
   .title { font-size: 56px; }
   .grid { grid-template-columns: 1fr; }
 }
+
+.sectionTitle {
+  font-family: var(--font-headline);
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: var(--bone);
+  margin: 0 0 0.25rem;
+}
+
+.sectionHint {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 0.85rem;
+  color: var(--bone-dim);
+  margin: 0 0 0.75rem;
+}
+
+.skillSection {
+  margin-bottom: 2rem;
+}
+
+.skillList {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  background: var(--ink);
+}
+
+.skillRow {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.45rem 0.8rem;
+  border-bottom: 1px dashed var(--rule);
+  font-family: var(--font-mono);
+}
+
+.skillRank {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--bone-dim);
+  min-width: 1.6ch;
+}
+
+.skillName {
+  flex: 0 0 28%;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--bone);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.skillParts {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--bone-dim);
+  white-space: nowrap;
+}
+
+.skillBarTrack {
+  flex: 1;
+  height: 8px;
+  border: 1px solid var(--rule);
+  background: var(--ink-2);
+}
+
+.skillBarFill {
+  height: 100%;
+  background: var(--lime);
+}
+
+.skillScore {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--lime);
+  min-width: 3ch;
+  text-align: right;
+}
+
+.matrixSection {
+  margin-top: 2rem;
+}
+
+.matrixWrapper {
+  overflow-x: auto;
+  border: 2px solid var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  background: var(--ink);
+}
+
+.matrix {
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  width: 100%;
+}
+
+.matrix th {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  border-bottom: 1px dashed var(--rule);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.matrix td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px dashed var(--rule);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.matrixWin {
+  color: var(--lime);
+  font-weight: 700;
+}
+
+.matrixLoss {
+  color: var(--blood);
+}
+
+.matrixEven {
+  color: var(--bone-dim);
+}
+
+.matrixSelf,
+.matrixEmpty {
+  color: var(--rule);
+}
+
+@media (max-width: 640px) {
+  .skillParts {
+    display: none;
+  }
+}

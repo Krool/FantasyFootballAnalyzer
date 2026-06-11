@@ -290,3 +290,80 @@
   color: var(--blood);
   font-weight: 700;
 }
+
+.recordsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.recordCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.9rem 1rem;
+  border: 2px solid var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  background: var(--ink);
+}
+
+.recordLabel {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+
+.recordHolder {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.05rem;
+  color: var(--bone);
+}
+
+.recordDetail {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--bone-dim);
+}
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 2px solid var(--rule);
+}
+
+.timelineEntry {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: 0.35rem 0 0.35rem 0.9rem;
+  flex-wrap: wrap;
+}
+
+.timelineWeek {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--lime);
+  min-width: 3ch;
+}
+
+.timelineHeadline {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--bone);
+}
+
+.timelineDetail {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--bone-dim);
+}

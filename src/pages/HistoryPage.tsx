@@ -221,6 +221,35 @@ export function HistoryPage({ league }: HistoryPageProps) {
 
         {!isLoading && history.length > 0 && (
           <>
+            {/* Champions wall: a trophy per finished season, newest first */}
+            {history.some(s => s.championTeamId) && (
+              <section className={styles.section}>
+                <h2 className={styles.sectionTitle}>Champions</h2>
+                <div className={styles.championsWall}>
+                  {history
+                    .filter(s => s.championTeamId)
+                    .map(s => {
+                      const champ = s.teams.find(t => t.id === s.championTeamId);
+                      return (
+                        <div key={s.season} className={styles.championCard}>
+                          <span className={styles.championYear}>{s.season}</span>
+                          <span className={styles.championTrophy} role="img" aria-label="Champion">
+                            🏆
+                          </span>
+                          <span className={styles.championName}>{champ?.name ?? '?'}</span>
+                          {champ && (
+                            <span className={styles.championRecord}>
+                              {champ.wins}-{champ.losses}
+                              {champ.ties ? `-${champ.ties}` : ''}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </section>
+            )}
+
             {/* Head-to-Head Rivalries */}
             <section className={styles.section}>
               <h2 className={styles.sectionTitle}>Head-to-Head Rivalries</h2>
@@ -269,7 +298,12 @@ export function HistoryPage({ league }: HistoryPageProps) {
 
             {/* All-Time Leaderboard */}
             <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>All-Time Leaderboard</h2>
+              <h2 className={styles.sectionTitle}>
+                Leaderboard{' '}
+                <span className={styles.sectionQualifier}>
+                  last {history.length} season{history.length === 1 ? '' : 's'}
+                </span>
+              </h2>
               <div className={styles.tableWrapper}>
                 <table className="table">
                   <thead>
