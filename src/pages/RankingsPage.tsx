@@ -33,6 +33,11 @@ type ViewTab = 'snake' | 'auction';
 const SNAKE_ONLY_SORTS: SortKey[] = ['espnAdp', 'sleeperAdp'];
 const AUCTION_ONLY_SORTS: SortKey[] = ['fpValue', 'espnValue', 'yahooValue'];
 
+// Each column's natural first-click order: ranks and ADPs read best low to
+// high, deltas and dollars high to low. A second click on the same header
+// reverses it.
+const DESC_FIRST: SortKey[] = ['delta', 'fpValue', 'espnValue', 'yahooValue'];
+
 interface RankingsPageProps {
   league: League;
 }
@@ -44,6 +49,7 @@ export function RankingsPage({ league }: RankingsPageProps) {
   const [query, setQuery] = useState('');
   const [posFilter, setPosFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState<SortKey>('avg');
+  const [sortRev, setSortRev] = useState(false);
   const { playFilter, playSort } = useSounds();
   const { starred, avoided, cycle } = useTargets(POOL.season);
 
@@ -78,7 +84,12 @@ export function RankingsPage({ league }: RankingsPageProps) {
 
   const setSort = (key: SortKey) => {
     playSort();
-    setSortBy(key);
+    if (key === sortBy) {
+      setSortRev(r => !r);
+    } else {
+      setSortBy(key);
+      setSortRev(false);
+    }
   };
 
   // Switching views hides the columns the other view sorts by; a sort on a
@@ -87,7 +98,10 @@ export function RankingsPage({ league }: RankingsPageProps) {
     playFilter();
     setViewTab(tab);
     const hidden = tab === 'auction' ? SNAKE_ONLY_SORTS : AUCTION_ONLY_SORTS;
-    if (hidden.includes(sortBy)) setSortBy(tab === 'auction' ? 'fpValue' : 'avg');
+    if (hidden.includes(sortBy)) {
+      setSortBy(tab === 'auction' ? 'fpValue' : 'avg');
+      setSortRev(false);
+    }
   };
 
   const deferredQuery = useDeferredValue(query);
@@ -98,63 +112,58 @@ export function RankingsPage({ league }: RankingsPageProps) {
       .filter(p => posFilter === 'ALL' || p.pos === posFilter)
       .filter(p => q === '' || normalizeName(p.name).includes(q));
     const avg = (p: PoolPlayer) => avgById.get(p.id) ?? p.overallRank;
-    switch (sortBy) {
-      case 'avg':
-        filtered.sort((a, b) => avg(a) - avg(b));
-        break;
-      case 'delta':
-        // Biggest "falls on your platform" discounts first; players the
-        // platform doesn't rank sink to the bottom.
-        filtered.sort(
-          (a, b) =>
-            (platformDelta(b, source, scoring) ?? -Infinity) -
-              (platformDelta(a, source, scoring) ?? -Infinity) ||
-            a.overallRank - b.overallRank,
-        );
-        break;
-      case 'rank':
-        filtered.sort((a, b) => a.overallRank - b.overallRank);
-        break;
-      case 'espnAdp':
-        filtered.sort((a, b) => (a.espnAdp ?? 9999) - (b.espnAdp ?? 9999));
-        break;
-      case 'sleeperAdp':
-        filtered.sort(
-          (a, b) => (sleeperAdpFor(a, scoring) ?? 9999) - (sleeperAdpFor(b, scoring) ?? 9999),
-        );
-        break;
-      case 'fpValue':
-        filtered.sort(
-          (a, b) =>
-            (scaledValues.get(b.id) ?? 1) - (scaledValues.get(a.id) ?? 1) ||
-            a.overallRank - b.overallRank,
-        );
-        break;
-      case 'espnValue':
-        filtered.sort((a, b) => (b.espnValue ?? 0) - (a.espnValue ?? 0) || a.overallRank - b.overallRank);
-        break;
-      case 'yahooValue':
-        filtered.sort(
-          (a, b) =>
-            (yahoo.costs?.get(b.id) ?? 0) - (yahoo.costs?.get(a.id) ?? 0) ||
-            a.overallRank - b.overallRank,
-        );
-        break;
-    }
+    const stat = (p: PoolPlayer): number | undefined => {
+      switch (sortBy) {
+        case 'avg':
+          return avg(p);
+        case 'delta':
+          return platformDelta(p, source, scoring);
+        case 'rank':
+          return p.overallRank;
+        case 'espnAdp':
+          return p.espnAdp;
+        case 'sleeperAdp':
+          return sleeperAdpFor(p, scoring);
+        case 'fpValue':
+          return scaledValues.get(p.id) ?? 1;
+        case 'espnValue':
+          return p.espnValue;
+        case 'yahooValue':
+          return yahoo.costs?.get(p.id);
+      }
+    };
+    const dir = (DESC_FIRST.includes(sortBy) ? -1 : 1) * (sortRev ? -1 : 1);
+    // Players missing the sorted stat sink to the bottom in either
+    // direction; ties break by FantasyPros rank.
+    filtered.sort((a, b) => {
+      const sa = stat(a);
+      const sb = stat(b);
+      if (sa === undefined || sb === undefined) {
+        if (sa === sb) return a.overallRank - b.overallRank;
+        return sa === undefined ? 1 : -1;
+      }
+      return dir * (sa - sb) || a.overallRank - b.overallRank;
+    });
     return filtered;
-  }, [deferredQuery, posFilter, sortBy, avgById, scaledValues, source, scoring, yahoo.costs]);
+  }, [deferredQuery, posFilter, sortBy, sortRev, avgById, scaledValues, source, scoring, yahoo.costs]);
 
   const visible = rows.slice(0, MAX_ROWS);
 
-  const sortableTh = (key: SortKey, label: string, title: string) => (
-    <th
-      className={`${styles.num} ${styles.sortable} ${sortBy === key ? styles.sorted : ''}`}
-      onClick={() => setSort(key)}
-      title={title}
-    >
-      {label}
-    </th>
-  );
+  const sortableTh = (key: SortKey, label: string, title: string) => {
+    const active = sortBy === key;
+    const desc = DESC_FIRST.includes(key) !== sortRev;
+    return (
+      <th
+        className={`${styles.num} ${styles.sortable} ${active ? styles.sorted : ''}`}
+        onClick={() => setSort(key)}
+        title={`${title}. ${active ? 'Click to reverse the order.' : 'Click to sort.'}`}
+        aria-sort={active ? (desc ? 'descending' : 'ascending') : undefined}
+      >
+        {label}
+        {active && <span className={styles.sortArrow}>{desc ? '▼' : '▲'}</span>}
+      </th>
+    );
+  };
 
   const updated = new Date(POOL.generatedAt);
 
@@ -252,11 +261,23 @@ export function RankingsPage({ league }: RankingsPageProps) {
                 )}
                 {sortableTh('delta', `Δ ${source.label}`, source.describe)}
                 {sortableTh('rank', 'FP RK', 'FantasyPros expert consensus rank')}
-                <th className={styles.num}>Tier</th>
-                <th>Player</th>
-                <th>Pos</th>
-                <th>Team</th>
-                <th className={styles.num}>Bye</th>
+                <th
+                  className={styles.num}
+                  title="FantasyPros tier: players in the same tier are seen as close in value, so the breaks between tiers matter more than rank order within one"
+                >
+                  Tier
+                </th>
+                <th title="Player name. R marks rookies; an injury tag shows current status">
+                  Player
+                </th>
+                <th title="Position, with the player's rank at that position">Pos</th>
+                <th title="NFL team">Team</th>
+                <th
+                  className={styles.num}
+                  title="Bye week: the week this player's team does not play"
+                >
+                  Bye
+                </th>
                 {!auctionView && (
                   <>
                     {sortableTh('espnAdp', 'ESPN ADP', 'ESPN average draft position')}
