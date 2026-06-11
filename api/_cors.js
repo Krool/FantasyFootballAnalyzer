@@ -16,12 +16,19 @@ function allowedOrigin(req) {
   return origin && (origin === PROD_ORIGIN || DEV_ORIGINS.has(origin)) ? origin : PROD_ORIGIN;
 }
 
-// Whether a frontend base URL is one of ours (used to validate OAuth
-// return destinations - never redirect to an arbitrary URL).
+// Whether a frontend base URL is a safe OAuth token-redirect destination.
+// Stricter than the CORS allowlist on purpose: the callback redirects
+// freshly minted access/refresh tokens to this URL, and the `state` it comes
+// from round-trips through Yahoo (attacker-constructible). So localhost is
+// only honored when ALLOW_DEV_OAUTH is explicitly set on the deployment;
+// the production API defaults to redirecting tokens to PROD_ORIGIN only.
+// (CORS reflection of localhost stays on for data endpoints: those use
+// header-based auth a localhost page can't read, so reflecting them is safe.)
 export function isAllowedFrontend(url) {
   try {
     const origin = new URL(url).origin;
-    return origin === PROD_ORIGIN || DEV_ORIGINS.has(origin);
+    if (origin === PROD_ORIGIN) return true;
+    return process.env.ALLOW_DEV_OAUTH === '1' && DEV_ORIGINS.has(origin);
   } catch {
     return false;
   }

@@ -30,6 +30,19 @@ import type { LeagueCredentials, SeasonOption } from '@/types';
 import { logger } from '@/utils/logger';
 import { loadSeasons } from '@/utils/seasonsCache';
 
+const PAGE_TITLES: Record<string, string> = {
+  '/': 'Connect Your League',
+  '/draft': 'Draft Analysis',
+  '/draft-room': 'Draft Room',
+  '/rankings': 'Rankings',
+  '/trades': 'Trades',
+  '/waivers': 'Waivers',
+  '/teams': 'Teams',
+  '/history': 'History',
+  '/awards': 'Awards',
+  '/players': 'Player Journey',
+};
+
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,6 +61,14 @@ function App() {
   // Yahoo login status for the header control. The OAuth redirect is a full
   // page load, so a fresh mount always reads the latest token state.
   const [yahooConnected, setYahooConnected] = useState(isAuthenticated);
+
+  // Per-page document titles so tabs and browser history are tellable apart.
+  useEffect(() => {
+    const page = PAGE_TITLES[location.pathname];
+    document.title = page
+      ? `${page} · Fantasy Football Analyzer`
+      : 'Fantasy Football Analyzer';
+  }, [location.pathname]);
 
   // Play sounds on league load success/error
   useEffect(() => {
@@ -80,6 +101,7 @@ function App() {
       if (!stateParam || !validateOAuthState(stateParam)) {
         logger.error('Yahoo OAuth CSRF validation failed');
         clearOAuthState();
+        takeOAuthReturn(); // discard the stash so a later login can't replay it
         navigate('/', { replace: true });
         return;
       }

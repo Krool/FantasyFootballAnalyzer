@@ -9,9 +9,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { refresh_token } = req.body;
+  // req.body is undefined or a raw string when the Content-Type isn't JSON;
+  // guard so a bad request gets a 400 instead of a destructure TypeError 500.
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const { refresh_token } = body;
 
-  if (!refresh_token) {
+  if (!refresh_token || typeof refresh_token !== 'string') {
     return res.status(400).json({ error: 'Missing refresh_token' });
   }
 

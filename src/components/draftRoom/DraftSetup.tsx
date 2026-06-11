@@ -74,6 +74,16 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
 
   const savedAt = resumable ? new Date(resumable.savedAt) : null;
 
+  // Mirrors the reducer's START guards so the button can explain itself
+  // instead of silently doing nothing.
+  const startBlocked =
+    config.teams.length < 2 ? 'Add at least two teams.'
+    : !config.myTeamId ? 'Mark which team is yours.'
+    : config.rounds < 1 ? 'Add at least one roster spot.'
+    : config.draftType === 'auction' && config.budget < config.rounds
+      ? `Budget must cover $1 per roster spot (at least $${config.rounds}).`
+    : null;
+
   return (
     <div className={styles.setup}>
       {resumable && (
@@ -296,10 +306,11 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
           type="button"
           className={styles.btnPrimary}
           onClick={start}
-          disabled={config.teams.length < 2 || !config.myTeamId}
+          disabled={startBlocked !== null}
         >
           Start {config.mode === 'mock' ? 'Mock ' : ''}Draft
         </button>
+        {startBlocked && <p className={styles.hint}>{startBlocked}</p>}
       </div>
     </div>
   );

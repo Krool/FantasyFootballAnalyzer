@@ -41,7 +41,10 @@ migrateLegacyTokens();
 // Yahoo's universe and gets its own numeric key. Add the new key here
 // when a season ends — until then we lean on the 'nfl' alias for the
 // current year. Reference: https://developer.yahoo.com/fantasysports/
-const NFL_GAME_KEYS: Record<number, string> = {
+// Exported for tests: yahoo.test.ts asserts last season's key exists so the
+// "just-completed season missing from the year dropdown" bug can't recur.
+export const NFL_GAME_KEYS: Record<number, string> = {
+  2025: '461',
   2024: '449',
   2023: '423',
   2022: '414',
@@ -321,7 +324,9 @@ export async function getUserLeagues(season: number = new Date().getFullYear()):
 // game key for. Years with multiple name matches are dropped — we can't
 // disambiguate without forcing the user back through the picker.
 export async function getAvailableSeasons(
-  currentLeagueKey: string,
+  // Kept for signature parity with the api/index dispatcher (ESPN/Sleeper
+  // take the league id here); Yahoo matches by name, so the key is unused.
+  _currentLeagueKey: string,
   currentLeagueName: string,
 ): Promise<SeasonOption[]> {
   const currentYear = new Date().getFullYear();
@@ -337,8 +342,7 @@ export async function getAvailableSeasons(
       // Past years are necessarily final. Current year we leave as 'live'
       // until the user actually loads it (cheap heuristic; pages re-derive
       // from the real response on load).
-      const status: LeagueStatus = year < currentYear ? 'final'
-        : match.id === currentLeagueKey ? 'live' : 'live';
+      const status: LeagueStatus = year < currentYear ? 'final' : 'live';
       return { year, leagueId: match.id, status, leagueName: match.name } as SeasonOption;
     } catch (err) {
       logger.debug(`[Yahoo] getAvailableSeasons: year ${year} failed:`, err);

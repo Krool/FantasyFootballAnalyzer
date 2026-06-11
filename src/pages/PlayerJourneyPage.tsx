@@ -354,9 +354,15 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
                   {selectedPlayer.draftPick && (
                     <div className={styles.statCard}>
                       <span className={styles.statValue}>
-                        {selectedPlayer.draftPick.round}.{String(selectedPlayer.draftPick.pickNumber % 12 || 12).padStart(2, '0')}
+                        {selectedPlayer.draftPick.auctionValue
+                          ? `$${selectedPlayer.draftPick.auctionValue}`
+                          : `${selectedPlayer.draftPick.round}.${String(
+                              ((selectedPlayer.draftPick.pickNumber - 1) % (league.totalTeams || 12)) + 1,
+                            ).padStart(2, '0')}`}
                       </span>
-                      <span className={styles.statLabel}>Draft Pick</span>
+                      <span className={styles.statLabel}>
+                        {selectedPlayer.draftPick.auctionValue ? 'Auction Price' : 'Draft Pick'}
+                      </span>
                     </div>
                   )}
                   <div className={styles.statCard}>

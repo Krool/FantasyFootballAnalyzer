@@ -157,10 +157,16 @@ export function deriveDraftState(
         : orderedIds[pickCount % orderedIds.length];
   }
 
+  // Keepers are a snake-only mechanic: the auto-pick effect and the
+  // validateEvent exception both key on snake_pick. In an auction draft,
+  // reserving them would only make those players permanently unbuyable
+  // (e.g. left over after switching the draft type in setup), so ignore them.
   const reservedPlayerIds = new Set(
-    (config.keepers ?? [])
-      .filter(k => !draftedPlayerIds.has(k.playerId))
-      .map(k => k.playerId),
+    config.draftType === 'snake'
+      ? (config.keepers ?? [])
+          .filter(k => !draftedPlayerIds.has(k.playerId))
+          .map(k => k.playerId)
+      : [],
   );
 
   const available = pool

@@ -61,7 +61,11 @@ export function PickLog({ room }: PickLogProps) {
           nominator: isSale ? teamName.get(event.nominatedById) ?? '?' : '',
           team: teamName.get(isSale ? event.wonById : event.teamId) ?? '?',
           price: isSale ? event.price : null,
-          expected: player && isSale ? scaledValues.get(player.id) ?? 1 : null,
+          // Prefer the value stamped at sale time (inflation-adjusted, what
+          // the logger showed); older events fall back to the sheet value.
+          expected: isSale
+            ? event.expectedValue ?? (player ? scaledValues.get(player.id) ?? 1 : null)
+            : null,
         };
       }),
     [events, playerById, teamName, scaledValues],

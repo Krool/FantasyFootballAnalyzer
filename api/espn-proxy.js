@@ -44,14 +44,23 @@ export default async function handler(req, res) {
   if (extend && !ALLOWED_EXTEND.has(extend)) {
     return res.status(400).json({ error: 'Invalid extend parameter' });
   }
+  if (scoringPeriodId && !/^\d+$/.test(scoringPeriodId)) {
+    return res.status(400).json({ error: 'Invalid scoringPeriodId parameter' });
+  }
 
   // Get cookies from custom headers (browsers can't send Cookie header cross-origin)
   // Values are URL-encoded to preserve special characters like + / =
   const espnS2Raw = req.headers['x-espn-s2'];
   const swidRaw = req.headers['x-espn-swid'];
   const fantasyFilter = req.headers['x-fantasy-filter'];
-  const espnS2 = espnS2Raw ? decodeURIComponent(espnS2Raw) : null;
-  const swid = swidRaw ? decodeURIComponent(swidRaw) : null;
+  let espnS2 = null;
+  let swid = null;
+  try {
+    espnS2 = espnS2Raw ? decodeURIComponent(espnS2Raw) : null;
+    swid = swidRaw ? decodeURIComponent(swidRaw) : null;
+  } catch {
+    return res.status(400).json({ error: 'Malformed cookie header encoding' });
+  }
 
   try {
     // Build ESPN URL

@@ -38,6 +38,9 @@ export function AuctionLogger({ room, selected, onLogged }: AuctionLoggerProps) 
       nominatedById: effectiveNominator,
       wonById: winnerId,
       price: Number(price),
+      // Stamp the adjusted value we displayed so the pick log agrees with
+      // what the user saw at sale time.
+      expectedValue: expected ?? undefined,
     });
     setError(result);
     if (result) {

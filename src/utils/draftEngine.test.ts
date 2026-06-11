@@ -192,6 +192,18 @@ describe('keepers', () => {
     expect(state.draftedPlayerIds.has('RB1')).toBe(true);
     expect(state.teams.get('B')!.picks).toHaveLength(1);
   });
+
+  it('ignores leftover keepers in an auction draft (they stay buyable)', () => {
+    // Keepers are snake-only; switching the setup to auction must not leave
+    // the player reserved and permanently unsellable.
+    const auctionConfig = makeConfig({
+      draftType: 'auction',
+      keepers: [{ teamId: 'B', playerId: 'RB1', costRound: 2 }],
+    });
+    const state = deriveDraftState(auctionConfig, pool, []);
+    expect(state.reservedPlayerIds.size).toBe(0);
+    expect(state.available.some(p => p.id === 'RB1')).toBe(true);
+  });
 });
 
 describe('validateEvent', () => {

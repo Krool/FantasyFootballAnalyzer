@@ -20,6 +20,9 @@ export interface UseDraftSimReturn {
   nominate: (player: PoolPlayer) => void;
   // Run the bidding for the pending nomination. 0 = pass.
   resolve: (myMaxBid: number) => void;
+  // One-shot feedback from the last resolution (e.g. "no eligible buyers"),
+  // cleared when the next nomination goes up.
+  notice: string | null;
 }
 
 // Drives mock drafts: auto-picks for AI teams in snake, auto-nominates and
@@ -27,7 +30,13 @@ export interface UseDraftSimReturn {
 export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
   const { config, derived, scaledValues, inflation, logEvent, phase } = room;
   const [pending, setPending] = useState<PendingNomination | null>(null);
-  const rngRef = useRef<() => number>(mulberry32(Date.now() & 0xffffffff));
+  const [notice, setNotice] = useState<string | null>(null);
+  // Lazy init so the RNG isn't rebuilt (and discarded) on every render.
+  const rngRef = useRef<(() => number) | null>(null);
+  if (rngRef.current === null) {
+    rngRef.current = mulberry32(Date.now() & 0xffffffff);
+  }
+  const rng = rngRef.current;
 
   const active = phase === 'drafting' && config.mode === 'mock';
   const isMyTurn = derived.onTheClockId === config.myTeamId;
@@ -48,7 +57,7 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
       if (!team) return;
       const round = roundForPick(derived.pickCount, config.teams.length);
       const totalRounds = config.rounds;
-      const player = simSnakePick(derived.available, scaledValues, team, round, totalRounds, rngRef.current);
+      const player = simSnakePick(derived.available, scaledValues, team, round, totalRounds, rng);
       if (player) logEvent({ kind: 'snake_pick', playerId: player.id, teamId });
     }, TICK_MS);
     return () => clearTimeout(timer);
@@ -67,9 +76,12 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
         scaledValues,
         nominator,
         [...derived.teams.values()],
-        rngRef.current,
+        rng,
       );
-      if (player) setPending({ nominatorId, player });
+      if (player) {
+        setNotice(null);
+        setPending({ nominatorId, player });
+      }
     }, TICK_MS);
     return () => clearTimeout(timer);
   }, [active, config.draftType, pending, isMyTurn, derived, scaledValues]);
@@ -77,6 +89,7 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
   const nominate = useCallback(
     (player: PoolPlayer) => {
       if (!active || pending) return;
+      setNotice(null);
       setPending({ nominatorId: config.myTeamId, player });
     },
     [active, pending, config.myTeamId],
@@ -95,7 +108,7 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
         derived.available,
         config.myTeamId,
         myMaxBid,
-        rngRef.current,
+        rng,
       );
       if (result.winnerId) {
         logEvent({
@@ -104,11 +117,17 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
           nominatedById: pending.nominatorId,
           wonById: result.winnerId,
           price: result.price,
+          expectedValue: expected,
         });
+        setNotice(null);
+      } else {
+        // Nobody could legally roster him; without this the nomination just
+        // vanishes and the user is left wondering what happened.
+        setNotice(`No eligible buyers for ${pending.player.name}. He stays on the board.`);
       }
       setPending(null);
     },
-    [pending, scaledValues, inflation.rate, derived.teams, derived.available, config.myTeamId, logEvent],
+    [pending, scaledValues, inflation.rate, derived.teams, derived.available, config.myTeamId, logEvent, rng],
   );
 
   return {
@@ -116,5 +135,6 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
     awaitingMyNomination: active && config.draftType === 'auction' && !pending && isMyTurn,
     nominate,
     resolve,
+    notice,
   };
 }

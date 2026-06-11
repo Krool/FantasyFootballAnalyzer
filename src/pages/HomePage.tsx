@@ -11,29 +11,35 @@ interface HomePageProps {
   progress: LoadingProgress | null;
 }
 
-// Secret credentials for the crocodile button
-const SECRET_SLEEPER: LeagueCredentials = {
-  platform: 'sleeper',
-  leagueId: '1240782642371104768',
-};
+// Test-league shortcuts for the crocodile button. Dev builds only: the
+// import.meta.env.DEV guards below are statically false in production, so
+// these credentials are dead-code-eliminated from the deployed bundle.
+const SECRET_SLEEPER: LeagueCredentials | null = import.meta.env.DEV
+  ? {
+      platform: 'sleeper',
+      leagueId: '1240782642371104768',
+    }
+  : null;
 
-const SECRET_ESPN: LeagueCredentials = {
-  platform: 'espn',
-  leagueId: '347749457',
-  season: 2025,
-  // Store decoded - the API layer will encode for headers
-  espnS2: 'AECcgwVOUgKOpAFwDhM8LMDZ+6kT13GrqWmxCIE14bNXH7MbiuByz4DdB7mTAJZ7Nmh5NRYPV7/zrQqIg6UCJSQyXOvFjksg4AFx1rgpiI7gbTS8hCudtxF54SbZys7fKrfYYY/OfXxEeTSgRVdw8fx0Q4gS8kiUV0/bLbnTmbOxDom+/qVuwaExb8lWZrXyQ7H3luMiYk+w+zMYKq07zm1J4gBTkuwyQp3hFt/d0kN4HAdpCByIzPTP988NEIJz7eZtk5UlnAyF1tkDvTaGT5HXex0OO0hUlPsF5fxNjzHmDA==',
-  swid: '{419BAD61-FE0D-4590-827B-BAE6A00E5289}',
-};
+const SECRET_ESPN: LeagueCredentials | null = import.meta.env.DEV
+  ? {
+      platform: 'espn',
+      leagueId: '347749457',
+      season: 2025,
+      // Store decoded - the API layer will encode for headers
+      espnS2: 'AECcgwVOUgKOpAFwDhM8LMDZ+6kT13GrqWmxCIE14bNXH7MbiuByz4DdB7mTAJZ7Nmh5NRYPV7/zrQqIg6UCJSQyXOvFjksg4AFx1rgpiI7gbTS8hCudtxF54SbZys7fKrfYYY/OfXxEeTSgRVdw8fx0Q4gS8kiUV0/bLbnTmbOxDom+/qVuwaExb8lWZrXyQ7H3luMiYk+w+zMYKq07zm1J4gBTkuwyQp3hFt/d0kN4HAdpCByIzPTP988NEIJz7eZtk5UlnAyF1tkDvTaGT5HXex0OO0hUlPsF5fxNjzHmDA==',
+      swid: '{419BAD61-FE0D-4590-827B-BAE6A00E5289}',
+    }
+  : null;
 
 export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>('sleeper');
 
   const handleSecretClick = () => {
     // Load the secret league based on which platform is currently selected
-    if (selectedPlatform === 'espn') {
+    if (selectedPlatform === 'espn' && SECRET_ESPN) {
       onLoadLeague(SECRET_ESPN);
-    } else {
+    } else if (SECRET_SLEEPER) {
       // Default to Sleeper for sleeper or yahoo
       onLoadLeague(SECRET_SLEEPER);
     }
@@ -236,15 +242,17 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
         </div>
       </div>
 
-      {/* Secret button */}
-      <button
-        className={styles.secretButton}
-        onClick={handleSecretClick}
-        title="🐊"
-        aria-label="Secret league loader"
-      >
-        🐊
-      </button>
+      {/* Secret button. Dev builds only so the test credentials never ship. */}
+      {import.meta.env.DEV && (
+        <button
+          className={styles.secretButton}
+          onClick={handleSecretClick}
+          title="🐊"
+          aria-label="Secret league loader"
+        >
+          🐊
+        </button>
+      )}
     </div>
   );
 }

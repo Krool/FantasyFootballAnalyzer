@@ -693,14 +693,16 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       ) || [];
       return teamTrades.length === 0;
     });
-    if (tradeAvoiders.length > 0 && tradeAvoiders.length < league.teams.length) {
+    // Only award when exactly one team sat out: picking tradeAvoiders[0]
+    // among several would crown an arbitrary winner by array order.
+    if (tradeAvoiders.length === 1) {
       awards.push({
         id: 'trade_avoider',
         name: 'Lone Wolf',
         category: 'trades',
         winner: { teamId: tradeAvoiders[0].id, teamName: tradeAvoiders[0].name, ownerName: tradeAvoiders[0].ownerName },
         value: '0',
-        description: 'Made zero trades',
+        description: 'The only team that made zero trades',
         icon: '🐺',
       });
     }
@@ -754,17 +756,18 @@ function getMostPointsAgainst(teams: Team[]): Team | undefined {
 }
 
 function getLeastPointsAgainst(teams: Team[]): Team | undefined {
+  // ?? (not ||): a legitimate 0 PA must not re-enter as Infinity and lose.
   return teams.reduce((least, curr) => {
-    const currPA = curr.pointsAgainst || 0;
-    const leastPA = least?.pointsAgainst || Infinity;
+    const currPA = curr.pointsAgainst ?? 0;
+    const leastPA = least?.pointsAgainst ?? Infinity;
     return !least || currPA < leastPA ? curr : least;
   }, undefined as Team | undefined);
 }
 
 function getLowestScorer(teams: Team[]): Team | undefined {
   return teams.reduce((lowest, curr) => {
-    const currPF = curr.pointsFor || Infinity;
-    const lowestPF = lowest?.pointsFor || Infinity;
+    const currPF = curr.pointsFor ?? Infinity;
+    const lowestPF = lowest?.pointsFor ?? Infinity;
     return !lowest || currPF < lowestPF ? curr : lowest;
   }, undefined as Team | undefined);
 }

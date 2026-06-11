@@ -17,7 +17,7 @@ import {
   saveDraftRoom,
   type DraftRoomSession,
 } from '@/utils/draftRoomCache';
-import { computeInflation, type InflationState } from '@/utils/inflation';
+import { computeInflation, NEUTRAL_INFLATION, type InflationState } from '@/utils/inflation';
 import { scaleValues, type ScoringType } from '@/utils/valueScaling';
 
 const POOL = poolJson as DraftPoolFile;
@@ -95,9 +95,17 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
       );
       return { ...state, config: { ...state.config, teams } };
     }
-    case 'START':
+    case 'START': {
       if (state.phase !== 'setup' || state.config.teams.length < 2) return state;
+      // A zero-round config would enter 'drafting' with totalPicks = 0 and
+      // reject every event ("already complete") with no way out but Reset.
+      // An auction budget under $1/slot can never fill a roster legally.
+      if (state.config.rounds < 1) return state;
+      if (state.config.draftType === 'auction' && state.config.budget < state.config.rounds) {
+        return state;
+      }
       return { ...state, phase: 'drafting', events: [] };
+    }
     case 'LOG_EVENT': {
       if (state.phase !== 'drafting') return state;
       const events = [...state.events, action.event];
@@ -183,9 +191,16 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
     [state.config.budget, state.config.teams.length, state.config.rounds, league.scoringType],
   );
 
+  // Inflation only means something when money is being spent. For snake
+  // drafts `spent` stays 0 while the available pool shrinks, so the raw
+  // computation balloons into a garbage rate; return neutral instead so a
+  // future consumer can't trust a bogus number.
   const inflation = useMemo(
-    () => computeInflation([...derived.teams.values()], derived.available, scaledValues),
-    [derived, scaledValues],
+    () =>
+      state.config.draftType === 'auction'
+        ? computeInflation([...derived.teams.values()], derived.available, scaledValues)
+        : NEUTRAL_INFLATION,
+    [state.config.draftType, derived, scaledValues],
   );
 
   // Persist any in-progress or finished draft; setup-phase tweaking is not

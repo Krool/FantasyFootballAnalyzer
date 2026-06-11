@@ -62,8 +62,13 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
         e.preventDefault();
         undo();
       }
-      // D drafts the selected player to whoever is on the clock.
-      if ((e.key === 'd' || e.key === 'D') && !typing && selected && canQuickDraft) {
+      // D drafts the selected player to whoever is on the clock. Bare key
+      // only: Ctrl+D is the browser's bookmark shortcut.
+      if (
+        (e.key === 'd' || e.key === 'D') &&
+        !e.ctrlKey && !e.metaKey && !e.altKey &&
+        !typing && selected && canQuickDraft
+      ) {
         e.preventDefault();
         quickDraft(selected);
       }

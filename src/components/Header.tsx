@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { League } from '@/types';
 import { exportLeagueReport } from '@/utils/exportPdf';
 import { useSounds } from '@/hooks/useSounds';
+import { logger } from '@/utils/logger';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -47,14 +48,19 @@ export function Header({
 }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { playClick, playExport, playPageTransition, isMuted, toggleMute } = useSounds();
+  const { playClick, playExport, playPageTransition, playError, isMuted, toggleMute } = useSounds();
   // Draft prep routes share a focused nav (Draft + Rankings only).
   const isDraftPrep = location.pathname === '/draft-room' || location.pathname === '/rankings';
 
   const handleExportPdf = () => {
     if (league) {
       playExport();
-      exportLeagueReport(league);
+      // The exporter dynamic-imports jspdf; a failed chunk load (offline, or
+      // a stale deploy hash) would otherwise be a silent unhandled rejection.
+      exportLeagueReport(league).catch(err => {
+        logger.error('PDF export failed:', err);
+        playError();
+      });
     }
   };
 

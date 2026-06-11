@@ -57,6 +57,7 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
         >
           Nominate
         </button>
+        {sim.notice && <div className={styles.error}>{sim.notice}</div>}
       </div>
     );
   }
@@ -72,6 +73,7 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
           <span className={styles.clockKicker}>Nominating</span>
           <span className={styles.clockTeam}>{upNext ?? '...'}</span>
         </div>
+        {sim.notice && <div className={styles.error}>{sim.notice}</div>}
       </div>
     );
   }

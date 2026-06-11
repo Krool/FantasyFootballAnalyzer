@@ -266,7 +266,10 @@ export function HistoryPage({ league }: HistoryPageProps) {
                   <tbody>
                     {allTimeStats.map((team, index) => {
                       const totalGames = team.totalWins + team.totalLosses + team.totalTies;
-                      const winPct = totalGames > 0 ? (team.totalWins / totalGames * 100).toFixed(1) : '0.0';
+                      // Ties count as half a win, the standard convention.
+                      const winPct = totalGames > 0
+                        ? ((team.totalWins + team.totalTies * 0.5) / totalGames * 100).toFixed(1)
+                        : '0.0';
                       return (
                         <tr key={team.key} className={index < 3 ? styles.topThree : ''}>
                           <td className="font-mono">{index + 1}</td>

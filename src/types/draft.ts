@@ -48,6 +48,10 @@ export type DraftEvent =
       nominatedById: string;
       wonById: string;
       price: number;
+      // Inflation-adjusted value shown when the sale was logged, so the pick
+      // log's delta matches what the logger displayed. Older saved sessions
+      // lack it; consumers fall back to the raw sheet value.
+      expectedValue?: number;
     }
   | {
       kind: 'snake_pick';
