@@ -24,11 +24,22 @@ export function HistoryPage({ league }: HistoryPageProps) {
   // Check if platform supports history
   const supportsHistory = league.platform === 'sleeper' || league.platform === 'espn';
 
+  // A team picked for one league means nothing in another (year switch via
+  // the header reuses this mounted page).
+  useEffect(() => {
+    setSelectedTeamId('');
+    setRivalries([]);
+  }, [league.id]);
+
   useEffect(() => {
     if (!supportsHistory) {
       setError('Historical data is only available for Sleeper and ESPN leagues.');
       return;
     }
+
+    // Cancellation flag: switching seasons fires a new load, and the older
+    // (slower) response must not win and show the wrong season's history.
+    let cancelled = false;
 
     const loadHistory = async () => {
       setIsLoading(true);
@@ -45,21 +56,26 @@ export function HistoryPage({ league }: HistoryPageProps) {
           data = [];
         }
 
-        setHistory(data);
+        if (!cancelled) setHistory(data);
       } catch (err) {
-        setError('Failed to load historical data.');
+        if (!cancelled) setError('Failed to load historical data.');
         logger.error(err);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     loadHistory();
+    return () => {
+      cancelled = true;
+    };
   }, [league, supportsHistory]);
 
   // Load rivalries when a team is selected
   useEffect(() => {
     if (!selectedTeamId || !supportsHistory) return;
+
+    let cancelled = false;
 
     const loadRivalries = async () => {
       setRivalriesLoading(true);
@@ -74,6 +90,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
         } else {
           result = { records: new Map(), teamName: '' };
         }
+        if (cancelled) return;
 
         // Convert Map to array and sort by total games played
         const rivalryArray = Array.from(result.records.values()).sort((a, b) => {
@@ -84,13 +101,16 @@ export function HistoryPage({ league }: HistoryPageProps) {
         setRivalries(rivalryArray);
       } catch (err) {
         logger.error('Failed to load rivalries:', err);
-        setRivalries([]);
+        if (!cancelled) setRivalries([]);
       } finally {
-        setRivalriesLoading(false);
+        if (!cancelled) setRivalriesLoading(false);
       }
     };
 
     loadRivalries();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedTeamId, league.id, league.platform, supportsHistory]);
 
   // Calculate all-time standings. Aggregate by stable owner id when the

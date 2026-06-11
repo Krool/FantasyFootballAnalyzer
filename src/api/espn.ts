@@ -1296,24 +1296,30 @@ export async function loadLeague(
   const hasSuperflex = (posLimits[7] || 0) > 0;
   logger.debug('[ESPN] Roster slots:', rosterSlots, hasSuperflex ? '(superflex)' : '');
 
-  // Build weekly matchups for luck analysis from team records
-  // ESPN provides schedule data in the mMatchup view
+  // Build weekly matchups for luck analysis from team records.
+  // ESPN provides schedule data in the mMatchup view — including FUTURE
+  // matchups (winner UNDECIDED) and playoff games. Both must be excluded:
+  // a future game read as 0-0 hands every team a phantom all-play tie and
+  // +0.5 expected wins per week, and playoff games would bias luck against
+  // playoff teams (actualWins counts the regular season only).
   const weeklyMatchups: WeeklyMatchup[] = [];
   const schedule = (leagueData as any).schedule;
   if (schedule && Array.isArray(schedule)) {
     schedule.forEach((matchup: any) => {
-      if (matchup.home && matchup.away && matchup.matchupPeriodId) {
-        weeklyMatchups.push({
-          week: matchup.matchupPeriodId,
-          team1Id: String(matchup.home.teamId),
-          team1Points: matchup.home.totalPoints || 0,
-          team2Id: String(matchup.away.teamId),
-          team2Points: matchup.away.totalPoints || 0,
-        });
-      }
+      if (!matchup.home || !matchup.away || !matchup.matchupPeriodId) return;
+      const played = matchup.winner && matchup.winner !== 'UNDECIDED';
+      const regularSeason = !matchup.playoffTierType || matchup.playoffTierType === 'NONE';
+      if (!played || !regularSeason) return;
+      weeklyMatchups.push({
+        week: matchup.matchupPeriodId,
+        team1Id: String(matchup.home.teamId),
+        team1Points: matchup.home.totalPoints || 0,
+        team2Id: String(matchup.away.teamId),
+        team2Points: matchup.away.totalPoints || 0,
+      });
     });
   }
-  logger.debug('[ESPN] Weekly matchups collected:', weeklyMatchups.length);
+  logger.debug('[ESPN] Weekly matchups collected (played regular season):', weeklyMatchups.length);
 
   // Derive lifecycle status. ESPN sets rankCalculatedFinal once playoffs end
   // (1 = champion), and currentMatchupPeriod is 0 before week 1.

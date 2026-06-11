@@ -467,10 +467,16 @@ export async function loadLeague(leagueId: string): Promise<League> {
     teamNameMap.set(String(roster.roster_id), teamName);
   });
 
-  // Build weekly matchups for luck analysis
+  // Build weekly matchups for luck analysis. Regular season only: luck
+  // metrics compare against regular-season records, so playoff weeks would
+  // bias scores against playoff teams. Unplayed weeks (both sides zero)
+  // are skipped too — a phantom 0-0 reads as an all-play tie for everyone.
+  const playoffStart = (leagueData.settings as { playoff_week_start?: number })
+    ?.playoff_week_start || 15;
   const weeklyMatchups: WeeklyMatchup[] = [];
   allMatchups.forEach((weekMatchups, weekIndex) => {
     const week = weekIndex + 1;
+    if (week >= playoffStart) return;
     // Group by matchup_id to pair opponents
     const matchupPairs = new Map<number, SleeperAPI.Matchup[]>();
     weekMatchups.forEach(matchup => {
@@ -484,12 +490,15 @@ export async function loadLeague(leagueId: string): Promise<League> {
     // Convert pairs to WeeklyMatchup format
     matchupPairs.forEach(pair => {
       if (pair.length === 2) {
+        const p1 = pair[0].points || 0;
+        const p2 = pair[1].points || 0;
+        if (p1 === 0 && p2 === 0) return; // future/unplayed week
         weeklyMatchups.push({
           week,
           team1Id: String(pair[0].roster_id),
-          team1Points: pair[0].points || 0,
+          team1Points: p1,
           team2Id: String(pair[1].roster_id),
-          team2Points: pair[1].points || 0,
+          team2Points: p2,
         });
       }
     });
@@ -714,6 +723,10 @@ export async function loadHeadToHeadRecords(
 
   // Map to track owner IDs across seasons (since roster IDs can change)
   const ownerIdToName = new Map<string, string>();
+  // The selected team's OWNER, resolved once in the current season. Roster
+  // ids shuffle between renewals; following the roster id into history
+  // would mix different managers' games into one record.
+  let ourOwnerId: string | undefined;
 
   while (currentLeagueId && seasonsLoaded < maxSeasons) {
     try {
@@ -739,16 +752,13 @@ export async function loadHeadToHeadRecords(
       // Find our team's roster ID for this season
       let ourRosterId: number | undefined;
       if (seasonsLoaded === 0) {
-        // First season: use the provided teamId
+        // First season: use the provided teamId and remember its owner.
         ourRosterId = parseInt(teamId);
+        ourOwnerId = rosterToOwner.get(ourRosterId);
         teamName = rosterToName.get(ourRosterId) || teamId;
-      } else {
-        // Subsequent seasons: find by matching owner ID
-        const ourOwnerIdInFirstSeason = rosters.find(r => String(r.roster_id) === teamId)?.owner_id;
-        if (ourOwnerIdInFirstSeason) {
-          const roster = rosters.find(r => r.owner_id === ourOwnerIdInFirstSeason);
-          ourRosterId = roster?.roster_id;
-        }
+      } else if (ourOwnerId) {
+        // Prior seasons: same human, whatever roster id they had that year.
+        ourRosterId = rosters.find(r => r.owner_id === ourOwnerId)?.roster_id;
       }
 
       if (!ourRosterId) {
@@ -757,8 +767,11 @@ export async function loadHeadToHeadRecords(
         continue;
       }
 
-      // Load all matchups for the season
-      const weekCount = 17; // Regular season weeks
+      // Load regular-season matchups only; playoff games aren't "rivalry"
+      // games in the H2H sense and skew the totals.
+      const playoffStart = (leagueData.settings as { playoff_week_start?: number })
+        ?.playoff_week_start || 15;
+      const weekCount = Math.min(17, playoffStart - 1);
       for (let week = 1; week <= weekCount; week++) {
         try {
           const matchups = await getMatchups(currentLeagueId, week);
@@ -792,9 +805,10 @@ export async function loadHeadToHeadRecords(
             records.set(opponentOwnerId, record);
           }
 
-          // Update record
+          // Update record. A 0-0 "matchup" is an unplayed week, not a tie.
           const ourScore = ourMatchup.points || 0;
           const oppScore = opponentMatchup.points || 0;
+          if (ourScore === 0 && oppScore === 0) continue;
           const won = ourScore > oppScore;
           const tied = ourScore === oppScore;
 
@@ -826,6 +840,12 @@ export async function loadHeadToHeadRecords(
       logger.warn(`Could not load matchups for league ${currentLeagueId}:`, error);
       break;
     }
+  }
+
+  // Most recent first, matching the ESPN loader: the rivalry card shows the
+  // top of this list as "Recent Matchups".
+  for (const record of records.values()) {
+    record.matchups.sort((a, b) => b.season - a.season || b.week - a.week);
   }
 
   return { records, teamName };
