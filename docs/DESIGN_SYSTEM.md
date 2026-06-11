@@ -43,7 +43,31 @@ or font in a component. Always reference a CSS variable.
 - Lime is the primary accent. Use it sparingly so it stays loud.
 - Red is reserved for negative states. Do not decorate with it.
 - No gradients except the one approved exception (TradeTable winner stripe).
-- No purple, blue, teal, or other unapproved hues.
+- No purple, blue, teal, or other unapproved hues — with one sanctioned
+  carve-out: the position color tokens below.
+
+### Position colors (sanctioned extension)
+
+Every draft tool users know color-codes positions; mid-draft the eye scans
+color before text. These six desaturated tokens are approved for
+position-coded ACCENTS only (left bars, badges, spend-bar segments via the
+`PosBadge` component and the recap spend bars) — never body text, never
+full-component backgrounds.
+
+| Token | Hex | Position |
+|---|---|---|
+| `--pos-qb` | `#d66a6a` | QB |
+| `--pos-rb` | `#6fbf8f` | RB |
+| `--pos-wr` | `#6a9fd6` | WR |
+| `--pos-te` | `#d6a25e` | TE |
+| `--pos-k` | `#b08fd6` | K |
+| `--pos-dst` | `#8fa3ad` | DST |
+
+NFL brand colors (`src/data/nflTeams.ts`) follow the same rule: accent
+stripes and chips only, where a team's identity is the content (NFL Teams
+cards, Player Journey header). Logos idle in grayscale
+(`filter: grayscale(1)`) and gain color on hover, so 32 brand palettes
+don't shout over ours.
 
 ### Legacy aliases
 
@@ -562,6 +586,21 @@ This applies to any user-facing text we add:
   don't import inline patterns from it elsewhere.
 
 ---
+
+## Shared primitives (extracted)
+
+These exist; reuse them instead of re-implementing:
+
+- `<PosBadge pos="RB" posRank={12} />` — position-colored chip
+  (`src/components/PosBadge.tsx`)
+- `<NflTeamLabel team="KC" size="xs|sm" />` — grayscale-idle NFL logo +
+  abbreviation with text fallback (`src/components/NflTeamLabel.tsx`)
+- `<TeamLink teamId name />` — fantasy team name linking to its hub page
+  (`src/components/TeamLink.tsx`)
+- `.skeleton` (global) — hard-edged loading block with a stepped shimmer;
+  use for content-heavy loads instead of a bare spinner
+- `.visually-hidden` (global) — screen-reader-only content (aria-live
+  regions, table captions)
 
 ## Future extraction targets
 

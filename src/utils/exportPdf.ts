@@ -186,7 +186,7 @@ export async function exportLeagueReport(league: League) {
     if (imageUrl) {
       try {
         doc.addImage(imageUrl, 'PNG', x + awardColWidth - 18, y + 1, 12, 12);
-      } catch (e) {
+      } catch {
         // Image failed to load, skip it
       }
     }

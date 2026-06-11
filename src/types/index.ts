@@ -241,6 +241,7 @@ export interface LeagueCredentials {
 }
 
 // Sleeper API specific types
+// eslint-disable-next-line @typescript-eslint/no-namespace -- raw API shapes grouped per platform; converting to modules would churn every converter import
 export namespace SleeperAPI {
   export interface User {
     user_id: string;
@@ -362,6 +363,7 @@ export namespace SleeperAPI {
 }
 
 // ESPN API specific types
+// eslint-disable-next-line @typescript-eslint/no-namespace -- see SleeperAPI note
 export namespace ESPNAPI {
   export interface League {
     id: number;

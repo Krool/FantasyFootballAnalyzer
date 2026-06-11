@@ -57,7 +57,18 @@ type ExtensionState = 'unknown' | 'detected' | 'missing';
 // Probe the companion extension. Returns cookies if installed and user is logged into ESPN.
 function probeExtension(): Promise<{ espnS2: string; swid: string } | null> {
   return new Promise((resolve) => {
-    const chrome = (window as unknown as { chrome?: { runtime?: { sendMessage?: Function; lastError?: unknown } } }).chrome;
+    const chrome = (window as unknown as {
+      chrome?: {
+        runtime?: {
+          sendMessage?: (
+            id: string,
+            message: unknown,
+            callback: (response: { espnS2?: string; swid?: string } | undefined) => void,
+          ) => void;
+          lastError?: unknown;
+        };
+      };
+    }).chrome;
     if (!ESPN_EXTENSION_ID || !chrome?.runtime?.sendMessage) {
       resolve(null);
       return;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RosterSlots } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
-import type { StarterPos, TeamDraftState } from './draftEngine';
+import type { TeamDraftState } from './draftEngine';
 import { suggestPicks } from './suggestions';
 import type { SuggestOptions } from './suggestions';
 

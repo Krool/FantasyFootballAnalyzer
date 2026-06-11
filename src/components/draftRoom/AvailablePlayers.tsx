@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState, type RefObject } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState, type RefObject } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
@@ -60,7 +60,10 @@ export function AvailablePlayers({
     }
     return new Set([...counts.entries()].filter(([, n]) => n >= 2).map(([week]) => week));
   }, [derived.teams, config.myTeamId]);
-  const adp = (p: PoolPlayer) => sleeperAdpFor(p, scoring) ?? p.espnAdp;
+  const adp = useCallback(
+    (p: PoolPlayer) => sleeperAdpFor(p, scoring) ?? p.espnAdp,
+    [scoring],
+  );
   const adjValue = (p: PoolPlayer) => inflateValue(scaledValues.get(p.id) ?? 1, inflation.rate);
 
   const setSort = (key: typeof sortBy) => {
@@ -108,7 +111,7 @@ export function AvailablePlayers({
       filtered.sort((a, b) => (adp(a) ?? 9999) - (adp(b) ?? 9999));
     }
     return filtered;
-  }, [derived.available, deferredQuery, posFilter, sortBy, scaledValues, yahooCosts, scoring]);
+  }, [derived.available, deferredQuery, posFilter, sortBy, scaledValues, yahooCosts, adp]);
 
   // Last available player at their position in their tier: once they're
   // gone, that position drops a tier.

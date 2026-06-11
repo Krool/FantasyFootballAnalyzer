@@ -63,9 +63,11 @@ a season from a game's calendar date.
   `maxBid = remaining - (openSlots - 1) * $1`. Platforms enforce this.
 - Nomination rotates round-robin through the draft order; full teams are
   skipped and locked out of bidding.
-- Strategy concepts the assistant supports: bait/burn nominations (nominate
-  players you don't want to drain budgets), price enforcing, endgame $1
-  fills where nomination order matters most.
+- Strategy concepts the assistant supports: bait/burn nominations (the
+  NominationPanel suggests them on your turn, weighted toward what rich
+  opponents still need), price enforcing (live-bidding mock mode lets you
+  push a bidder to their ceiling and let go), endgame $1 fills (suggested
+  automatically once no opponent can bid past $3).
 - Value inflation: when sales run above/below sheet values, remaining values
   shift. In-draft inflation = remaining budget / remaining projected value.
   Computed live in the Draft Room (`src/utils/inflation.ts`, surplus-over-$1
@@ -91,7 +93,9 @@ a season from a game's calendar date.
 - **Superflex / 2QB**: QB demand nearly doubles against ~32 startable QBs, so
   QB values explode (top QBs become 1st-rounders / $40-60 auction players).
   1QB rankings are unusable in superflex. Our `RosterSlots` model has no
-  superflex slot yet; flag loudly if a league has one.
+  superflex slot yet, but all three parsers set `league.hasSuperflex`
+  (Sleeper `SUPER_FLEX`, ESPN slot 7 / OP, Yahoo `Q/W/R/T`) and the Draft
+  Room setup shows a loud warning that its QB values are floors.
 - **6-pt passing TDs**: modest QB bump even in 1QB.
 - K and DST have near-zero value over replacement: never more than $1 or a
   last-round pick.

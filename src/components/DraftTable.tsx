@@ -100,10 +100,11 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
         case 'value':
           comparison = a.valueOverExpected - b.valueOverExpected;
           break;
-        case 'grade':
+        case 'grade': {
           const gradeOrder = { great: 0, good: 1, bad: 2, terrible: 3 };
           comparison = gradeOrder[a.grade] - gradeOrder[b.grade];
           break;
+        }
         case 'cost':
           comparison = (a.auctionValue || 0) - (b.auctionValue || 0);
           break;
