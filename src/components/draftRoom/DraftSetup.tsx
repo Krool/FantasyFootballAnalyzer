@@ -176,9 +176,26 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
           </div>
         </div>
         {config.mode === 'mock' && (
-          <p className={styles.hint}>
-            Mock mode: the other teams draft automatically so you can practice.
-          </p>
+          <>
+            <p className={styles.hint}>
+              Mock mode: the other teams draft automatically so you can practice.
+            </p>
+            <div className={styles.field}>
+              <span className={styles.label}>Sim Seed (optional)</span>
+              <input
+                type="number"
+                className={styles.input}
+                placeholder="random"
+                value={config.simSeed ?? ''}
+                onChange={e =>
+                  updateConfig({
+                    simSeed: e.target.value === '' ? undefined : Number(e.target.value) || undefined,
+                  })
+                }
+                title="Same seed = the AI repeats the exact same picks and bids, so you can replay a mock with a different strategy"
+              />
+            </div>
+          </>
         )}
       </section>
 

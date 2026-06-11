@@ -21,6 +21,40 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
+// Standard normal via Box-Muller; mock-draft noise wants a bell curve, not
+// the uniform jitter rng() gives.
+function gaussian(rng: () => number): number {
+  const u = Math.max(rng(), 1e-9);
+  const v = rng();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+// A drafting temperament, rolled once per AI team at draft start. Without
+// personas every team bids the same way and mock auctions converge on
+// identical balanced rosters with a $1 parade at the end.
+export interface AiPersona {
+  // Scales auction willingness: tightwads to overpayers.
+  aggression: number;
+  // Extra multiplier on premium players: stars-and-scrubs vs spread-the-cash.
+  starsBias: number;
+  // Chance a nomination is bait (a good player they DON'T want) rather than
+  // a player they're hoping to buy.
+  baitiness: number;
+}
+
+export function makePersonas(teamIds: string[], rng: () => number): Map<string, AiPersona> {
+  return new Map(
+    teamIds.map(id => [
+      id,
+      {
+        aggression: 0.85 + rng() * 0.3,
+        starsBias: 0.9 + rng() * 0.35,
+        baitiness: 0.15 + rng() * 0.35,
+      },
+    ]),
+  );
+}
+
 function weightedPick(pool: PoolPlayer[], weights: number[], rng: () => number): PoolPlayer {
   const total = weights.reduce((sum, w) => sum + w, 0);
   let roll = rng() * total;
@@ -75,6 +109,11 @@ export function simSnakePick(
   round: number,
   totalRounds: number,
   rng: () => number,
+  // Market position accessor (Sleeper/ESPN ADP for the league's scoring);
+  // when provided the AI drafts like real rooms do — off ADP with noise —
+  // instead of off auction dollars, which are too top-heavy (deterministic
+  // chalk early) and too flat late ($1 = $1 = coin flip).
+  adpOf?: (p: PoolPlayer) => number | undefined,
 ): PoolPlayer | null {
   let candidates = rosterable(team, available);
   if (candidates.length === 0) return null;
@@ -87,6 +126,31 @@ export function simSnakePick(
   }
 
   const progress = totalRounds > 1 ? (round - 1) / (totalRounds - 1) : 1;
+
+  if (adpOf) {
+    const lateFill = team.openSlots <= starterNeedTotal(team) + 2;
+    // Real-draft model: take the best market position with gaussian noise
+    // that widens as the draft goes (rooms agree on round 1, not round 12).
+    const sigma = 2 + progress * 10;
+    let best: PoolPlayer | null = null;
+    let bestScore = Infinity;
+    for (const p of candidates.slice(0, 40)) {
+      const market = adpOf(p) ?? p.overallRank;
+      let score = market + gaussian(rng) * sigma;
+      const pos = p.pos as StarterPos;
+      // Nobody drafts a kicker in round 5 no matter what a sheet says.
+      if ((pos === 'K' || pos === 'DST') && !lateFill) score += 500;
+      // Mild pull toward open starter slots, growing with the draft.
+      if (team.starterNeeds[pos] > 0) score -= progress * 12;
+      if (score < bestScore) {
+        bestScore = score;
+        best = p;
+      }
+    }
+    return best ?? candidates[0];
+  }
+
+  // Dollar-weighted fallback when no market data exists in the pool.
   const poolSize = Math.min(candidates.length, Math.round(3 + progress * 22));
   const pool = candidates.slice(0, poolSize);
   const exp = 3 - progress * 2.5;
@@ -94,24 +158,31 @@ export function simSnakePick(
   return weightedPick(pool, weights, rng);
 }
 
-// AI teams nominate good players they still need slightly more often, from
-// the top of the board. Only nominates players someone can still roster.
+// AI nominations: sometimes a player the nominator wants, sometimes bait —
+// a good player at a position they're already set at, nominated to drain
+// other budgets (real auction strategy). Only nominates players someone can
+// still roster.
 export function simNomination(
   available: PoolPlayer[],
   scaledValues: Map<string, number>,
   nominator: TeamDraftState,
   allTeams: TeamDraftState[],
   rng: () => number,
+  persona?: AiPersona,
 ): PoolPlayer | null {
   const scarce = scarcePositions(available, allTeams);
   const someoneCanBuy = (p: PoolPlayer) =>
     allTeams.some(t => aiWillBid(t, p.pos, scarce) || (t.openSlots > 0 && !t.fullAt[p.pos as StarterPos]));
   const candidates = available.filter(someoneCanBuy).slice(0, 15);
   if (candidates.length === 0) return null;
+
+  const baiting = persona ? rng() < persona.baitiness : false;
   const weights = candidates.map(p => {
     const value = scaledValues.get(p.id) ?? 1;
-    const needBias = nominator.starterNeeds[p.pos as StarterPos] > 0 ? 1.5 : 1;
-    return value * needBias;
+    const needed = nominator.starterNeeds[p.pos as StarterPos] > 0;
+    // Baiting flips the bias: prefer high-value players they DON'T need.
+    const bias = baiting ? (needed ? 0.5 : 2) : needed ? 1.5 : 1;
+    return value * bias;
   });
   return weightedPick(candidates, weights, rng);
 }
@@ -133,8 +204,18 @@ export function simAuctionResult(
   myTeamId: string,
   myMaxBid: number,
   rng: () => number,
+  personas?: Map<string, AiPersona>,
 ): AuctionResult {
   const scarce = scarcePositions(available, teams);
+
+  // Budget pacing: a team sitting on cash relative to the room should bid
+  // up (the money has to go somewhere); a drained team tightens.
+  const opponents = teams.filter(t => t.teamId !== myTeamId && t.openSlots > 0);
+  const avgRemaining =
+    opponents.length > 0
+      ? opponents.reduce((sum, t) => sum + t.remaining, 0) / opponents.length
+      : 0;
+
   const bids: Array<{ teamId: string; amount: number }> = [];
   for (const team of teams) {
     if (team.teamId === myTeamId) {
@@ -147,6 +228,15 @@ export function simAuctionResult(
     if (!aiWillBid(team, player.pos, scarce)) continue;
     let willingness = expectedPrice * (0.8 + 0.4 * rng());
     if (team.starterNeeds[player.pos as StarterPos] > 0) willingness *= 1.15;
+    const persona = personas?.get(team.teamId);
+    if (persona) {
+      willingness *= persona.aggression;
+      if (expectedPrice >= 20) willingness *= persona.starsBias;
+    }
+    if (avgRemaining > 0) {
+      const parity = team.remaining / avgRemaining;
+      willingness *= Math.min(1.3, Math.max(0.85, 0.9 + 0.25 * (parity - 1) + 0.1));
+    }
     const amount = Math.min(Math.round(willingness), team.maxBid);
     if (amount >= 1) bids.push({ teamId: team.teamId, amount });
   }

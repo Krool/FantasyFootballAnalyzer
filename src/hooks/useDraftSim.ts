@@ -1,8 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import { inflateValue } from '@/utils/inflation';
 import { roundForPick } from '@/utils/snakeOrder';
-import { mulberry32, simAuctionResult, simNomination, simSnakePick } from '@/utils/draftSim';
+import { sleeperAdpFor } from '@/utils/consensus';
+import {
+  makePersonas,
+  mulberry32,
+  simAuctionResult,
+  simNomination,
+  simSnakePick,
+} from '@/utils/draftSim';
 import type { UseDraftRoomReturn } from './useDraftRoom';
 
 const TICK_MS = 900;
@@ -23,20 +30,50 @@ export interface UseDraftSimReturn {
   // One-shot feedback from the last resolution (e.g. "no eligible buyers"),
   // cleared when the next nomination goes up.
   notice: string | null;
+  // The RNG seed this mock is running on; enter it in setup to replay.
+  seed: number;
 }
 
 // Drives mock drafts: auto-picks for AI teams in snake, auto-nominates and
 // settles bidding in auctions. No-ops entirely in live mode.
 export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
-  const { config, derived, scaledValues, inflation, logEvent, phase } = room;
+  const { config, derived, scaledValues, inflation, logEvent, phase, scoring } = room;
   const [pending, setPending] = useState<PendingNomination | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  // Lazy init so the RNG isn't rebuilt (and discarded) on every render.
+
+  // Lazy init so the RNG isn't rebuilt (and discarded) on every render. A
+  // configured seed makes the AI script reproducible across runs.
+  const seedRef = useRef<number | null>(null);
+  if (seedRef.current === null) {
+    seedRef.current = config.simSeed ?? (Date.now() & 0xffffffff);
+  }
   const rngRef = useRef<(() => number) | null>(null);
   if (rngRef.current === null) {
-    rngRef.current = mulberry32(Date.now() & 0xffffffff);
+    rngRef.current = mulberry32(seedRef.current);
   }
+  // A new draft start re-rolls (or re-applies) the seed; the user may have
+  // typed one into setup after this hook first mounted.
+  const prevPhaseRef = useRef(phase);
+  if (prevPhaseRef.current === 'setup' && phase === 'drafting') {
+    seedRef.current = config.simSeed ?? (Date.now() & 0xffffffff);
+    rngRef.current = mulberry32(seedRef.current);
+  }
+  prevPhaseRef.current = phase;
   const rng = rngRef.current;
+
+  // One temperament per AI team per mock; separate RNG stream so persona
+  // rolls don't shift the pick script between snake and auction. Recomputed
+  // when a draft starts (phase dep) so a typed-in seed applies.
+  const personas = useMemo(
+    () => makePersonas(config.teams.map(t => t.id), mulberry32((seedRef.current ?? 1) ^ 0x9e3779b9)),
+    [config.teams, phase], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  // Market position for the league's scoring; the snake AI drafts off this.
+  const adpOf = useCallback(
+    (p: PoolPlayer) => sleeperAdpFor(p, scoring) ?? p.espnAdp,
+    [scoring],
+  );
 
   const active = phase === 'drafting' && config.mode === 'mock';
   const isMyTurn = derived.onTheClockId === config.myTeamId;
@@ -57,11 +94,11 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
       if (!team) return;
       const round = roundForPick(derived.pickCount, config.teams.length);
       const totalRounds = config.rounds;
-      const player = simSnakePick(derived.available, scaledValues, team, round, totalRounds, rng);
+      const player = simSnakePick(derived.available, scaledValues, team, round, totalRounds, rng, adpOf);
       if (player) logEvent({ kind: 'snake_pick', playerId: player.id, teamId });
     }, TICK_MS);
     return () => clearTimeout(timer);
-  }, [active, config, isMyTurn, derived, scaledValues, logEvent]);
+  }, [active, config, isMyTurn, derived, scaledValues, logEvent, rng, adpOf]);
 
   // Auction: AI nominator puts a player up after a beat. The user's own
   // nominations come through nominate().
@@ -77,6 +114,7 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
         nominator,
         [...derived.teams.values()],
         rng,
+        personas.get(nominatorId),
       );
       if (player) {
         setNotice(null);
@@ -84,7 +122,7 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
       }
     }, TICK_MS);
     return () => clearTimeout(timer);
-  }, [active, config.draftType, pending, isMyTurn, derived, scaledValues]);
+  }, [active, config.draftType, pending, isMyTurn, derived, scaledValues, rng, personas]);
 
   const nominate = useCallback(
     (player: PoolPlayer) => {
@@ -109,6 +147,7 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
         config.myTeamId,
         myMaxBid,
         rng,
+        personas,
       );
       if (result.winnerId) {
         logEvent({
@@ -127,7 +166,7 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
       }
       setPending(null);
     },
-    [pending, scaledValues, inflation.rate, derived.teams, derived.available, config.myTeamId, logEvent, rng],
+    [pending, scaledValues, inflation.rate, derived.teams, derived.available, config.myTeamId, logEvent, rng, personas],
   );
 
   return {
@@ -136,5 +175,6 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
     nominate,
     resolve,
     notice,
+    seed: seedRef.current,
   };
 }

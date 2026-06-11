@@ -37,6 +37,9 @@ export interface DraftRoomConfig {
   // Snake-only for now. Keeper players are held out of the pool and
   // auto-logged when the draft reaches their cost round.
   keepers?: KeeperAssignment[];
+  // Mock-draft RNG seed. Set it to replay the same AI script after changing
+  // strategy; left empty, each mock rolls fresh.
+  simSeed?: number;
 }
 
 export type DraftEvent =
