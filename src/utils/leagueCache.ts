@@ -5,7 +5,10 @@ import { logger } from '@/utils/logger';
 // unsafe to hydrate. The cache key includes this; older versions are ignored.
 // v2: added LeagueStatus + loadedAt + SeasonSummary.championTeamId/isComplete
 //     so old caches no longer drive History / Header reliably.
-const CACHE_VERSION = 2;
+// v3: added Team.isMyTeam + ownerUserIds, which drive the Draft Room "me"
+//     preselect. Final-season snapshots live 30 days, so without a bump a
+//     pre-v3 cache silently preselects the first team as "you" for weeks.
+const CACHE_VERSION = 3;
 const KEY_PREFIX = 'ffa:league:v' + CACHE_VERSION + ':';
 
 interface CacheEntry {

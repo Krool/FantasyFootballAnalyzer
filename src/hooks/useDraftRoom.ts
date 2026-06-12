@@ -19,6 +19,7 @@ import {
   type DraftRoomSession,
 } from '@/utils/draftRoomCache';
 import { computeInflation, NEUTRAL_INFLATION, type InflationState } from '@/utils/inflation';
+import { loadLastConnection } from '@/utils/lastConnection';
 import { scaleValues, type ScoringType } from '@/utils/valueScaling';
 
 // Used when the platform didn't expose roster settings (Yahoo default shape).
@@ -61,14 +62,22 @@ function configFromLeague(league: League): DraftRoomConfig {
           name: `Team ${i + 1}`,
         }));
   const rosterSlots = league.rosterSlots ?? DEFAULT_ROSTER_SLOTS;
+  // The platform marked which of last season's teams is the user's own;
+  // carry that over so setup starts with "me" already correct. For Sleeper
+  // also match the remembered user_id at read time: a cached snapshot bakes
+  // in whoever was remembered when it was loaded, but ownerUserIds is stable
+  // data, so a username looked up after caching still lands.
+  const sleeperUserId =
+    league.platform === 'sleeper' ? loadLastConnection()?.sleeper?.userId : undefined;
+  const myLeagueTeam = league.teams.find(
+    t => t.isMyTeam || (sleeperUserId !== undefined && t.ownerUserIds?.includes(sleeperUserId)),
+  );
   return {
     leagueKey: leagueKeyFor(league),
     season: POOL.season,
     draftType: league.draftType,
     teams,
-    // The platform marked which of last season's teams is the user's own;
-    // carry that over so setup starts with "me" already correct.
-    myTeamId: league.teams.find(t => t.isMyTeam)?.id ?? teams[0]?.id ?? '',
+    myTeamId: myLeagueTeam?.id ?? teams[0]?.id ?? '',
     rosterSlots,
     budget: DEFAULT_BUDGET,
     rounds: draftableSlotCount(rosterSlots),

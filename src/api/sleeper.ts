@@ -635,7 +635,9 @@ export async function loadLeague(leagueId: string): Promise<League> {
   const teams: Team[] = rosters.map(roster => {
     const owner = userMap.get(roster.owner_id);
     const teamName = owner?.display_name || owner?.username || `Team ${roster.roster_id}`;
-    const isMyTeam = myUserId !== null && roster.owner_id === myUserId;
+    // Owner plus co-managers: a co-managed roster is still the user's own.
+    const ownerUserIds = [roster.owner_id, ...(roster.co_owners ?? [])].filter(Boolean);
+    const isMyTeam = myUserId !== null && ownerUserIds.includes(myUserId);
 
     const draftPicksForTeam = (teamDraftPicks.get(roster.roster_id) || []).map(pick => ({
       ...pick,
@@ -657,6 +659,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
       name: teamName,
       ownerName: owner?.display_name || owner?.username,
       isMyTeam: isMyTeam || undefined,
+      ownerUserIds,
       avatarUrl: owner?.avatar ? `https://sleepercdn.com/avatars/thumbs/${owner.avatar}` : undefined,
       roster: roster.players?.map(id => convertPlayer(id, players)) || [],
       draftPicks: draftPicksForTeam,

@@ -113,9 +113,13 @@ export interface Team {
   name: string;
   ownerName?: string;
   // True when the platform identified this team as the connected user's own
-  // (Yahoo login flag, ESPN SWID match, Sleeper username match). The Draft
+  // (Yahoo login flag, ESPN SWID match, Sleeper user_id match). The Draft
   // Room uses it to preselect "me"; absent on older cached snapshots.
   isMyTeam?: boolean;
+  // Sleeper only: the user_ids of the roster's owner and co-owners. Stable
+  // data (unlike isMyTeam, which bakes in who was remembered at load time),
+  // so cached snapshots can be re-matched against the current identity.
+  ownerUserIds?: string[];
   avatarUrl?: string;
   roster?: Player[];
   draftPicks?: DraftPick[];
@@ -297,6 +301,8 @@ export namespace SleeperAPI {
   export interface Roster {
     roster_id: number;
     owner_id: string;
+    // Co-managers; the primary owner is not repeated here.
+    co_owners?: string[] | null;
     league_id: string;
     players: string[];
     starters: string[];

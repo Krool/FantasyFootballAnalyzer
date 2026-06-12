@@ -53,7 +53,9 @@ function makeRoster(rosterId: number, ownerId: string, players: string[], wins: 
 
 const rostersFixture: SleeperAPI.Roster[] = [
   makeRoster(1, 'u1', ['101', '105'], 10, 4),
-  makeRoster(2, 'u2', ['102', '106'], 8, 6),
+  // u9 co-manages roster 2 (not in the league users fixture, like a real
+  // co-owner who never set up a profile card).
+  { ...makeRoster(2, 'u2', ['102', '106'], 8, 6), co_owners: ['u9'] },
   makeRoster(3, 'u3', ['103'], 6, 8),
   makeRoster(4, 'u4', ['104'], 4, 10),
 ];
@@ -397,6 +399,19 @@ describe('sleeper loadLeague my-team detection', () => {
     const league = await loadLeague(LEAGUE_ID);
     expect(league.teams.find(t => t.id === '1')!.isMyTeam).toBe(true);
     expect(league.teams.find(t => t.id === '2')!.isMyTeam).toBeUndefined();
+  });
+
+  it('flags a roster the remembered user co-manages', async () => {
+    localStorage.setItem(
+      'ffa:lastconn:v1',
+      JSON.stringify({ platform: 'sleeper', sleeper: { username: 'nina', userId: 'u9' } }),
+    );
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      jsonResponse(routeSleeper(String(input)))
+    ));
+    const league = await loadLeague(LEAGUE_ID);
+    expect(league.teams.find(t => t.id === '2')!.isMyTeam).toBe(true);
+    expect(league.teams.find(t => t.id === '1')!.isMyTeam).toBeUndefined();
   });
 
   it('ignores a remembered username with no user_id (display names are not identity)', async () => {

@@ -44,7 +44,7 @@ describe('cacheLeague + loadCachedLeague', () => {
 
   it('returns null when the cached entry is for a different platform', () => {
     // Manually plant a poisoned entry under the right key with wrong platform.
-    const key = 'ffa:league:v2:sleeper:L1:2024';
+    const key = 'ffa:league:v3:sleeper:L1:2024';
     localStorage.setItem(
       key,
       JSON.stringify({ league: makeLeague({ platform: 'espn' }), savedAt: 0 }),
@@ -53,7 +53,7 @@ describe('cacheLeague + loadCachedLeague', () => {
   });
 
   it('returns null when the cached JSON is corrupted', () => {
-    localStorage.setItem('ffa:league:v2:sleeper:L1:2024', '{not json');
+    localStorage.setItem('ffa:league:v3:sleeper:L1:2024', '{not json');
     expect(loadCachedLeague('sleeper', 'L1', 2024)).toBeNull();
   });
 
@@ -107,7 +107,7 @@ describe('loadCachedLeagueForCredentials', () => {
 describe('keyForCredentials', () => {
   it('returns a deterministic key when season is provided', () => {
     const creds: LeagueCredentials = { platform: 'sleeper', leagueId: 'L1', season: 2024 };
-    expect(keyForCredentials(creds)).toBe('ffa:league:v2:sleeper:L1:2024');
+    expect(keyForCredentials(creds)).toBe('ffa:league:v3:sleeper:L1:2024');
   });
 
   it('returns null when season is missing', () => {
