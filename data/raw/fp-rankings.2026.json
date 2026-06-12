@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-06-11T18:15:34.613Z",
+ "fetchedAt": "2026-06-12T12:06:33.265Z",
  "data": {
   "scoring": "HALF",
   "players": [
@@ -62,7 +62,7 @@
     "bye": 11,
     "rankMin": 4,
     "rankMax": 8,
-    "rankStd": 0.99
+    "rankStd": 0.96
    },
    {
     "name": "Amon-Ra St. Brown",
@@ -74,7 +74,7 @@
     "bye": 6,
     "rankMin": 4,
     "rankMax": 11,
-    "rankStd": 1.23
+    "rankStd": 1.24
    },
    {
     "name": "Christian McCaffrey",
@@ -98,7 +98,7 @@
     "bye": 14,
     "rankMin": 6,
     "rankMax": 16,
-    "rankStd": 2.01
+    "rankStd": 2.09
    },
    {
     "name": "Jonathan Taylor",
@@ -110,7 +110,7 @@
     "bye": 13,
     "rankMin": 5,
     "rankMax": 19,
-    "rankStd": 2.88
+    "rankStd": 2.85
    },
    {
     "name": "Justin Jefferson",
@@ -122,7 +122,7 @@
     "bye": 6,
     "rankMin": 6,
     "rankMax": 18,
-    "rankStd": 2.74
+    "rankStd": 2.76
    },
    {
     "name": "James Cook III",
@@ -132,33 +132,33 @@
     "rank": 11,
     "tier": 2,
     "bye": 7,
-    "rankMin": 5,
+    "rankMin": 6,
     "rankMax": 23,
-    "rankStd": 3.25
-   },
-   {
-    "name": "Drake London",
-    "team": "ATL",
-    "pos": "WR",
-    "posRank": 7,
-    "rank": 12,
-    "tier": 3,
-    "bye": 11,
-    "rankMin": 9,
-    "rankMax": 25,
-    "rankStd": 4
+    "rankStd": 3.17
    },
    {
     "name": "Ashton Jeanty",
     "team": "LV",
     "pos": "RB",
     "posRank": 6,
-    "rank": 13,
+    "rank": 12,
     "tier": 3,
     "bye": 13,
     "rankMin": 6,
     "rankMax": 30,
-    "rankStd": 4.67
+    "rankStd": 4.69
+   },
+   {
+    "name": "Drake London",
+    "team": "ATL",
+    "pos": "WR",
+    "posRank": 7,
+    "rank": 13,
+    "tier": 3,
+    "bye": 11,
+    "rankMin": 9,
+    "rankMax": 25,
+    "rankStd": 3.96
    },
    {
     "name": "De'Von Achane",
@@ -192,9 +192,9 @@
     "rank": 16,
     "tier": 3,
     "bye": 6,
-    "rankMin": 10,
+    "rankMin": 9,
     "rankMax": 30,
-    "rankStd": 4.55
+    "rankStd": 4.59
    },
    {
     "name": "Brock Bowers",
@@ -206,7 +206,7 @@
     "bye": 13,
     "rankMin": 13,
     "rankMax": 24,
-    "rankStd": 3.11
+    "rankStd": 3.08
    },
    {
     "name": "Saquon Barkley",
@@ -242,7 +242,7 @@
     "bye": 14,
     "rankMin": 9,
     "rankMax": 35,
-    "rankStd": 5.1
+    "rankStd": 5.01
    },
    {
     "name": "Omarion Hampton",
@@ -264,9 +264,9 @@
     "rank": 22,
     "tier": 4,
     "bye": 11,
-    "rankMin": 11,
+    "rankMin": 9,
     "rankMax": 55,
-    "rankStd": 7.55
+    "rankStd": 7.89
    },
    {
     "name": "Chris Olave",
@@ -314,7 +314,7 @@
     "bye": 7,
     "rankMin": 24,
     "rankMax": 39,
-    "rankStd": 3.77
+    "rankStd": 4.04
    },
    {
     "name": "Rashee Rice",
@@ -338,7 +338,7 @@
     "bye": 8,
     "rankMin": 10,
     "rankMax": 74,
-    "rankStd": 14.89
+    "rankStd": 14.88
    },
    {
     "name": "Tetairoa McMillan",
@@ -374,7 +374,7 @@
     "bye": 10,
     "rankMin": 21,
     "rankMax": 59,
-    "rankStd": 9.08
+    "rankStd": 9.1
    },
    {
     "name": "Tee Higgins",
@@ -398,7 +398,7 @@
     "bye": 13,
     "rankMin": 26,
     "rankMax": 69,
-    "rankStd": 10.96
+    "rankStd": 10.97
    },
    {
     "name": "Drake Maye",
@@ -410,7 +410,7 @@
     "bye": 11,
     "rankMin": 27,
     "rankMax": 66,
-    "rankStd": 11.61
+    "rankStd": 11.58
    },
    {
     "name": "Kyren Williams",
@@ -437,40 +437,40 @@
     "rankStd": 5.89
    },
    {
+    "name": "Josh Jacobs",
+    "team": "GB",
+    "pos": "RB",
+    "posRank": 16,
+    "rank": 37,
+    "tier": 5,
+    "bye": 11,
+    "rankMin": 18,
+    "rankMax": 64,
+    "rankStd": 9.4
+   },
+   {
     "name": "Garrett Wilson",
     "team": "NYJ",
     "pos": "WR",
     "posRank": 17,
-    "rank": 37,
+    "rank": 38,
     "tier": 5,
     "bye": 13,
     "rankMin": 26,
     "rankMax": 52,
-    "rankStd": 6.14
+    "rankStd": 6.15
    },
    {
     "name": "Zay Flowers",
     "team": "BAL",
     "pos": "WR",
     "posRank": 18,
-    "rank": 38,
+    "rank": 39,
     "tier": 5,
     "bye": 13,
     "rankMin": 19,
     "rankMax": 61,
     "rankStd": 8.03
-   },
-   {
-    "name": "Josh Jacobs",
-    "team": "GB",
-    "pos": "RB",
-    "posRank": 16,
-    "rank": 39,
-    "tier": 5,
-    "bye": 11,
-    "rankMin": 18,
-    "rankMax": 93,
-    "rankStd": 11.81
    },
    {
     "name": "Ladd McConkey",
@@ -482,7 +482,7 @@
     "bye": 7,
     "rankMin": 21,
     "rankMax": 62,
-    "rankStd": 7.09
+    "rankStd": 7.12
    },
    {
     "name": "Colston Loveland",
@@ -494,7 +494,7 @@
     "bye": 10,
     "rankMin": 22,
     "rankMax": 95,
-    "rankStd": 14.11
+    "rankStd": 14.1
    },
    {
     "name": "Javonte Williams",
@@ -530,7 +530,7 @@
     "bye": 8,
     "rankMin": 21,
     "rankMax": 59,
-    "rankStd": 8.14
+    "rankStd": 8.22
    },
    {
     "name": "Joe Burrow",
@@ -674,7 +674,7 @@
     "bye": 7,
     "rankMin": 29,
     "rankMax": 103,
-    "rankStd": 13.8
+    "rankStd": 13.75
    },
    {
     "name": "D'Andre Swift",
@@ -686,7 +686,7 @@
     "bye": 10,
     "rankMin": 43,
     "rankMax": 67,
-    "rankStd": 5.87
+    "rankStd": 5.84
    },
    {
     "name": "Jalen Hurts",
@@ -710,7 +710,7 @@
     "bye": 11,
     "rankMin": 24,
     "rankMax": 82,
-    "rankStd": 10.66
+    "rankStd": 10.69
    },
    {
     "name": "Tyler Warren",
@@ -842,7 +842,7 @@
     "bye": 10,
     "rankMin": 32,
     "rankMax": 103,
-    "rankStd": 13.76
+    "rankStd": 13.78
    },
    {
     "name": "Alec Pierce",
@@ -854,7 +854,7 @@
     "bye": 13,
     "rankMin": 50,
     "rankMax": 101,
-    "rankStd": 10.15
+    "rankStd": 10.01
    },
    {
     "name": "Marvin Harrison Jr.",
@@ -890,7 +890,7 @@
     "bye": 5,
     "rankMin": 51,
     "rankMax": 116,
-    "rankStd": 13.39
+    "rankStd": 13.41
    },
    {
     "name": "Harold Fannin Jr.",
@@ -938,7 +938,7 @@
     "bye": 8,
     "rankMin": 58,
     "rankMax": 118,
-    "rankStd": 14.66
+    "rankStd": 14.68
    },
    {
     "name": "Tony Pollard",
@@ -974,7 +974,7 @@
     "bye": 11,
     "rankMin": 58,
     "rankMax": 102,
-    "rankStd": 9.16
+    "rankStd": 9.06
    },
    {
     "name": "Rico Dowdle",
@@ -998,7 +998,7 @@
     "bye": 10,
     "rankMin": 45,
     "rankMax": 119,
-    "rankStd": 16.13
+    "rankStd": 16.14
    },
    {
     "name": "Kyle Pitts Sr.",
@@ -1058,7 +1058,7 @@
     "bye": 10,
     "rankMin": 59,
     "rankMax": 131,
-    "rankStd": 12.73
+    "rankStd": 12.77
    },
    {
     "name": "Jordyn Tyson",
@@ -1164,9 +1164,9 @@
     "rank": 97,
     "tier": 8,
     "bye": 10,
-    "rankMin": 69,
+    "rankMin": 72,
     "rankMax": 142,
-    "rankStd": 15.57
+    "rankStd": 15.44
    },
    {
     "name": "Patrick Mahomes II",
@@ -1202,7 +1202,7 @@
     "bye": 6,
     "rankMin": 83,
     "rankMax": 124,
-    "rankStd": 9.65
+    "rankStd": 9.68
    },
    {
     "name": "Matthew Stafford",
@@ -1260,9 +1260,9 @@
     "rank": 105,
     "tier": 8,
     "bye": 6,
-    "rankMin": 86,
+    "rankMin": 88,
     "rankMax": 142,
-    "rankStd": 12.35
+    "rankStd": 12.16
    },
    {
     "name": "Kenneth Gainwell",
@@ -1322,7 +1322,7 @@
     "bye": 11,
     "rankMin": 79,
     "rankMax": 135,
-    "rankStd": 15.43
+    "rankStd": 15.42
    },
    {
     "name": "Quentin Johnston",
@@ -1334,7 +1334,7 @@
     "bye": 7,
     "rankMin": 81,
     "rankMax": 141,
-    "rankStd": 13.78
+    "rankStd": 13.69
    },
    {
     "name": "Kyler Murray",
@@ -1442,7 +1442,7 @@
     "bye": 8,
     "rankMin": 101,
     "rankMax": 148,
-    "rankStd": 8.54
+    "rankStd": 8.52
    },
    {
     "name": "Jordan Mason",
@@ -1478,7 +1478,7 @@
     "bye": 5,
     "rankMin": 89,
     "rankMax": 162,
-    "rankStd": 15.02
+    "rankStd": 15.04
    },
    {
     "name": "Tyrone Tracy Jr.",
@@ -1490,7 +1490,7 @@
     "bye": 8,
     "rankMin": 102,
     "rankMax": 144,
-    "rankStd": 10.41
+    "rankStd": 10.37
    },
    {
     "name": "Tyler Shough",
@@ -1502,7 +1502,7 @@
     "bye": 8,
     "rankMin": 99,
     "rankMax": 152,
-    "rankStd": 13.04
+    "rankStd": 13.01
    },
    {
     "name": "Khalil Shakir",
@@ -1514,7 +1514,7 @@
     "bye": 7,
     "rankMin": 94,
     "rankMax": 147,
-    "rankStd": 11.12
+    "rankStd": 11.07
    },
    {
     "name": "Tyler Allgeier",
@@ -1550,7 +1550,7 @@
     "bye": 13,
     "rankMin": 96,
     "rankMax": 172,
-    "rankStd": 17.86
+    "rankStd": 17.89
    },
    {
     "name": "Chris Rodriguez Jr.",
@@ -1610,7 +1610,7 @@
     "bye": 6,
     "rankMin": 93,
     "rankMax": 284,
-    "rankStd": 35.29
+    "rankStd": 35.34
    },
    {
     "name": "Zach Charbonnet",
@@ -1622,7 +1622,7 @@
     "bye": 11,
     "rankMin": 78,
     "rankMax": 200,
-    "rankStd": 21.49
+    "rankStd": 21.53
    },
    {
     "name": "Jalen Coker",
@@ -1658,19 +1658,19 @@
     "bye": 8,
     "rankMin": 118,
     "rankMax": 201,
-    "rankStd": 15.72
+    "rankStd": 15.73
    },
    {
-    "name": "Tyjae Spears",
-    "team": "TEN",
-    "pos": "RB",
-    "posRank": 47,
+    "name": "Matthew Golden",
+    "team": "GB",
+    "pos": "WR",
+    "posRank": 55,
     "rank": 139,
     "tier": 9,
-    "bye": 9,
-    "rankMin": 113,
-    "rankMax": 175,
-    "rankStd": 11.65
+    "bye": 11,
+    "rankMin": 101,
+    "rankMax": 203,
+    "rankStd": 20.78
    },
    {
     "name": "Juwan Johnson",
@@ -1682,19 +1682,19 @@
     "bye": 8,
     "rankMin": 105,
     "rankMax": 196,
-    "rankStd": 21.17
+    "rankStd": 21.26
    },
    {
-    "name": "Matthew Golden",
-    "team": "GB",
-    "pos": "WR",
-    "posRank": 55,
+    "name": "Tyjae Spears",
+    "team": "TEN",
+    "pos": "RB",
+    "posRank": 47,
     "rank": 141,
     "tier": 9,
-    "bye": 11,
-    "rankMin": 101,
-    "rankMax": 203,
-    "rankStd": 20.76
+    "bye": 9,
+    "rankMin": 113,
+    "rankMax": 175,
+    "rankStd": 11.85
    },
    {
     "name": "Isiah Pacheco",
@@ -1706,7 +1706,7 @@
     "bye": 6,
     "rankMin": 120,
     "rankMax": 161,
-    "rankStd": 9.51
+    "rankStd": 9.42
    },
    {
     "name": "Dylan Sampson",
@@ -1718,7 +1718,7 @@
     "bye": 11,
     "rankMin": 121,
     "rankMax": 188,
-    "rankStd": 12.21
+    "rankStd": 12.24
    },
    {
     "name": "Sam Darnold",
@@ -1745,28 +1745,28 @@
     "rankStd": 27.79
    },
    {
-    "name": "Hunter Henry",
-    "team": "NE",
-    "pos": "TE",
-    "posRank": 19,
-    "rank": 146,
-    "tier": 10,
-    "bye": 11,
-    "rankMin": 123,
-    "rankMax": 180,
-    "rankStd": 12.45
-   },
-   {
     "name": "Rashid Shaheed",
     "team": "SEA",
     "pos": "WR",
     "posRank": 56,
-    "rank": 147,
+    "rank": 146,
     "tier": 10,
     "bye": 11,
     "rankMin": 133,
     "rankMax": 179,
-    "rankStd": 12.48
+    "rankStd": 12.47
+   },
+   {
+    "name": "Hunter Henry",
+    "team": "NE",
+    "pos": "TE",
+    "posRank": 19,
+    "rank": 147,
+    "tier": 10,
+    "bye": 11,
+    "rankMin": 123,
+    "rankMax": 180,
+    "rankStd": 12.52
    },
    {
     "name": "Alvin Kamara",
@@ -1790,7 +1790,7 @@
     "bye": 7,
     "rankMin": 119,
     "rankMax": 237,
-    "rankStd": 26.43
+    "rankStd": 26.45
    },
    {
     "name": "Cam Ward",
@@ -1802,7 +1802,7 @@
     "bye": 9,
     "rankMin": 137,
     "rankMax": 202,
-    "rankStd": 15.27
+    "rankStd": 15.25
    },
    {
     "name": "Brian Robinson Jr.",
@@ -1814,7 +1814,7 @@
     "bye": 11,
     "rankMin": 134,
     "rankMax": 181,
-    "rankStd": 9.74
+    "rankStd": 9.68
    },
    {
     "name": "Jerry Jeudy",
@@ -1826,7 +1826,7 @@
     "bye": 11,
     "rankMin": 136,
     "rankMax": 209,
-    "rankStd": 14.1
+    "rankStd": 14.11
    },
    {
     "name": "Jauan Jennings",
@@ -1838,7 +1838,7 @@
     "bye": 6,
     "rankMin": 95,
     "rankMax": 207,
-    "rankStd": 25.82
+    "rankStd": 25.88
    },
    {
     "name": "Braelon Allen",
@@ -1874,7 +1874,7 @@
     "bye": 11,
     "rankMin": 132,
     "rankMax": 240,
-    "rankStd": 27.47
+    "rankStd": 27.46
    },
    {
     "name": "Bryce Young",
@@ -1910,7 +1910,7 @@
     "bye": 10,
     "rankMin": 121,
     "rankMax": 265,
-    "rankStd": 33.74
+    "rankStd": 33.68
    },
    {
     "name": "Emanuel Wilson",
@@ -1922,7 +1922,7 @@
     "bye": 11,
     "rankMin": 126,
     "rankMax": 230,
-    "rankStd": 25.77
+    "rankStd": 25.45
    },
    {
     "name": "James Conner",
@@ -1946,7 +1946,7 @@
     "bye": 8,
     "rankMin": 149,
     "rankMax": 311,
-    "rankStd": 24.85
+    "rankStd": 24.84
    },
    {
     "name": "Dalton Schultz",
@@ -1970,7 +1970,7 @@
     "bye": 7,
     "rankMin": 94,
     "rankMax": 263,
-    "rankStd": 32.42
+    "rankStd": 32.62
    },
    {
     "name": "Chig Okonkwo",
@@ -2018,7 +2018,7 @@
     "bye": 5,
     "rankMin": 132,
     "rankMax": 313,
-    "rankStd": 34.97
+    "rankStd": 34.96
    },
    {
     "name": "Adonai Mitchell",
@@ -2054,7 +2054,7 @@
     "bye": 10,
     "rankMin": 150,
     "rankMax": 314,
-    "rankStd": 24.2
+    "rankStd": 24.22
    },
    {
     "name": "Kayshon Boutte",
@@ -2102,31 +2102,31 @@
     "bye": 11,
     "rankMin": 150,
     "rankMax": 313,
-    "rankStd": 22.59
-   },
-   {
-    "name": "Kenyon Sadiq",
-    "team": "NYJ",
-    "pos": "TE",
-    "posRank": 22,
-    "rank": 176,
-    "tier": 11,
-    "bye": 13,
-    "rankMin": 130,
-    "rankMax": 267,
-    "rankStd": 26.6
+    "rankStd": 22.62
    },
    {
     "name": "Tre' Harris",
     "team": "LAC",
     "pos": "WR",
     "posRank": 66,
-    "rank": 177,
+    "rank": 176,
     "tier": 11,
     "bye": 7,
     "rankMin": 132,
     "rankMax": 280,
-    "rankStd": 23.66
+    "rankStd": 23.71
+   },
+   {
+    "name": "Kenyon Sadiq",
+    "team": "NYJ",
+    "pos": "TE",
+    "posRank": 22,
+    "rank": 177,
+    "tier": 11,
+    "bye": 13,
+    "rankMin": 130,
+    "rankMax": 267,
+    "rankStd": 26.6
    },
    {
     "name": "Deebo Samuel Sr.",
@@ -2186,7 +2186,7 @@
     "bye": 13,
     "rankMin": 120,
     "rankMax": 290,
-    "rankStd": 29.09
+    "rankStd": 29.25
    },
    {
     "name": "Sean Tucker",
@@ -2222,7 +2222,7 @@
     "bye": 11,
     "rankMin": 143,
     "rankMax": 245,
-    "rankStd": 23.61
+    "rankStd": 23.57
    },
    {
     "name": "Brandon Aubrey",
@@ -2232,9 +2232,9 @@
     "rank": 186,
     "tier": 11,
     "bye": 14,
-    "rankMin": 178,
+    "rankMin": 180,
     "rankMax": 331,
-    "rankStd": 22.34
+    "rankStd": 22.32
    },
    {
     "name": "Jaylin Noel",
@@ -2246,7 +2246,7 @@
     "bye": 8,
     "rankMin": 160,
     "rankMax": 292,
-    "rankStd": 32.11
+    "rankStd": 32.05
    },
    {
     "name": "New England Patriots",
@@ -2282,7 +2282,7 @@
     "bye": 6,
     "rankMin": 175,
     "rankMax": 306,
-    "rankStd": 26.16
+    "rankStd": 26.13
    },
    {
     "name": "Pittsburgh Steelers",
@@ -2294,7 +2294,7 @@
     "bye": 9,
     "rankMin": 183,
     "rankMax": 320,
-    "rankStd": 21.18
+    "rankStd": 21.17
    },
    {
     "name": "Jacksonville Jaguars",
@@ -2306,7 +2306,7 @@
     "bye": 7,
     "rankMin": 182,
     "rankMax": 318,
-    "rankStd": 23.67
+    "rankStd": 23.66
    },
    {
     "name": "Minnesota Vikings",
@@ -2316,9 +2316,9 @@
     "rank": 193,
     "tier": 11,
     "bye": 6,
-    "rankMin": 179,
+    "rankMin": 180,
     "rankMax": 355,
-    "rankStd": 34.45
+    "rankStd": 34.43
    },
    {
     "name": "Ray Davis",
@@ -2414,7 +2414,7 @@
     "bye": 7,
     "rankMin": 144,
     "rankMax": 310,
-    "rankStd": 44.49
+    "rankStd": 44.37
    },
    {
     "name": "Jason Myers",
@@ -2462,7 +2462,7 @@
     "bye": 9,
     "rankMin": 134,
     "rankMax": 309,
-    "rankStd": 43.44
+    "rankStd": 43.41
    },
    {
     "name": "Darnell Mooney",
@@ -2474,7 +2474,7 @@
     "bye": 8,
     "rankMin": 160,
     "rankMax": 297,
-    "rankStd": 26.68
+    "rankStd": 26.71
    },
    {
     "name": "Green Bay Packers",
@@ -2510,7 +2510,7 @@
     "bye": 7,
     "rankMin": 125,
     "rankMax": 258,
-    "rankStd": 32.09
+    "rankStd": 32.16
    },
    {
     "name": "Eddy Pineiro",
@@ -2568,9 +2568,9 @@
     "rank": 214,
     "tier": 11,
     "bye": 13,
-    "rankMin": 177,
+    "rankMin": 179,
     "rankMax": 355,
-    "rankStd": 33.22
+    "rankStd": 33.17
    },
    {
     "name": "Tyler Loop",
@@ -2856,9 +2856,9 @@
     "rank": 238,
     "tier": 12,
     "bye": 9,
-    "rankMin": 162,
+    "rankMin": 164,
     "rankMax": 301,
-    "rankStd": 36.77
+    "rankStd": 36.67
    },
    {
     "name": "Harrison Butker",
@@ -3014,7 +3014,7 @@
     "bye": 6,
     "rankMin": 149,
     "rankMax": 296,
-    "rankStd": 35.64
+    "rankStd": 35.5
    },
    {
     "name": "Aaron Rodgers",
@@ -3132,9 +3132,9 @@
     "rank": 261,
     "tier": 13,
     "bye": 13,
-    "rankMin": 172,
+    "rankMin": 174,
     "rankMax": 330,
-    "rankStd": 28.31
+    "rankStd": 28.16
    },
    {
     "name": "Justice Hill",
@@ -5742,12 +5742,12 @@
    },
    {
     "name": "Desmond Reid",
-    "team": "BUF",
+    "team": "FA",
     "pos": "RB",
     "posRank": 147,
     "rank": 479,
     "tier": 16,
-    "bye": 7,
+    "bye": null,
     "rankMin": 364,
     "rankMax": 458,
     "rankStd": 47
