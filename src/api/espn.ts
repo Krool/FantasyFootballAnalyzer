@@ -1241,7 +1241,11 @@ export async function loadLeague(
   logger.debug('[ESPN] Processed trades:', allTrades.length);
   logger.debug('[ESPN] Processed waiver transactions:', Array.from(teamTransactions.values()).flat().length);
 
-  // Build teams
+  // Build teams. The SWID cookie is the connected user's member GUID; the
+  // team whose owners include it is theirs. Braces and casing vary between
+  // the cookie and the API payload, so compare normalized.
+  const normalizeSwid = (id: string) => id.replace(/[{}]/g, '').toLowerCase();
+  const mySwid = options?.swid ? normalizeSwid(options.swid) : null;
   const teams: Team[] = leagueData.teams.map(espnTeam => {
     const ownerIds = espnTeam.owners || [];
     const primaryOwner = ownerIds.length > 0 ? memberMap.get(ownerIds[0]) : undefined;
@@ -1274,6 +1278,7 @@ export async function loadLeague(
       id: String(espnTeam.id),
       name: teamName,
       ownerName: primaryOwner?.displayName,
+      isMyTeam: (mySwid !== null && ownerIds.some(o => normalizeSwid(o) === mySwid)) || undefined,
       roster,
       draftPicks: draftPicksForTeam,
       transactions: transactionsForTeam,

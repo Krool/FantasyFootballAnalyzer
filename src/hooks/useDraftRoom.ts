@@ -66,7 +66,9 @@ function configFromLeague(league: League): DraftRoomConfig {
     season: POOL.season,
     draftType: league.draftType,
     teams,
-    myTeamId: teams[0]?.id ?? '',
+    // The platform marked which of last season's teams is the user's own;
+    // carry that over so setup starts with "me" already correct.
+    myTeamId: league.teams.find(t => t.isMyTeam)?.id ?? teams[0]?.id ?? '',
     rosterSlots,
     budget: DEFAULT_BUDGET,
     rounds: draftableSlotCount(rosterSlots),

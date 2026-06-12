@@ -371,4 +371,43 @@ describe('sleeper loadLeague', () => {
     const team2 = league.teams.find(t => t.id === '2')!;
     expect(team2.trades).toHaveLength(1);
   });
+
+  it('flags no team as mine when no Sleeper user was remembered', () => {
+    expect(league.teams.every(t => t.isMyTeam === undefined)).toBe(true);
+  });
+});
+
+describe('sleeper loadLeague my-team detection', () => {
+  afterAll(() => {
+    vi.unstubAllGlobals();
+    localStorage.removeItem('ffa:lastconn:v1');
+  });
+
+  it('flags the roster owned by the remembered user_id', async () => {
+    // The league finder remembers the user_id its username lookup resolved;
+    // matching is by roster owner_id, never by name (league users responses
+    // carry username as null and display_name is freely settable).
+    localStorage.setItem(
+      'ffa:lastconn:v1',
+      JSON.stringify({ platform: 'sleeper', sleeper: { username: 'alice', userId: 'u1' } }),
+    );
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      jsonResponse(routeSleeper(String(input)))
+    ));
+    const league = await loadLeague(LEAGUE_ID);
+    expect(league.teams.find(t => t.id === '1')!.isMyTeam).toBe(true);
+    expect(league.teams.find(t => t.id === '2')!.isMyTeam).toBeUndefined();
+  });
+
+  it('ignores a remembered username with no user_id (display names are not identity)', async () => {
+    localStorage.setItem(
+      'ffa:lastconn:v1',
+      JSON.stringify({ platform: 'sleeper', sleeper: { username: 'Alice' } }),
+    );
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      jsonResponse(routeSleeper(String(input)))
+    ));
+    const league = await loadLeague(LEAGUE_ID);
+    expect(league.teams.every(t => t.isMyTeam === undefined)).toBe(true);
+  });
 });

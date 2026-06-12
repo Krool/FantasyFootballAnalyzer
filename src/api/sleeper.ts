@@ -1,4 +1,5 @@
 import type { SleeperAPI, League, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, SeasonSummary, HeadToHeadRecord, RosterSlots, WeeklyMatchup } from '@/types';
+import { loadLastConnection } from '@/utils/lastConnection';
 import { logger } from '@/utils/logger';
 import { decideTradeWinner } from '@/utils/tradeVerdict';
 import {
@@ -44,10 +45,13 @@ export async function getDraft(draftId: string): Promise<SleeperAPI.Draft> {
 // Username → that user's leagues, for the connect form's league finder.
 // Returns null when no Sleeper user matches the username. Spans the current
 // and previous seasons: each Sleeper season is its own league id, and during
-// the offseason the league a user wants is usually last year's.
+// the offseason the league a user wants is usually last year's. The resolved
+// user_id rides along so the caller can remember it: league rosters key
+// owners by user_id, and it's the only stable identity Sleeper exposes
+// (league users responses carry username as null).
 export async function findLeaguesByUsername(
   username: string,
-): Promise<Array<{ id: string; name: string; season: string }> | null> {
+): Promise<{ userId: string; leagues: Array<{ id: string; name: string; season: string }> } | null> {
   const user = await fetchJSON<{ user_id?: string } | null>(
     `/user/${encodeURIComponent(username)}`,
   );
@@ -66,9 +70,12 @@ export async function findLeaguesByUsername(
       }
     }),
   );
-  return perSeason
-    .flat()
-    .map((l) => ({ id: l.league_id, name: l.name, season: l.season }));
+  return {
+    userId: user.user_id,
+    leagues: perSeason
+      .flat()
+      .map((l) => ({ id: l.league_id, name: l.name, season: l.season })),
+  };
 }
 
 // Sleeper's league.status moves pre_draft → drafting → in_season → complete.
@@ -619,10 +626,16 @@ export async function loadLeague(leagueId: string): Promise<League> {
     })),
   }));
 
-  // Build teams
+  // Build teams. Sleeper has no auth, but the league finder remembers the
+  // user_id its username lookup resolved; the roster owned by that user is
+  // the connected user's own team. Matched on user_id, not names: league
+  // users responses carry username as null, and display_name is freely
+  // settable, so a name match can flag someone else's roster.
+  const myUserId = loadLastConnection()?.sleeper?.userId ?? null;
   const teams: Team[] = rosters.map(roster => {
     const owner = userMap.get(roster.owner_id);
     const teamName = owner?.display_name || owner?.username || `Team ${roster.roster_id}`;
+    const isMyTeam = myUserId !== null && roster.owner_id === myUserId;
 
     const draftPicksForTeam = (teamDraftPicks.get(roster.roster_id) || []).map(pick => ({
       ...pick,
@@ -643,6 +656,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
       id: String(roster.roster_id),
       name: teamName,
       ownerName: owner?.display_name || owner?.username,
+      isMyTeam: isMyTeam || undefined,
       avatarUrl: owner?.avatar ? `https://sleepercdn.com/avatars/thumbs/${owner.avatar}` : undefined,
       roster: roster.players?.map(id => convertPlayer(id, players)) || [],
       draftPicks: draftPicksForTeam,

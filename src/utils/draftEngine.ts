@@ -129,6 +129,47 @@ export function assignLineup(picks: DraftedPlayer[], slots: RosterSlots): Lineup
   });
 }
 
+export interface LineupRow {
+  key: string;
+  slot: LineupSlot;
+  // Display abbreviation for the slot, computed once so render sites agree.
+  label: string;
+  // null = the slot is still open.
+  pick: DraftedPlayer | null;
+}
+
+const SLOT_LABELS: Partial<Record<LineupSlot, string>> = { FLEX: 'FLX', BENCH: 'BN' };
+
+// A roster rendered lineup-shaped: every starting slot present (filled or
+// open), bench rows below. Holes jump out in a way pick order never shows.
+// Shared by MyTeamPanel and the Teams tab.
+export function lineupRows(picks: DraftedPlayer[], slots: RosterSlots): LineupRow[] {
+  const assignments = assignLineup(picks, slots);
+  const bySlot = new Map<LineupSlot, DraftedPlayer[]>();
+  for (const a of assignments) {
+    const group = bySlot.get(a.slot) ?? [];
+    group.push(a.pick);
+    bySlot.set(a.slot, group);
+  }
+  const rows: LineupRow[] = [];
+  const slotOrder: LineupSlot[] = [
+    ...STARTER_POSITIONS.filter(p => p !== 'K' && p !== 'DST'),
+    'FLEX',
+    'K',
+    'DST',
+  ];
+  for (const slot of slotOrder) {
+    const filled = bySlot.get(slot) ?? [];
+    for (let i = 0; i < slots[slot]; i++) {
+      rows.push({ key: `${slot}-${i}`, slot, label: SLOT_LABELS[slot] ?? slot, pick: filled[i] ?? null });
+    }
+  }
+  (bySlot.get('BENCH') ?? []).forEach((pick, i) =>
+    rows.push({ key: `BN-${i}`, slot: 'BENCH', label: 'BN', pick }),
+  );
+  return rows;
+}
+
 export function deriveDraftState(
   config: DraftRoomConfig,
   pool: PoolPlayer[],

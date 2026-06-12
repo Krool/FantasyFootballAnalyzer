@@ -12,7 +12,9 @@ const PLATFORMS: readonly Platform[] = ['sleeper', 'espn', 'yahoo'];
 
 export interface LastConnection {
   platform: Platform;
-  sleeper?: { leagueId?: string; username?: string };
+  // userId is the Sleeper user_id the username lookup resolved; it's what
+  // my-team detection matches rosters against (names aren't stable).
+  sleeper?: { leagueId?: string; username?: string; userId?: string };
   espn?: { leagueId: string; season: number };
   yahoo?: { leagueId: string };
 }
@@ -44,6 +46,7 @@ function sanitize(parsed: unknown): LastConnection | null {
     out.sleeper = {};
     if (typeof sleeper.leagueId === 'string') out.sleeper.leagueId = sleeper.leagueId;
     if (typeof sleeper.username === 'string') out.sleeper.username = sleeper.username;
+    if (typeof sleeper.userId === 'string') out.sleeper.userId = sleeper.userId;
   }
   const espn = asRecord(p.espn);
   if (espn && typeof espn.leagueId === 'string' && typeof espn.season === 'number') {
@@ -83,14 +86,15 @@ export function rememberConnection(
   save(next);
 }
 
-// Call after a username lookup succeeds. Leaves the rest of the record
-// (including the last platform) alone: looking up leagues isn't connecting.
-export function rememberSleeperUsername(username: string): void {
+// Call after a username lookup succeeds, with the user_id it resolved.
+// Leaves the rest of the record (including the last platform) alone:
+// looking up leagues isn't connecting.
+export function rememberSleeperUsername(username: string, userId: string): void {
   const prev = loadLastConnection();
   const next: LastConnection = {
     ...prev,
     platform: prev?.platform ?? 'sleeper',
-    sleeper: { ...prev?.sleeper, username },
+    sleeper: { ...prev?.sleeper, username, userId },
   };
   save(next);
 }

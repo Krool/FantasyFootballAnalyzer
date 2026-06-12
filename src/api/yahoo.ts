@@ -490,6 +490,8 @@ export async function loadLeague(leagueKey: string): Promise<League> {
       id: team.team_key,
       name: team.name,
       ownerName: team.managers?.manager?.nickname || team.managers?.manager?.[0]?.nickname,
+      // Yahoo flags the authenticated user's own team directly.
+      isMyTeam: String(team.is_owned_by_current_login) === '1' || undefined,
       wins: parseInt(outcomes.wins || '0'),
       losses: parseInt(outcomes.losses || '0'),
       ties: parseInt(outcomes.ties || '0'),

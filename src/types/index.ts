@@ -112,6 +112,10 @@ export interface Team {
   id: string;
   name: string;
   ownerName?: string;
+  // True when the platform identified this team as the connected user's own
+  // (Yahoo login flag, ESPN SWID match, Sleeper username match). The Draft
+  // Room uses it to preselect "me"; absent on older cached snapshots.
+  isMyTeam?: boolean;
   avatarUrl?: string;
   roster?: Player[];
   draftPicks?: DraftPick[];

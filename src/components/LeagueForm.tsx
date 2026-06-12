@@ -322,16 +322,18 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     setSleeperLookupBusy(true);
     setSleeperLookupError(null);
     try {
-      const leagues = await findLeaguesByUsername(username);
-      if (leagues === null) {
+      const found = await findLeaguesByUsername(username);
+      if (found === null) {
         setSleeperLeagues([]);
         setSleeperLookupError('No Sleeper user with that username.');
         return;
       }
+      const { userId, leagues } = found;
       setSleeperLeagues(leagues);
       // The username resolved, so it's worth prefilling next visit even if
-      // the user ends up loading the league some other way.
-      rememberSleeperUsername(username);
+      // the user ends up loading the league some other way. The user_id is
+      // what my-team detection matches rosters against.
+      rememberSleeperUsername(username, userId);
       if (leagues.length === 0) {
         setSleeperLookupError('That user has no leagues this season or last.');
       } else {

@@ -1,0 +1,134 @@
+/* Teams tab: one league roster at a time with prev/next arrows. The roster
+   body reuses Panels.module.css; this file only styles the navigation. */
+
+.wrap {
+  border: 2px solid var(--bone-dim);
+  background: var(--ink);
+  padding: 1rem 1.1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.wrapMine {
+  border-color: var(--bone);
+  border-left: 6px solid var(--lime);
+  box-shadow: 5px 5px 0 var(--bone);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px dashed var(--bone-dim);
+}
+
+.arrow {
+  padding: 0.45rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 2px solid var(--bone-dim);
+  background: transparent;
+  color: var(--bone);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.arrow:hover {
+  border-color: var(--lime);
+  color: var(--lime);
+  background: var(--ink-2);
+}
+
+.navCenter {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.teamLine {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.teamName {
+  font-family: var(--font-headline);
+  font-size: 1.35rem;
+  line-height: 0.95;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: var(--bone);
+}
+
+.meBadge,
+.upBadge {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  padding: 0.08rem 0.35rem;
+}
+
+.meBadge {
+  background: var(--lime);
+  color: var(--ink);
+}
+
+.upBadge {
+  background: var(--blood);
+  color: var(--bone);
+}
+
+.teamMeta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.jump {
+  max-width: 11rem;
+  padding: 0.4rem 0.5rem;
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.jump:focus {
+  outline: none;
+  border-color: var(--lime);
+}
+
+.picksLine {
+  margin: 0;
+}
+
+/* The main column is wide; let the lineup flow into two columns when there
+   is room instead of one long strip. */
+.lineup {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  column-gap: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .jump {
+    display: none;
+  }
+}

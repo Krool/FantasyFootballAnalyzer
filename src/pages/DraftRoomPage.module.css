@@ -2,6 +2,13 @@
   padding: 3rem 0 5rem;
 }
 
+/* The draft board is the densest screen in the app: side column + a wide
+   stats table. Let it spread past the reading-width container on big
+   monitors instead of leaving the screen edges empty. */
+.wide {
+  max-width: 1880px;
+}
+
 .header {
   margin-bottom: 2.5rem;
   padding-bottom: 1.25rem;

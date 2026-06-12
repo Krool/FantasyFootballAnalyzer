@@ -69,6 +69,7 @@ const leagueBody = {
           {
             team_key: TEAM_1,
             name: 'Krool Runnings',
+            is_owned_by_current_login: 1,
             managers: { manager: { nickname: 'Krool' } },
             team_standings: {
               outcome_totals: { wins: '9', losses: '5', ties: '0' },
@@ -244,6 +245,11 @@ describe('yahoo loadLeague', () => {
     expect(team1.ties).toBe(0);
     expect(team1.pointsFor).toBeCloseTo(1500.5);
     expect(team1.pointsAgainst).toBeCloseTo(1400.2);
+  });
+
+  it('flags the logged-in manager team as mine via is_owned_by_current_login', () => {
+    expect(league.teams.find(t => t.id === TEAM_1)!.isMyTeam).toBe(true);
+    expect(league.teams.find(t => t.id === TEAM_2)!.isMyTeam).toBeUndefined();
   });
 
   it('attaches draft picks with auction costs to teams', () => {

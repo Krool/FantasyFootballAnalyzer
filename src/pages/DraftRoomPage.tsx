@@ -20,6 +20,7 @@ import { PickStrip } from '@/components/draftRoom/PickStrip';
 import { SnakeLogger } from '@/components/draftRoom/SnakeLogger';
 import { SuggestionsPanel } from '@/components/draftRoom/SuggestionsPanel';
 import { TeamBoard } from '@/components/draftRoom/TeamBoard';
+import { TeamsTab } from '@/components/draftRoom/TeamsTab';
 import { TierBoard } from '@/components/draftRoom/TierBoard';
 import { detectRun } from '@/utils/draftAlerts';
 import { fullPositions } from '@/utils/draftEngine';
@@ -46,11 +47,12 @@ function PickTimer({ lastEventTs }: { lastEventTs: number | null }) {
   );
 }
 
-type BoardTab = 'board' | 'tiers' | 'nfl';
+type BoardTab = 'board' | 'tiers' | 'teams' | 'nfl';
 
 const BOARD_TABS: Array<{ key: BoardTab; label: string; title: string }> = [
   { key: 'board', label: 'Board', title: 'Every available player, sortable by rank and value' },
   { key: 'tiers', label: 'Tiers', title: 'Remaining players stacked by position and tier' },
+  { key: 'teams', label: 'Teams', title: 'One league roster at a time; arrows flip between teams' },
   { key: 'nfl', label: 'NFL Teams', title: 'The pool by NFL roster: stacks, handcuffs, teammates' },
 ];
 
@@ -67,6 +69,9 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
   // The board is the selection surface: clicking a row feeds the logger.
   const [selected, setSelected] = useState<PoolPlayer | null>(null);
   const [boardTab, setBoardTab] = useState<BoardTab>('board');
+  // Which roster the Teams tab is showing; lives here so flipping to another
+  // tab and back doesn't lose the place. null = the user's own team.
+  const [viewTeamId, setViewTeamId] = useState<string | null>(null);
 
   const { phase, config, derived, undo, reset } = room;
 
@@ -272,7 +277,7 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
 
   return (
     <div className={styles.page}>
-      <div className="container">
+      <div className={`container ${styles.wide}`}>
         <div className={styles.header}>
           <h1 className={styles.title}>Draft Room</h1>
           <p className={styles.subtitle}>
@@ -466,6 +471,9 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
                 )}
                 {boardTab === 'tiers' && (
                   <TierBoard room={room} selectedId={selected?.id ?? null} onSelect={setSelected} />
+                )}
+                {boardTab === 'teams' && (
+                  <TeamsTab room={room} viewTeamId={viewTeamId} onViewTeam={setViewTeamId} />
                 )}
                 {boardTab === 'nfl' && (
                   <NflTeams room={room} selectedId={selected?.id ?? null} onSelect={setSelected} />

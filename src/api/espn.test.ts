@@ -342,4 +342,40 @@ describe('espn loadLeague', () => {
     // Dropped player has no roster data anywhere: falls back to placeholder
     expect(tx.drops.map(p => p.name)).toEqual(['Player 401']);
   });
+
+  it('flags no team as mine without cookies', () => {
+    expect(league.teams.every(t => t.isMyTeam === undefined)).toBe(true);
+  });
+});
+
+describe('espn loadLeague my-team detection (cookies)', () => {
+  // With cookies the loader goes through the proxy; same fixtures, routed by
+  // view params instead of host.
+  function routeProxy(url: string): unknown {
+    if (!url.includes('/api/espn-proxy')) {
+      throw new Error(`Expected proxy URL in cookie test: ${url}`);
+    }
+    if (url.includes('kona_league_communication')) return { topics: [] };
+    if (url.includes('view=mTransactions2')) return transactionsBody;
+    if (url.includes('view=mTeam')) return mainLeagueBody;
+    const weekMatch = url.match(/scoringPeriodId=(\d+)/);
+    if (weekMatch && url.includes('view=mRoster')) {
+      return weeklyRosterBody(parseInt(weekMatch[1]));
+    }
+    throw new Error(`Unexpected ESPN URL in test: ${url}`);
+  }
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('matches the SWID cookie against team owners despite braces and casing', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      jsonResponse(routeProxy(String(input)))
+    ));
+    // Fixture owner id is 'm2'; the cookie ships uppercase in braces.
+    const league = await loadLeague(LEAGUE_ID, SEASON, { espnS2: 's2-cookie', swid: '{M2}' });
+    expect(league.teams.find(t => t.id === '2')!.isMyTeam).toBe(true);
+    expect(league.teams.find(t => t.id === '1')!.isMyTeam).toBeUndefined();
+  });
 });

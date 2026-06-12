@@ -42,6 +42,18 @@ describe('useDraftRoom', () => {
     expect(result.current.config.season).toBe(POOL.season);
   });
 
+  it('preselects the team the platform marked as the user\'s own', () => {
+    const league = makeLeague();
+    league.teams[1].isMyTeam = true;
+    const { result } = renderHook(() => useDraftRoom(league));
+    expect(result.current.config.myTeamId).toBe('t2');
+  });
+
+  it('falls back to the first team when no team is marked as mine', () => {
+    const { result } = renderHook(() => useDraftRoom(makeLeague()));
+    expect(result.current.config.myTeamId).toBe('t1');
+  });
+
   it('refuses to start with zero rounds or a sub-$1/slot auction budget', () => {
     const { result } = renderHook(() => useDraftRoom(makeLeague()));
     act(() => {

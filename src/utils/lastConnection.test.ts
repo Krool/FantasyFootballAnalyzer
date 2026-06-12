@@ -51,11 +51,11 @@ describe('rememberConnection + loadLastConnection', () => {
 });
 
 describe('rememberSleeperUsername', () => {
-  it('saves the username without a prior record', () => {
-    rememberSleeperUsername('krool');
+  it('saves the username and user_id without a prior record', () => {
+    rememberSleeperUsername('krool', 'u42');
     expect(loadLastConnection()).toEqual({
       platform: 'sleeper',
-      sleeper: { username: 'krool' },
+      sleeper: { username: 'krool', userId: 'u42' },
     });
   });
 
@@ -63,10 +63,10 @@ describe('rememberSleeperUsername', () => {
     rememberConnection('espn', 'E1', 2025);
     rememberConnection('sleeper', 'S1', 2026);
     rememberConnection('espn', 'E1', 2025);
-    rememberSleeperUsername('krool');
+    rememberSleeperUsername('krool', 'u42');
     const conn = loadLastConnection();
     expect(conn?.platform).toBe('espn');
-    expect(conn?.sleeper).toEqual({ leagueId: 'S1', username: 'krool' });
+    expect(conn?.sleeper).toEqual({ leagueId: 'S1', username: 'krool', userId: 'u42' });
   });
 });
 
