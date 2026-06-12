@@ -124,228 +124,236 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
         </div>
       )}
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Format</h2>
-        <div className={styles.formatRow}>
-          <div className={styles.field}>
-            <span className={styles.label}>Draft Type</span>
-            <div className={styles.toggle}>
-              <button
-                type="button"
-                className={config.draftType === 'auction' ? styles.toggleOn : styles.toggleOff}
-                onClick={() => updateConfig({ draftType: 'auction' })}
-              >
-                Auction
-              </button>
-              <button
-                type="button"
-                className={config.draftType === 'snake' ? styles.toggleOn : styles.toggleOff}
-                onClick={() => updateConfig({ draftType: 'snake' })}
-              >
-                Snake
-              </button>
+      <div className={styles.columns}>
+        <div className={styles.column}>
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Format</h2>
+            <div className={styles.formatRow}>
+              <div className={styles.field}>
+                <span className={styles.label}>Draft Type</span>
+                <div className={styles.toggle}>
+                  <button
+                    type="button"
+                    className={config.draftType === 'auction' ? styles.toggleOn : styles.toggleOff}
+                    onClick={() => updateConfig({ draftType: 'auction' })}
+                  >
+                    Auction
+                  </button>
+                  <button
+                    type="button"
+                    className={config.draftType === 'snake' ? styles.toggleOn : styles.toggleOff}
+                    onClick={() => updateConfig({ draftType: 'snake' })}
+                  >
+                    Snake
+                  </button>
+                </div>
+              </div>
+              {config.draftType === 'auction' && (
+                <div className={styles.field}>
+                  <span className={styles.label}>Budget Per Team</span>
+                  <input
+                    type="number"
+                    className={styles.input}
+                    min={config.rounds}
+                    value={config.budget}
+                    onChange={e => updateConfig({ budget: Number(e.target.value) || 0 })}
+                  />
+                </div>
+              )}
+              <div className={styles.field}>
+                <span className={styles.label}>Mode</span>
+                <div className={styles.toggle}>
+                  <button
+                    type="button"
+                    className={config.mode === 'live' ? styles.toggleOn : styles.toggleOff}
+                    onClick={() => updateConfig({ mode: 'live' })}
+                  >
+                    Live
+                  </button>
+                  <button
+                    type="button"
+                    className={config.mode === 'mock' ? styles.toggleOn : styles.toggleOff}
+                    onClick={() => updateConfig({ mode: 'mock' })}
+                  >
+                    Mock
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-          {config.draftType === 'auction' && (
-            <div className={styles.field}>
-              <span className={styles.label}>Budget Per Team</span>
-              <input
-                type="number"
-                className={styles.input}
-                min={config.rounds}
-                value={config.budget}
-                onChange={e => updateConfig({ budget: Number(e.target.value) || 0 })}
-              />
+            {config.mode === 'mock' && (
+              <>
+                <p className={styles.hint}>
+                  Mock mode: the other teams draft automatically so you can practice.
+                </p>
+                {config.draftType === 'auction' && (
+                  <label className={styles.keeperToggle}>
+                    <input
+                      type="checkbox"
+                      checked={!!config.liveBidding}
+                      onChange={e => updateConfig({ liveBidding: e.target.checked })}
+                    />
+                    Live bidding: bids are called one at a time so you can price-enforce,
+                    instead of submitting one sealed max bid
+                  </label>
+                )}
+                <div className={styles.field}>
+                  <span className={styles.label}>Sim Seed (optional)</span>
+                  <input
+                    type="number"
+                    className={styles.input}
+                    placeholder="random"
+                    value={config.simSeed ?? ''}
+                    onChange={e => {
+                      // Number, not ||: 0 is a valid seed.
+                      const n = Number(e.target.value);
+                      updateConfig({
+                        simSeed: e.target.value === '' || Number.isNaN(n) ? undefined : n,
+                      });
+                    }}
+                    title="Same seed = the AI repeats the exact same picks and bids, so you can replay a mock with a different strategy"
+                  />
+                </div>
+              </>
+            )}
+          </section>
+
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Roster</h2>
+            <div className={styles.slotGrid}>
+              {SLOT_KEYS.map(key => (
+                <div key={key} className={styles.field}>
+                  <span className={styles.label}>{key}</span>
+                  <input
+                    type="number"
+                    className={styles.input}
+                    min={0}
+                    value={config.rosterSlots[key]}
+                    onChange={e => setSlot(key, Number(e.target.value) || 0)}
+                  />
+                </div>
+              ))}
             </div>
-          )}
-          <div className={styles.field}>
-            <span className={styles.label}>Mode</span>
-            <div className={styles.toggle}>
-              <button
-                type="button"
-                className={config.mode === 'live' ? styles.toggleOn : styles.toggleOff}
-                onClick={() => updateConfig({ mode: 'live' })}
-              >
-                Live
-              </button>
-              <button
-                type="button"
-                className={config.mode === 'mock' ? styles.toggleOn : styles.toggleOff}
-                onClick={() => updateConfig({ mode: 'mock' })}
-              >
-                Mock
-              </button>
-            </div>
-          </div>
-        </div>
-        {config.mode === 'mock' && (
-          <>
             <p className={styles.hint}>
-              Mock mode: the other teams draft automatically so you can practice.
+              {config.rounds} draftable spots per team, {config.teams.length * config.rounds} total
+              picks. IR slots are not drafted.
             </p>
-            {config.draftType === 'auction' && (
+          </section>
+
+          {config.draftType === 'snake' && anyKeeperCandidates && (
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Keepers</h2>
               <label className={styles.keeperToggle}>
                 <input
                   type="checkbox"
-                  checked={!!config.liveBidding}
-                  onChange={e => updateConfig({ liveBidding: e.target.checked })}
+                  checked={keepersOn}
+                  onChange={e => toggleKeepers(e.target.checked)}
                 />
-                Live bidding: bids are called one at a time so you can price-enforce,
-                instead of submitting one sealed max bid
+                Each team keeps one player, costing one round earlier than last season
               </label>
-            )}
-            <div className={styles.field}>
-              <span className={styles.label}>Sim Seed (optional)</span>
-              <input
-                type="number"
-                className={styles.input}
-                placeholder="random"
-                value={config.simSeed ?? ''}
-                onChange={e =>
-                  updateConfig({
-                    simSeed: e.target.value === '' ? undefined : Number(e.target.value) || undefined,
-                  })
-                }
-                title="Same seed = the AI repeats the exact same picks and bids, so you can replay a mock with a different strategy"
-              />
-            </div>
-          </>
-        )}
-      </section>
-
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>
-          Teams <span className={styles.sectionCount}>{config.teams.length}</span>
-        </h2>
-        <p className={styles.hint}>
-          {config.draftType === 'auction'
-            ? 'Order sets the nomination rotation.'
-            : 'Order sets the round 1 pick order.'}{' '}
-          Mark which team is yours.
-        </p>
-        <div className={styles.teamList}>
-          {config.teams.map((team, i) => (
-            <div key={team.id} className={styles.teamRow}>
-              <span className={styles.teamIndex}>{String(i + 1).padStart(2, '0')}</span>
-              <input
-                className={styles.input}
-                value={team.name}
-                onChange={e =>
-                  setTeams(config.teams.map(t => (t.id === team.id ? { ...t, name: e.target.value } : t)))
-                }
-              />
-              <label className={styles.meLabel}>
-                <input
-                  type="radio"
-                  name={meGroup}
-                  checked={config.myTeamId === team.id}
-                  onChange={() => updateConfig({ myTeamId: team.id })}
-                />
-                Me
-              </label>
-              <div className={styles.teamButtons}>
-                <button type="button" className={styles.iconBtn} onClick={() => moveTeam(i, -1)} aria-label={`Move ${team.name} up`}>
-                  ▲
-                </button>
-                <button type="button" className={styles.iconBtn} onClick={() => moveTeam(i, 1)} aria-label={`Move ${team.name} down`}>
-                  ▼
-                </button>
-                <button
-                  type="button"
-                  className={styles.iconBtn}
-                  onClick={() => removeTeam(i)}
-                  disabled={config.teams.length <= 2}
-                  aria-label={`Remove ${team.name}`}
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-        <button type="button" className={styles.btn} onClick={addTeam}>
-          + Add Team
-        </button>
-      </section>
-
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Roster</h2>
-        <div className={styles.slotGrid}>
-          {SLOT_KEYS.map(key => (
-            <div key={key} className={styles.field}>
-              <span className={styles.label}>{key}</span>
-              <input
-                type="number"
-                className={styles.input}
-                min={0}
-                value={config.rosterSlots[key]}
-                onChange={e => setSlot(key, Number(e.target.value) || 0)}
-              />
-            </div>
-          ))}
-        </div>
-        <p className={styles.hint}>
-          {config.rounds} draftable spots per team, {config.teams.length * config.rounds} total
-          picks. IR slots are not drafted.
-        </p>
-      </section>
-
-      {config.draftType === 'snake' && anyKeeperCandidates && (
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Keepers</h2>
-          <label className={styles.keeperToggle}>
-            <input
-              type="checkbox"
-              checked={keepersOn}
-              onChange={e => toggleKeepers(e.target.checked)}
-            />
-            Each team keeps one player, costing one round earlier than last season
-          </label>
-          {keepersOn && (
-            <>
-              <p className={styles.hint}>
-                Guesses pick the biggest gap between the player and what his cost round
-                normally buys, weighted toward the top of the board. Fix any we got wrong;
-                kept players come off the board and consume that round's pick.
-              </p>
-              <div className={styles.keeperList}>
-                {config.teams.map(team => {
-                  const candidates = candidatesByTeam.get(team.id) ?? [];
-                  const current = config.keepers?.find(k => k.teamId === team.id);
-                  if (candidates.length === 0) {
-                    return (
-                      <div key={team.id} className={styles.keeperRow}>
-                        <span className={styles.keeperTeam}>{team.name}</span>
-                        <span className={styles.keeperNone}>no eligible players</span>
-                      </div>
-                    );
-                  }
-                  return (
-                    <div key={team.id} className={styles.keeperRow}>
-                      <span className={styles.keeperTeam}>{team.name}</span>
-                      <select
-                        className={styles.keeperSelect}
-                        value={current?.playerId ?? ''}
-                        onChange={e => setTeamKeeper(team.id, e.target.value)}
-                      >
-                        <option value="">No keeper</option>
-                        {candidates.slice(0, 10).map(c => (
-                          <option key={c.player.id} value={c.player.id}>
-                            {c.player.name} ({c.player.pos}) keeps R{c.costRound}, expert R
-                            {c.expertRound}, market R{c.marketRound},{' '}
-                            {c.surplus >= 0 ? '+' : ''}${Math.round(c.surplus)}
-                            {c.keptLastYear ? ', kept last year' : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
+              {keepersOn && (
+                <>
+                  <p className={styles.hint}>
+                    Guesses pick the biggest gap between the player and what his cost round
+                    normally buys, weighted toward the top of the board. Fix any we got wrong;
+                    kept players come off the board and consume that round's pick.
+                  </p>
+                  <div className={styles.keeperList}>
+                    {config.teams.map(team => {
+                      const candidates = candidatesByTeam.get(team.id) ?? [];
+                      const current = config.keepers?.find(k => k.teamId === team.id);
+                      if (candidates.length === 0) {
+                        return (
+                          <div key={team.id} className={styles.keeperRow}>
+                            <span className={styles.keeperTeam}>{team.name}</span>
+                            <span className={styles.keeperNone}>no eligible players</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={team.id} className={styles.keeperRow}>
+                          <span className={styles.keeperTeam}>{team.name}</span>
+                          <select
+                            className={styles.keeperSelect}
+                            value={current?.playerId ?? ''}
+                            onChange={e => setTeamKeeper(team.id, e.target.value)}
+                          >
+                            <option value="">No keeper</option>
+                            {candidates.slice(0, 10).map(c => (
+                              <option key={c.player.id} value={c.player.id}>
+                                {c.player.name} ({c.player.pos}) keeps R{c.costRound}, expert R
+                                {c.expertRound}, market R{c.marketRound},{' '}
+                                {c.surplus >= 0 ? '+' : ''}${Math.round(c.surplus)}
+                                {c.keptLastYear ? ', kept last year' : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </section>
           )}
-        </section>
-      )}
+        </div>
+
+        <div className={styles.column}>
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              Teams <span className={styles.sectionCount}>{config.teams.length}</span>
+            </h2>
+            <p className={styles.hint}>
+              {config.draftType === 'auction'
+                ? 'Order sets the nomination rotation.'
+                : 'Order sets the round 1 pick order.'}{' '}
+              Mark which team is yours.
+            </p>
+            <div className={styles.teamList}>
+              {config.teams.map((team, i) => (
+                <div key={team.id} className={styles.teamRow}>
+                  <span className={styles.teamIndex}>{String(i + 1).padStart(2, '0')}</span>
+                  <input
+                    className={styles.input}
+                    value={team.name}
+                    onChange={e =>
+                      setTeams(config.teams.map(t => (t.id === team.id ? { ...t, name: e.target.value } : t)))
+                    }
+                  />
+                  <label className={styles.meLabel}>
+                    <input
+                      type="radio"
+                      name={meGroup}
+                      checked={config.myTeamId === team.id}
+                      onChange={() => updateConfig({ myTeamId: team.id })}
+                    />
+                    Me
+                  </label>
+                  <div className={styles.teamButtons}>
+                    <button type="button" className={styles.iconBtn} onClick={() => moveTeam(i, -1)} aria-label={`Move ${team.name} up`}>
+                      ▲
+                    </button>
+                    <button type="button" className={styles.iconBtn} onClick={() => moveTeam(i, 1)} aria-label={`Move ${team.name} down`}>
+                      ▼
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.iconBtn}
+                      onClick={() => removeTeam(i)}
+                      disabled={config.teams.length <= 2}
+                      aria-label={`Remove ${team.name}`}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button type="button" className={styles.btn} onClick={addTeam}>
+              + Add Team
+            </button>
+          </section>
+        </div>
+      </div>
 
       <div className={styles.startRow}>
         <button

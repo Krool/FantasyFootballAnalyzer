@@ -2,7 +2,28 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  max-width: 760px;
+}
+
+/* Side-by-side on desktop: settings on the left, the team list on the
+   right, so the form fills the page container like every other screen. */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  min-width: 0;
+}
+
+@media (max-width: 1000px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .resume {
@@ -223,8 +244,23 @@
 
 .slotGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 1rem;
+  /* 8 = SLOT_KEYS.length in DraftSetup.tsx; one row across a roomy column. */
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.slotGrid .field .input[type='number'] {
+  width: 100%;
+}
+
+/* While the two-column layout squeezes this section (1001-1300px) and again
+   on phones, eight tracks clip the numbers; two rows of four keep every
+   input readable. The single-column band between 641-1000px is roomy enough
+   for one row, but stays at four for a consistent shape. */
+@media (max-width: 1300px) {
+  .slotGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .keeperToggle {

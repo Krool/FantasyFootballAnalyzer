@@ -277,7 +277,7 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
 
   return (
     <div className={styles.page}>
-      <div className={`container ${styles.wide}`}>
+      <div className={phase === 'setup' ? 'container' : `container ${styles.wide}`}>
         <div className={styles.header}>
           <h1 className={styles.title}>Draft Room</h1>
           <p className={styles.subtitle}>
