@@ -104,7 +104,9 @@ export function SuggestionsPanel({ room, onSelect }: SuggestionsPanelProps) {
                     playClick();
                     onSelect(player);
                   }}
-                  title={`Select ${player.name} for the pick logger`}
+                  // The why lives in the tooltip: a reasons line under every
+                  // name doubled the panel's height.
+                  title={reasons.join(' · ')}
                 >
                   <span className={styles.suggestMain}>
                     <span className={styles.rowPos}>
@@ -114,7 +116,6 @@ export function SuggestionsPanel({ room, onSelect }: SuggestionsPanelProps) {
                     <span className={styles.rowName}>{player.name}</span>
                     <span className={styles.rowValueDim}>#{player.overallRank}</span>
                   </span>
-                  <span className={styles.suggestReasons}>{reasons.join(' · ')}</span>
                 </button>
               </li>
             ))}

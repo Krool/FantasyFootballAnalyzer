@@ -33,6 +33,11 @@
   align-items: start;
   max-height: calc(100dvh - 280px);
   overflow-y: auto;
+  /* The pane scrolls, so give it a visible frame: cards sliding past a bare
+     edge read as a rendering glitch. Padding keeps their shadows inside. */
+  border: 2px solid var(--bone-dim);
+  background: var(--ink);
+  padding: 1rem;
 }
 
 @media (max-width: 640px) {
@@ -47,6 +52,8 @@
   .grid {
     max-height: none;
     overflow: visible;
+    border: none;
+    padding: 0;
   }
 }
 

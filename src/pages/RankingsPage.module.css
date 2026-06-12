@@ -211,6 +211,13 @@
   white-space: nowrap;
 }
 
+/* `.table th` outweighs single-class rules; the th-scoped selectors below
+   keep numeric heads sitting over their right-aligned values and let the
+   active-sort highlight actually win. */
+.table th.num {
+  text-align: right;
+}
+
 .sortable {
   cursor: pointer;
   user-select: none;
@@ -220,7 +227,7 @@
   color: var(--lime);
 }
 
-.sorted {
+.table th.sorted {
   color: var(--lime);
 }
 

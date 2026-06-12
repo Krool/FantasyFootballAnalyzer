@@ -156,12 +156,18 @@
   background: var(--ink-2);
 }
 
+/* Both lines truncate instead of wrapping: a long player name growing the
+   card a row taller made the whole logger jostle on every selection. */
 .clockKicker {
   font-family: var(--font-mono);
   font-size: 0.65rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--bone-dim);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .clockTeam {
@@ -170,6 +176,10 @@
   font-weight: 500;
   font-size: 1.05rem;
   color: var(--bone);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .clockMine .clockTeam {
