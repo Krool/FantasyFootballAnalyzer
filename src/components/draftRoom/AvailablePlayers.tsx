@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState, type RefObject } from 'react';
+import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState, type RefObject } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
@@ -28,6 +28,9 @@ interface AvailablePlayersProps {
   // Yahoo auction market prices by pool player id (present when the user
   // has a Yahoo session).
   yahooCosts?: Map<string, number> | null;
+  // Snake only: picks other teams make before the user's next turn. Draws
+  // the "your pick lands here" line that creeps up the board as picks log.
+  picksUntilMine?: number | null;
   inputRef?: RefObject<HTMLInputElement>;
 }
 
@@ -45,6 +48,7 @@ export function AvailablePlayers({
   excludedPositions,
   clockFullPositions,
   yahooCosts,
+  picksUntilMine,
   inputRef,
 }: AvailablePlayersProps) {
   const { config, derived, scaledValues, inflation, scoring } = room;
@@ -52,7 +56,9 @@ export function AvailablePlayers({
   const showYahoo = isAuction && !!yahooCosts;
   const [query, setQuery] = useState('');
   const [posFilter, setPosFilter] = useState('ALL');
-  const [sortBy, setSortBy] = useState<'rank' | 'value' | 'adj' | 'espn' | 'yahoo' | 'adp'>('rank');
+  const [sortBy, setSortBy] = useState<
+    'rank' | 'value' | 'adj' | 'espn' | 'yahoo' | 'adp' | 'delta' | 'adpDelta'
+  >('rank');
   // Arrow-key cursor through the visible rows; Enter selects it.
   const [cursor, setCursor] = useState(0);
   const { playClick, playFilter, playSort } = useSounds();
@@ -74,7 +80,35 @@ export function AvailablePlayers({
     (p: PoolPlayer) => sleeperAdpFor(p, scoring) ?? p.espnAdp,
     [scoring],
   );
-  const adjValue = (p: PoolPlayer) => inflateValue(scaledValues.get(p.id) ?? 1, inflation.rate);
+  const adjValue = useCallback(
+    (p: PoolPlayer) => inflateValue(scaledValues.get(p.id) ?? 1, inflation.rate),
+    [scaledValues, inflation.rate],
+  );
+  // What the market actually pays: real Yahoo auction averages when the
+  // user has a session, ESPN's live price otherwise. An espnValue of 0 is
+  // the pipeline's no-price sentinel, not a real $0.
+  const marketCost = useCallback(
+    (p: PoolPlayer) => yahooCosts?.get(p.id) ?? (p.espnValue || null),
+    [yahooCosts],
+  );
+  // Surplus per dollar at market price. Positive: the room usually pays
+  // less than he's worth here, a value buy. Negative: a market overpay.
+  const valueDelta = useCallback(
+    (p: PoolPlayer) => {
+      const market = marketCost(p);
+      return market === null ? null : Math.round(adjValue(p) - market);
+    },
+    [marketCost, adjValue],
+  );
+  // Snake discount: ADP minus expert rank. Positive: rooms take him later
+  // than experts rank him, so he can be had below his worth.
+  const adpDelta = useCallback(
+    (p: PoolPlayer) => {
+      const a = adp(p);
+      return a == null ? null : Math.round(a - p.overallRank);
+    },
+    [adp],
+  );
 
   const setSort = (key: typeof sortBy) => {
     playSort();
@@ -120,9 +154,23 @@ export function AvailablePlayers({
       );
     } else if (sortBy === 'adp') {
       filtered.sort((a, b) => (adp(a) ?? 9999) - (adp(b) ?? 9999));
+    } else if (sortBy === 'adpDelta') {
+      // Biggest discounts first; players with no ADP sink to the bottom.
+      filtered.sort(
+        (a, b) =>
+          (adpDelta(b) ?? -Infinity) - (adpDelta(a) ?? -Infinity) ||
+          a.overallRank - b.overallRank,
+      );
+    } else if (sortBy === 'delta') {
+      // Players with no market price sink to the bottom.
+      filtered.sort(
+        (a, b) =>
+          (valueDelta(b) ?? -Infinity) - (valueDelta(a) ?? -Infinity) ||
+          a.overallRank - b.overallRank,
+      );
     }
     return filtered;
-  }, [derived.available, excludedPositions, deferredQuery, posFilter, sortBy, scaledValues, yahooCosts, adp]);
+  }, [derived.available, excludedPositions, deferredQuery, posFilter, sortBy, scaledValues, yahooCosts, adp, adpDelta, valueDelta]);
 
   // Last available player at their position in their tier: once they're
   // gone, that position drops a tier.
@@ -136,6 +184,27 @@ export function AvailablePlayers({
   }, [derived.available]);
 
   const visible = rows.slice(0, MAX_ROWS);
+
+  // "Your pick lands here": if every pick before the user's comes off the
+  // top of this list, the rows above the line are gone and the user picks
+  // from the rows below. Only drawn on the full board in a pick-likelihood
+  // order; a position filter, search, excluded positions (other teams still
+  // draft those players), or a discount sort breaks the
+  // everyone-picks-from-the-top assumption.
+  const cutoffAt =
+    picksUntilMine != null &&
+    picksUntilMine > 0 &&
+    picksUntilMine < visible.length &&
+    posFilter === 'ALL' &&
+    deferredQuery.trim() === '' &&
+    (sortBy === 'rank' || sortBy === 'adp') &&
+    !excludedPositions?.size
+      ? picksUntilMine
+      : null;
+
+  // Tier heat: tiers 1-4 cool from gold to mute, 5+ stays dim.
+  const tierClass = (tier: number) =>
+    [styles.tier1, styles.tier2, styles.tier3, styles.tier4][tier - 1] ?? styles.dim;
 
   // Keep the cursor in range whenever the visible list changes shape.
   useEffect(() => {
@@ -196,14 +265,24 @@ export function AvailablePlayers({
                 tabIndex={0}
                 onKeyDown={sortKeyDown('rank')}
                 aria-sort={ariaSortFor('rank')}
+                title="FantasyPros expert consensus rank (ECR): the average of every expert's overall rank for this scoring format. The board's default order."
               >
                 RK
               </th>
-              <th className={styles.num}>Tier</th>
+              <th
+                className={styles.num}
+                title="FantasyPros consensus tier. Players in the same tier are close enough to treat as interchangeable; the real drop-off is between tiers."
+              >
+                Tier
+              </th>
               <th>Player</th>
-              <th>Pos</th>
+              <th title="Position and consensus rank within it: RB12 is the experts' 12th-ranked RB.">
+                Pos
+              </th>
               <th>Team</th>
-              <th className={styles.num}>Bye</th>
+              <th title="Week the player's team sits out. ⚠ marks byes where you already have two or more skill starters.">
+                Bye
+              </th>
               <th
                 className={`${styles.num} ${styles.sortable} ${sortBy === 'adp' ? styles.sorted : ''}`}
                 onClick={() => setSort('adp')}
@@ -211,10 +290,23 @@ export function AvailablePlayers({
                 tabIndex={0}
                 onKeyDown={sortKeyDown('adp')}
                 aria-sort={ariaSortFor('adp')}
-                title={`ADP: Sleeper ${scoring.replace('_', ' ')} scoring, ESPN as fallback`}
+                title={`Average draft position: the pick where real drafters take him. Sleeper ${scoring.replace('_', ' ')} drafts, ESPN as fallback.`}
               >
                 ADP
               </th>
+              {!isAuction && (
+                <th
+                  className={`${styles.num} ${styles.sortable} ${sortBy === 'adpDelta' ? styles.sorted : ''}`}
+                  onClick={() => setSort('adpDelta')}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={sortKeyDown('adpDelta')}
+                  aria-sort={ariaSortFor('adpDelta')}
+                  title="ADP minus expert rank. Positive: rooms usually take him later than experts rank him, a discount."
+                >
+                  Δ
+                </th>
+              )}
               {isAuction && (
                 <>
                   <th
@@ -263,6 +355,17 @@ export function AvailablePlayers({
                       YHO $
                     </th>
                   )}
+                  <th
+                    className={`${styles.num} ${styles.sortable} ${sortBy === 'delta' ? styles.sorted : ''}`}
+                    onClick={() => setSort('delta')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={sortKeyDown('delta')}
+                aria-sort={ariaSortFor('delta')}
+                    title={`ADJ $ minus the market price (${showYahoo ? 'Yahoo when present, else ESPN' : 'ESPN'}). Positive: the market usually pays less than he's worth, a value buy.`}
+                  >
+                    Δ $
+                  </th>
                 </>
               )}
               {onQuickDraft && <th aria-label="Quick draft" />}
@@ -270,8 +373,18 @@ export function AvailablePlayers({
           </thead>
           <tbody>
             {visible.map((p, i) => (
+              <Fragment key={p.id}>
+              {i === cutoffAt && (
+                <tr className={styles.cutoffRow}>
+                  <td
+                    colSpan={(isAuction ? 12 : 9) + (showYahoo ? 1 : 0) + (onQuickDraft ? 1 : 0)}
+                    title="If every pick before yours comes off the top of this list, the board above this line is gone and you choose from the players below it."
+                  >
+                    ▲ Likely gone · your pick lands here ({cutoffAt} {cutoffAt === 1 ? 'pick' : 'picks'} away)
+                  </td>
+                </tr>
+              )}
               <tr
-                key={p.id}
                 className={`${p.id === selectedId ? styles.rowSelected : styles.row} ${
                   i === cursor ? styles.rowCursor : ''
                 } ${avoided.has(p.id) ? styles.rowAvoided : ''}`}
@@ -317,7 +430,7 @@ export function AvailablePlayers({
                   </button>
                 </td>
                 <td className={`${styles.num} ${styles.dim}`}>{p.overallRank}</td>
-                <td className={`${styles.num} ${styles.dim}`}>{p.tier}</td>
+                <td className={`${styles.num} ${tierClass(p.tier)}`}>{p.tier}</td>
                 <td className={styles.player}>
                   {p.name}
                   {p.rookie && <span className={styles.rookieTag} title="Rookie">R</span>}
@@ -345,7 +458,37 @@ export function AvailablePlayers({
                     </span>
                   )}
                 </td>
-                <td className={`${styles.num} ${styles.dim}`}>{adp(p) ?? '-'}</td>
+                {(() => {
+                  const a = adp(p);
+                  // Still on the board past his ADP: the room usually takes
+                  // him earlier, so he's falling value right now.
+                  const fell = !isAuction && derived.pickCount > 0 && a != null && a < derived.pickCount + 1;
+                  return (
+                    <td
+                      className={`${styles.num} ${fell ? styles.adpFall : styles.dim}`}
+                      title={fell ? 'Fallen past his ADP: rooms usually take him before this pick' : undefined}
+                    >
+                      {a ?? '-'}
+                    </td>
+                  );
+                })()}
+                {!isAuction &&
+                  (() => {
+                    const d = adpDelta(p);
+                    return (
+                      <td
+                        className={`${styles.num} ${
+                          d !== null && d > 0
+                            ? styles.deltaGood
+                            : d !== null && d < 0
+                              ? styles.deltaBad
+                              : styles.dim
+                        }`}
+                      >
+                        {d === null ? '-' : d > 0 ? `+${d}` : d}
+                      </td>
+                    );
+                  })()}
                 {isAuction && (
                   <>
                     <td className={`${styles.num} ${styles.dim}`}>
@@ -358,6 +501,22 @@ export function AvailablePlayers({
                         {yahooCosts?.get(p.id) ? `$${yahooCosts.get(p.id)}` : '-'}
                       </td>
                     )}
+                    {(() => {
+                      const d = valueDelta(p);
+                      return (
+                        <td
+                          className={`${styles.num} ${
+                            d !== null && d > 0
+                              ? styles.deltaGood
+                              : d !== null && d < 0
+                                ? styles.deltaBad
+                                : styles.dim
+                          }`}
+                        >
+                          {d === null ? '-' : d > 0 ? `+${d}` : d}
+                        </td>
+                      );
+                    })()}
                   </>
                 )}
                 {onQuickDraft && (
@@ -378,11 +537,12 @@ export function AvailablePlayers({
                   </td>
                 )}
               </tr>
+              </Fragment>
             ))}
             {visible.length === 0 && (
               <tr>
                 <td
-                  colSpan={(isAuction ? 11 : 8) + (showYahoo ? 1 : 0) + (onQuickDraft ? 1 : 0)}
+                  colSpan={(isAuction ? 12 : 9) + (showYahoo ? 1 : 0) + (onQuickDraft ? 1 : 0)}
                   className={styles.emptyRow}
                 >
                   No available players match.

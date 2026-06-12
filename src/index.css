@@ -65,6 +65,13 @@
   --pos-k:   #b08fd6;
   --pos-dst: #8fa3ad;
 
+  /* Draft tier heat: tier 1 burns gold, cooling toward mute by tier 5+
+     (which stays plain --bone-dim). Accent text only, never backgrounds. */
+  --tier-1: var(--gold);
+  --tier-2: var(--lime);
+  --tier-3: color-mix(in srgb, var(--lime) 55%, var(--bone-dim));
+  --tier-4: color-mix(in srgb, var(--lime) 30%, var(--bone-dim));
+
   /* ── Type system ── */
   --font-headline: "Bowlby One", Impact, "Arial Black", sans-serif;
   --font-display:  "Fraunces", Georgia, "Times New Roman", serif;

@@ -92,6 +92,9 @@
   border-collapse: collapse;
   font-family: var(--font-mono);
   font-size: 0.82rem;
+  /* Cell color rides on the table and inherits down: a `.table td` color
+     would outweigh single-class cells like .dim and the tier ramp. */
+  color: var(--bone);
 }
 
 .table th {
@@ -125,7 +128,6 @@
 .table td {
   border-bottom: 1px dashed var(--rule);
   padding: 0.45rem 0.65rem;
-  color: var(--bone);
 }
 
 .row,
@@ -223,6 +225,55 @@
 .value {
   color: var(--lime);
   font-weight: 700;
+}
+
+/* Tier heat: tier 1 burns gold, cooling to mute by tier 5+ (plain .dim). */
+.tier1 {
+  color: var(--tier-1);
+  font-weight: 700;
+}
+
+.tier2 {
+  color: var(--tier-2);
+  font-weight: 700;
+}
+
+.tier3 {
+  color: var(--tier-3);
+}
+
+.tier4 {
+  color: var(--tier-4);
+}
+
+/* Available past his ADP: falling value. */
+.adpFall {
+  color: var(--lime);
+  font-weight: 700;
+}
+
+.deltaGood {
+  color: var(--lime);
+  font-weight: 700;
+}
+
+.deltaBad {
+  color: var(--blood);
+  font-weight: 700;
+}
+
+/* "Your pick lands here": everything above is likely gone before the snake
+   comes back around; the user gets one of the players below. */
+.cutoffRow td {
+  border-top: 2px solid var(--lime);
+  border-bottom: 1px dashed var(--rule);
+  padding: 0.25rem 0.65rem;
+  color: var(--lime);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .quickCell {

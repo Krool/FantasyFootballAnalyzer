@@ -10,14 +10,24 @@
 
 .logo {
   display: block;
-  /* Idle in grayscale so 32 brand palettes don't fight the app's own;
-     containers can opt into color on hover via :hover .logo overrides. */
-  filter: grayscale(1) contrast(1.15) brightness(1.1);
-  transition: filter 0.15s ease;
 }
 
-.label:hover .logo {
-  filter: none;
+/* The -dark logo art is drawn for dark surfaces (NYJ and LAR are pure
+   white); on paper it needs its ink behind it. print-color-adjust keeps
+   the chip even when the browser skips backgrounds. */
+@media print {
+  .logo {
+    background: var(--ink);
+    border-radius: 2px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* Brand color softened toward bone so navy-on-ink teams stay readable.
+   --team-accent is set inline by NflTeamLabel from nflAccentColor(). */
+.abbrTinted {
+  color: color-mix(in srgb, var(--team-accent) 70%, var(--bone));
 }
 
 .xs .logo {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectRun, tierAlerts } from './draftAlerts';
+import { detectRun } from './draftAlerts';
 import type { DraftEvent, PoolPlayer } from '@/types/draft';
 
 let nextId = 0;
@@ -56,30 +56,5 @@ describe('detectRun', () => {
       ...others.map((p, i) => pickEvent(p.id, 4 + i)),
     ];
     expect(detectRun(events, byId)).toBeNull();
-  });
-});
-
-describe('tierAlerts', () => {
-  const demand = { QB: 3, RB: 4, WR: 2, TE: 1, K: 0, DST: 0 };
-
-  it('alerts when the top open tier is nearly gone and demanded', () => {
-    const available = [
-      player({ pos: 'RB', tier: 2 }),
-      player({ pos: 'RB', tier: 2 }),
-      player({ pos: 'RB', tier: 3 }),
-      player({ pos: 'RB', tier: 3 }),
-      player({ pos: 'RB', tier: 3 }),
-    ];
-    expect(tierAlerts(available, demand)).toEqual([
-      { pos: 'RB', tier: 2, left: 2, demand: 4 },
-    ]);
-  });
-
-  it('stays quiet without demand or with a deep tier', () => {
-    const noDemand = { ...demand, TE: 1 };
-    const lastTe = [player({ pos: 'TE', tier: 1 })];
-    expect(tierAlerts(lastTe, noDemand)).toEqual([]);
-    const deepRb = Array.from({ length: 5 }, () => player({ pos: 'RB', tier: 2 }));
-    expect(tierAlerts(deepRb, demand)).toEqual([]);
   });
 });

@@ -57,11 +57,33 @@ export function nflTeamInfo(team: string | null | undefined): NflTeamInfo | null
   return NFL_TEAMS[canonicalTeam(team)] ?? null;
 }
 
-// 500px source scaled down by the consumer; the -dark variants read better
-// on the app's ink background.
+// 500px source scaled down by the consumer; the -dark variants are drawn
+// for dark backgrounds like the app's ink.
 export function nflLogoUrl(team: string | null | undefined): string | null {
   const info = nflTeamInfo(team);
-  return info ? `https://a.espncdn.com/i/teamlogos/nfl/500/${info.espnSlug}.png` : null;
+  return info ? `https://a.espncdn.com/i/teamlogos/nfl/500-dark/${info.espnSlug}.png` : null;
+}
+
+// WCAG relative luminance (0..1) of a #rrggbb hex.
+function luminance(hex: string): number {
+  const n = parseInt(hex.slice(1), 16);
+  const chan = (v: number) => {
+    const c = v / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * chan((n >> 16) & 255) + 0.7152 * chan((n >> 8) & 255) + 0.0722 * chan(n & 255);
+}
+
+// The brand color that registers on the ink background: the primary unless
+// it's too dark to read, then whichever of the pair is brighter. Half the
+// league's primaries are near-black navy; their secondaries carry the
+// identity on dark surfaces. Consumers should still soften the result
+// (color-mix toward --bone) before using it as text.
+export function nflAccentColor(team: string | null | undefined): string | null {
+  const info = nflTeamInfo(team);
+  if (!info) return null;
+  if (luminance(info.primary) >= 0.15) return info.primary;
+  return luminance(info.secondary) > luminance(info.primary) ? info.secondary : info.primary;
 }
 
 // Sleeper player headshot; needs the player's sleeperId from the pool.

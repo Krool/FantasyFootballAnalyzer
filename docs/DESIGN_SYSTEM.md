@@ -65,9 +65,17 @@ full-component backgrounds.
 
 NFL brand colors (`src/data/nflTeams.ts`) follow the same rule: accent
 stripes and chips only, where a team's identity is the content (NFL Teams
-cards, Player Journey header). Logos idle in grayscale
-(`filter: grayscale(1)`) and gain color on hover, so 32 brand palettes
-don't shout over ours.
+cards, Player Journey header). Logos render in full color (the ESPN
+`500-dark` variants, drawn for dark backgrounds), and `NflTeamLabel` tints
+the abbreviation with `nflAccentColor()`, softened toward `--bone` via
+`color-mix` so navy-heavy palettes stay readable on ink.
+
+### Tier heat ramp (sanctioned extension)
+
+Draft tiers colorize so the eye catches the elite shelves before reading
+numbers: `--tier-1` is gold, `--tier-2` lime, `--tier-3` and `--tier-4`
+mix lime toward `--bone-dim`, and tier 5+ stays plain `--bone-dim`.
+Accent text only (tier columns, tier labels), never backgrounds.
 
 ### Legacy aliases
 
@@ -593,8 +601,8 @@ These exist; reuse them instead of re-implementing:
 
 - `<PosBadge pos="RB" posRank={12} />` — position-colored chip
   (`src/components/PosBadge.tsx`)
-- `<NflTeamLabel team="KC" size="xs|sm" />` — grayscale-idle NFL logo +
-  abbreviation with text fallback (`src/components/NflTeamLabel.tsx`)
+- `<NflTeamLabel team="KC" size="xs|sm" />` — full-color NFL logo +
+  brand-tinted abbreviation with text fallback (`src/components/NflTeamLabel.tsx`)
 - `<TeamLink teamId name />` — fantasy team name linking to its hub page
   (`src/components/TeamLink.tsx`)
 - `.skeleton` (global) — hard-edged loading block with a stepped shimmer;

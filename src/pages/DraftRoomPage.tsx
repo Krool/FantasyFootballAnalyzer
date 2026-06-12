@@ -21,8 +21,9 @@ import { SnakeLogger } from '@/components/draftRoom/SnakeLogger';
 import { SuggestionsPanel } from '@/components/draftRoom/SuggestionsPanel';
 import { TeamBoard } from '@/components/draftRoom/TeamBoard';
 import { TierBoard } from '@/components/draftRoom/TierBoard';
-import { detectRun, tierAlerts } from '@/utils/draftAlerts';
+import { detectRun } from '@/utils/draftAlerts';
 import { fullPositions } from '@/utils/draftEngine';
+import { picksUntilMine } from '@/utils/pickPreview';
 import { nextPickFor } from '@/utils/snakeOrder';
 import styles from './DraftRoomPage.module.css';
 
@@ -145,11 +146,6 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
     () => (phase === 'drafting' ? detectRun(room.events, playerById) : null),
     [phase, room.events, playerById],
   );
-  const breaks = useMemo(
-    () => (phase === 'drafting' ? tierAlerts(derived.available, derived.positionalDemand) : []),
-    [phase, derived.available, derived.positionalDemand],
-  );
-
   // Snake: where the draft comes back around to the user.
   const myNextPick = useMemo(() => {
     if (config.draftType !== 'snake' || phase !== 'drafting') return null;
@@ -157,6 +153,34 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
     const from = myTurn ? derived.pickCount + 1 : derived.pickCount;
     return nextPickFor(config.myTeamId, orderedIds, from, derived.totalPicks);
   }, [config.draftType, config.teams, config.myTeamId, phase, myTurn, derived.pickCount, derived.totalPicks]);
+
+  // Of the picks before the user's next turn, how many can actually take
+  // someone off the open board. Keeper-locked slots don't count: those
+  // picks are spoken for by players already outside the pool.
+  const openPicksUntilMine = useMemo(() => {
+    if (config.draftType !== 'snake' || phase !== 'drafting' || myTurn || myNextPick === null) {
+      return null;
+    }
+    return picksUntilMine(
+      config.myTeamId,
+      config.teams.map(t => t.id),
+      derived.pickCount,
+      derived.totalPicks,
+      config.keepers,
+      derived.draftedPlayerIds,
+    ).filter(p => !p.isMine && !p.keeperPlayerId).length;
+  }, [
+    config.draftType,
+    config.myTeamId,
+    config.teams,
+    config.keepers,
+    phase,
+    myTurn,
+    myNextPick,
+    derived.pickCount,
+    derived.totalPicks,
+    derived.draftedPlayerIds,
+  ]);
 
   // Auction pacing: is the room's money going out faster than its picks?
   const spentPct = useMemo(() => {
@@ -326,15 +350,6 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
                   {run.pos} RUN
                 </span>
               )}
-              {breaks.map(b => (
-                <span
-                  key={b.pos}
-                  className={styles.statusAlert}
-                  title={`${b.left} Tier ${b.tier} ${b.pos}${b.left === 1 ? '' : 's'} left and ${b.demand} teams still need ${b.pos}`}
-                >
-                  T{b.tier} {b.pos}: {b.left} LEFT
-                </span>
-              ))}
               {phase === 'drafting' && (
                 <span className={styles.statusItem}>
                   <PickTimer lastEventTs={lastEventTs} />
@@ -445,6 +460,7 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
                     excludedPositions={isSnake && isMock ? myFullPositions : undefined}
                     clockFullPositions={clockFullPositions}
                     yahooCosts={yahoo.costs}
+                    picksUntilMine={openPicksUntilMine}
                     inputRef={searchRef}
                   />
                 )}

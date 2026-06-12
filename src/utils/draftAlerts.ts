@@ -1,10 +1,7 @@
-// Live alerts derived from the event stream: positional runs and tier
-// breaks. Both are "look up from your queue" moments; the components only
-// render what these return.
+// Live alerts derived from the event stream: positional runs. A "look up
+// from your queue" moment; the components only render what this returns.
 
 import type { DraftEvent, PoolPlayer } from '@/types/draft';
-import type { StarterPos } from './draftEngine';
-import { STARTER_POSITIONS } from './draftEngine';
 
 export interface PositionalRun {
   pos: string;
@@ -36,33 +33,4 @@ export function detectRun(
     }
   }
   return best;
-}
-
-export interface TierAlert {
-  pos: StarterPos;
-  tier: number;
-  left: number;
-  demand: number;
-}
-
-// The cheapest tier still open at each position, when it's nearly drained
-// AND multiple teams still need the position (scarcity without demand is
-// not urgent).
-export function tierAlerts(
-  available: PoolPlayer[],
-  positionalDemand: Record<StarterPos, number>,
-): TierAlert[] {
-  const alerts: TierAlert[] = [];
-  for (const pos of STARTER_POSITIONS) {
-    if (pos === 'K' || pos === 'DST') continue;
-    const atPos = available.filter(p => p.pos === pos && p.tier > 0);
-    if (atPos.length === 0) continue;
-    const topTier = Math.min(...atPos.map(p => p.tier));
-    const left = atPos.filter(p => p.tier === topTier).length;
-    const demand = positionalDemand[pos];
-    if (left <= 2 && demand >= 2) {
-      alerts.push({ pos, tier: topTier, left, demand });
-    }
-  }
-  return alerts;
 }

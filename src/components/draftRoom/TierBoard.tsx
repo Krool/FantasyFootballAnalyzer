@@ -58,7 +58,16 @@ export function TierBoard({ room, selectedId, onSelect }: TierBoardProps) {
           </div>
           {tiers.map(([tier, group]) => (
             <div key={tier} className={styles.tierGroup}>
-              <div className={group.length === 1 ? styles.tierLabelHot : styles.tierLabel}>
+              <div
+                className={group.length === 1 ? styles.tierLabelHot : styles.tierLabel}
+                // Tier heat tokens from index.css; tier 0 (missing data)
+                // and 5+ keep the dim default.
+                style={
+                  group.length > 1 && tier >= 1 && tier <= 4
+                    ? { color: `var(--tier-${tier})` }
+                    : undefined
+                }
+              >
                 Tier {tier} · {group.length === 1 ? 'last one' : `${group.length} left`}
               </div>
               {group.map(p => (

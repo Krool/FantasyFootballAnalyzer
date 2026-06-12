@@ -76,6 +76,17 @@
   flex-shrink: 0;
 }
 
+/* Same fix as NflTeamLabel: -dark logo art needs its ink behind it on
+   paper, or white-heavy marks (NYJ, LAR) print invisible. */
+@media print {
+  .cardLogo {
+    background: var(--ink);
+    border-radius: 2px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
 /* Position color accents on the pos column. */
 .posQB { color: var(--pos-qb); }
 .posRB { color: var(--pos-rb); }
