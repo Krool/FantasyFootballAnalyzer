@@ -145,10 +145,12 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
   );
 
   // ---- Live bidding (config.liveBidding) ----
-  // The nomination opens at $1 to the highest-willing AI (or nobody); every
-  // beat, some AI team with headroom raises by $1; two quiet beats settle
-  // the sale. The user raises via placeBid, which makes price enforcing
-  // possible — push a bidder to their ceiling without ever sealing a max.
+  // The nomination opens to the highest-willing AI (or nobody); every beat,
+  // some AI team with headroom raises — jumping while the price sits well
+  // under the expected value, tightening to $1 raises near it; two quiet
+  // beats settle the sale. The user raises via placeBid, which makes price
+  // enforcing possible — push a bidder to their ceiling without ever
+  // sealing a max.
   const [liveBid, setLiveBid] = useState<LiveBidState | null>(null);
   const willingnessRef = useRef<Map<string, number>>(new Map());
   const quietBeatsRef = useRef(0);
@@ -186,20 +188,31 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
   useEffect(() => {
     if (!liveMode || !liveBid?.open || !pending) return;
     const timer = setTimeout(() => {
-      const nextBid = liveBid.highBid + 1;
+      const minBid = liveBid.highBid + 1;
+      const expected = inflateValue(scaledValues.get(pending.player.id) ?? 1, inflation.rate);
       // AI raisers: anyone (not already high bidder) whose private ceiling
-      // covers the next bid and whose budget legally allows it.
+      // covers the minimum raise and whose budget legally allows it.
       const raisers = [...willingnessRef.current.entries()].filter(([teamId, ceiling]) => {
         if (teamId === liveBid.highBidderId) return false;
-        if (ceiling < nextBid) return false;
+        if (ceiling < minBid) return false;
         const team = derived.teams.get(teamId);
-        return !!team && team.maxBid >= nextBid;
+        return !!team && team.maxBid >= minBid;
       });
       if (raisers.length > 0) {
         // Highest ceiling speaks first; ties break toward the earlier team.
         raisers.sort((a, b) => b[1] - a[1]);
+        const [raiserId, ceiling] = raisers[0];
+        // Jump bidding: while the price sits under the expected value, raise
+        // by half the distance to the expected price or to the raiser's own
+        // ceiling, whichever is nearer; that shrinks to $1 raises around the
+        // expected price, where the contest actually gets decided. $1 beats
+        // from zero made every sale a minute-long crawl.
+        const headroom = Math.min(ceiling - liveBid.highBid, expected - minBid);
+        const jump = Math.max(1, Math.floor(headroom / 2));
+        const budgetCap = derived.teams.get(raiserId)?.maxBid ?? minBid;
+        const bid = Math.min(liveBid.highBid + jump, ceiling, budgetCap);
         quietBeatsRef.current = 0;
-        setLiveBid({ highBid: nextBid, highBidderId: raisers[0][0], open: true });
+        setLiveBid({ highBid: bid, highBidderId: raiserId, open: true });
         return;
       }
       quietBeatsRef.current += 1;
@@ -210,7 +223,6 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
       }
       // Going twice: settle.
       if (liveBid.highBidderId && liveBid.highBid >= 1) {
-        const expected = inflateValue(scaledValues.get(pending.player.id) ?? 1, inflation.rate);
         logEvent({
           kind: 'auction_sale',
           playerId: pending.player.id,
@@ -222,7 +234,6 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
         setNotice(null);
       } else {
         // Nobody opened: hand off to the sealed resolver's $1 fallback.
-        const expected = inflateValue(scaledValues.get(pending.player.id) ?? 1, inflation.rate);
         const result = simAuctionResult(
           pending.player,
           expected,

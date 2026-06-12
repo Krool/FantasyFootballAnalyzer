@@ -56,9 +56,9 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
           Analyzer
         </h1>
         <p className={styles.subtitle}>
-          Draft grades, a live draft room, trade verdicts, waiver receipts,
-          luck scores, and a trophy case for your league. Bring your league
-          ID. Settle the group chat.
+          Mock drafts, draft grades, a live draft room, trade verdicts,
+          waiver receipts, luck scores, and a trophy case for your league.
+          Bring your league ID. Settle the group chat.
         </p>
       </header>
 
@@ -134,6 +134,28 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
           <p className={styles.featureDesc}>
             Grade every pick based on actual season production.
             See who got value and who reached.
+          </p>
+        </div>
+
+        <div className={styles.feature}>
+          <div className={styles.featureIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="4" y="4" width="16" height="16" rx="2" />
+              <rect x="9" y="9" width="6" height="6" />
+              <line x1="9" y1="1" x2="9" y2="4" />
+              <line x1="15" y1="1" x2="15" y2="4" />
+              <line x1="9" y1="20" x2="9" y2="23" />
+              <line x1="15" y1="20" x2="15" y2="23" />
+              <line x1="20" y1="9" x2="23" y2="9" />
+              <line x1="20" y1="15" x2="23" y2="15" />
+              <line x1="1" y1="9" x2="4" y2="9" />
+              <line x1="1" y1="15" x2="4" y2="15" />
+            </svg>
+          </div>
+          <h3 className={styles.featureTitle}>Mock Drafts</h3>
+          <p className={styles.featureDesc}>
+            Practice snake or auction drafts against AI opponents
+            with their own tendencies. Replay any run by its seed.
           </p>
         </div>
 
@@ -292,22 +314,6 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
           </p>
         </div>
 
-        <div className={styles.feature}>
-          <div className={styles.featureIcon}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="18" cy="5" r="3" />
-              <circle cx="6" cy="12" r="3" />
-              <circle cx="18" cy="19" r="3" />
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-            </svg>
-          </div>
-          <h3 className={styles.featureTitle}>Three Platforms</h3>
-          <p className={styles.featureDesc}>
-            Sleeper, ESPN, and Yahoo leagues all load here.
-            Same grades, same trophies, same analysis.
-          </p>
-        </div>
       </div>
 
       {/* Secret button. Dev builds only so the test credentials never ship. */}
