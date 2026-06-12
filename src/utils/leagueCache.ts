@@ -46,10 +46,13 @@ export function loadCachedLeague(
 export function loadCachedLeagueForCredentials(
   credentials: LeagueCredentials,
 ): League | null {
-  // When the year is known (ESPN), key directly. For Sleeper/Yahoo the
-  // leagueId is already unique per season, but the home form doesn't supply
-  // a year, so scan the platform's entries for a matching leagueId.
-  if (credentials.season) {
+  // ESPN is the only platform where one leagueId spans seasons, so only
+  // there does credentials.season pick the entry. Sleeper and Yahoo ids are
+  // already season-scoped, and the form's season can disagree with what the
+  // platform reports (Yahoo's current-year 'nfl' alias resolves on Yahoo's
+  // schedule, not the calendar's), so match on id alone; the stored key's
+  // year comes from league.season.
+  if (credentials.platform === 'espn' && credentials.season) {
     return loadCachedLeague(credentials.platform, credentials.leagueId, credentials.season);
   }
   try {

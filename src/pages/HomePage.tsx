@@ -71,7 +71,8 @@ export function HomePage({ onLoadLeague, isLoading, error, progress }: HomePageP
           Your credentials stay in your browser and are passed through to
           Sleeper, ESPN, or Yahoo to fetch your league. ESPN cookies clear when
           the tab closes; a Yahoo login is remembered on this device until you
-          log out.
+          log out. Your last league ID is kept on this device so reconnecting
+          is one click.
         </p>
         <a
           className={styles.manifestoLink}

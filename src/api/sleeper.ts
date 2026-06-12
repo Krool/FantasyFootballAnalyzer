@@ -71,6 +71,60 @@ export async function findLeaguesByUsername(
     .map((l) => ({ id: l.league_id, name: l.name, season: l.season }));
 }
 
+// Sleeper's league.status moves pre_draft → drafting → in_season → complete.
+// Past-year leagues are always final regardless of what status says.
+function toLeagueStatus(status: string, season: number, nflSeason: number): LeagueStatus {
+  if (season < nflSeason) return 'final';
+  if (status === 'complete') return 'final';
+  if (status === 'pre_draft' || status === 'drafting') return 'preseason';
+  return 'live';
+}
+
+// A renewed league points backward via previous_league_id; nothing points
+// forward. To find the renewal, check league members' league lists for the
+// next season and match the back-pointer. The first few members are enough:
+// whoever renewed the league is in it.
+export async function findSuccessorLeague(
+  leagueId: string,
+  season: number,
+  // The forward walk in getAvailableSeasons chases successors that can
+  // themselves be past seasons (an abandoned renewal keeps its stale status
+  // forever); it passes the real NFL season so those still land on 'final'.
+  // Direct callers probe season + 1 from the newest league, never the past,
+  // so the default is right for them.
+  nflSeason: number = season + 1,
+): Promise<{ leagueId: string; season: number; name: string; status: LeagueStatus } | null> {
+  let users: SleeperAPI.User[];
+  try {
+    users = await getLeagueUsers(leagueId);
+  } catch (err) {
+    logger.warn('[Sleeper] findSuccessorLeague: could not list league users:', err);
+    return null;
+  }
+  const perMember = await Promise.all(
+    users.slice(0, 3).map(async (user) => {
+      try {
+        const leagues = await fetchJSON<SleeperAPI.League[] | null>(
+          `/user/${user.user_id}/leagues/nfl/${season + 1}`,
+        );
+        return leagues ?? [];
+      } catch {
+        // One member's list failing shouldn't sink the search.
+        return [] as SleeperAPI.League[];
+      }
+    }),
+  );
+  const match = perMember.flat().find(l => l.previous_league_id === leagueId);
+  if (!match) return null;
+  const year = parseInt(match.season);
+  return {
+    leagueId: match.league_id,
+    season: year,
+    name: match.name,
+    status: toLeagueStatus(match.status, year, nflSeason),
+  };
+}
+
 export async function getLeagueUsers(leagueId: string): Promise<SleeperAPI.User[]> {
   return fetchJSON<SleeperAPI.User[]>(`/league/${leagueId}/users`);
 }
@@ -604,18 +658,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
 
   const season = parseInt(leagueData.season);
   const nflSeason = parseInt(nflState.season);
-  // Sleeper's league.status moves pre_draft → drafting → in_season → complete.
-  // Past-year leagues are always final regardless of what status says.
-  let status: LeagueStatus;
-  if (season < nflSeason) {
-    status = 'final';
-  } else if (leagueData.status === 'complete') {
-    status = 'final';
-  } else if (leagueData.status === 'pre_draft' || leagueData.status === 'drafting') {
-    status = 'preseason';
-  } else {
-    status = 'live';
-  }
+  const status = toLeagueStatus(leagueData.status, season, nflSeason);
 
   return {
     id: leagueId,
@@ -630,7 +673,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
     totalTeams: leagueData.total_rosters,
     currentWeek: nflState.week,
     isLoaded: true,
-    previousLeagueId: (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id,
+    previousLeagueId: leagueData.previous_league_id,
     rosterSlots,
     hasSuperflex: (leagueData.roster_positions || []).some(
       p => p === 'SUPER_FLEX' || p === 'SUPERFLEX',
@@ -661,19 +704,38 @@ export async function getAvailableSeasons(leagueId: string): Promise<SeasonOptio
     try {
       const data = await getLeague(id);
       const year = parseInt(data.season);
-      let status: LeagueStatus;
-      if (year < nflSeason) status = 'final';
-      else if (data.status === 'complete') status = 'final';
-      else if (data.status === 'pre_draft' || data.status === 'drafting') status = 'preseason';
-      else status = 'live';
-
-      out.push({ year, leagueId: id, status, leagueName: data.name });
-      id = (data as SleeperAPI.League & { previous_league_id?: string }).previous_league_id;
+      out.push({
+        year,
+        leagueId: id,
+        status: toLeagueStatus(data.status, year, nflSeason),
+        leagueName: data.name,
+      });
+      id = data.previous_league_id;
       hops++;
     } catch (err) {
       logger.warn(`[Sleeper] getAvailableSeasons: stopped at ${id}:`, err);
       break;
     }
+  }
+
+  // The chain only points backward, so when the given league has been renewed
+  // its newer seasons are invisible from here. Walk forward too, so the year
+  // dropdown can offer the new season when the loaded league is last year's.
+  // Only probe while the newest known season trails the NFL calendar: an
+  // up-to-date league can't have a successor yet, and each probe costs up to
+  // four requests.
+  let forwardHops = 0;
+  while (out.length > 0 && out[0].year < nflSeason && forwardHops < 3) {
+    const newest = out[0];
+    const next = await findSuccessorLeague(newest.leagueId, newest.year, nflSeason);
+    if (!next) break;
+    out.unshift({
+      year: next.season,
+      leagueId: next.leagueId,
+      status: next.status,
+      leagueName: next.name,
+    });
+    forwardHops++;
   }
   return out;
 }
@@ -752,7 +814,7 @@ export async function loadLeagueHistory(leagueId: string, maxSeasons: number = 5
         teams: teamsWithStandings,
       });
 
-      currentLeagueId = (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id;
+      currentLeagueId = leagueData.previous_league_id;
       seasonsLoaded++;
     } catch (error) {
       logger.warn(`Could not load season for league ${currentLeagueId}:`, error);
@@ -815,7 +877,7 @@ export async function loadHeadToHeadRecords(
       }
 
       if (!ourRosterId) {
-        currentLeagueId = (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id;
+        currentLeagueId = leagueData.previous_league_id;
         seasonsLoaded++;
         continue;
       }
@@ -887,7 +949,7 @@ export async function loadHeadToHeadRecords(
         }
       }
 
-      currentLeagueId = (leagueData as SleeperAPI.League & { previous_league_id?: string }).previous_league_id;
+      currentLeagueId = leagueData.previous_league_id;
       seasonsLoaded++;
     } catch (error) {
       logger.warn(`Could not load matchups for league ${currentLeagueId}:`, error);

@@ -17,6 +17,7 @@ vi.mock('@/utils/espnCredentials', () => ({
 }));
 
 import * as api from '@/api';
+import { ESPNAPIError } from '@/api/espn';
 import * as leagueCache from '@/utils/leagueCache';
 import * as espnCreds from '@/utils/espnCredentials';
 import { useLeague } from './useLeague';
@@ -273,6 +274,93 @@ describe('useLeague.load - error mapping', () => {
   });
 });
 
+describe('useLeague.load - ESPN season fallback', () => {
+  // The form defaults the ESPN season to the calendar year, but the league
+  // may not be rolled over to it yet; a 404 on that default retries last
+  // season instead of erroring.
+  const year = new Date().getFullYear();
+
+  beforeEach(() => {
+    mockedLoadCachedLeague.mockReturnValue(null);
+  });
+
+  it('retries the previous season when the calendar-year default 404s', async () => {
+    const fallback = makeLeague({ platform: 'espn', season: year - 1 });
+    mockedLoadLeague
+      .mockRejectedValueOnce(new ESPNAPIError('ESPN API error: 404 Not Found', 404))
+      .mockResolvedValueOnce(fallback);
+
+    const { result } = renderHook(() => useLeague());
+    let returned: League | null = null;
+    await act(async () => {
+      returned = await result.current.load({ platform: 'espn', leagueId: 'L1', season: year });
+    });
+
+    expect(mockedLoadLeague).toHaveBeenCalledTimes(2);
+    expect(mockedLoadLeague.mock.calls[1][0]).toMatchObject({
+      platform: 'espn',
+      leagueId: 'L1',
+      season: year - 1,
+    });
+    expect(returned).toEqual(fallback);
+    expect(result.current.error).toBeNull();
+    expect(result.current.league).toEqual(fallback);
+  });
+
+  it('does not retry an explicitly picked past season', async () => {
+    mockedLoadLeague.mockRejectedValue(new ESPNAPIError('ESPN API error: 404 Not Found', 404));
+
+    const { result } = renderHook(() => useLeague());
+    await act(async () => {
+      await result.current.load({ platform: 'espn', leagueId: 'L1', season: year - 2 });
+    });
+
+    expect(mockedLoadLeague).toHaveBeenCalledTimes(1);
+    expect(result.current.error).toMatch(/League not found/);
+  });
+
+  it('does not retry non-404 failures', async () => {
+    mockedLoadLeague.mockRejectedValue(new ESPNAPIError('Request failed: 401', 401));
+
+    const { result } = renderHook(() => useLeague());
+    await act(async () => {
+      await result.current.load({ platform: 'espn', leagueId: 'L1', season: year });
+    });
+
+    expect(mockedLoadLeague).toHaveBeenCalledTimes(1);
+    expect(result.current.error).toMatch(/espn_s2/);
+  });
+
+  it('does not retry when error text mentions "not found" without a 404 status', async () => {
+    // The proxy passes upstream messages through verbatim; a transient
+    // failure that happens to say "not found" must not load last season.
+    mockedLoadLeague.mockRejectedValue(new ESPNAPIError('Endpoint not found', 502));
+
+    const { result } = renderHook(() => useLeague());
+    await act(async () => {
+      await result.current.load({ platform: 'espn', leagueId: 'L1', season: year });
+    });
+
+    expect(mockedLoadLeague).toHaveBeenCalledTimes(1);
+    expect(result.current.error).toMatch(/League not found/);
+  });
+
+  it('surfaces the error when the fallback season fails too', async () => {
+    mockedLoadLeague.mockRejectedValue(new ESPNAPIError('ESPN API error: 404 Not Found', 404));
+
+    const { result } = renderHook(() => useLeague());
+    let returned: League | null = makeLeague();
+    await act(async () => {
+      returned = await result.current.load({ platform: 'espn', leagueId: 'L1', season: year });
+    });
+
+    // One retry only: year - 1 no longer matches the calendar year.
+    expect(mockedLoadLeague).toHaveBeenCalledTimes(2);
+    expect(returned).toBeNull();
+    expect(result.current.error).toMatch(/League not found/);
+  });
+});
+
 describe('useLeague.refresh', () => {
   it('no-ops when called before any load', async () => {
     const { result } = renderHook(() => useLeague());
@@ -302,6 +390,26 @@ describe('useLeague.refresh', () => {
 
     expect(mockedClearCachedLeague).toHaveBeenCalledWith('sleeper', 'L1', 2024);
     expect(mockedLoadLeague).toHaveBeenCalledTimes(1);
+  });
+
+  it('prefers the loaded league season over the form season for cache clearing', async () => {
+    // Cache entries are keyed by league.season; Yahoo's form season can
+    // disagree with it (current-year alias), so clearing must use the
+    // loaded value or it deletes a key that was never written.
+    mockedLoadCachedLeague.mockReturnValue(null);
+    mockedLoadLeague.mockResolvedValue(makeLeague({ platform: 'yahoo', id: '461.l.123', season: 2025 }));
+
+    const { result } = renderHook(() => useLeague());
+    await act(async () => {
+      await result.current.load({ platform: 'yahoo', leagueId: '461.l.123', season: 2026 });
+    });
+
+    mockedClearCachedLeague.mockClear();
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    expect(mockedClearCachedLeague).toHaveBeenCalledWith('yahoo', '461.l.123', 2025);
   });
 
   it('uses the loaded league season when credentials omit it', async () => {

@@ -26,6 +26,18 @@ const TEAM_MAP: Record<number, string> = {
   30: 'JAX', 33: 'BAL', 34: 'HOU', 0: 'FA',
 };
 
+// Carries the HTTP status so callers can branch on it (the season fallback in
+// useLeague needs a real 404) instead of substring-matching error text, which
+// the proxy can populate with arbitrary upstream messages.
+export class ESPNAPIError extends Error {
+  readonly status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ESPNAPIError';
+    this.status = status;
+  }
+}
+
 interface FetchOptions {
   espnS2?: string;
   swid?: string;
@@ -78,14 +90,18 @@ async function fetchESPN<T>(
         // is an expired espn_s2 — they roll over when you sign out / sign in
         // again on espn.com. Tell the user that specifically so they don't
         // re-copy the same cookies and try again.
-        throw new Error(
+        throw new ESPNAPIError(
           'ESPN: cookies were rejected (401). Your espn_s2 likely expired. ' +
-          'Log into espn.com again and re-copy both cookies.'
+          'Log into espn.com again and re-copy both cookies.',
+          response.status,
         );
       }
       const errorData = await response.json().catch(() => ({}));
       logger.error('[ESPN] Proxy error:', errorData);
-      throw new Error(errorData.error || `ESPN API error: ${response.status}`);
+      throw new ESPNAPIError(
+        errorData.error || `ESPN API error: ${response.status}`,
+        response.status,
+      );
     }
 
     return response.json();
@@ -109,9 +125,9 @@ async function fetchESPN<T>(
   if (!response.ok) {
     if (response.status === 401) {
       // No cookies supplied — direct ESPN call hit a private league.
-      throw new Error('ESPN: this looks like a private league. Provide your espn_s2 and SWID cookies to access it.');
+      throw new ESPNAPIError('ESPN: this looks like a private league. Provide your espn_s2 and SWID cookies to access it.', response.status);
     }
-    throw new Error(`ESPN API error: ${response.status} ${response.statusText}`);
+    throw new ESPNAPIError(`ESPN API error: ${response.status} ${response.statusText}`, response.status);
   }
 
   return response.json();

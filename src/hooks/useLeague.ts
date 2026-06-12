@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { League, LeagueCredentials } from '@/types';
 import { loadLeague } from '@/api';
+import { ESPNAPIError } from '@/api/espn';
 import { logger } from '@/utils/logger';
 import {
   cacheLeague,
@@ -57,7 +58,11 @@ export function useLeague(): UseLeagueReturn {
     };
   }, []);
 
-  const load = useCallback(async (credentials: LeagueCredentials, options?: LoadOptions) => {
+  // Named so the ESPN season fallback below can retry through the same path.
+  const load = useCallback(async function loadImpl(
+    credentials: LeagueCredentials,
+    options?: LoadOptions,
+  ): Promise<League | null> {
     logger.debug('[useLeague] load() called with credentials:', credentials, options);
     lastCredentialsRef.current = credentials;
     setCredentials(credentials);
@@ -135,6 +140,24 @@ export function useLeague(): UseLeagueReturn {
           // for an error banner.
           return hydrated;
         }
+        // The form defaults the ESPN season to the calendar year, but the
+        // league may not be rolled over to it yet. When the current year
+        // 404s, retry last season instead of erroring on a year the user
+        // never really chose. Explicit past-year picks differ from the
+        // calendar year, so they never fall back; nor can the retried year
+        // re-trigger this. Keyed on the HTTP status, not error text: the
+        // proxy passes upstream messages through verbatim, and one that
+        // merely mentions "not found" must not be misread as a missing
+        // season.
+        if (
+          credentials.platform === 'espn' &&
+          credentials.season === new Date().getFullYear() &&
+          err instanceof ESPNAPIError &&
+          err.status === 404
+        ) {
+          logger.debug('[useLeague] ESPN current-year season missing; retrying previous season');
+          return loadImpl({ ...credentials, season: credentials.season - 1 }, options);
+        }
         let message = 'Failed to load league. Please try again.';
 
         if (err instanceof Error) {
@@ -181,10 +204,11 @@ export function useLeague(): UseLeagueReturn {
       return;
     }
     // Drop the stale cache entry before re-fetching so a mid-refresh crash
-    // doesn't leave the user re-hydrating the old snapshot next time. We have
-    // the year from the currently loaded league for Sleeper/Yahoo where the
-    // user-supplied credentials didn't include it.
-    const year = creds.season ?? league?.season;
+    // doesn't leave the user re-hydrating the old snapshot next time. Cache
+    // entries are keyed by the loaded league's season (the platform's
+    // answer), which can disagree with creds.season (the form's guess, e.g.
+    // Yahoo's current-year alias), so prefer the loaded value.
+    const year = league?.season ?? creds.season;
     if (year) {
       clearCachedLeague(creds.platform, creds.leagueId, year);
     }

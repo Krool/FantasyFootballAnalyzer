@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Platform, LeagueCredentials } from '@/types';
 import { isAuthenticated, getAuthUrl, getUserLeagues, clearTokens, NFL_GAME_KEYS } from '@/api/yahoo';
 import { findLeaguesByUsername } from '@/api/sleeper';
 import { normalizeLeagueId } from '@/utils/leagueId';
+import { loadLastConnection, rememberSleeperUsername } from '@/utils/lastConnection';
+import { loadESPNCredentials } from '@/utils/espnCredentials';
 import { logger } from '@/utils/logger';
 import styles from './LeagueForm.module.css';
 
@@ -124,16 +126,41 @@ interface LeagueFormProps {
 }
 
 export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueFormProps) {
-  const [platform, setPlatformState] = useState<Platform>('sleeper');
+  // Last successful connection (public identifiers only): prefills the form
+  // so a repeat visitor reconnects in one click. Read once per mount.
+  const [saved] = useState(loadLastConnection);
+  const savedIdFor = (p: Platform): string =>
+    (p === 'sleeper' ? saved?.sleeper?.leagueId : p === 'espn' ? saved?.espn?.leagueId : undefined) ?? '';
+
+  const [platform, setPlatformState] = useState<Platform>(saved?.platform ?? 'sleeper');
+
+  // The saved ESPN season prefills only a deliberate history visit (two or
+  // more years back). A last-year save is usually the 404 fallback's artifact
+  // from before the league rolled over; starting at the current year lets the
+  // newest season that exists win again (the fallback lands back on last year
+  // while it doesn't exist).
+  const defaultSeasonFor = (p: Platform): number => {
+    const savedSeason = p === 'espn' && saved?.platform === 'espn' ? saved.espn?.season : undefined;
+    return savedSeason !== undefined && savedSeason < currentYear - 1 ? savedSeason : currentYear;
+  };
 
   const setPlatform = (p: Platform) => {
+    // The League ID field is shared between Sleeper and ESPN. Swap the
+    // prefill along with the tab, but only while the field still holds the
+    // outgoing platform's prefill (or nothing); hand-typed ids stay put.
+    setLeagueId(prev =>
+      prev === '' || prev === savedIdFor(platform) ? savedIdFor(p) : prev,
+    );
+    // The season box is shared too. Reset it per platform so a saved ESPN
+    // season can't leak into the Yahoo list (it would fetch an old year and
+    // disarm the offseason fallback below).
+    setSeason(defaultSeasonFor(p));
     setPlatformState(p);
     onPlatformChange?.(p);
   };
-  const [leagueId, setLeagueId] = useState('');
+  const [leagueId, setLeagueId] = useState(() => savedIdFor(saved?.platform ?? 'sleeper'));
   const [leagueIdError, setLeagueIdError] = useState<string | null>(null);
-  // Default to current year for all platforms
-  const [season, setSeason] = useState(currentYear);
+  const [season, setSeason] = useState(() => defaultSeasonFor(saved?.platform ?? 'sleeper'));
   const [espnS2, setEspnS2] = useState('');
   const [swid, setSwid] = useState('');
   const [showEspnHelp, setShowEspnHelp] = useState(false);
@@ -146,7 +173,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
   const [yahooError, setYahooError] = useState<string | null>(null);
 
   // Sleeper league finder (username → leagues, no auth needed)
-  const [sleeperUsername, setSleeperUsername] = useState('');
+  const [sleeperUsername, setSleeperUsername] = useState(saved?.sleeper?.username ?? '');
   const [sleeperLeagues, setSleeperLeagues] = useState<Array<{ id: string; name: string; season: string }>>([]);
   const [sleeperLookupBusy, setSleeperLookupBusy] = useState(false);
   const [sleeperLookupError, setSleeperLookupError] = useState<string | null>(null);
@@ -158,29 +185,75 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
 
   // Returning from a Yahoo login that started on this form: reopen the Yahoo
   // tab. The OAuth redirect remounts the whole app, which would otherwise
-  // land the user back on the Sleeper default with no sign their login worked.
+  // land the user back on the saved/default tab with no sign their login
+  // worked. Otherwise just tell the parent which tab the prefill landed on
+  // (it defaults to Sleeper without us).
   useEffect(() => {
     try {
       if (sessionStorage.getItem(YAHOO_RETURN_FLAG)) {
         sessionStorage.removeItem(YAHOO_RETURN_FLAG);
         setPlatform('yahoo');
+        return;
       }
     } catch {
-      // Storage blocked: stay on the default tab.
+      // Storage blocked: stay on the initial tab.
     }
+    onPlatformChange?.(platform);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Same-tab ESPN cookie reuse: espn_s2/SWID live in sessionStorage and are
+  // gone when the tab closes, but inside one session there's no reason to
+  // make the user paste them twice. Fill once per league id so deliberately
+  // clearing the fields isn't fought.
+  const cookieFillRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (platform !== 'espn' || espnS2 || swid) return;
+    const id = leagueId.trim();
+    if (!id || cookieFillRef.current === id) return;
+    cookieFillRef.current = id;
+    const creds = loadESPNCredentials(id);
+    if (creds?.espnS2) setEspnS2(creds.espnS2);
+    if (creds?.swid) setSwid(creds.swid);
+  }, [platform, leagueId, espnS2, swid]);
+
+  // Season the automatic fallback below just loaded leagues for; lets the
+  // load-on-mount effect skip the re-run its setSeason triggers.
+  const autoFellBackRef = useRef<number | null>(null);
+  // One-shot guard: the fallback rescues the form's default season, but a
+  // user re-picking the current year to check on a pending renewal must see
+  // the real (empty) answer instead of being snapped back again.
+  const autoFallbackTriedRef = useRef(false);
 
   const loadYahooLeagues = useCallback(async () => {
     setLoadingYahooLeagues(true);
     setYahooError(null);
     try {
-      const leagues = await getUserLeagues(season);
+      let leagues = await getUserLeagues(season);
+      // Offseason gap: Yahoo may not have the user's current-year league yet
+      // (renewal pending), which would strand the form on "No leagues
+      // found". Fall back one season so the default lands on data; the
+      // season dropdown updates to match.
+      if (leagues.length === 0 && season === currentYear && !autoFallbackTriedRef.current) {
+        autoFallbackTriedRef.current = true;
+        const prior = await getUserLeagues(season - 1);
+        if (prior.length > 0) {
+          leagues = prior;
+          autoFellBackRef.current = season - 1;
+          setSeason(season - 1);
+        }
+      }
       setYahooLeagues(leagues);
-      // Always select the first league for the new season
-      // (the old selection is from a different season and won't be valid)
+      // Prefer the league loaded last visit when it's in this season's list;
+      // otherwise the first one. Never keep the previous in-form selection
+      // (it's from a different season and won't be valid).
       if (leagues.length > 0) {
-        setSelectedYahooLeague(leagues[0].id);
+        const remembered = saved?.yahoo?.leagueId;
+        setSelectedYahooLeague(
+          remembered && leagues.some(l => l.id === remembered)
+            ? remembered
+            : leagues[0].id,
+        );
       } else {
         setSelectedYahooLeague('');
       }
@@ -194,14 +267,20 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     } finally {
       setLoadingYahooLeagues(false);
     }
-  }, [season]);
+  }, [season, saved]);
 
   // Load Yahoo leagues when authenticated
   useEffect(() => {
     if (platform === 'yahoo' && yahooAuthenticated) {
+      // The automatic season fallback already fetched this season's leagues;
+      // skip the re-run its setSeason caused.
+      if (autoFellBackRef.current === season) {
+        autoFellBackRef.current = null;
+        return;
+      }
       loadYahooLeagues();
     }
-  }, [platform, yahooAuthenticated, loadYahooLeagues]);
+  }, [platform, yahooAuthenticated, loadYahooLeagues, season]);
 
   // Probe for the companion extension when ESPN is selected (once per platform change).
   useEffect(() => {
@@ -250,6 +329,9 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
         return;
       }
       setSleeperLeagues(leagues);
+      // The username resolved, so it's worth prefilling next visit even if
+      // the user ends up loading the league some other way.
+      rememberSleeperUsername(username);
       if (leagues.length === 0) {
         setSleeperLookupError('That user has no leagues this season or last.');
       } else {
@@ -470,7 +552,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
             )}
             <span id="leagueId-hint" className={styles.hint}>
               {platform === 'sleeper'
-                ? 'Paste your league URL or ID. Sleeper makes a new ID each season, so grab it from the season you want.'
+                ? 'Paste your league URL or ID. Sleeper makes a new ID each season; last season\'s ID follows the renewal automatically.'
                 : 'Paste your league URL or ID. One ID covers every season; pick the year in the Season box.'}
             </span>
           </div>

@@ -272,6 +272,8 @@ export namespace SleeperAPI {
       type: number; // 0 = redraft, 1 = keeper, 2 = dynasty
     };
     draft_id: string;
+    // Points at last season's league: renewals chain backward, never forward.
+    previous_league_id?: string;
     metadata?: {
       latest_league_winner_roster_id?: string;
       [key: string]: string | undefined;

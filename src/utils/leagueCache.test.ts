@@ -69,10 +69,26 @@ describe('cacheLeague + loadCachedLeague', () => {
 });
 
 describe('loadCachedLeagueForCredentials', () => {
-  it('uses the year directly when credentials carry a season', () => {
-    cacheLeague(makeLeague({ season: 2024 }));
-    const creds: LeagueCredentials = { platform: 'sleeper', leagueId: 'L1', season: 2024 };
+  it('uses the year directly when ESPN credentials carry a season', () => {
+    cacheLeague(makeLeague({ platform: 'espn', season: 2024 }));
+    const creds: LeagueCredentials = { platform: 'espn', leagueId: 'L1', season: 2024 };
     expect(loadCachedLeagueForCredentials(creds)?.season).toBe(2024);
+  });
+
+  it('keeps ESPN seasons distinct: a different year is a cache miss', () => {
+    cacheLeague(makeLeague({ platform: 'espn', season: 2024 }));
+    const creds: LeagueCredentials = { platform: 'espn', leagueId: 'L1', season: 2025 };
+    expect(loadCachedLeagueForCredentials(creds)).toBeNull();
+  });
+
+  it('ignores the credentials season for Yahoo, whose ids are season-scoped', () => {
+    // The form's season can disagree with what Yahoo reports (the
+    // current-year 'nfl' alias resolves on Yahoo's schedule, not the
+    // calendar's). The id alone identifies the season, so the mismatch
+    // must not break hydration.
+    cacheLeague(makeLeague({ platform: 'yahoo', id: '461.l.123', season: 2025 }));
+    const creds: LeagueCredentials = { platform: 'yahoo', leagueId: '461.l.123', season: 2026 };
+    expect(loadCachedLeagueForCredentials(creds)?.season).toBe(2025);
   });
 
   it('scans the platform for a matching leagueId when no season is given', () => {

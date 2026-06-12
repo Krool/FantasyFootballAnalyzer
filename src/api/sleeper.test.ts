@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import type { League, SleeperAPI } from '@/types';
-import { loadLeague } from './sleeper';
+import { findSuccessorLeague, loadLeague } from './sleeper';
 
 // Fixture: a 4-team half-PPR superflex league, season complete.
 // Weeks 1-3 played, weeks 4-14 unplayed (0-0), playoffs start week 15
@@ -167,6 +167,89 @@ function routeSleeper(url: string): unknown {
 
   throw new Error(`Unexpected Sleeper URL in test: ${url}`);
 }
+
+describe('sleeper findSuccessorLeague', () => {
+  // The renewal points back at LEAGUE_ID; UNRELATED is another league the
+  // same user plays in next season.
+  const SUCCESSOR = {
+    league_id: 'L2',
+    name: 'Sleeper Test League',
+    season: '2026',
+    status: 'pre_draft',
+    previous_league_id: LEAGUE_ID,
+  };
+  const UNRELATED = {
+    league_id: 'X9',
+    name: 'Other League',
+    season: '2026',
+    status: 'pre_draft',
+    previous_league_id: 'some-other-league',
+  };
+
+  function stubRoutes(routes: Record<string, unknown>) {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input).replace('https://api.sleeper.app/v1', '');
+      if (path in routes) return jsonResponse(routes[path]);
+      throw new Error(`Unexpected Sleeper URL in test: ${path}`);
+    }));
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('finds the renewal through a member back-pointer', async () => {
+    stubRoutes({
+      [`/league/${LEAGUE_ID}/users`]: usersFixture,
+      '/user/u1/leagues/nfl/2026': [UNRELATED, SUCCESSOR],
+    });
+    const successor = await findSuccessorLeague(LEAGUE_ID, 2025);
+    expect(successor).toEqual({
+      leagueId: 'L2',
+      season: 2026,
+      name: 'Sleeper Test League',
+      status: 'preseason',
+    });
+  });
+
+  it('tries the next member when the first has not joined the renewal', async () => {
+    stubRoutes({
+      [`/league/${LEAGUE_ID}/users`]: usersFixture,
+      '/user/u1/leagues/nfl/2026': [UNRELATED],
+      '/user/u2/leagues/nfl/2026': [SUCCESSOR],
+    });
+    const successor = await findSuccessorLeague(LEAGUE_ID, 2025);
+    expect(successor?.leagueId).toBe('L2');
+  });
+
+  it('returns null when no renewal exists', async () => {
+    stubRoutes({
+      [`/league/${LEAGUE_ID}/users`]: usersFixture,
+      '/user/u1/leagues/nfl/2026': [],
+      '/user/u2/leagues/nfl/2026': [],
+      '/user/u3/leagues/nfl/2026': [],
+    });
+    expect(await findSuccessorLeague(LEAGUE_ID, 2025)).toBeNull();
+  });
+
+  it('gives up after the first three members', async () => {
+    // u4's list would match, but three misses end the search: by then the
+    // renewal almost certainly doesn't exist, and each member costs a request.
+    stubRoutes({
+      [`/league/${LEAGUE_ID}/users`]: usersFixture,
+      '/user/u1/leagues/nfl/2026': [],
+      '/user/u2/leagues/nfl/2026': null,
+      '/user/u3/leagues/nfl/2026': [UNRELATED],
+      '/user/u4/leagues/nfl/2026': [SUCCESSOR],
+    });
+    expect(await findSuccessorLeague(LEAGUE_ID, 2025)).toBeNull();
+  });
+
+  it('returns null when the user list itself fails', async () => {
+    stubRoutes({});
+    expect(await findSuccessorLeague(LEAGUE_ID, 2025)).toBeNull();
+  });
+});
 
 describe('sleeper loadLeague', () => {
   let league: League;
