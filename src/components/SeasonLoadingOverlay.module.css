@@ -36,7 +36,7 @@
 }
 
 .bar {
-  width: 220px;
+  width: min(220px, 60vw);
   height: 6px;
   margin-top: 0.25rem;
   background: var(--rule);

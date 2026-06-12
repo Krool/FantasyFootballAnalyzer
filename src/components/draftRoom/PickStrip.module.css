@@ -106,7 +106,7 @@
   color: var(--ink);
   background: var(--lime);
   padding: 0 0.25rem;
-  font-size: 0.55rem;
+  font-size: 0.62rem;
   letter-spacing: 0.1em;
 }
 
@@ -139,7 +139,7 @@
 .chipNeed,
 .chipHave {
   font-family: var(--font-mono);
-  font-size: 0.55rem;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: 0.08rem 0.22rem;
@@ -158,7 +158,7 @@
 .keeperTag {
   align-self: flex-start;
   font-family: var(--font-mono);
-  font-size: 0.55rem;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;

@@ -294,7 +294,7 @@ export function WaiverTable({ teams, platform, pointsBasis }: WaiverTableProps) 
         </div>
       </div>
 
-      <div className={styles.tableWrapper}>
+      <div className={`${styles.tableWrapper} scroll-x-hint`}>
         <table className={`table ${styles.table}`}>
           <thead>
             <tr>

@@ -36,7 +36,7 @@
   color: var(--bone-dim);
   text-transform: uppercase;
 }
-.vsLabel::before { content: '◆ '; color: var(--blood); }
+.vsLabel::before { content: '◆ '; color: var(--blood-text); }
 
 .opponentName {
   font-family: var(--font-headline);
@@ -102,11 +102,11 @@
   color: var(--bone);
 }
 .statValue.positive { color: var(--lime); }
-.statValue.negative { color: var(--blood); }
+.statValue.negative { color: var(--blood-text); }
 
 .statLabel {
   font-family: var(--font-mono);
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--bone-dim);
@@ -171,4 +171,4 @@
 }
 
 .matchupWon  .matchupResult { color: var(--lime); }
-.matchupLost .matchupResult { color: var(--blood); }
+.matchupLost .matchupResult { color: var(--blood-text); }

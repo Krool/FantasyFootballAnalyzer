@@ -3,9 +3,13 @@
    ───────────────────────────────────────────── */
 
 .awardsPage {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 3rem 1.5rem 5rem;
+  padding: 3rem 0 5rem;
+}
+
+.header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 3px solid var(--bone);
 }
 
 .title {
@@ -16,7 +20,6 @@
   text-transform: uppercase;
   letter-spacing: -0.025em;
   color: var(--bone);
-  text-align: left;
   margin-bottom: 0.5rem;
 }
 
@@ -26,10 +29,6 @@
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--lime);
-  text-align: left;
-  margin-bottom: 3rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 3px solid var(--bone);
 }
 .subtitle::before {
   content: '★ ';
@@ -206,13 +205,16 @@
   overflow-x: auto;
   border: 2px solid var(--bone);
   box-shadow: 5px 5px 0 var(--bone);
+  /* Ink lives on the wrapper (background-color, not the shorthand) so the
+     global scroll-x-hint gradient layers show through the table on touch
+     screens; an opaque table background would mask them. */
+  background-color: var(--ink);
 }
 
 .luckTable table {
   width: 100%;
   min-width: 720px;
   border-collapse: collapse;
-  background: var(--ink);
   font-family: var(--font-mono);
   font-size: 0.82rem;
 }
@@ -270,7 +272,7 @@
 .lucky       { color: var(--color-good);     font-weight: 700; }
 .neutral     { color: var(--bone-dim); }
 .unlucky     { color: var(--color-bad);     font-weight: 700; }
-.veryUnlucky { color: var(--blood);font-weight: 700; }
+.veryUnlucky { color: var(--blood-text);font-weight: 700; }
 
 @media (max-width: 640px) {
   .awardsGrid { grid-template-columns: 1fr; }
@@ -287,7 +289,7 @@
 }
 
 .rankUnlucky {
-  color: var(--blood);
+  color: var(--blood-text);
   font-weight: 700;
 }
 

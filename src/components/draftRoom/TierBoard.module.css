@@ -11,9 +11,18 @@
   background: var(--ink);
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 280px);
+  max-height: calc(100dvh - 280px);
   min-height: 420px;
   overflow-y: auto;
+}
+
+/* Match the player board: shorter columns on phones so the page and the
+   column aren't fighting over a ~650px viewport. */
+@media (max-width: 640px) {
+  .column {
+    max-height: calc(100dvh - 320px);
+    min-height: 300px;
+  }
 }
 
 .columnHeader {

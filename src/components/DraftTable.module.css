@@ -47,7 +47,9 @@
   overflow-x: auto;
   border: 2px solid var(--bone);
   box-shadow: 5px 5px 0 var(--bone);
-  background: var(--ink);
+  /* background-color, not the shorthand: the wrapper carries the global
+     scroll-x-hint gradient layers on touch screens. */
+  background-color: var(--ink);
 }
 
 .table {
@@ -250,6 +252,6 @@
 
 .lbRegret {
   font-size: 0.7rem;
-  color: var(--blood);
+  color: var(--blood-text);
   white-space: nowrap;
 }

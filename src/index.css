@@ -10,9 +10,11 @@
   --ink-3:      #1f1e1a;   /* hover / input */
   --rule:       #2a2823;   /* border / hairline */
   --bone:       #f1ece1;   /* primary text, paper */
-  --bone-dim:   #8a8478;   /* secondary text */
+  --bone-dim:   #948e80;   /* secondary text */
   --lime:       #d6ff2e;   /* electric accent */
-  --blood:      #e63a1f;   /* signal red */
+  --blood:      #e63a1f;   /* signal red: backgrounds, borders, large display */
+  --blood-text: #ff6242;   /* signal red for small text; --blood is 4.0:1 on ink,
+                              under the 4.5:1 AA floor for body sizes */
   --turf:       #0f3d2e;   /* deep field green */
   --gold:       #ffcf3a;   /* hardware */
 
@@ -43,11 +45,11 @@
   --color-great:    var(--lime);
   --color-good:     #a6e22e;
   --color-bad:      #ff8a3d;
-  --color-terrible: var(--blood);
+  --color-terrible: var(--blood-text);
   --color-neutral:  var(--bone-dim);
 
   --color-positive: var(--lime);
-  --color-negative: var(--blood);
+  --color-negative: var(--blood-text);
   --color-warning:  #ff8a3d;
 
   /* Platform colors */
@@ -364,6 +366,27 @@ input, select, textarea { font-family: inherit; color: var(--bone); }
 @media (prefers-reduced-motion: reduce) {
   .skeleton::after {
     animation: none;
+  }
+}
+
+/* Horizontal-scroll affordance for wide tables on touch screens, where
+   scrollbars are invisible until you're already scrolling. A faint bone fade
+   sits at each edge; the ink "cover" layers scroll with the content
+   (background-attachment: local) and slide over the fade at the scroll ends,
+   so the hint only shows when there are more columns off-screen. The host
+   must set background-color, not the background shorthand, or these layers
+   get reset. */
+@media (pointer: coarse) {
+  .scroll-x-hint {
+    background-image:
+      linear-gradient(90deg, var(--ink) 40%, transparent),
+      linear-gradient(270deg, var(--ink) 40%, transparent),
+      linear-gradient(90deg, rgba(241, 236, 225, 0.2), transparent),
+      linear-gradient(270deg, rgba(241, 236, 225, 0.2), transparent);
+    background-position: left, right, left, right;
+    background-size: 32px 100%, 32px 100%, 12px 100%, 12px 100%;
+    background-repeat: no-repeat;
+    background-attachment: local, local, scroll, scroll;
   }
 }
 

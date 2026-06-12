@@ -87,7 +87,7 @@
   font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--blood);
+  color: var(--blood-text);
 }
 
 .mineRoster {
@@ -128,7 +128,7 @@
 }
 
 .priceBad {
-  color: var(--blood);
+  color: var(--blood-text);
 }
 
 .btn {
@@ -216,7 +216,7 @@
 }
 
 .statBad {
-  color: var(--blood);
+  color: var(--blood-text);
 }
 
 .spendBar {

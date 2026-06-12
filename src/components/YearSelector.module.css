@@ -37,6 +37,7 @@
   top: calc(100% + 0.5rem);
   right: 0;
   min-width: 220px;
+  max-width: calc(100vw - 2rem);
   margin: 0;
   padding: 0.25rem;
   list-style: none;
@@ -97,6 +98,16 @@
   height: 8px;
   border-radius: 50%;
   background: currentColor;
+}
+
+/* Below the header's stack breakpoint the trigger sits near the LEFT edge
+   (the header switches to a left-aligned column), so a right-anchored 220px
+   menu would hang off the left side of a phone screen. Anchor left instead. */
+@media (max-width: 1000px) {
+  .menu {
+    left: 0;
+    right: auto;
+  }
 }
 
 .status_live { color: var(--lime); }

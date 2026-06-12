@@ -19,10 +19,8 @@ export function TradesPage({ league }: TradesPageProps) {
           <h1 className={styles.title}>Trade Analysis</h1>
           <p className={styles.subtitle}>
             Analyze trades from the {league.season} season
+            {verdictBasis && ` · ${VERDICT_BASIS_NOTE[verdictBasis]}`}
           </p>
-          {verdictBasis && (
-            <p className={styles.subtitle}>{VERDICT_BASIS_NOTE[verdictBasis]}</p>
-          )}
         </div>
 
         {hasTrades ? (

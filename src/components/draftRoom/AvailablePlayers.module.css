@@ -70,11 +70,22 @@
 .tableWrapper {
   overflow-x: auto;
   overflow-y: auto;
-  max-height: calc(100vh - 280px);
+  max-height: calc(100dvh - 280px);
   min-height: 420px;
   border: 2px solid var(--bone);
   box-shadow: 5px 5px 0 var(--bone);
-  background: var(--ink);
+  /* background-color, not the shorthand: the wrapper carries the global
+     scroll-x-hint gradient layers on touch screens. */
+  background-color: var(--ink);
+}
+
+/* The stacked header and status bar eat far more than 280px of a phone
+   viewport; the 420px floor forced double scrollbars on short screens. */
+@media (max-width: 640px) {
+  .tableWrapper {
+    max-height: calc(100dvh - 320px);
+    min-height: 300px;
+  }
 }
 
 /* Print clips scroll panes to their on-screen window at the current scroll
@@ -210,7 +221,7 @@
 }
 
 .injuryTag {
-  color: var(--blood);
+  color: var(--blood-text);
   border: 1px solid var(--blood);
 }
 
@@ -258,7 +269,7 @@
 }
 
 .deltaBad {
-  color: var(--blood);
+  color: var(--blood-text);
   font-weight: 700;
 }
 
@@ -355,7 +366,7 @@
 }
 
 .starAvoid {
-  color: var(--blood);
+  color: var(--blood-text);
 }
 
 .byeWarn {

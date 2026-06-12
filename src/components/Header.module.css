@@ -237,9 +237,11 @@
   box-shadow: 4px 4px 0 var(--blood);
 }
 
-@media (max-width: 880px) {
+@media (max-width: 1000px) {
   /* A wrapped 8-link nav permanently stuck atop a phone viewport eats
-     200px of screen; one scroll-snap row keeps it to ~50px. */
+     200px of screen; one scroll-snap row keeps it to ~50px. The eight season
+     tabs plus the export and sound buttons stop fitting one row around
+     1000px, so the scroll row takes over there rather than wrapping. */
   .headerContent { flex-direction: column; align-items: flex-start; }
   .logo { font-size: 1.1rem; }
   .nav {
@@ -258,6 +260,20 @@
 @media (pointer: coarse) {
   .nav a,
   .nav button {
+    min-height: 44px;
+  }
+
+  /* The fixed-size icon buttons live outside .nav and stay sub-44px
+     otherwise (refresh is 28px). */
+  .backButton,
+  .refreshButton,
+  .soundButton,
+  .yahooButton,
+  .yahooButtonOn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .exportButton {
     min-height: 44px;
   }
 }

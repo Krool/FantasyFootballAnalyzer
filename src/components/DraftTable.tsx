@@ -275,7 +275,7 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
         </div>
       )}
 
-      <div className={styles.tableWrapper}>
+      <div className={`${styles.tableWrapper} scroll-x-hint`}>
         <table className={`table ${styles.table}`}>
           <thead>
             <tr>

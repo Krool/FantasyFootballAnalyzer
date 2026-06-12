@@ -31,8 +31,14 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1rem;
   align-items: start;
-  max-height: calc(100vh - 280px);
+  max-height: calc(100dvh - 280px);
   overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .grid {
+    max-height: calc(100dvh - 320px);
+  }
 }
 
 /* Print clips scroll panes to their on-screen window at the current scroll
@@ -189,7 +195,7 @@
 .cuffTag {
   font-family: var(--font-mono);
   font-style: normal;
-  font-size: 0.55rem;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--bone-dim);

@@ -249,7 +249,7 @@
 .luckBadge.lucky       { color: var(--color-good); }
 .luckBadge.neutral     { color: var(--bone-dim); }
 .luckBadge.unlucky     { color: var(--color-bad); }
-.luckBadge.veryUnlucky { color: var(--blood); }
+.luckBadge.veryUnlucky { color: var(--blood-text); }
 
 .topScorers {
   list-style: none;

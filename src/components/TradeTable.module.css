@@ -151,7 +151,7 @@
   top: 0.65rem;
   right: 0.85rem;
   font-family: var(--font-mono);
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   letter-spacing: 0.22em;
   color: var(--lime);
   font-weight: 700;
@@ -206,7 +206,7 @@
 
 .label {
   font-family: var(--font-mono);
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 700;
   color: var(--bone-dim);
   text-transform: uppercase;
@@ -278,7 +278,7 @@
 }
 
 .positive { color: var(--lime); }
-.negative { color: var(--blood); }
+.negative { color: var(--blood-text); }
 
 /* ── Mobile divider ── */
 .tradeDivider { display: none; }

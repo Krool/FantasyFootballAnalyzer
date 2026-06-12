@@ -29,9 +29,10 @@ or font in a component. Always reference a CSS variable.
 | `--ink-3` | `#1f1e1a` | Input backgrounds, deepest hover |
 | `--rule` | `#2a2823` | Hairline borders, dashed separators |
 | `--bone` | `#f1ece1` | Primary text, primary borders |
-| `--bone-dim` | `#8a8478` | Secondary text, mono labels, muted UI |
+| `--bone-dim` | `#948e80` | Secondary text, mono labels, muted UI |
 | `--lime` | `#d6ff2e` | Primary accent. Wins, focus, hover, kickers |
-| `--blood` | `#e63a1f` | Errors, losses, warnings |
+| `--blood` | `#e63a1f` | Error/loss backgrounds, borders, large display text |
+| `--blood-text` | `#ff6242` | Error/loss text at body sizes. `--blood` is 4.0:1 on ink, under the 4.5:1 AA floor, so small red text uses this instead |
 | `--turf` | `#0f3d2e` | Reserved (rare use only) |
 | `--gold` | `#ffcf3a` | Reserved hardware tier |
 

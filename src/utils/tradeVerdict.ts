@@ -16,9 +16,9 @@ const WINNER_THRESHOLD: Record<TradeVerdictBasis, number> = {
 // Human-readable note for the UI so verdicts from different platforms are
 // never silently compared on different math.
 export const VERDICT_BASIS_NOTE: Record<TradeVerdictBasis, string> = {
-  'post-trade': 'Verdicts compare points above replacement after the trade.',
+  'post-trade': 'Verdicts compare points above replacement after the trade',
   'full-season':
-    'Verdicts compare full-season value; weekly data was not available for this league.',
+    'Verdicts compare full-season value; weekly data was not available for this league',
 };
 
 export function decideTradeWinner(

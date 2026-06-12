@@ -206,14 +206,14 @@
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--blood);
+  color: var(--blood-text);
   white-space: nowrap;
 }
 
 .keeperTag {
   font-family: var(--font-mono);
   font-style: normal;
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 700;
   color: var(--gold);
   border: 1px solid var(--gold);

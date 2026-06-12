@@ -60,12 +60,12 @@ export function AwardsPage({ league }: AwardsPageProps) {
   return (
     <div className={styles.awardsPage}>
       <div className="container">
-        <h1 className={styles.title}>
-          Season Awards
-        </h1>
-        <p className={styles.subtitle}>
-          {league.name} - {awards.length} Awards
-        </p>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Season Awards</h1>
+          <p className={styles.subtitle}>
+            {league.name} · {awards.length} Awards
+          </p>
+        </div>
 
         {awards.length === 0 && (
           <p className={styles.empty}>
@@ -126,7 +126,7 @@ export function AwardsPage({ league }: AwardsPageProps) {
         {luckMetrics.length > 0 && (
           <section className={styles.luckSection}>
             <h2 className={styles.categoryTitle}>Luck Analysis</h2>
-            <div className={styles.luckTable}>
+            <div className={`${styles.luckTable} scroll-x-hint`}>
               <table>
                 <thead>
                   <tr>

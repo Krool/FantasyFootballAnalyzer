@@ -3,7 +3,7 @@
 .page { padding: 3rem 0 5rem; }
 
 .header {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
   padding-bottom: 1.25rem;
   border-bottom: 3px solid var(--bone);
 }
@@ -76,7 +76,9 @@
 /* ── Layout ── */
 .content {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  /* Let the list column give ground at narrow desktop widths instead of
+     pinning 360px and starving the detail pane (~570px at a 1000px window). */
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   gap: 1.5rem;
   min-height: 600px;
 }
@@ -177,7 +179,7 @@
 
 .eventCount {
   font-family: var(--font-mono);
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--bone-dim);
@@ -269,7 +271,7 @@ button.moreResults:hover {
 
 .currentTeamLabel {
   font-family: var(--font-mono);
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--bone-dim);
@@ -311,7 +313,7 @@ button.moreResults:hover {
 
 .statLabel {
   font-family: var(--font-mono);
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--bone-dim);

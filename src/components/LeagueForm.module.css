@@ -234,7 +234,7 @@
 }
 
 .warning {
-  color: var(--blood);
+  color: var(--blood-text);
   margin-top: 0.75rem;
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -356,7 +356,7 @@
 }
 
 .error {
-  color: var(--blood);
+  color: var(--blood-text);
   font-family: var(--font-mono);
   font-size: 0.78rem;
   margin: 0.5rem 0 0;
@@ -383,7 +383,7 @@
   font-family: var(--font-mono);
   font-size: 0.68rem;
   letter-spacing: 0.08em;
-  color: var(--blood);
+  color: var(--blood-text);
 }
 .fieldError::before { content: '! '; }
 
