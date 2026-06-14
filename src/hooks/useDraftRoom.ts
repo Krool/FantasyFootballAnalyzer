@@ -81,7 +81,11 @@ function configFromLeague(league: League): DraftRoomConfig {
     rosterSlots,
     budget: DEFAULT_BUDGET,
     rounds: draftableSlotCount(rosterSlots),
-    mode: 'live',
+    mode: 'mock',
+    // Default mock auctions to live bidding: bids are called one at a time so
+    // the running price is always visible and you can rebid or pass after
+    // being outbid, instead of sealing one max and watching it resolve.
+    liveBidding: true,
   };
 }
 

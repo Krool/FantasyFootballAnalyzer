@@ -95,7 +95,12 @@ export function Header({
             </button>
           )}
           <Link to="/" className={styles.logo} aria-label="Fantasy Football Analyzer">
-            FANTASY <span>FOOTBALL</span> ANALYZER
+            <span className={styles.logoFull}>
+              FANTASY <span className={styles.logoAccent}>FOOTBALL</span> ANALYZER
+            </span>
+            <span className={styles.logoShort} aria-hidden="true">
+              F<span className={styles.logoAccent}>F</span>A
+            </span>
           </Link>
         </div>
 

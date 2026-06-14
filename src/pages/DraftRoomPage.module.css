@@ -80,6 +80,13 @@
   color: var(--bone-dim);
 }
 
+/* Lower-priority chips (your-next, money %, pick timer). Useful on a wide
+   screen, dead weight on a phone where the bar wraps to four rows; hidden
+   under the narrow breakpoint so the essentials stay one or two rows. */
+.statusSecondary {
+  /* no-op on desktop; the @media (max-width: 640px) block hides these */
+}
+
 .statusStrong {
   color: var(--lime);
   font-weight: 700;
@@ -267,7 +274,22 @@
 }
 
 @media (max-width: 640px) {
-  .title { font-size: 56px; }
+  /* A draft in progress doesn't need a 56px "DRAFT ROOM" billboard plus
+     4rem of margin/border above the board. Shrink the masthead and drop the
+     secondary status chips so the player list starts higher up. */
+  .title { font-size: 40px; }
+  .header {
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+  }
+  .statusBar {
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .statusSecondary { display: none; }
+  /* With the secondary chips gone the bar wraps to at most two rows, so the
+     reserved drafting height can drop from the desktop reservation. */
+  .statusBarLive { min-height: 4.5rem; }
 }
 
 /* Mis-taps cost picks: bump interactive targets on touch screens. */
@@ -288,6 +310,15 @@
 
   .statusBarLive {
     min-height: 6.75rem;
+  }
+}
+
+/* Narrow touch phones: 44px buttons keep the bar tall, but the hidden
+   secondary chips trim it to two rows. Ordered after both blocks above so it
+   wins the equal-specificity tie over the 6.75rem coarse reservation. */
+@media (max-width: 640px) and (pointer: coarse) {
+  .statusBarLive {
+    min-height: 5.75rem;
   }
 }
 

@@ -192,9 +192,20 @@ export interface AuctionResult {
   price: number;
 }
 
+// Hard ceiling on how far over the expected price any AI team will go. The
+// multipliers below (need + persona + budget pacing + jitter) compound, and
+// uncapped they stack into absurd buys -- a $50 back going for $112 -- which
+// second-price settlement then makes everyone actually pay. Real rooms have a
+// ceiling: even the team that wants a player most won't pay far past value.
+const MAX_OVERPAY = 1.3;
+// Small absolute cushion so cheap players can still draw a real $1-2 fight
+// (30% of $2 rounds to nothing); on a $50 player the multiplier dominates.
+const OVERPAY_CUSHION = 2;
+
 // One AI team's private ceiling for a player: expected price with noise,
-// need bump, persona, and budget pacing. Shared by the sealed-bid resolver
-// and the live-bidding loop so both modes price identically.
+// need bump, persona, and budget pacing, then capped near the expected price
+// so no one runs away with a bid. Shared by the sealed-bid resolver and the
+// live-bidding loop so both modes price identically.
 export function aiWillingness(
   player: PoolPlayer,
   expectedPrice: number,
@@ -213,7 +224,8 @@ export function aiWillingness(
     const parity = team.remaining / opponentsAvgRemaining;
     willingness *= Math.min(1.3, Math.max(0.85, 0.9 + 0.25 * (parity - 1) + 0.1));
   }
-  return Math.min(Math.round(willingness), team.maxBid);
+  const overpayCeiling = Math.max(expectedPrice + OVERPAY_CUSHION, expectedPrice * MAX_OVERPAY);
+  return Math.min(Math.round(willingness), Math.round(overpayCeiling), team.maxBid);
 }
 
 // Private ceilings for every eligible AI team, for live bidding.

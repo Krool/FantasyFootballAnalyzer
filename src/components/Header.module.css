@@ -59,8 +59,13 @@
   gap: 0.2em;
   white-space: nowrap;
 }
-.logo span { color: var(--blood); transition: color .2s ease; }
-.logo:hover span { color: var(--lime); }
+.logoAccent { color: var(--blood); transition: color .2s ease; }
+.logo:hover .logoAccent { color: var(--lime); }
+
+/* The full wordmark on roomy viewports; the "FFA" monogram swaps in on
+   phones (see the narrow media query) so the frozen header stays short. */
+.logoFull { display: inline; }
+.logoShort { display: none; }
 
 .leagueGroup {
   display: flex;
@@ -255,6 +260,17 @@
   }
   .nav::-webkit-scrollbar { display: none; }
   .nav > * { flex-shrink: 0; scroll-snap-align: start; }
+}
+
+@media (max-width: 600px) {
+  /* On phones the full "FANTASY FOOTBALL ANALYZER" wordmark wraps and the
+     sticky header swallows the viewport. Swap to the "FFA" monogram (middle
+     F keeps the accent) and trim the masthead padding to claw back space. */
+  .header { padding: 0.65rem 0 0.55rem; }
+  .headerContent { gap: 0.9rem; }
+  .logoFull { display: none; }
+  .logoShort { display: inline; }
+  .logo { font-size: 1.5rem; letter-spacing: 0; }
 }
 
 @media (pointer: coarse) {

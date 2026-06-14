@@ -321,7 +321,10 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
                 </span>
               )}
               {isSnake && !myTurn && myNextPick !== null && (
-                <span className={styles.statusItem} title="Where the snake comes back to you">
+                <span
+                  className={`${styles.statusItem} ${styles.statusSecondary}`}
+                  title="Where the snake comes back to you"
+                >
                   Your next: #{myNextPick + 1} ({myNextPick - derived.pickCount} away)
                 </span>
               )}
@@ -343,7 +346,7 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
               )}
               {spentPct !== null && derived.pickCount > 0 && (
                 <span
-                  className={styles.statusItem}
+                  className={`${styles.statusItem} ${styles.statusSecondary}`}
                   title="Share of the room's total money already spent vs share of picks made"
                 >
                   Money: {spentPct}% spent · picks{' '}
@@ -356,7 +359,7 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
                 </span>
               )}
               {phase === 'drafting' && (
-                <span className={styles.statusItem}>
+                <span className={`${styles.statusItem} ${styles.statusSecondary}`}>
                   <PickTimer lastEventTs={lastEventTs} />
                 </span>
               )}

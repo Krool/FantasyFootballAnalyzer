@@ -103,6 +103,7 @@
 }
 
 .skillParts {
+  flex: 0 0 11rem;
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   color: var(--bone-dim);

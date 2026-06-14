@@ -80,10 +80,12 @@
 }
 
 /* The stacked header and status bar eat far more than 280px of a phone
-   viewport; the 420px floor forced double scrollbars on short screens. */
+   viewport; the 420px floor forced double scrollbars on short screens. The
+   trimmed masthead and two-row status bar (DraftRoomPage phone styles) claw
+   ~80px back, so the board reservation tightens from 320px to 240px. */
 @media (max-width: 640px) {
   .tableWrapper {
-    max-height: calc(100dvh - 320px);
+    max-height: calc(100dvh - 240px);
     min-height: 300px;
   }
 }

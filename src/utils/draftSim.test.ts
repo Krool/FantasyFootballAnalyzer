@@ -163,6 +163,22 @@ describe('simAuctionResult', () => {
     expect(result.price).toBeLessThanOrEqual(state.teams.get('t1')!.maxBid);
   });
 
+  it('never lets the price run far past the expected value', () => {
+    const pool = makePool();
+    const config = makeConfig('auction');
+    const state = deriveDraftState(config, pool, []);
+    const teams = [...state.teams.values()];
+    const star = pool[0];
+    const expected = 50;
+    // The user sits out; even with eight cashed-up AI teams bidding each
+    // other up, no one pays much past 30% over the expected price.
+    const ceiling = Math.round(expected * 1.3) + 1;
+    for (let seed = 1; seed <= 50; seed++) {
+      const result = simAuctionResult(star, expected, teams, state.available, 't1', 0, mulberry32(seed));
+      expect(result.price).toBeLessThanOrEqual(ceiling);
+    }
+  });
+
   it('passes to the richest eligible team at $1 when nobody bids', () => {
     const pool = makePool();
     const config = makeConfig('auction');
