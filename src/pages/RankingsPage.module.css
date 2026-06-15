@@ -61,6 +61,32 @@
   flex: 1;
 }
 
+/* Guest-mode inline controls: editable draft shape, same mono key style. */
+.settingsControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+
+.settingsSelect {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bone);
+  background: var(--ink);
+  border: 2px solid var(--bone);
+  padding: 0.3rem 0.4rem;
+  cursor: pointer;
+}
+
 .tabs {
   display: flex;
   align-items: center;

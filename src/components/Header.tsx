@@ -11,6 +11,10 @@ interface HeaderProps {
   leagueName?: string;
   platform?: string;
   league?: League | null;
+  // Guest mode: no real connection. The header swaps the league name + refresh
+  // for a "Connect your league" CTA (which clears the guest and lands on the
+  // home form). The Yahoo button stays so a guest can log in on demand.
+  isGuest?: boolean;
   onChangeLeague?: () => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
@@ -39,6 +43,7 @@ export function Header({
   leagueName,
   platform,
   league,
+  isGuest,
   onChangeLeague,
   onRefresh,
   isRefreshing,
@@ -62,6 +67,7 @@ export function Header({
       exportLeagueReport(league).catch(err => {
         logger.error('PDF export failed:', err);
         playError();
+        window.alert("Couldn't build the PDF report. Check your connection and try again.");
       });
     }
   };
@@ -82,7 +88,7 @@ export function Header({
     <header className={styles.header}>
       <div className={`container ${styles.headerContent}`}>
         <div className={styles.logoSection}>
-          {league && (
+          {league && !isGuest && (
             <button
               onClick={handleChangeLeague}
               className={styles.backButton}
@@ -134,6 +140,19 @@ export function Header({
                 </button>
               )}
             </div>
+          </div>
+        )}
+
+        {isGuest && (
+          <div className={styles.leagueGroup}>
+            <span className={styles.guestTag}>Guest</span>
+            <button
+              onClick={handleChangeLeague}
+              className={styles.connectCta}
+              title="Connect your real league for team names, grades, and history"
+            >
+              Connect your league
+            </button>
           </div>
         )}
 

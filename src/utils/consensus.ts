@@ -12,17 +12,30 @@ import type { ScoringType } from './valueScaling';
 
 // The Sleeper ADP that matches the league's scoring rules. The bundled pool
 // carries all three variants; half-PPR is the fallback (and the best guess
-// for custom scoring, which is usually a PPR tweak).
-export function sleeperAdpFor(player: PoolPlayer, scoring: ScoringType): number | undefined {
+// for custom scoring, which is usually a PPR tweak). In superflex leagues the
+// 2QB ADP takes over: QBs go far earlier there, and the scoring-variant ADPs
+// are all 1QB markets that badly misprice them.
+export function sleeperAdpFor(
+  player: PoolPlayer,
+  scoring: ScoringType,
+  superflex = false,
+): number | undefined {
+  if (superflex && player.sleeperAdp2qb != null) return player.sleeperAdp2qb;
   if (scoring === 'ppr') return player.sleeperAdpPpr ?? player.sleeperAdp;
   if (scoring === 'standard') return player.sleeperAdpStd ?? player.sleeperAdp;
   return player.sleeperAdp;
 }
 
-export function consensusAvg(player: PoolPlayer, scoring: ScoringType = 'half_ppr'): number {
-  const signals = [player.overallRank, player.espnAdp, sleeperAdpFor(player, scoring)].filter(
-    (n): n is number => n != null,
-  );
+export function consensusAvg(
+  player: PoolPlayer,
+  scoring: ScoringType = 'half_ppr',
+  superflex = false,
+): number {
+  const signals = [
+    player.overallRank,
+    player.espnAdp,
+    sleeperAdpFor(player, scoring, superflex),
+  ].filter((n): n is number => n != null);
   // overallRank is always present, so signals is never empty.
   return signals.reduce((sum, n) => sum + n, 0) / signals.length;
 }
@@ -41,6 +54,7 @@ export interface PlatformRankSource {
 export function platformRankSource(
   platform: Platform,
   scoring: ScoringType = 'half_ppr',
+  superflex = false,
 ): PlatformRankSource {
   switch (platform) {
     case 'sleeper':
@@ -48,7 +62,7 @@ export function platformRankSource(
         label: 'SLPR',
         describe:
           'Sleeper ADP minus the consensus average. Positive: Sleeper drafts him later than consensus, so he should fall to you.',
-        value: p => sleeperAdpFor(p, scoring),
+        value: p => sleeperAdpFor(p, scoring, superflex),
       };
     case 'espn':
       return {
@@ -73,8 +87,9 @@ export function platformDelta(
   player: PoolPlayer,
   source: PlatformRankSource,
   scoring: ScoringType = 'half_ppr',
+  superflex = false,
 ): number | undefined {
   const value = source.value(player);
   if (value == null) return undefined;
-  return value - consensusAvg(player, scoring);
+  return value - consensusAvg(player, scoring, superflex);
 }

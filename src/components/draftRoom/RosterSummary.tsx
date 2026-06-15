@@ -45,6 +45,7 @@ export function RosterSummary({ state, rosterSlots, listClassName, showPickNumbe
           Still need:{' '}
           {openNeeds.map(pos => `${state.starterNeeds[pos]} ${pos}`).join(', ')}
           {state.slotsFilled.FLEX < rosterSlots.FLEX ? ', FLEX open' : ''}
+          {state.slotsFilled.SUPERFLEX < rosterSlots.SUPERFLEX ? ', SUPERFLEX open' : ''}
         </p>
       ) : (
         <p className={styles.needsLine}>All starting slots filled.</p>

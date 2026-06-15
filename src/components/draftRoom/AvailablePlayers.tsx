@@ -76,9 +76,10 @@ export function AvailablePlayers({
     }
     return new Set([...counts.entries()].filter(([, n]) => n >= 2).map(([week]) => week));
   }, [derived.teams, config.myTeamId]);
+  const superflex = config.rosterSlots.SUPERFLEX > 0;
   const adp = useCallback(
-    (p: PoolPlayer) => sleeperAdpFor(p, scoring) ?? p.espnAdp,
-    [scoring],
+    (p: PoolPlayer) => sleeperAdpFor(p, scoring, superflex) ?? p.espnAdp,
+    [scoring, superflex],
   );
   const adjValue = useCallback(
     (p: PoolPlayer) => inflateValue(scaledValues.get(p.id) ?? 1, inflation.rate),

@@ -384,11 +384,11 @@ export async function getAvailableSeasons(
 }
 
 // Parse roster settings to get position slot counts
-function parseRosterSettings(settings: any): { QB: number; RB: number; WR: number; TE: number; FLEX: number; K: number; DST: number; BENCH: number; IR: number; hasSuperflex: boolean } {
+function parseRosterSettings(settings: any): { QB: number; RB: number; WR: number; TE: number; FLEX: number; SUPERFLEX: number; K: number; DST: number; BENCH: number; IR: number; hasSuperflex: boolean } {
   const rosterPositions = settings?.roster_positions?.roster_position || [];
   const posList = Array.isArray(rosterPositions) ? rosterPositions : [rosterPositions];
 
-  const slots = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, K: 0, DST: 0, BENCH: 0, IR: 0, hasSuperflex: false };
+  const slots = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0, IR: 0, hasSuperflex: false };
   let parsedAny = false;
 
   for (const pos of posList) {
@@ -403,7 +403,7 @@ function parseRosterSettings(settings: any): { QB: number; RB: number; WR: numbe
       case 'W/R/T': case 'W/R': case 'FLEX': slots.FLEX += count; parsedAny = true; break;
       // Superflex: counted as FLEX for slot math, but flagged so the Draft
       // Room can warn that 1QB values badly underprice QBs here.
-      case 'Q/W/R/T': slots.FLEX += count; slots.hasSuperflex = true; parsedAny = true; break;
+      case 'Q/W/R/T': slots.SUPERFLEX += count; slots.hasSuperflex = true; parsedAny = true; break;
       case 'K': slots.K += count; parsedAny = true; break;
       case 'DEF': case 'D/ST': case 'DST': slots.DST += count; parsedAny = true; break;
       case 'BN': slots.BENCH += count; parsedAny = true; break;
@@ -552,6 +552,7 @@ export async function loadLeague(leagueKey: string): Promise<League> {
       WR: rosterSlots.WR,
       TE: rosterSlots.TE,
       FLEX: rosterSlots.FLEX,
+      SUPERFLEX: rosterSlots.SUPERFLEX,
       K: rosterSlots.K,
       DST: rosterSlots.DST,
       BENCH: rosterSlots.BENCH,
@@ -1000,7 +1001,7 @@ export async function enrichPlayersWithStats(
   // Build position rankings to calculate replacement level baselines
   const totalTeamsCount = league.totalTeams;
   const rosterSlots = league.rosterSlots || {
-    QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, K: 1, DST: 1, BENCH: 6, IR: 1
+    QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 0, K: 1, DST: 1, BENCH: 6, IR: 1
   };
 
   // Calculate replacement level for each position

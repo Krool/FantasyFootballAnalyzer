@@ -32,22 +32,22 @@ export default async function handler(req, res) {
   // The state should be validated against a stored value on the client side
   // We pass it through to the frontend for validation
   if (!state) {
-    return res.redirect(`${FRONTEND_URL}/#/yahoo-error?error=missing_state&description=CSRF%20protection%20failed`);
+    return res.redirect(`${FRONTEND_URL}/yahoo-error?error=missing_state&description=CSRF%20protection%20failed`);
   }
 
   if (error) {
-    return res.redirect(`${FRONTEND_URL}/#/yahoo-error?error=${encodeURIComponent(error)}&description=${encodeURIComponent(error_description || '')}`);
+    return res.redirect(`${FRONTEND_URL}/yahoo-error?error=${encodeURIComponent(error)}&description=${encodeURIComponent(error_description || '')}`);
   }
 
   if (!code || typeof code !== 'string') {
-    return res.redirect(`${FRONTEND_URL}/#/yahoo-error?error=missing_code`);
+    return res.redirect(`${FRONTEND_URL}/yahoo-error?error=missing_code`);
   }
 
   const CLIENT_ID = process.env.YAHOO_CLIENT_ID;
   const CLIENT_SECRET = process.env.YAHOO_CLIENT_SECRET;
 
   if (!CLIENT_ID || !CLIENT_SECRET) {
-    return res.redirect(`${FRONTEND_URL}/#/yahoo-error?error=server_config`);
+    return res.redirect(`${FRONTEND_URL}/yahoo-error?error=server_config`);
   }
 
   try {
@@ -74,13 +74,14 @@ export default async function handler(req, res) {
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
       console.error('Token exchange failed:', errorData);
-      return res.redirect(`${FRONTEND_URL}/#/yahoo-error?error=token_exchange`);
+      return res.redirect(`${FRONTEND_URL}/yahoo-error?error=token_exchange`);
     }
 
     const tokens = await tokenResponse.json();
 
-    // Redirect to frontend with tokens in URL fragment
-    // Include state for CSRF validation on the client side
+    // Redirect to the frontend route with tokens in the query string.
+    // BrowserRouter resolves /yahoo-success via the GitHub Pages 404 shim.
+    // Include state for CSRF validation on the client side.
     const tokenData = encodeURIComponent(JSON.stringify({
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
@@ -88,9 +89,9 @@ export default async function handler(req, res) {
       token_type: tokens.token_type
     }));
 
-    res.redirect(`${FRONTEND_URL}/#/yahoo-success?tokens=${tokenData}&state=${encodeURIComponent(state)}`);
+    res.redirect(`${FRONTEND_URL}/yahoo-success?tokens=${tokenData}&state=${encodeURIComponent(state)}`);
   } catch (err) {
     console.error('OAuth callback error:', err);
-    res.redirect(`${FRONTEND_URL}/#/yahoo-error?error=server_error`);
+    res.redirect(`${FRONTEND_URL}/yahoo-error?error=server_error`);
   }
 }

@@ -2,14 +2,21 @@
 
 ## Deployment
 
-This project deploys to GitHub Pages via the `gh-pages` branch, NOT from `master`.
+This project serves GitHub Pages from the `gh-pages` branch. Production is
+published by CI, not from your machine.
 
-After committing and pushing to `master`, always run `npm run deploy` to build
-and publish to production. Pushing to `master` alone does NOT deploy.
+Pushing to `master` deploys: the CI workflow (.github/workflows/ci.yml) lints,
+tests, and builds every push and PR, and on a push to `master` it publishes
+`dist/` to `gh-pages` after those pass. So the live site always equals a pushed,
+green commit. `npm run deploy` still works as a manual break-glass fallback, but
+it builds your local working tree (committed or not), so prefer pushing.
 
-Exception: the `Update rankings` GitHub Action (.github/workflows/update-rankings.yml)
-fetches fresh draft rankings daily, commits them to `master`, and deploys on
-its own when the data changed.
+The `Update rankings` GitHub Action (.github/workflows/update-rankings.yml)
+fetches fresh draft rankings daily, builds as a gate, commits to `master`, and
+deploys its own commit. It can't rely on ci.yml for that: its push uses the
+default `GITHUB_TOKEN`, and GitHub does not trigger workflows from
+`GITHUB_TOKEN` pushes, so ci.yml never sees that commit. Hence two deploy paths
+that don't overlap: ci.yml for human pushes, this Action for its data commit.
 
 Production URL: https://krool.github.io/FantasyFootballAnalyzer/
 

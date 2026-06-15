@@ -14,6 +14,7 @@ import { handcuffPartner, stackPartner } from './stacks';
 import type { ScoringType } from './valueScaling';
 
 const FLEX_ELIGIBLE = new Set<string>(['RB', 'WR', 'TE']);
+const SUPERFLEX_ELIGIBLE = new Set<string>(['QB', 'RB', 'WR', 'TE']);
 // Suggestions come from the top of the board; deeper players are never the
 // right pick while 40 better ones sit there.
 const CANDIDATE_DEPTH = 40;
@@ -60,6 +61,9 @@ export function suggestPicks(
   // roster is down to its last fills.
   const lateFill = team.openSlots <= starterTotal + 1;
   const flexOpen = team.slotsFilled.FLEX < rosterSlots.FLEX;
+  // Superflex adds a QB-eligible flex, so a "spare" QB (beyond the QB slots)
+  // is a starter, not bench depth, while the SUPERFLEX slot is open.
+  const superflexOpen = team.slotsFilled.SUPERFLEX < rosterSlots.SUPERFLEX;
   const currentPick = opts.pickCount + 1;
 
   const tierLeft = new Map<string, number>();
@@ -96,6 +100,9 @@ export function suggestPicks(
     } else if (FLEX_ELIGIBLE.has(p.pos) && flexOpen) {
       score *= 1.1;
       reasons.push('FLEX-eligible');
+    } else if (SUPERFLEX_ELIGIBLE.has(p.pos) && superflexOpen) {
+      score *= 1.1;
+      reasons.push('SUPERFLEX-eligible');
     } else {
       score *= 0.8;
       reasons.push('bench depth');
@@ -108,7 +115,7 @@ export function suggestPicks(
       reasons.push(`last Tier ${p.tier} ${pos}`);
     }
 
-    const adp = sleeperAdpFor(p, opts.scoring) ?? p.espnAdp;
+    const adp = sleeperAdpFor(p, opts.scoring, rosterSlots.SUPERFLEX > 0) ?? p.espnAdp;
     if (adp !== undefined) {
       const fall = currentPick - adp;
       if (fall >= opts.teamCount / 2) {

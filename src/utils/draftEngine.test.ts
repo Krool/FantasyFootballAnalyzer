@@ -3,7 +3,7 @@ import type { RosterSlots } from '@/types';
 import type { DraftEvent, DraftRoomConfig, PoolPlayer } from '@/types/draft';
 import { deriveDraftState, draftableSlotCount, validateEvent } from './draftEngine';
 
-const SLOTS: RosterSlots = { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, K: 1, DST: 1, BENCH: 2, IR: 1 };
+const SLOTS: RosterSlots = { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 0, K: 1, DST: 1, BENCH: 2, IR: 1 };
 
 function makePool(): PoolPlayer[] {
   const players: PoolPlayer[] = [];
@@ -41,6 +41,7 @@ function makeConfig(overrides: Partial<DraftRoomConfig> = {}): DraftRoomConfig {
     ],
     myTeamId: 'A',
     rosterSlots: SLOTS,
+    scoring: 'half_ppr',
     budget: 100,
     rounds: draftableSlotCount(SLOTS), // 11
     mode: 'live',
@@ -91,7 +92,7 @@ describe('deriveDraftState (auction)', () => {
       sale('QB2', 'A', 10), // QB not flex eligible -> BENCH
     ];
     const a = deriveDraftState(config, pool, events).teams.get('A')!;
-    expect(a.slotsFilled).toEqual({ QB: 1, RB: 2, WR: 0, TE: 0, FLEX: 1, K: 0, DST: 0, BENCH: 2 });
+    expect(a.slotsFilled).toEqual({ QB: 1, RB: 2, WR: 0, TE: 0, FLEX: 1, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 2 });
   });
 
   it('reports starter needs and league-wide positional demand', () => {
@@ -193,16 +194,60 @@ describe('keepers', () => {
     expect(state.teams.get('B')!.picks).toHaveLength(1);
   });
 
-  it('ignores leftover keepers in an auction draft (they stay buyable)', () => {
-    // Keepers are snake-only; switching the setup to auction must not leave
-    // the player reserved and permanently unsellable.
+  it('reserves auction keepers until they are auto-logged as pre-draft sales', () => {
     const auctionConfig = makeConfig({
       draftType: 'auction',
-      keepers: [{ teamId: 'B', playerId: 'RB1', costRound: 2 }],
+      keepers: [{ teamId: 'B', playerId: 'RB1', costRound: 2, keeperPrice: 12 }],
     });
-    const state = deriveDraftState(auctionConfig, pool, []);
-    expect(state.reservedPlayerIds.size).toBe(0);
-    expect(state.available.some(p => p.id === 'RB1')).toBe(true);
+    // Before the keeper sale is logged the player is reserved (off the board).
+    const before = deriveDraftState(auctionConfig, pool, []);
+    expect(before.reservedPlayerIds.has('RB1')).toBe(true);
+    expect(before.available.some(p => p.id === 'RB1')).toBe(false);
+
+    // Once logged as a keeper sale he's on team B and no longer reserved, and
+    // the keeper sale does not shift whose nomination it is (still team A).
+    const sale: DraftEvent = {
+      kind: 'auction_sale',
+      seq: 0,
+      ts: 0,
+      playerId: 'RB1',
+      nominatedById: 'B',
+      wonById: 'B',
+      price: 12,
+      isKeeper: true,
+    };
+    const after = deriveDraftState(auctionConfig, pool, [sale]);
+    expect(after.reservedPlayerIds.has('RB1')).toBe(false);
+    expect(after.onTheClockId).toBe('A');
+    expect(after.teams.get('B')!.spent).toBe(12);
+  });
+});
+
+describe('dynasty ordering and rookie pool', () => {
+  // overallRank ascending is RB1..RB3; dynasty value flips it, and only RB2/RB3
+  // are rookies.
+  const dynPool: PoolPlayer[] = [
+    { id: 'RB1', name: 'Vet', team: 'FA', pos: 'RB', posRank: 1, overallRank: 1, tier: 1, bye: null, baseValue: 40, dynastyRank: 30 },
+    { id: 'RB2', name: 'Rook A', team: 'FA', pos: 'RB', posRank: 2, overallRank: 2, tier: 1, bye: null, baseValue: 30, dynastyRank: 5, rookie: true },
+    { id: 'RB3', name: 'Rook B', team: 'FA', pos: 'RB', posRank: 3, overallRank: 3, tier: 1, bye: null, baseValue: 20, dynastyRank: 12, rookie: true },
+  ];
+
+  it('orders the board by dynasty value in a dynasty league', () => {
+    const config = makeConfig({ draftType: 'snake', leagueType: 'dynasty' });
+    const state = deriveDraftState(config, dynPool, []);
+    expect(state.available.map(p => p.id)).toEqual(['RB2', 'RB3', 'RB1']);
+  });
+
+  it('narrows the board to rookies in a rookie draft, ordered by dynasty value', () => {
+    const config = makeConfig({ draftType: 'snake', leagueType: 'dynasty', dynastyMode: 'rookie' });
+    const state = deriveDraftState(config, dynPool, []);
+    expect(state.available.map(p => p.id)).toEqual(['RB2', 'RB3']);
+  });
+
+  it('keeps redraft order untouched when not a dynasty league', () => {
+    const config = makeConfig({ draftType: 'snake' });
+    const state = deriveDraftState(config, dynPool, []);
+    expect(state.available.map(p => p.id)).toEqual(['RB1', 'RB2', 'RB3']);
   });
 });
 

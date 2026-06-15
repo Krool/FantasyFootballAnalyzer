@@ -37,9 +37,10 @@ export function SuggestionsPanel({ room, onSelect }: SuggestionsPanelProps) {
       .filter((p): p is PoolPlayer => p !== undefined);
   }, [config.keepers, config.myTeamId, derived.reservedPlayerIds, pool.players]);
 
+  const superflex = config.rosterSlots.SUPERFLEX > 0;
   const adpOf = useCallback(
-    (p: PoolPlayer) => sleeperAdpFor(p, scoring) ?? p.espnAdp,
-    [scoring],
+    (p: PoolPlayer) => sleeperAdpFor(p, scoring, superflex) ?? p.espnAdp,
+    [scoring, superflex],
   );
 
   // Simulated odds each board player is gone before the user's next pick.
@@ -66,7 +67,7 @@ export function SuggestionsPanel({ room, onSelect }: SuggestionsPanelProps) {
     if (!me) return [];
     // The pick after the one on the clock that belongs to the user, 1-based.
     const orderedIds = config.teams.map(t => t.id);
-    const next = nextPickFor(config.myTeamId, orderedIds, derived.pickCount + 1, derived.totalPicks);
+    const next = nextPickFor(config.myTeamId, orderedIds, derived.pickCount + 1, derived.totalPicks, config.snakeFormat);
     return suggestPicks(derived.available, me, config.rosterSlots, scaledValues, {
       pickCount: derived.pickCount,
       teamCount: config.teams.length,
@@ -78,7 +79,7 @@ export function SuggestionsPanel({ room, onSelect }: SuggestionsPanelProps) {
       avoided,
       keeperPlayers,
     });
-  }, [me, derived, config.rosterSlots, config.teams, config.myTeamId, scaledValues, scoring, takenOdds, starred, avoided, keeperPlayers]);
+  }, [me, derived, config.rosterSlots, config.teams, config.myTeamId, config.snakeFormat, scaledValues, scoring, takenOdds, starred, avoided, keeperPlayers]);
 
   // Insurance still on the board for the user's lead RBs, keepers included.
   const cuffs = useMemo(() => {

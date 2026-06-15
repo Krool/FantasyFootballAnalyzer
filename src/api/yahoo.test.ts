@@ -227,7 +227,7 @@ describe('yahoo loadLeague', () => {
   it('parses roster slots and flags superflex (Q/W/R/T)', () => {
     expect(league.hasSuperflex).toBe(true);
     expect(league.rosterSlots).toMatchObject({
-      QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 2, K: 1, DST: 1,
+      QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 1, K: 1, DST: 1,
     });
   });
 

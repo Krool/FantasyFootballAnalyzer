@@ -35,4 +35,33 @@ describe('snakeOrder', () => {
       expect(teamsThisRound.size).toBe(12);
     }
   });
+
+  it('linear keeps the same order every round', () => {
+    const ids = Array.from({ length: 10 }, (_, i) => `t${i + 1}`);
+    expect(teamForPick(0, ids, 'linear')).toBe('t1');
+    expect(teamForPick(9, ids, 'linear')).toBe('t10');
+    expect(teamForPick(10, ids, 'linear')).toBe('t1'); // round 2 starts at t1 again
+    expect(teamForPick(19, ids, 'linear')).toBe('t10');
+  });
+
+  it('3rr reverses round 3 like round 2, then resumes alternating', () => {
+    // Direction by 0-based round: F, R, R, F, R, F...
+    expect(teamIndexForPick(0, 10, '3rr')).toBe(0); // R1 forward
+    expect(teamIndexForPick(10, 10, '3rr')).toBe(9); // R2 reversed
+    expect(teamIndexForPick(20, 10, '3rr')).toBe(9); // R3 reversed again (the reversal)
+    expect(teamIndexForPick(30, 10, '3rr')).toBe(0); // R4 forward
+    expect(teamIndexForPick(40, 10, '3rr')).toBe(9); // R5 reversed
+  });
+
+  it('every format gives each team exactly one pick per round', () => {
+    const ids = Array.from({ length: 12 }, (_, i) => `t${i + 1}`);
+    for (const format of ['standard', '3rr', 'linear'] as const) {
+      for (let round = 0; round < 5; round++) {
+        const teamsThisRound = new Set(
+          Array.from({ length: 12 }, (_, i) => teamForPick(round * 12 + i, ids, format)),
+        );
+        expect(teamsThisRound.size).toBe(12);
+      }
+    }
+  });
 });

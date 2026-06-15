@@ -6,7 +6,7 @@ import { mulberry32, simAuctionResult, simNomination, simSnakePick } from './dra
 import { roundForPick } from './snakeOrder';
 import { scaleValues } from './valueScaling';
 
-const SLOTS: RosterSlots = { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, K: 1, DST: 1, BENCH: 3, IR: 0 };
+const SLOTS: RosterSlots = { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 0, K: 1, DST: 1, BENCH: 3, IR: 0 };
 
 function makePool(): PoolPlayer[] {
   const players: PoolPlayer[] = [];
@@ -41,6 +41,7 @@ function makeConfig(draftType: 'snake' | 'auction'): DraftRoomConfig {
     teams: Array.from({ length: 8 }, (_, i) => ({ id: `t${i + 1}`, name: `Team ${i + 1}` })),
     myTeamId: 't1',
     rosterSlots: SLOTS,
+    scoring: 'half_ppr',
     budget: 200,
     rounds: draftableSlotCount(SLOTS), // 12
     mode: 'mock',

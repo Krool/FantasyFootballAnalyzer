@@ -16,14 +16,15 @@
 // which slightly under-prices the ~179th-250th players in deep leagues.
 
 import type { PoolPlayer } from '@/types/draft';
+import type { ScoringType } from '@/types';
+
+export type { ScoringType };
 
 export interface LeagueShape {
   budget: number;
   teams: number;
   rounds: number;
 }
-
-export type ScoringType = 'standard' | 'ppr' | 'half_ppr' | 'custom';
 
 // Seam for scoring-format adjustments (e.g. WRs worth a few % less in
 // half-PPR than in the full-PPR baseline). Returns 1 until per-position

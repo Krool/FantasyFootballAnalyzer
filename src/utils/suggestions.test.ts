@@ -5,7 +5,7 @@ import type { TeamDraftState } from './draftEngine';
 import { suggestPicks } from './suggestions';
 import type { SuggestOptions } from './suggestions';
 
-const SLOTS: RosterSlots = { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, K: 1, DST: 1, BENCH: 6, IR: 1 };
+const SLOTS: RosterSlots = { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 0, K: 1, DST: 1, BENCH: 6, IR: 1 };
 
 let nextRank = 1;
 function player(partial: Partial<PoolPlayer> & { id: string; pos: string }): PoolPlayer {
@@ -31,7 +31,7 @@ function team(partial: Partial<TeamDraftState> = {}): TeamDraftState {
     remaining: 200,
     maxBid: 186,
     avgPrice: 0,
-    slotsFilled: { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, K: 0, DST: 0, BENCH: 0 },
+    slotsFilled: { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0 },
     starterNeeds: { QB: 1, RB: 2, WR: 2, TE: 1, K: 1, DST: 1 },
     fullAt: { QB: false, RB: false, WR: false, TE: false, K: false, DST: false },
     ...partial,
@@ -61,7 +61,7 @@ describe('suggestPicks', () => {
     ];
     // QB starter already filled, no FLEX for QBs: qb2 is bench depth.
     const me = team({
-      slotsFilled: { QB: 1, RB: 0, WR: 0, TE: 0, FLEX: 0, K: 0, DST: 0, BENCH: 0 },
+      slotsFilled: { QB: 1, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0 },
       starterNeeds: { QB: 0, RB: 2, WR: 2, TE: 1, K: 1, DST: 1 },
     });
     const top = suggestPicks(pool, me, SLOTS, values(pool, { qb2: 30, rb1: 28, rb2: 20 }), opts());

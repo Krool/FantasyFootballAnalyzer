@@ -12,6 +12,7 @@ import { DraftRecap } from '@/components/draftRoom/DraftRecap';
 import { DraftSetup } from '@/components/draftRoom/DraftSetup';
 import { LeagueNeeds } from '@/components/draftRoom/LeagueNeeds';
 import { MockBidPanel } from '@/components/draftRoom/MockBidPanel';
+import { MockControls } from '@/components/draftRoom/MockControls';
 import { MyTeamPanel } from '@/components/draftRoom/MyTeamPanel';
 import { NflTeams } from '@/components/draftRoom/NflTeams';
 import { NominationPanel } from '@/components/draftRoom/NominationPanel';
@@ -47,6 +48,13 @@ function PickTimer({ lastEventTs }: { lastEventTs: number | null }) {
   );
 }
 
+const SCORING_LABEL: Record<string, string> = {
+  standard: 'Standard',
+  half_ppr: 'Half PPR',
+  ppr: 'Full PPR',
+  custom: 'Custom',
+};
+
 type BoardTab = 'board' | 'tiers' | 'teams' | 'nfl';
 
 const BOARD_TABS: Array<{ key: BoardTab; label: string; title: string }> = [
@@ -72,6 +80,9 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
   // Which roster the Teams tab is showing; lives here so flipping to another
   // tab and back doesn't lose the place. null = the user's own team.
   const [viewTeamId, setViewTeamId] = useState<string | null>(null);
+  // A transient flourish when one of your own picks is a clear value.
+  const [spark, setSpark] = useState<string | null>(null);
+  const lastSparkSeqRef = useRef(-1);
 
   const { phase, config, derived, undo, reset } = room;
 
@@ -147,6 +158,38 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
     () => new Map(room.pool.players.map(p => [p.id, p])),
     [room.pool.players],
   );
+
+  // Celebrate your own value picks: a snake player who slid well past his board
+  // rank, or an auction buy comfortably under his adjusted value.
+  useEffect(() => {
+    if (phase !== 'drafting' || room.events.length === 0) return;
+    const last = room.events[room.events.length - 1];
+    if (last.seq === lastSparkSeqRef.current) return;
+    lastSparkSeqRef.current = last.seq;
+    if (last.isKeeper) return;
+    const owner = last.kind === 'auction_sale' ? last.wonById : last.teamId;
+    if (owner !== config.myTeamId) return;
+    const player = playerById.get(last.playerId);
+    if (!player) return;
+    let msg: string | null = null;
+    if (last.kind === 'snake_pick') {
+      const fell = room.events.length - player.overallRank;
+      if (fell >= config.teams.length) msg = `STEAL · ${player.name} slid ${fell} past his rank`;
+    } else {
+      const value = room.scaledValues.get(last.playerId) ?? 1;
+      if (last.price <= value * 0.7 && value - last.price >= 3) {
+        msg = `BARGAIN · ${player.name} for $${value - last.price} under value`;
+      }
+    }
+    if (msg) setSpark(msg);
+  }, [room.events, phase, config.myTeamId, config.teams.length, playerById, room.scaledValues]);
+
+  useEffect(() => {
+    if (!spark) return;
+    const timer = setTimeout(() => setSpark(null), 1800);
+    return () => clearTimeout(timer);
+  }, [spark]);
+
   const run = useMemo(
     () => (phase === 'drafting' ? detectRun(room.events, playerById) : null),
     [phase, room.events, playerById],
@@ -156,8 +199,8 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
     if (config.draftType !== 'snake' || phase !== 'drafting') return null;
     const orderedIds = config.teams.map(t => t.id);
     const from = myTurn ? derived.pickCount + 1 : derived.pickCount;
-    return nextPickFor(config.myTeamId, orderedIds, from, derived.totalPicks);
-  }, [config.draftType, config.teams, config.myTeamId, phase, myTurn, derived.pickCount, derived.totalPicks]);
+    return nextPickFor(config.myTeamId, orderedIds, from, derived.totalPicks, config.snakeFormat);
+  }, [config.draftType, config.snakeFormat, config.teams, config.myTeamId, phase, myTurn, derived.pickCount, derived.totalPicks]);
 
   // Of the picks before the user's next turn, how many can actually take
   // someone off the open board. Keeper-locked slots don't count: those
@@ -173,9 +216,11 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
       derived.totalPicks,
       config.keepers,
       derived.draftedPlayerIds,
+      config.snakeFormat,
     ).filter(p => !p.isMine && !p.keeperPlayerId).length;
   }, [
     config.draftType,
+    config.snakeFormat,
     config.myTeamId,
     config.teams,
     config.keepers,
@@ -282,6 +327,9 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
           <h1 className={styles.title}>Draft Room</h1>
           <p className={styles.subtitle}>
             {league.name} · {config.season} {isAuction ? 'Auction' : 'Snake'}
+            {' · '}{SCORING_LABEL[config.scoring]}
+            {config.rosterSlots.SUPERFLEX > 0 ? ' · Superflex' : ''}
+            {config.tePremium ? ' · TEP' : ''}
             {isMock ? ' · Mock' : ''}
           </p>
         </div>
@@ -377,7 +425,9 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
                   {liveSync.enabled
                     ? liveSync.status === 'syncing'
                       ? '● LIVE SYNC'
-                      : '○ CONNECTING'
+                      : liveSync.status === 'error'
+                        ? '○ RECONNECTING'
+                        : '○ CONNECTING'
                     : 'Live Sync'}
                 </button>
               )}
@@ -414,12 +464,32 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
               </p>
             )}
 
+            {liveSync.enabled && liveSync.status === 'error' && (
+              <p className={styles.shortcutLegend} role="alert">
+                Live sync hit a snag and is retrying. Picks may be a few seconds behind; log manually if it persists.
+              </p>
+            )}
+
+            {yahoo.status === 'error' && (
+              <p className={styles.shortcutLegend} role="alert">
+                Yahoo prices failed to load. Reconnect Yahoo and reload to see market values.
+              </p>
+            )}
+
             {phase === 'drafting' && (
               <p className={styles.shortcutLegend}>
                 <kbd>/</kbd> search · <kbd>↑↓</kbd> move · <kbd>Enter</kbd> select
                 {isSnake ? <> · <kbd>D</kbd> draft</> : <> · <kbd>1-9</kbd> winner</>}
                 {' '}· <kbd>Ctrl+Z</kbd> undo
               </p>
+            )}
+
+            {isMock && phase === 'drafting' && <MockControls sim={sim} isSnake={isSnake} />}
+
+            {spark && (
+              <div className={styles.spark} role="status">
+                {spark}
+              </div>
             )}
 
             {isSnake && phase === 'drafting' && <PickStrip room={room} />}

@@ -39,9 +39,10 @@ export function TierBoard({ room, selectedId, onSelect }: TierBoardProps) {
     });
   }, [derived.available]);
 
+  const superflex = config.rosterSlots.SUPERFLEX > 0;
   const detail = (p: PoolPlayer) => {
     if (isAuction) return `$${inflateValue(scaledValues.get(p.id) ?? 1, inflation.rate)}`;
-    const adp = sleeperAdpFor(p, scoring) ?? p.espnAdp;
+    const adp = sleeperAdpFor(p, scoring, superflex) ?? p.espnAdp;
     return adp !== undefined ? `ADP ${Math.round(adp)}` : `#${p.overallRank}`;
   };
 

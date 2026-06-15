@@ -30,8 +30,10 @@ describe('parseSleeperRosterPositions', () => {
     const positions = ['QB', 'RB', 'RB', 'WR', 'WR', 'TE', 'FLEX', 'SUPER_FLEX', 'K', 'DEF'];
     const result = parseSleeperRosterPositions(positions);
 
-    expect(result.QB).toBe(1.5); // 1 QB + 0.5 for superflex
-    expect(result.FLEX).toBe(2); // 1 FLEX + 1 SUPER_FLEX
+    // Superflex is its own slot now (not smeared into QB/FLEX).
+    expect(result.QB).toBe(1);
+    expect(result.FLEX).toBe(1);
+    expect(result.SUPERFLEX).toBe(1);
   });
 
   it('handles empty positions array', () => {
@@ -51,6 +53,7 @@ describe('calculateReplacementLevels', () => {
       WR: 2,
       TE: 1,
       FLEX: 1,
+      SUPERFLEX: 0,
       K: 1,
       DST: 1,
       BENCH: 6,
@@ -79,6 +82,7 @@ describe('calculateReplacementLevels', () => {
       WR: 2,
       TE: 1,
       FLEX: 1,
+      SUPERFLEX: 0,
       K: 1,
       DST: 1,
       BENCH: 6,

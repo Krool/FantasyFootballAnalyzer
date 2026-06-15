@@ -1,0 +1,79 @@
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.6rem 0 0.4rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--ink-2);
+  border: 1px solid var(--bone-dim);
+  border-left: 3px solid var(--lime);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+}
+
+.label {
+  color: var(--bone-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-left: 0.4rem;
+}
+
+.btn,
+.btnLive {
+  padding: 0.35rem 0.7rem;
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: var(--lime);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btnLive {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+
+.toggle {
+  display: inline-flex;
+  border: 2px solid var(--bone-dim);
+}
+
+.toggleOn,
+.toggleOff {
+  padding: 0.35rem 0.6rem;
+  background: var(--ink);
+  border: none;
+  color: var(--bone-dim);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.toggleOn {
+  background: var(--lime);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--bone);
+  cursor: pointer;
+}
+
+.spacer {
+  flex: 1;
+}

@@ -30,8 +30,10 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
   const [error, setError] = useState<string | null>(null);
   const draftIdRef = useRef<string | null>(null);
 
+  // A guest's `platform` is just the Rankings delta lens, not a real Sleeper
+  // league, so live sync never applies (there's no draft id to poll).
   const available =
-    league.platform === 'sleeper' && config.mode === 'live' && phase === 'drafting';
+    !league.isGuest && league.platform === 'sleeper' && config.mode === 'live' && phase === 'drafting';
 
   // Sleeper player id -> pool player id (bundled by the data pipeline).
   const bySleeperId = useMemo(() => {

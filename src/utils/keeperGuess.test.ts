@@ -120,4 +120,48 @@ describe('guessKeepers', () => {
     expect(keepers).toHaveLength(1);
     expect(keepers[0]).toEqual({ teamId: 'A', playerId: 'p1', costRound: 4 });
   });
+
+  it('keeps multiple players per team with distinct cost rounds', () => {
+    const team = leagueTeam('A', [
+      ['Star Back', 'RB', 5], // costRound 4
+      ['Great Receiver', 'WR', 5], // costRound 4 -> collides, bumped to 3
+    ]);
+    const keepers = guessKeepers([team], POOL, 2, 6, 2);
+    expect(keepers).toHaveLength(2);
+    const rounds = keepers.map(k => k.costRound).sort();
+    expect(rounds).toEqual([3, 4]); // collision resolved to distinct rounds
+  });
+
+  it('honours the round escalation rule', () => {
+    const team = leagueTeam('A', [['Star Back', 'RB', 6]]);
+    const oneEarlier = guessKeepers([team], POOL, 2, 6, 1, 1);
+    const twoEarlier = guessKeepers([team], POOL, 2, 6, 1, 2);
+    expect(oneEarlier[0].costRound).toBe(5);
+    expect(twoEarlier[0].costRound).toBe(4);
+  });
+});
+
+describe('auction keeper prices', () => {
+  it('suggests last price plus the bump from the prior auction value', () => {
+    const team: Team = {
+      id: 'A',
+      name: 'Team A',
+      draftPicks: [
+        {
+          pickNumber: 1,
+          round: 5,
+          player: leaguePlayer('Star Back', 'RB'),
+          teamId: 'A',
+          teamName: 'Team A',
+          auctionValue: 22,
+        },
+      ],
+    };
+    const byTeam = keeperCandidates([team], POOL, 2, 6);
+    const candidate = byTeam.get('A')![0];
+    expect(candidate.lastPrice).toBe(22);
+    expect(candidate.keeperPrice).toBe(27); // 22 + $5 bump
+    const keepers = guessKeepers([team], POOL, 2, 6);
+    expect(keepers[0].keeperPrice).toBe(27);
+  });
 });

@@ -1,5 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { League, LeagueCredentials } from '@/types';
+import {
+  buildGuestLeague,
+  settingsFromGuestLeague,
+  type GuestSettings,
+} from '@/utils/guestLeague';
 import { loadLeague } from '@/api';
 import { ESPNAPIError } from '@/api/espn';
 import { logger } from '@/utils/logger';
@@ -35,6 +40,11 @@ interface UseLeagueReturn {
   load: (credentials: LeagueCredentials, options?: LoadOptions) => Promise<League | null>;
   refresh: () => Promise<void>;
   clear: () => void;
+  // Guest mode: drop a synthetic league built from picked draft settings into
+  // state with no network call. updateGuest merges a settings change and
+  // rebuilds (no-op unless the current league is a guest).
+  enterGuest: (settings: GuestSettings) => League;
+  updateGuest: (patch: Partial<GuestSettings>) => void;
 }
 
 export function useLeague(): UseLeagueReturn {
@@ -222,5 +232,32 @@ export function useLeague(): UseLeagueReturn {
     lastCredentialsRef.current = null;
   }, []);
 
-  return { league, credentials, isLoading, error, progress, load, refresh, clear };
+  // Enter guest mode: synthesize a league from picked settings, no fetch.
+  // Cancels any in-flight load (bump the request id) and clears real
+  // credentials so the header shows the guest treatment, not a stale league.
+  const enterGuest = useCallback((settings: GuestSettings): League => {
+    ++currentRequestRef.current;
+    const guest = buildGuestLeague(settings);
+    setLeague(guest);
+    setCredentials(null);
+    lastCredentialsRef.current = null;
+    setError(null);
+    setIsLoading(false);
+    setProgress(null);
+    return guest;
+  }, []);
+
+  // Merge a settings change into the current guest league and rebuild. A no-op
+  // for a real league, so callers can wire controls unconditionally.
+  const updateGuest = useCallback((patch: Partial<GuestSettings>) => {
+    setLeague(prev => {
+      if (!prev?.isGuest) return prev;
+      return buildGuestLeague({ ...settingsFromGuestLeague(prev), ...patch });
+    });
+  }, []);
+
+  return {
+    league, credentials, isLoading, error, progress,
+    load, refresh, clear, enterGuest, updateGuest,
+  };
 }

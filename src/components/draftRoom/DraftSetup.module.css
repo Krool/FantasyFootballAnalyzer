@@ -330,9 +330,68 @@
   font-size: 0.9rem;
 }
 
+/* Multiple keeper slots per team stack vertically and fill the row. */
+.keeperSlots {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.keeperSlot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.keeperPrice {
+  width: 5rem;
+  flex: none;
+  padding: 0.5rem 0.6rem;
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.keeperPrice:focus {
+  outline: none;
+  border-color: var(--lime);
+}
+
+/* The keeper row holds a taller stack now, so top-align the team label. */
+.keeperRow {
+  align-items: flex-start;
+}
+
+.presetSave {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.presetSave .input {
+  flex: 1;
+}
+
+/* The headline-settings recap that sits beside the Start button. */
+.summary {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--lime);
+  letter-spacing: 0.03em;
+  margin-right: auto;
+}
+
 .startRow {
   display: flex;
+  align-items: center;
+  gap: 1rem;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .btn,

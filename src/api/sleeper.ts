@@ -248,6 +248,10 @@ export async function loadLeague(leagueId: string): Promise<League> {
   // collapses to snake (same board mechanics for our purposes).
   let draftPicks: SleeperAPI.DraftPick[] = [];
   let draftType: League['draftType'] = 'snake';
+  // Sleeper carries the real pick order (linear / third-round reversal) and the
+  // carryover model (settings.type: 0 redraft, 1 keeper, 2 dynasty). Preserve
+  // both so the Draft Room can open already configured.
+  let draftFormat: League['draftFormat'] = 'standard';
   if (leagueData.draft_id) {
     try {
       const [draft, picks] = await Promise.all([
@@ -257,11 +261,17 @@ export async function loadLeague(leagueId: string): Promise<League> {
       draftPicks = picks;
       if (draft?.type === 'auction') {
         draftType = 'auction';
+      } else if (draft?.type === 'linear') {
+        draftFormat = 'linear';
+      } else if ((draft?.settings?.reversal_round ?? 0) >= 3) {
+        draftFormat = '3rr';
       }
     } catch (error) {
       logger.warn('Could not fetch draft picks:', error instanceof Error ? error.message : error);
     }
   }
+  const leagueType: League['leagueType'] =
+    leagueData.settings?.type === 2 ? 'dynasty' : leagueData.settings?.type === 1 ? 'keeper' : 'redraft';
 
   // Fetch all transactions for the season (always fetch all 18 weeks + playoffs)
   // During offseason, nflState.week might be 0 or 1, so we use max of current week or 18
@@ -692,6 +702,8 @@ export async function loadLeague(leagueId: string): Promise<League> {
     isLoaded: true,
     previousLeagueId: leagueData.previous_league_id,
     rosterSlots,
+    leagueType,
+    draftFormat,
     hasSuperflex: (leagueData.roster_positions || []).some(
       p => p === 'SUPER_FLEX' || p === 'SUPERFLEX',
     ),

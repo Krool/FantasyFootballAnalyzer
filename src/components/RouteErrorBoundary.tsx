@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { logger } from '@/utils/logger';
+import { captureError } from '@/utils/sentry';
 
 interface Props {
   children: ReactNode;
@@ -28,6 +29,11 @@ export class RouteErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     logger.error('RouteErrorBoundary caught:', error, errorInfo);
+    captureError(error, {
+      boundary: 'route',
+      resetKey: this.props.resetKey,
+      componentStack: errorInfo.componentStack,
+    });
   }
 
   componentDidUpdate(prevProps: Props) {

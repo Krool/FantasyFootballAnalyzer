@@ -23,11 +23,13 @@ export function PickStrip({ room }: PickStripProps) {
         derived.totalPicks,
         config.keepers,
         derived.draftedPlayerIds,
+        config.snakeFormat,
       ),
     [
       config.myTeamId,
       config.teams,
       config.keepers,
+      config.snakeFormat,
       derived.pickCount,
       derived.totalPicks,
       derived.draftedPlayerIds,

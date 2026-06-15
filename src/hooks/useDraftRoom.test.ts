@@ -28,7 +28,7 @@ function makeLeague(): League {
 // Tiny rosters keep total picks manageable: 2 bench slots = 2 rounds, and
 // bench-only means any position is legal (the top of the pool is all
 // RB/WR, which a 1-QB/1-bench roster would reject on the second pick).
-const TINY_SLOTS = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, K: 0, DST: 0, BENCH: 2, IR: 0 };
+const TINY_SLOTS = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 2, IR: 0 };
 
 beforeEach(() => {
   localStorage.clear();

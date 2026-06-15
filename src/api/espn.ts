@@ -379,6 +379,11 @@ export async function loadLeague(
 
   // Determine draft type
   const draftType = leagueData.settings.draftSettings?.type === 'AUCTION' ? 'auction' : 'snake';
+  // ESPN exposes a keeper count but no clear dynasty flag, so we only infer
+  // keeper leagues here (dynasty users can switch the mode in setup).
+  const keeperCount =
+    (leagueData.settings.draftSettings as { keeperCount?: number } | undefined)?.keeperCount ?? 0;
+  const leagueType: League['leagueType'] = keeperCount > 0 ? 'keeper' : 'redraft';
 
   // Build player map from roster data FIRST (before draft processing)
   const playerMap = buildPlayerMap(leagueData, season);
@@ -1312,13 +1317,14 @@ export async function loadLeague(
     WR: posLimits[4] || 2,
     TE: posLimits[6] || 1,
     FLEX: posLimits[23] || 1,
+    // Slot 7 is OP (offensive player), ESPN's QB-eligible superflex.
+    SUPERFLEX: posLimits[7] || 0,
     K: posLimits[17] || 1,
     DST: posLimits[16] || 1,
     BENCH: posLimits[20] || 6,
     IR: posLimits[21] || 1,
   };
-  // Slot 7 is OP (offensive player), ESPN's QB-eligible superflex.
-  const hasSuperflex = (posLimits[7] || 0) > 0;
+  const hasSuperflex = rosterSlots.SUPERFLEX > 0;
   logger.debug('[ESPN] Roster slots:', rosterSlots, hasSuperflex ? '(superflex)' : '');
 
   // Build weekly matchups for luck analysis from team records.
@@ -1376,6 +1382,7 @@ export async function loadLeague(
     currentWeek: leagueData.status?.currentMatchupPeriod,
     isLoaded: true,
     rosterSlots,
+    leagueType,
     hasSuperflex,
     playerWeeklyPoints: Object.keys(playerWeeklyPoints).length > 0 ? playerWeeklyPoints : undefined,
     status,

@@ -4,7 +4,7 @@
 // meaning there.
 
 import type { KeeperAssignment } from '@/types/draft';
-import { nextPickFor, roundForPick, teamForPick } from './snakeOrder';
+import { nextPickFor, roundForPick, teamForPick, type SnakeFormat } from './snakeOrder';
 
 export interface UpcomingPick {
   pickIndex: number; // 0-based overall
@@ -29,20 +29,22 @@ export function picksUntilMine(
   totalPicks: number,
   keepers: KeeperAssignment[] = [],
   draftedPlayerIds: ReadonlySet<string> = new Set(),
+  format: SnakeFormat = 'standard',
 ): UpcomingPick[] {
   if (pickCount >= totalPicks) return [];
-  const onClockMine = teamForPick(pickCount, orderedTeamIds) === myTeamId;
+  const onClockMine = teamForPick(pickCount, orderedTeamIds, format) === myTeamId;
   const end = nextPickFor(
     myTeamId,
     orderedTeamIds,
     onClockMine ? pickCount + 1 : pickCount,
     totalPicks,
+    format,
   );
   if (end === null) return [];
 
   const picks: UpcomingPick[] = [];
   for (let pick = pickCount; pick <= end; pick++) {
-    const teamId = teamForPick(pick, orderedTeamIds);
+    const teamId = teamForPick(pick, orderedTeamIds, format);
     const round = roundForPick(pick, orderedTeamIds.length);
     // One pick per team per round in a snake, so (teamId, round) names this
     // pick exactly; an already-drafted keeper has consumed an earlier slot.

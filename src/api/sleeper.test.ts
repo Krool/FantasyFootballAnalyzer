@@ -287,9 +287,10 @@ describe('sleeper loadLeague', () => {
 
   it('parses roster slots and flags superflex', () => {
     expect(league.hasSuperflex).toBe(true);
-    // 1 QB + 0.5 for SUPER_FLEX; FLEX + SUPER_FLEX both count as FLEX slots
-    expect(league.rosterSlots?.QB).toBe(1.5);
-    expect(league.rosterSlots?.FLEX).toBe(2);
+    // SUPER_FLEX is its own slot now (not folded into QB/FLEX).
+    expect(league.rosterSlots?.QB).toBe(1);
+    expect(league.rosterSlots?.FLEX).toBe(1);
+    expect(league.rosterSlots?.SUPERFLEX).toBe(1);
     expect(league.rosterSlots?.RB).toBe(2);
     expect(league.rosterSlots?.WR).toBe(2);
     expect(league.rosterSlots?.BENCH).toBe(2);

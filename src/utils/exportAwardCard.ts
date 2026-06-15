@@ -3,6 +3,7 @@
 // card beats a four-page PDF when you just want to rub in Toilet Bowl.
 
 import type { Award } from './awards';
+import { logger } from './logger';
 
 const INK = '#0a0a0a';
 const INK2 = '#141412';
@@ -10,14 +11,20 @@ const BONE = '#f1ece1';
 const BONE_DIM = '#8a8478';
 const LIME = '#d6ff2e';
 
-export function exportAwardCard(award: Award, leagueName: string, season: number): void {
+// Returns false when the browser couldn't produce the image (no 2D context,
+// blocked toDataURL) so the caller can tell the user instead of leaving a
+// dead button. Returns true once the download has been triggered.
+export function exportAwardCard(award: Award, leagueName: string, season: number): boolean {
   const w = 800;
   const h = 420;
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  if (!ctx) {
+    logger.error('[awardCard] 2D canvas context unavailable');
+    return false;
+  }
 
   // Field
   ctx.fillStyle = INK;
@@ -71,8 +78,16 @@ export function exportAwardCard(award: Award, leagueName: string, season: number
   ctx.fillStyle = BONE;
   ctx.fillRect(50, 335, w - 100, 3);
 
-  const link = document.createElement('a');
-  link.download = `${award.name.replace(/[^a-z0-9]/gi, '_')}_${season}.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  try {
+    const link = document.createElement('a');
+    link.download = `${award.name.replace(/[^a-z0-9]/gi, '_')}_${season}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    return true;
+  } catch (err) {
+    // toDataURL can throw (memory limits, tainted canvas). The drawing all
+    // happened on data we own, but fail loud rather than silent either way.
+    logger.error('[awardCard] toDataURL/download failed:', err);
+    return false;
+  }
 }

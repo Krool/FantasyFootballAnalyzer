@@ -141,6 +141,10 @@ export interface Team {
   };
 }
 
+// League scoring format. 'custom' is treated as half-PPR for value/ADP
+// purposes (see consensus.ts and projectionValues.ts).
+export type ScoringType = 'standard' | 'ppr' | 'half_ppr' | 'custom';
+
 // Roster slot configuration for calculating replacement level
 export interface RosterSlots {
   QB: number;
@@ -148,6 +152,7 @@ export interface RosterSlots {
   WR: number;
   TE: number;
   FLEX: number; // RB/WR/TE flex
+  SUPERFLEX: number; // QB/RB/WR/TE flex (superflex / 2QB)
   K: number;
   DST: number;
   BENCH: number;
@@ -172,12 +177,18 @@ export interface League {
   teams: Team[];
   trades?: Trade[];
   matchups?: WeeklyMatchup[]; // For luck analysis
-  scoringType: 'standard' | 'ppr' | 'half_ppr' | 'custom';
+  scoringType: ScoringType;
   totalTeams: number;
   currentWeek?: number;
   isLoaded: boolean;
   previousLeagueId?: string;
   rosterSlots?: RosterSlots; // For PAR calculation
+  // League carryover model, when the platform exposes it. Seeds the Draft
+  // Room so a dynasty/keeper league opens in the right mode automatically.
+  leagueType?: 'redraft' | 'keeper' | 'dynasty';
+  // Snake pick-order variant the platform reports (Sleeper exposes linear and
+  // reversal_round). Seeds the Draft Room's pick-order setting.
+  draftFormat?: 'standard' | '3rr' | 'linear';
   // League starts a QB-eligible flex (superflex / 2QB). 1QB rankings badly
   // underprice QBs in these leagues; the Draft Room warns when set.
   hasSuperflex?: boolean;
@@ -196,6 +207,12 @@ export interface League {
   // Epoch ms when this snapshot was fetched. Set by the loader; the cache
   // layer reads it to render "Loaded <time>" and decide refresh affordances.
   loadedAt?: number;
+  // Guest mode: a synthetic league built from user-picked draft settings
+  // instead of a real connection (no teams, trades, matchups, or history).
+  // Lets Rankings and the Draft Room work without logging in. Routing, the
+  // header, and the guest banner branch on this. `platform` on a guest is
+  // just the chosen delta-comparison lens, not a real account.
+  isGuest?: boolean;
 }
 
 export interface HeadToHeadRecord {

@@ -128,6 +128,35 @@ async function fetchFantasyPros(): Promise<void> {
   writeRaw(`fp-rankings.${SEASON}.json`, { scoring: FP_SCORING, players });
 }
 
+// Dynasty consensus ranks (whole-roster value, not this-year-only). Rookies
+// are ranked among veterans here, which is what a dynasty startup board needs;
+// a rookie-only draft just filters to the rookies. Lower row floor than
+// redraft: dynasty lists are shorter. Non-fatal on its own — a missing dynasty
+// snapshot just means dynasty mode falls back to redraft order.
+async function fetchFantasyProsDynasty(): Promise<void> {
+  const url = `https://api.fantasypros.com/v2/json/nfl/${SEASON}/consensus-rankings?type=dynasty&scoring=${FP_SCORING}&position=ALL&week=0`;
+  const json = (await getJson(url, { 'x-api-key': FP_API_KEY })) as {
+    players: Array<{
+      player_name: string;
+      player_team_id: string;
+      player_position_id: string;
+      rank_ecr: number;
+      tier: number;
+    }>;
+  };
+  if (!Array.isArray(json.players)) throw new Error('FantasyPros dynasty payload has no players array');
+  const players = json.players.map(p => ({
+    name: p.player_name,
+    team: p.player_team_id,
+    pos: p.player_position_id,
+    rank: p.rank_ecr,
+    tier: p.tier,
+  }));
+  assertMinRows('FantasyPros dynasty', players.length, 150);
+  console.log(`FantasyPros dynasty: ${players.length} players (${FP_SCORING})`);
+  writeRaw(`fp-dynasty.${SEASON}.json`, { scoring: FP_SCORING, players });
+}
+
 async function fetchEspn(): Promise<void> {
   const url = `https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/${SEASON}/segments/0/leaguedefaults/3?view=kona_player_info`;
   const filter = { players: { limit: 400, sortAdp: { sortAsc: true, sortPriority: 1 } } };
@@ -236,6 +265,8 @@ async function fetchSleeperPlayers(): Promise<void> {
 
 mkdirSync(rawDir, { recursive: true });
 console.log(`Fetching for season ${SEASON}`);
+// Required sources gate the run; dynasty is optional (its loss only disables
+// dynasty ordering, so it must never red the daily Action).
 const results = await Promise.allSettled([
   fetchFantasyPros(),
   fetchEspn(),
@@ -249,8 +280,14 @@ for (const r of results) {
     console.error('FAILED:', r.reason);
   }
 }
+
+const dynasty = await Promise.allSettled([fetchFantasyProsDynasty()]);
+if (dynasty[0].status === 'rejected') {
+  console.warn('Dynasty rankings unavailable (non-fatal):', dynasty[0].reason);
+}
+
 if (failed) {
-  console.error('One or more sources failed; existing snapshots (if any) were left untouched.');
+  console.error('One or more required sources failed; existing snapshots (if any) were left untouched.');
   process.exit(1);
 }
 console.log('Done. Now run: npm run build:draft-data');

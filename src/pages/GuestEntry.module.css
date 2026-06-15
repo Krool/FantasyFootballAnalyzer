@@ -1,0 +1,165 @@
+/* ─────────────────────────────────────────────
+   GRIDIRON · Home / Guest entry
+   ───────────────────────────────────────────── */
+
+.guest {
+  max-width: 720px;
+  margin: 0 auto 4rem;
+  padding: 1.6rem 1.7rem 1.8rem;
+  background: var(--ink);
+  border: 2px solid var(--bone);
+  border-left: 6px solid var(--lime);
+  box-shadow: 5px 5px 0 var(--bone);
+}
+
+.kicker {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin-bottom: 0.65rem;
+}
+
+.title {
+  font-family: var(--font-headline);
+  font-size: 1.85rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: var(--bone);
+  margin-bottom: 0.6rem;
+}
+
+.blurb {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  color: var(--bone);
+  opacity: 0.85;
+  margin: 0 0 1.3rem;
+  max-width: 60ch;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 560px) {
+  .controls { grid-template-columns: 1fr; }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+/* Segmented control: hard-edged toggle row matching the brand. */
+.segmented {
+  display: inline-flex;
+  border: 2px solid var(--bone);
+}
+
+.seg,
+.segOn {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+  border: none;
+  border-right: 2px solid var(--bone);
+  background: var(--ink);
+  color: var(--bone);
+  transition: background .15s ease, color .15s ease;
+}
+.seg:last-child,
+.segOn:last-child { border-right: none; }
+.seg:hover { background: var(--ink-2); }
+.segOn {
+  background: var(--lime);
+  color: var(--ink);
+}
+
+.select {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.5rem 0.6rem;
+  background: var(--ink);
+  color: var(--bone);
+  border: 2px solid var(--bone);
+  cursor: pointer;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bone);
+  cursor: pointer;
+  padding: 0.4rem 0;
+}
+.toggle input { width: 18px; height: 18px; accent-color: var(--lime); cursor: pointer; }
+.toggleText { user-select: none; }
+
+.buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.primary,
+.secondary {
+  flex: 1;
+  min-width: 180px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  border: 2px solid var(--bone);
+  transition: transform .12s ease, box-shadow .12s ease, background .15s ease;
+}
+
+.primary {
+  background: var(--lime);
+  color: var(--ink);
+  box-shadow: 4px 4px 0 var(--bone);
+}
+.primary:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--bone); }
+.primary:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--bone); }
+
+.secondary {
+  background: var(--ink);
+  color: var(--bone);
+}
+.secondary:hover { background: var(--ink-2); }

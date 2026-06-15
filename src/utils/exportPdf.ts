@@ -5,6 +5,7 @@ import { gradeAllPicks, calculateDraftSummary, getGradeDisplayText } from './gra
 import { calculateAllAwards } from './awards';
 import { calculateLuckMetrics } from './luck';
 import { isPlaceholderPlayer } from './placeholders';
+import { logger } from './logger';
 
 // Import trophy images
 import BestWaiverPickup from '@/images/BestWaiverPickup.png';
@@ -188,8 +189,10 @@ export async function exportLeagueReport(league: League) {
     if (imageUrl) {
       try {
         doc.addImage(imageUrl, 'PNG', x + awardColWidth - 18, y + 1, 12, 12);
-      } catch {
-        // Image failed to load, skip it
+      } catch (err) {
+        // Image failed to load; the PDF is still usable without the trophy, but
+        // report it so a broken asset doesn't silently ship incomplete reports.
+        logger.warn(`[pdf] addImage failed for award "${award.title}":`, err);
       }
     }
 

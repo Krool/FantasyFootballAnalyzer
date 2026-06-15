@@ -13,7 +13,16 @@ import {
 } from '@/utils/draftSim';
 import type { UseDraftRoomReturn } from './useDraftRoom';
 
-const TICK_MS = 900;
+export type SimSpeed = 'slow' | 'normal' | 'fast' | 'instant';
+
+// Per-action delay by speed. Instant still yields to the event loop (0ms) so
+// React can paint between picks while fast-simming a whole board.
+const SPEED_MS: Record<SimSpeed, number> = {
+  slow: 1500,
+  normal: 900,
+  fast: 300,
+  instant: 0,
+};
 
 export interface PendingNomination {
   nominatorId: string;
@@ -43,6 +52,18 @@ export interface UseDraftSimReturn {
   notice: string | null;
   // The RNG seed this mock is running on; enter it in setup to replay.
   seed: number;
+  // Mock pacing controls.
+  speed: SimSpeed;
+  setSpeed: (s: SimSpeed) => void;
+  paused: boolean;
+  setPaused: (p: boolean) => void;
+  // Snake only: when true, the sim also drafts for you (fast-sim a whole board).
+  autoPickMe: boolean;
+  setAutoPickMe: (v: boolean) => void;
+  // Advance one AI pick while paused (snake).
+  step: () => void;
+  // Replay the mock from scratch with the same seed (same script).
+  restart: () => void;
 }
 
 // Drives mock drafts: auto-picks for AI teams in snake, auto-nominates and
@@ -51,6 +72,13 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
   const { config, derived, scaledValues, inflation, logEvent, phase, scoring } = room;
   const [pending, setPending] = useState<PendingNomination | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [speed, setSpeed] = useState<SimSpeed>('normal');
+  const [paused, setPaused] = useState(false);
+  const [autoPickMe, setAutoPickMe] = useState(false);
+  // Bumped by restart() to re-seed the RNG and re-roll personas for an
+  // identical replay.
+  const [restartNonce, setRestartNonce] = useState(0);
+  const tickMs = SPEED_MS[speed];
 
   // Lazy init so the RNG isn't rebuilt (and discarded) on every render. A
   // configured seed makes the AI script reproducible across runs.
@@ -77,13 +105,16 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
   // when a draft starts (phase dep) so a typed-in seed applies.
   const personas = useMemo(
     () => makePersonas(config.teams.map(t => t.id), mulberry32((seedRef.current ?? 1) ^ 0x9e3779b9)),
-    [config.teams, phase], // eslint-disable-line react-hooks/exhaustive-deps
+    [config.teams, phase, restartNonce], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   // Market position for the league's scoring; the snake AI drafts off this.
+  // Superflex flips QBs to their 2QB ADP so the AI reaches for them like a
+  // real superflex room does.
+  const superflex = config.rosterSlots.SUPERFLEX > 0;
   const adpOf = useCallback(
-    (p: PoolPlayer) => sleeperAdpFor(p, scoring) ?? p.espnAdp,
-    [scoring],
+    (p: PoolPlayer) => sleeperAdpFor(p, scoring, superflex) ?? p.espnAdp,
+    [scoring, superflex],
   );
 
   const active = phase === 'drafting' && config.mode === 'mock';
@@ -96,25 +127,33 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
     if (pending && derived.draftedPlayerIds.has(pending.player.id)) setPending(null);
   }, [active, pending, derived.draftedPlayerIds]);
 
-  // Snake: auto-pick for AI teams on a timer; the user picks via the logger.
-  useEffect(() => {
-    if (!active || config.draftType !== 'snake' || isMyTurn || !derived.onTheClockId) return;
-    const teamId = derived.onTheClockId;
-    const timer = setTimeout(() => {
+  // Draft one snake pick for the team on the clock (AI logic, also used for
+  // auto-pick-me and manual stepping).
+  const doSnakePick = useCallback(
+    (teamId: string) => {
       const team = derived.teams.get(teamId);
       if (!team) return;
       const round = roundForPick(derived.pickCount, config.teams.length);
-      const totalRounds = config.rounds;
-      const player = simSnakePick(derived.available, scaledValues, team, round, totalRounds, rng, adpOf);
+      const player = simSnakePick(derived.available, scaledValues, team, round, config.rounds, rng, adpOf);
       if (player) logEvent({ kind: 'snake_pick', playerId: player.id, teamId });
-    }, TICK_MS);
+    },
+    [derived, config.teams.length, config.rounds, scaledValues, rng, adpOf, logEvent],
+  );
+
+  // Snake: auto-pick on a timer. AI teams always; your team only when
+  // auto-pick-me is on (otherwise you pick via the logger). Paused halts it.
+  useEffect(() => {
+    if (!active || config.draftType !== 'snake' || paused || !derived.onTheClockId) return;
+    const teamId = derived.onTheClockId;
+    if (teamId === config.myTeamId && !autoPickMe) return;
+    const timer = setTimeout(() => doSnakePick(teamId), tickMs);
     return () => clearTimeout(timer);
-  }, [active, config, isMyTurn, derived, scaledValues, logEvent, rng, adpOf]);
+  }, [active, config.draftType, config.myTeamId, paused, autoPickMe, tickMs, derived.onTheClockId, doSnakePick]);
 
   // Auction: AI nominator puts a player up after a beat. The user's own
   // nominations come through nominate().
   useEffect(() => {
-    if (!active || config.draftType !== 'auction' || pending || isMyTurn || !derived.onTheClockId) return;
+    if (!active || config.draftType !== 'auction' || paused || pending || isMyTurn || !derived.onTheClockId) return;
     const nominatorId = derived.onTheClockId;
     const timer = setTimeout(() => {
       const nominator = derived.teams.get(nominatorId);
@@ -131,9 +170,9 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
         setNotice(null);
         setPending({ nominatorId, player });
       }
-    }, TICK_MS);
+    }, tickMs);
     return () => clearTimeout(timer);
-  }, [active, config.draftType, pending, isMyTurn, derived, scaledValues, rng, personas]);
+  }, [active, config.draftType, paused, tickMs, pending, isMyTurn, derived, scaledValues, rng, personas]);
 
   const nominate = useCallback(
     (player: PoolPlayer) => {
@@ -186,7 +225,7 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
 
   // The auction heartbeat.
   useEffect(() => {
-    if (!liveMode || !liveBid?.open || !pending) return;
+    if (!liveMode || paused || !liveBid?.open || !pending) return;
     const timer = setTimeout(() => {
       const minBid = liveBid.highBid + 1;
       const expected = inflateValue(scaledValues.get(pending.player.id) ?? 1, inflation.rate);
@@ -261,7 +300,7 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
       setPending(null);
     }, 1100);
     return () => clearTimeout(timer);
-  }, [liveMode, liveBid, pending, derived.teams, derived.available, scaledValues, inflation.rate, config.myTeamId, logEvent, rng, personas]);
+  }, [liveMode, paused, liveBid, pending, derived.teams, derived.available, scaledValues, inflation.rate, config.myTeamId, logEvent, rng, personas]);
 
   const placeBid = useCallback(
     (amount: number) => {
@@ -313,6 +352,23 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
     [pending, scaledValues, inflation.rate, derived.teams, derived.available, config.myTeamId, logEvent, rng, personas],
   );
 
+  // Advance one snake AI pick while paused (a manual heartbeat).
+  const step = useCallback(() => {
+    if (!active || config.draftType !== 'snake' || !derived.onTheClockId) return;
+    doSnakePick(derived.onTheClockId);
+  }, [active, config.draftType, derived.onTheClockId, doSnakePick]);
+
+  // Replay from scratch with the same seed: reset the RNG and re-roll personas
+  // off the same seed so the AI repeats its exact script, then clear the board.
+  const restart = useCallback(() => {
+    rngRef.current = mulberry32(seedRef.current ?? 1);
+    setRestartNonce(n => n + 1);
+    setPending(null);
+    setLiveBid(null);
+    setNotice(null);
+    room.restart();
+  }, [room]);
+
   return {
     pending,
     awaitingMyNomination: active && config.draftType === 'auction' && !pending && isMyTurn,
@@ -322,5 +378,13 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
     placeBid,
     notice,
     seed: seedRef.current,
+    speed,
+    setSpeed,
+    paused,
+    setPaused,
+    autoPickMe,
+    setAutoPickMe,
+    step,
+    restart,
   };
 }

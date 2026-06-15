@@ -1,0 +1,67 @@
+# The single source of truth for "is master shippable" and the only automated
+# path to production. On every push to master and every PR it lints, tests, and
+# runs the full build from a clean checkout (so `tsc -b` is never cache-masked,
+# the way a stale local .tsbuildinfo once hid a broken vite.config). On a push
+# to master, and only after lint + test + build pass, it deploys to gh-pages.
+# That keeps the live site equal to a pushed, green commit instead of whatever
+# happened to be in someone's working tree. `npm run deploy` stays as a manual
+# break-glass fallback. (The daily rankings Action deploys its own data commit
+# separately: its push uses GITHUB_TOKEN, which by design does not trigger this
+# workflow, so ci.yml never sees that commit.)
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+# Cancel superseded PR runs, but never interrupt a master run mid-deploy.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # the deploy step pushes the build to the gh-pages branch
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test:run
+
+      - name: Build
+        run: npm run build
+
+      # The prerender step degrades to an empty SPA on failure (exit 0) so the
+      # unattended rankings deploy never breaks. That makes a broken prerender
+      # silent. CI is attended, so surface it as a warning when dist/index.html
+      # ships an empty #root - visible in the run, without blocking the deploy.
+      - name: Verify homepage prerender
+        run: |
+          if grep -q '<div id="root"></div>' dist/index.html; then
+            echo "::warning::Homepage prerender did not inject markup; dist/index.html ships an empty #root (SEO/unfurl copy missing)."
+          else
+            echo "::notice::Homepage prerender injected static markup into dist/index.html."
+          fi
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist

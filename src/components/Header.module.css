@@ -242,6 +242,39 @@
   box-shadow: 4px 4px 0 var(--blood);
 }
 
+/* Guest mode header controls. */
+.guestTag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--lime);
+  padding: 0.2rem 0.45rem;
+}
+
+.connectCta {
+  height: 34px;
+  padding: 0 0.8rem;
+  background: transparent;
+  border: 2px solid var(--lime);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, transform .12s ease, box-shadow .12s ease;
+}
+.connectCta:hover {
+  background: var(--lime);
+  color: var(--ink);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--bone);
+}
+
 @media (max-width: 1000px) {
   /* A wrapped 8-link nav permanently stuck atop a phone viewport eats
      200px of screen; one scroll-snap row keeps it to ~50px. The eight season

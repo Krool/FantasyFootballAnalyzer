@@ -2,8 +2,9 @@ import { Fragment, useDeferredValue, useMemo, useState } from 'react';
 import { POOL } from '@/data/draftPool';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { injuryAbbrev, injuryTitle } from '@/utils/injury';
-import type { League } from '@/types';
+import type { League, Platform } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
+import { GUEST_TEAM_OPTIONS, type GuestScoring, type GuestSettings } from '@/utils/guestLeague';
 import { DEFAULT_BUDGET, DEFAULT_ROSTER_SLOTS } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
 import { useTargets } from '@/hooks/useTargets';
@@ -11,7 +12,7 @@ import { useYahooValues } from '@/hooks/useYahooValues';
 import { consensusAvg, platformDelta, platformRankSource, sleeperAdpFor } from '@/utils/consensus';
 import { draftableSlotCount } from '@/utils/draftEngine';
 import { normalizeName } from '@/utils/playerNames';
-import { scaleValues } from '@/utils/valueScaling';
+import { draftValues } from '@/utils/projectionValues';
 import styles from './RankingsPage.module.css';
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST'];
@@ -40,12 +41,17 @@ const DESC_FIRST: SortKey[] = ['delta', 'fpValue', 'espnValue', 'yahooValue'];
 
 interface RankingsPageProps {
   league: League;
+  // Present only in guest mode: lets the settings bar edit the synthetic
+  // league (scoring, teams, delta lens) so the board reprices live.
+  onUpdateGuest?: (patch: Partial<GuestSettings>) => void;
 }
 
 // Read-only view of the bundled draft pool: every ranking source side by
 // side, with no draft session required. Auto-sorted by the consensus average
 // so the delta column surfaces where the user's platform disagrees.
-export function RankingsPage({ league }: RankingsPageProps) {
+export function RankingsPage({ league, onUpdateGuest }: RankingsPageProps) {
+  // Guests have no real league, so their draft shape is editable inline.
+  const isGuest = !!league.isGuest && !!onUpdateGuest;
   const [query, setQuery] = useState('');
   const [posFilter, setPosFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState<SortKey>('avg');
@@ -57,30 +63,35 @@ export function RankingsPage({ league }: RankingsPageProps) {
   const [viewTab, setViewTab] = useState<ViewTab>(isAuction ? 'auction' : 'snake');
   const auctionView = viewTab === 'auction';
   const scoring = league.scoringType;
-  const source = platformRankSource(league.platform, scoring);
+  // Superflex leagues read Sleeper's 2QB ADP market (QBs go far earlier), so
+  // the board's ADP column, sort, and delta match the mock AI's behavior.
+  const superflex = (league.rosterSlots?.SUPERFLEX ?? 0) > 0;
+  const source = platformRankSource(league.platform, scoring, superflex);
   const yahoo = useYahooValues(POOL);
 
-  // Same league shape the Draft Room setup starts from, so FP $ here matches
-  // what the draft board will show.
-  const shape = useMemo(() => {
+  // Same league shape the Draft Room setup starts from, so the $ here matches
+  // what the draft board will show (both go through draftValues).
+  const valueLeague = useMemo(() => {
     const rosterSlots = league.rosterSlots ?? DEFAULT_ROSTER_SLOTS;
     return {
       budget: DEFAULT_BUDGET,
       teams: league.teams.length || league.totalTeams || 12,
       rounds: draftableSlotCount(rosterSlots),
+      rosterSlots,
+      scoring: league.scoringType,
     };
   }, [league]);
 
   const scaledValues = useMemo(
-    () => scaleValues(POOL.players, POOL.baseline, shape, league.scoringType),
-    [shape, league.scoringType],
+    () => draftValues(POOL.players, POOL.baseline, valueLeague),
+    [valueLeague],
   );
 
   const avgById = useMemo(() => {
     const map = new Map<string, number>();
-    for (const p of POOL.players) map.set(p.id, consensusAvg(p, scoring));
+    for (const p of POOL.players) map.set(p.id, consensusAvg(p, scoring, superflex));
     return map;
-  }, [scoring]);
+  }, [scoring, superflex]);
 
   const setSort = (key: SortKey) => {
     playSort();
@@ -117,13 +128,13 @@ export function RankingsPage({ league }: RankingsPageProps) {
         case 'avg':
           return avg(p);
         case 'delta':
-          return platformDelta(p, source, scoring);
+          return platformDelta(p, source, scoring, superflex);
         case 'rank':
           return p.overallRank;
         case 'espnAdp':
           return p.espnAdp;
         case 'sleeperAdp':
-          return sleeperAdpFor(p, scoring);
+          return sleeperAdpFor(p, scoring, superflex);
         case 'fpValue':
           return scaledValues.get(p.id) ?? 1;
         case 'espnValue':
@@ -145,7 +156,7 @@ export function RankingsPage({ league }: RankingsPageProps) {
       return dir * (sa - sb) || a.overallRank - b.overallRank;
     });
     return filtered;
-  }, [deferredQuery, posFilter, sortBy, sortRev, avgById, scaledValues, source, scoring, yahoo.costs]);
+  }, [deferredQuery, posFilter, sortBy, sortRev, avgById, scaledValues, source, scoring, superflex, yahoo.costs]);
 
   const visible = rows.slice(0, MAX_ROWS);
 
@@ -173,15 +184,63 @@ export function RankingsPage({ league }: RankingsPageProps) {
         <div className={styles.header}>
           <h1 className={styles.title}>Rankings</h1>
           <p className={styles.subtitle}>
-            {league.name} · {POOL.season} Draft Prep
+            {isGuest ? 'Guest mode' : league.name} · {POOL.season} Draft Prep
           </p>
         </div>
 
         <div className={styles.settingsBar}>
-          <span className={styles.settingsItem}>{shape.teams} teams</span>
-          {auctionView && <span className={styles.settingsItem}>${shape.budget} budget</span>}
-          <span className={styles.settingsItem}>{shape.rounds} spots</span>
-          <span className={styles.settingsItem}>{league.scoringType.replace('_', ' ')}</span>
+          {isGuest ? (
+            <>
+              <label className={styles.settingsControl}>
+                Teams
+                <select
+                  className={styles.settingsSelect}
+                  value={league.totalTeams}
+                  onChange={e => { playFilter(); onUpdateGuest!({ totalTeams: Number(e.target.value) }); }}
+                  title="League size. Scales auction dollar values."
+                >
+                  {GUEST_TEAM_OPTIONS.map(n => (
+                    <option key={n} value={n}>{n} teams</option>
+                  ))}
+                </select>
+              </label>
+              <label className={styles.settingsControl}>
+                Scoring
+                <select
+                  className={styles.settingsSelect}
+                  value={league.scoringType}
+                  onChange={e => { playFilter(); onUpdateGuest!({ scoringType: e.target.value as GuestScoring }); }}
+                  title="Scoring format. Changes ADP, consensus, and values."
+                >
+                  <option value="standard">Standard</option>
+                  <option value="half_ppr">Half PPR</option>
+                  <option value="ppr">PPR</option>
+                </select>
+              </label>
+              <label className={styles.settingsControl}>
+                Compare vs
+                <select
+                  className={styles.settingsSelect}
+                  value={league.platform}
+                  onChange={e => { playFilter(); onUpdateGuest!({ platform: e.target.value as Platform }); }}
+                  title="Which platform the delta column compares against"
+                >
+                  <option value="sleeper">Sleeper</option>
+                  <option value="espn">ESPN</option>
+                  <option value="yahoo">Yahoo</option>
+                </select>
+              </label>
+              {auctionView && <span className={styles.settingsItem}>${valueLeague.budget} budget</span>}
+              <span className={styles.settingsItem}>{valueLeague.rounds} spots</span>
+            </>
+          ) : (
+            <>
+              <span className={styles.settingsItem}>{valueLeague.teams} teams</span>
+              {auctionView && <span className={styles.settingsItem}>${valueLeague.budget} budget</span>}
+              <span className={styles.settingsItem}>{valueLeague.rounds} spots</span>
+              <span className={styles.settingsItem}>{league.scoringType.replace('_', ' ')}</span>
+            </>
+          )}
           <span className={styles.settingsSpacer} />
           <span
             className={styles.settingsDim}
@@ -384,7 +443,7 @@ export function RankingsPage({ league }: RankingsPageProps) {
                       <>
                         <td className={`${styles.num} ${styles.dim}`}>{p.espnAdp ?? '-'}</td>
                         <td className={`${styles.num} ${styles.dim}`}>
-                          {sleeperAdpFor(p, scoring) ?? '-'}
+                          {sleeperAdpFor(p, scoring, superflex) ?? '-'}
                         </td>
                       </>
                     )}

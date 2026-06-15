@@ -23,6 +23,9 @@ import type { Player, Team } from '@/types';
 import type { KeeperAssignment, PoolPlayer } from '@/types/draft';
 import { matchPlayer, normalizeName } from './playerNames';
 
+// Default auction keeper escalation: last year's price plus this many dollars.
+export const AUCTION_KEEPER_BUMP = 5;
+
 export interface KeeperCandidate {
   teamId: string;
   player: PoolPlayer;
@@ -35,6 +38,9 @@ export interface KeeperCandidate {
   // Dollar gap between the player (expert/market blend) and what the cost
   // round normally buys.
   surplus: number;
+  // Last year's auction price and the suggested keeper price (auction leagues).
+  lastPrice?: number;
+  keeperPrice?: number;
   // The platform flagged him as a kept player last season already.
   keptLastYear: boolean;
   score: number;
@@ -72,6 +78,7 @@ export function keeperCandidates(
   pool: PoolPlayer[],
   teamCount: number,
   rounds: number,
+  escalation = 1,
 ): Map<string, KeeperCandidate[]> {
   const rankSorted = [...pool].sort((a, b) => a.overallRank - b.overallRank);
   const result = new Map<string, KeeperCandidate[]>();
@@ -79,7 +86,7 @@ export function keeperCandidates(
   for (const team of leagueTeams) {
     const candidates: KeeperCandidate[] = [];
     for (const pick of team.draftPicks ?? []) {
-      const costRound = pick.round - 1;
+      const costRound = pick.round - escalation;
       // Round 1 picks can't get cheaper; cost rounds beyond the draft don't exist.
       if (costRound < 1 || costRound > rounds) continue;
       // League rule: must have finished the season on the drafting team.
@@ -102,6 +109,7 @@ export function keeperCandidates(
       const consensusRank = (expert + market) / 2;
       const surplus = playerWorth - valueAtRank(rankSorted, slotRank);
       const logRankDelta = Math.log((slotRank + 1) / (consensusRank + 1));
+      const lastPrice = pick.auctionValue != null ? Math.round(pick.auctionValue) : undefined;
       candidates.push({
         teamId: team.id,
         player,
@@ -110,6 +118,8 @@ export function keeperCandidates(
         marketRound: Math.max(1, Math.ceil(market / teamCount)),
         expertRound: Math.max(1, Math.ceil(expert / teamCount)),
         surplus,
+        lastPrice,
+        keeperPrice: lastPrice != null ? lastPrice + AUCTION_KEEPER_BUMP : undefined,
         keptLastYear: pick.isKeeper === true,
         score: surplus + logRankDelta,
       });
@@ -120,21 +130,45 @@ export function keeperCandidates(
   return result;
 }
 
-// Best guess per team: the highest-scoring candidate with a positive score
-// (keeping a player who is worse than his cost slot helps nobody).
+// Two keepers on one team can't consume the same snake round (one pick per
+// round). Push collisions to the next free earlier round; drop a keeper that
+// can't fit at all. Auction keepers are unaffected (they cost money, not a
+// round) but pass through unchanged. Exported so the setup form can re-resolve
+// rounds when the user hand-picks multiple keepers.
+export function resolveKeeperRounds(picks: KeeperCandidate[]): KeeperAssignment[] {
+  const used = new Set<number>();
+  const out: KeeperAssignment[] = [];
+  // Settle higher cost rounds first so cheaper keepers bump earlier.
+  for (const c of [...picks].sort((a, b) => b.costRound - a.costRound)) {
+    let round = c.costRound;
+    while (round >= 1 && used.has(round)) round--;
+    if (round < 1) continue; // no free round: skip this keeper
+    used.add(round);
+    out.push({
+      teamId: c.teamId,
+      playerId: c.player.id,
+      costRound: round,
+      ...(c.keeperPrice != null ? { keeperPrice: c.keeperPrice } : {}),
+    });
+  }
+  return out;
+}
+
+// Best guess per team: the top `perTeam` positive-score candidates (keeping a
+// player worse than his cost slot helps nobody).
 export function guessKeepers(
   leagueTeams: Team[],
   pool: PoolPlayer[],
   teamCount: number,
   rounds: number,
+  perTeam = 1,
+  escalation = 1,
 ): KeeperAssignment[] {
-  const byTeam = keeperCandidates(leagueTeams, pool, teamCount, rounds);
+  const byTeam = keeperCandidates(leagueTeams, pool, teamCount, rounds, escalation);
   const keepers: KeeperAssignment[] = [];
-  for (const [teamId, candidates] of byTeam) {
-    const best = candidates.find(c => c.score > 0);
-    if (best) {
-      keepers.push({ teamId, playerId: best.player.id, costRound: best.costRound });
-    }
+  for (const candidates of byTeam.values()) {
+    const best = candidates.filter(c => c.score > 0).slice(0, Math.max(0, perTeam));
+    keepers.push(...resolveKeeperRounds(best));
   }
   return keepers;
 }

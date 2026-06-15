@@ -55,6 +55,15 @@ jobs:
         if: steps.diff.outputs.changed == 'true'
         run: npm run test:run
 
+      # Build BEFORE committing, as a gate: tests don't catch build/config
+      # errors (a vitest-4 type change once broke `vite build` while every test
+      # passed). Verifying the artifact compiles here means we never push a data
+      # commit that the deploy can't build, which would leave master ahead of
+      # production.
+      - name: Build site
+        if: steps.diff.outputs.changed == 'true'
+        run: npm run build
+
       - name: Commit updated data
         if: steps.diff.outputs.changed == 'true'
         run: |
@@ -67,10 +76,10 @@ jobs:
           git pull --rebase origin master
           git push
 
-      - name: Build site
-        if: steps.diff.outputs.changed == 'true'
-        run: npm run build
-
+      # This job must deploy its own commit. The push above uses the default
+      # GITHUB_TOKEN, and GitHub does not trigger workflows (including ci.yml)
+      # from GITHUB_TOKEN pushes - so relying on ci.yml to deploy the data
+      # commit would silently never run. dist/ is the artifact the gate built.
       - name: Deploy to GitHub Pages
         if: steps.diff.outputs.changed == 'true'
         uses: peaceiris/actions-gh-pages@v4

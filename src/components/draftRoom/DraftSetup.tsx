@@ -1,10 +1,18 @@
 import { useId, useMemo, useState } from 'react';
-import type { League, RosterSlots } from '@/types';
-import type { DraftRoomTeam, KeeperAssignment } from '@/types/draft';
+import type { League, RosterSlots, ScoringType } from '@/types';
+import type { DraftRoomTeam } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { leagueKeyFor } from '@/hooks/useDraftRoom';
-import { guessKeepers, keeperCandidates } from '@/utils/keeperGuess';
+import type { SnakeFormat } from '@/utils/snakeOrder';
+import { guessKeepers, keeperCandidates, resolveKeeperRounds } from '@/utils/keeperGuess';
 import { loadDraftArchive, removeFromDraftArchive } from '@/utils/draftRoomCache';
+import {
+  deletePreset,
+  loadPresets,
+  savePreset,
+  settingsFromConfig,
+  type DraftPreset,
+} from '@/utils/draftPresets';
 import styles from './DraftSetup.module.css';
 
 interface DraftSetupProps {
@@ -12,40 +20,117 @@ interface DraftSetupProps {
   league: League;
 }
 
-const SLOT_KEYS: Array<keyof RosterSlots> = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DST', 'BENCH'];
+const SLOT_KEYS: Array<keyof RosterSlots> = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'SUPERFLEX', 'K', 'DST', 'BENCH'];
+
+const SCORING_OPTIONS: Array<{ value: ScoringType; label: string }> = [
+  { value: 'standard', label: 'Standard' },
+  { value: 'half_ppr', label: 'Half PPR' },
+  { value: 'ppr', label: 'Full PPR' },
+];
+
+const LEAGUE_TYPE_OPTIONS: Array<{ value: 'redraft' | 'keeper' | 'dynasty'; label: string; title: string }> = [
+  { value: 'redraft', label: 'Redraft', title: 'Rosters reset every year' },
+  { value: 'keeper', label: 'Keeper', title: 'Keep a few players each year at a cost' },
+  { value: 'dynasty', label: 'Dynasty', title: 'Whole roster carries over; values use dynasty rankings' },
+];
+
+const SNAKE_FORMAT_OPTIONS: Array<{ value: SnakeFormat; label: string; title: string }> = [
+  { value: 'standard', label: 'Snake', title: 'Order reverses every round' },
+  { value: '3rr', label: '3RR', title: 'Third-round reversal: round 3 keeps round 2’s order (NFFC style)' },
+  { value: 'linear', label: 'Linear', title: 'Same order every round (common for dynasty rookie drafts)' },
+];
 
 export function DraftSetup({ room, league }: DraftSetupProps) {
   const { config, updateConfig, start, resumable, resume, reset, resumeSession } = room;
   const meGroup = useId();
   const [archive, setArchive] = useState(() => loadDraftArchive(leagueKeyFor(league)));
+  const [presets, setPresets] = useState<DraftPreset[]>(() => loadPresets());
+  const [presetName, setPresetName] = useState('');
+
+  const keepersPerTeam = config.keepersPerTeam ?? 1;
+  const escalation = config.keeperEscalation ?? 1;
+  const isAuction = config.draftType === 'auction';
+  const leagueType = config.leagueType ?? 'redraft';
+  const isDynasty = leagueType === 'dynasty';
+  const isRookieDraft = isDynasty && config.dynastyMode === 'rookie';
+
+  const setLeagueType = (lt: 'redraft' | 'keeper' | 'dynasty') => {
+    updateConfig(lt === 'dynasty' ? { leagueType: lt } : { leagueType: lt, dynastyMode: 'startup' });
+  };
+
+  // A rookie draft is a linear snake over first-year players with no keepers,
+  // so picking it locks those settings.
+  const setDynastyMode = (mode: 'startup' | 'rookie') => {
+    updateConfig(
+      mode === 'rookie'
+        ? { dynastyMode: mode, draftType: 'snake', snakeFormat: 'linear', keepers: undefined }
+        : { dynastyMode: mode },
+    );
+  };
 
   // Keeper guesses come from last season's draft results, valued against
-  // this year's rankings.
+  // this year's rankings (and escalated by the league's keeper rule).
   const candidatesByTeam = useMemo(
-    () => keeperCandidates(league.teams, room.pool.players, config.teams.length, config.rounds),
-    [league.teams, room.pool.players, config.teams.length, config.rounds],
+    () => keeperCandidates(league.teams, room.pool.players, config.teams.length, config.rounds, escalation),
+    [league.teams, room.pool.players, config.teams.length, config.rounds, escalation],
   );
   const anyKeeperCandidates = [...candidatesByTeam.values()].some(c => c.length > 0);
   const keepersOn = config.keepers !== undefined;
 
+  const teamKeeperIds = (teamId: string) =>
+    (config.keepers ?? []).filter(k => k.teamId === teamId).map(k => k.playerId);
+
   const toggleKeepers = (on: boolean) => {
     updateConfig({
       keepers: on
-        ? guessKeepers(league.teams, room.pool.players, config.teams.length, config.rounds)
+        ? guessKeepers(league.teams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, escalation)
         : undefined,
     });
   };
 
-  const setTeamKeeper = (teamId: string, playerId: string) => {
+  // Rebuild one team's keepers from a list of chosen player ids, re-resolving
+  // snake cost-round collisions and carrying each keeper's auction price.
+  const rebuildTeamKeepers = (teamId: string, playerIds: string[]) => {
     const others = (config.keepers ?? []).filter(k => k.teamId !== teamId);
-    if (playerId === '') {
-      updateConfig({ keepers: others });
-      return;
+    const cands = playerIds
+      .filter(Boolean)
+      .map(pid => candidatesByTeam.get(teamId)?.find(c => c.player.id === pid))
+      .filter((c): c is NonNullable<typeof c> => !!c);
+    updateConfig({ keepers: [...others, ...resolveKeeperRounds(cands)] });
+  };
+
+  const setTeamKeeperAt = (teamId: string, index: number, playerId: string) => {
+    const ids = teamKeeperIds(teamId);
+    const slots = Array.from({ length: keepersPerTeam }, (_, i) => ids[i] ?? '');
+    slots[index] = playerId;
+    rebuildTeamKeepers(teamId, slots);
+  };
+
+  const setKeeperPrice = (teamId: string, playerId: string, price: number) => {
+    updateConfig({
+      keepers: (config.keepers ?? []).map(k =>
+        k.teamId === teamId && k.playerId === playerId ? { ...k, keeperPrice: Math.max(1, price) } : k,
+      ),
+    });
+  };
+
+  const setKeepersPerTeam = (n: number) => {
+    const next = Math.max(1, Math.min(config.rounds, n));
+    updateConfig({ keepersPerTeam: next });
+    if (keepersOn) {
+      updateConfig({
+        keepers: guessKeepers(league.teams, room.pool.players, config.teams.length, config.rounds, next, escalation),
+      });
     }
-    const candidate = candidatesByTeam.get(teamId)?.find(c => c.player.id === playerId);
-    if (!candidate) return;
-    const next: KeeperAssignment = { teamId, playerId, costRound: candidate.costRound };
-    updateConfig({ keepers: [...others, next] });
+  };
+
+  const setEscalation = (n: number) => {
+    updateConfig({ keeperEscalation: n });
+    if (keepersOn) {
+      updateConfig({
+        keepers: guessKeepers(league.teams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, n),
+      });
+    }
   };
 
   const setTeams = (teams: DraftRoomTeam[]) => updateConfig({ teams });
@@ -75,6 +160,29 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
     updateConfig({ rosterSlots: { ...config.rosterSlots, [key]: Math.max(0, value) } });
   };
 
+  const saveCurrentPreset = () => {
+    if (!presetName.trim()) return;
+    setPresets(savePreset(presetName, settingsFromConfig(config)));
+    setPresetName('');
+  };
+  const applyPreset = (preset: DraftPreset) => updateConfig(preset.settings);
+  const removePreset = (name: string) => setPresets(deletePreset(name));
+
+  // A one-line confirmation of the headline settings, so the user can see at a
+  // glance what they're about to start without re-reading every section.
+  const scoringLabel = SCORING_OPTIONS.find(o => o.value === config.scoring)?.label ?? 'Custom';
+  const formatLabel = SNAKE_FORMAT_OPTIONS.find(o => o.value === (config.snakeFormat ?? 'standard'))?.label ?? 'Snake';
+  const summary = [
+    `${config.teams.length}-team`,
+    scoringLabel + (config.tePremium ? ' +TEP' : ''),
+    isAuction ? `$${config.budget} auction` : `${formatLabel}`,
+    config.rosterSlots.SUPERFLEX > 0 ? 'Superflex' : null,
+    leagueType !== 'redraft' ? leagueType : null,
+    isRookieDraft ? 'rookie draft' : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   const savedAt = resumable ? new Date(resumable.savedAt) : null;
 
   // Mirrors the reducer's START guards so the button can explain itself
@@ -89,20 +197,21 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
 
   return (
     <div className={styles.setup}>
-      {league.hasSuperflex && (
+      {league.hasSuperflex && config.rosterSlots.SUPERFLEX === 0 && (
         <div className={styles.warnBox}>
-          <strong>Superflex league detected.</strong> This room prices QBs off
-          1QB rankings, which badly underprices them in superflex: top QBs go
-          for first-round picks / $40+ there. Treat every QB value and
-          suggestion here as a floor, not a target.
+          <strong>Superflex league detected.</strong> Set a SUPERFLEX slot in
+          Roster below so QBs get priced for superflex demand. Without it this
+          room values QBs off 1QB rankings, which badly underprices them: top
+          QBs go for first-round picks / $40+ in superflex.
         </div>
       )}
-      {config.draftType === 'auction' && anyKeeperCandidates && (
-        <p className={styles.hint}>
-          Keeper support is snake-only for now. For an auction keeper league,
-          log each kept player as a sale at their keeper price once the draft
-          starts.
-        </p>
+      {isDynasty && (
+        <div className={styles.warnBox}>
+          <strong>Dynasty mode.</strong>{' '}
+          {isRookieDraft
+            ? 'Rookie draft: the board is rookies only, in linear order. Set rounds to your rookie-draft length below.'
+            : 'The board is ordered by dynasty value (whole-roster, not this-year-only). ADP and projection figures are still redraft, so lean on the dynasty order.'}
+        </div>
       )}
       {resumable && (
         <div className={styles.resume}>
@@ -130,6 +239,46 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
             <h2 className={styles.sectionTitle}>Format</h2>
             <div className={styles.formatRow}>
               <div className={styles.field}>
+                <span className={styles.label}>League Type</span>
+                <div className={styles.toggle}>
+                  {LEAGUE_TYPE_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={leagueType === opt.value ? styles.toggleOn : styles.toggleOff}
+                      onClick={() => setLeagueType(opt.value)}
+                      title={opt.title}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {isDynasty && (
+                <div className={styles.field}>
+                  <span className={styles.label}>Dynasty Draft</span>
+                  <div className={styles.toggle}>
+                    <button
+                      type="button"
+                      className={config.dynastyMode !== 'rookie' ? styles.toggleOn : styles.toggleOff}
+                      onClick={() => setDynastyMode('startup')}
+                      title="Initial draft of the whole pool, ordered by dynasty value"
+                    >
+                      Startup
+                    </button>
+                    <button
+                      type="button"
+                      className={config.dynastyMode === 'rookie' ? styles.toggleOn : styles.toggleOff}
+                      onClick={() => setDynastyMode('rookie')}
+                      title="Annual rookies-only draft, linear order"
+                    >
+                      Rookie
+                    </button>
+                  </div>
+                </div>
+              )}
+              {!isRookieDraft && (
+              <div className={styles.field}>
                 <span className={styles.label}>Draft Type</span>
                 <div className={styles.toggle}>
                   <button
@@ -148,6 +297,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                   </button>
                 </div>
               </div>
+              )}
               {config.draftType === 'auction' && (
                 <div className={styles.field}>
                   <span className={styles.label}>Budget Per Team</span>
@@ -160,25 +310,51 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                   />
                 </div>
               )}
-              <div className={styles.field}>
-                <span className={styles.label}>Mode</span>
-                <div className={styles.toggle}>
-                  <button
-                    type="button"
-                    className={config.mode === 'live' ? styles.toggleOn : styles.toggleOff}
-                    onClick={() => updateConfig({ mode: 'live' })}
-                  >
-                    Live
-                  </button>
-                  <button
-                    type="button"
-                    className={config.mode === 'mock' ? styles.toggleOn : styles.toggleOff}
-                    onClick={() => updateConfig({ mode: 'mock' })}
-                  >
-                    Mock
-                  </button>
+              {config.draftType === 'snake' && !isRookieDraft && (
+                <div className={styles.field}>
+                  <span className={styles.label}>Pick Order</span>
+                  <div className={styles.toggle}>
+                    {SNAKE_FORMAT_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={
+                          (config.snakeFormat ?? 'standard') === opt.value
+                            ? styles.toggleOn
+                            : styles.toggleOff
+                        }
+                        onClick={() => updateConfig({ snakeFormat: opt.value })}
+                        title={opt.title}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+              {/* Live mode syncs a real Sleeper draft; a guest has no league
+                  to sync, so the room is mock-only (config defaults to mock). */}
+              {!league.isGuest && (
+                <div className={styles.field}>
+                  <span className={styles.label}>Mode</span>
+                  <div className={styles.toggle}>
+                    <button
+                      type="button"
+                      className={config.mode === 'live' ? styles.toggleOn : styles.toggleOff}
+                      onClick={() => updateConfig({ mode: 'live' })}
+                    >
+                      Live
+                    </button>
+                    <button
+                      type="button"
+                      className={config.mode === 'mock' ? styles.toggleOn : styles.toggleOff}
+                      onClick={() => updateConfig({ mode: 'mock' })}
+                    >
+                      Mock
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
             {config.mode === 'mock' && (
               <>
@@ -218,6 +394,46 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
           </section>
 
           <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Scoring</h2>
+            <div className={styles.field}>
+              <span className={styles.label}>Reception Points</span>
+              <div className={styles.toggle}>
+                {SCORING_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={config.scoring === opt.value ? styles.toggleOn : styles.toggleOff}
+                    onClick={() => updateConfig({ scoring: opt.value })}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className={styles.keeperToggle}>
+              <input
+                type="checkbox"
+                checked={!!config.tePremium}
+                onChange={e => updateConfig({ tePremium: e.target.checked })}
+              />
+              TE premium (extra points per TE reception)
+            </label>
+            <label className={styles.keeperToggle}>
+              <input
+                type="checkbox"
+                checked={!!config.sixPtPassTd}
+                onChange={e => updateConfig({ sixPtPassTd: e.target.checked })}
+              />
+              6-point passing TDs
+            </label>
+            <p className={styles.hint}>
+              Drives player values and the mock AI's market. TE premium and 6pt
+              passing TDs are estimated from preset projections, not per-play
+              scoring, so treat their bumps as approximate.
+            </p>
+          </section>
+
+          <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Roster</h2>
             <div className={styles.slotGrid}>
               {SLOT_KEYS.map(key => (
@@ -239,7 +455,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
             </p>
           </section>
 
-          {config.draftType === 'snake' && anyKeeperCandidates && (
+          {!isDynasty && anyKeeperCandidates && (
             <section className={styles.section}>
               <h2 className={styles.sectionTitle}>Keepers</h2>
               <label className={styles.keeperToggle}>
@@ -248,19 +464,47 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                   checked={keepersOn}
                   onChange={e => toggleKeepers(e.target.checked)}
                 />
-                Each team keeps one player, costing one round earlier than last season
+                {isAuction
+                  ? 'Each team keeps players at a set price, charged before the auction'
+                  : 'Each team keeps players, costing a draft pick earlier than last season'}
               </label>
               {keepersOn && (
                 <>
+                  <div className={styles.formatRow}>
+                    <div className={styles.field}>
+                      <span className={styles.label}>Keepers Per Team</span>
+                      <input
+                        type="number"
+                        className={styles.input}
+                        min={1}
+                        max={config.rounds}
+                        value={keepersPerTeam}
+                        onChange={e => setKeepersPerTeam(Number(e.target.value) || 1)}
+                      />
+                    </div>
+                    {!isAuction && (
+                      <div className={styles.field}>
+                        <span className={styles.label}>Rounds Earlier</span>
+                        <input
+                          type="number"
+                          className={styles.input}
+                          min={0}
+                          max={config.rounds}
+                          value={escalation}
+                          onChange={e => setEscalation(Number(e.target.value) || 0)}
+                          title="How many rounds earlier than last season a keeper costs (0 = same round)"
+                        />
+                      </div>
+                    )}
+                  </div>
                   <p className={styles.hint}>
-                    Guesses pick the biggest gap between the player and what his cost round
-                    normally buys, weighted toward the top of the board. Fix any we got wrong;
-                    kept players come off the board and consume that round's pick.
+                    {isAuction
+                      ? 'Kept players come off the board and are charged to their team when the draft starts. Prices default to last year plus $5; edit any.'
+                      : 'Guesses pick the biggest gap between the player and what his cost round normally buys. Fix any we got wrong; kept players come off the board and consume that round’s pick.'}
                   </p>
                   <div className={styles.keeperList}>
                     {config.teams.map(team => {
                       const candidates = candidatesByTeam.get(team.id) ?? [];
-                      const current = config.keepers?.find(k => k.teamId === team.id);
                       if (candidates.length === 0) {
                         return (
                           <div key={team.id} className={styles.keeperRow}>
@@ -269,24 +513,56 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                           </div>
                         );
                       }
+                      const ids = teamKeeperIds(team.id);
                       return (
                         <div key={team.id} className={styles.keeperRow}>
                           <span className={styles.keeperTeam}>{team.name}</span>
-                          <select
-                            className={styles.keeperSelect}
-                            value={current?.playerId ?? ''}
-                            onChange={e => setTeamKeeper(team.id, e.target.value)}
-                          >
-                            <option value="">No keeper</option>
-                            {candidates.slice(0, 10).map(c => (
-                              <option key={c.player.id} value={c.player.id}>
-                                {c.player.name} ({c.player.pos}) keeps R{c.costRound}, expert R
-                                {c.expertRound}, market R{c.marketRound},{' '}
-                                {c.surplus >= 0 ? '+' : ''}${Math.round(c.surplus)}
-                                {c.keptLastYear ? ', kept last year' : ''}
-                              </option>
-                            ))}
-                          </select>
+                          <div className={styles.keeperSlots}>
+                            {Array.from({ length: keepersPerTeam }, (_, i) => {
+                              const selectedId = ids[i] ?? '';
+                              const chosenElsewhere = new Set(ids.filter((_, j) => j !== i));
+                              const kept = config.keepers?.find(
+                                k => k.teamId === team.id && k.playerId === selectedId,
+                              );
+                              return (
+                                <div key={i} className={styles.keeperSlot}>
+                                  <select
+                                    className={styles.keeperSelect}
+                                    value={selectedId}
+                                    onChange={e => setTeamKeeperAt(team.id, i, e.target.value)}
+                                  >
+                                    <option value="">No keeper</option>
+                                    {candidates
+                                      .filter(c => !chosenElsewhere.has(c.player.id))
+                                      .slice(0, 12)
+                                      .map(c => (
+                                        <option key={c.player.id} value={c.player.id}>
+                                          {c.player.name} ({c.player.pos}){' '}
+                                          {isAuction
+                                            ? c.lastPrice != null
+                                              ? `last $${c.lastPrice}`
+                                              : 'no prior price'
+                                            : `keeps R${c.costRound}, exp R${c.expertRound}, mkt R${c.marketRound}`}
+                                          {c.keptLastYear ? ', kept last year' : ''}
+                                        </option>
+                                      ))}
+                                  </select>
+                                  {isAuction && selectedId && (
+                                    <input
+                                      type="number"
+                                      className={styles.keeperPrice}
+                                      min={1}
+                                      value={kept?.keeperPrice ?? 1}
+                                      onChange={e =>
+                                        setKeeperPrice(team.id, selectedId, Number(e.target.value) || 1)
+                                      }
+                                      title="Keeper price charged before the auction"
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       );
                     })}
@@ -355,7 +631,54 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
         </div>
       </div>
 
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Presets</h2>
+        <p className={styles.hint}>
+          Save these settings (scoring, roster, format, budget) to reuse on any league or mock.
+          Teams and keepers are not stored.
+        </p>
+        <div className={styles.presetSave}>
+          <input
+            className={styles.input}
+            placeholder="Name this setup"
+            value={presetName}
+            onChange={e => setPresetName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') saveCurrentPreset();
+            }}
+          />
+          <button type="button" className={styles.btn} onClick={saveCurrentPreset} disabled={!presetName.trim()}>
+            Save
+          </button>
+        </div>
+        {presets.length > 0 && (
+          <div className={styles.keeperList}>
+            {presets.map(preset => (
+              <div key={preset.name} className={styles.teamRow}>
+                <span className={styles.archiveLabel}>{preset.name}</span>
+                <div className={styles.teamButtons}>
+                  <button type="button" className={styles.btn} onClick={() => applyPreset(preset)}>
+                    Load
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.iconBtn}
+                    onClick={() => removePreset(preset.name)}
+                    aria-label={`Delete preset ${preset.name}`}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       <div className={styles.startRow}>
+        <div className={styles.summary} title="What you're about to start">
+          {summary}
+        </div>
         <button
           type="button"
           className={styles.btnPrimary}

@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useRef, useState, Suspense, lazy } from 'react';
+import { useCallback, useEffect, useRef, useState, Suspense, lazy, type ReactNode } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Header, YearSelector, SeasonLoadingOverlay } from '@/components';
+import { GuestBanner } from '@/components/GuestBanner';
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import { HomePage } from '@/pages';
+import type { GuestDest } from '@/pages/GuestEntry';
+import { DEFAULT_GUEST_SETTINGS, type GuestSettings } from '@/utils/guestLeague';
 
 // Lazy-load data-heavy pages for smaller initial bundle
 const DraftPage = lazy(() => import('@/pages/DraftPage').then(m => ({ default: m.DraftPage })));
@@ -28,11 +31,27 @@ import {
 } from '@/api/yahoo';
 import { credentialsForSeason } from '@/api';
 import { findSuccessorLeague } from '@/api/sleeper';
-import type { LeagueCredentials, SeasonOption } from '@/types';
+import type { League, LeagueCredentials, SeasonOption } from '@/types';
 import { logger } from '@/utils/logger';
 import { rememberConnection } from '@/utils/lastConnection';
 import { loadSeasons } from '@/utils/seasonsCache';
 import { isEmptyPreseason } from '@/utils/leaguePhase';
+
+// Public draft-prep entry: a no-league visit to /rankings or /draft-room
+// (direct link, refresh, or crawler) drops into guest mode with default
+// settings instead of bouncing home, so those URLs work without logging in.
+// enterGuest sets state synchronously, so this renders once then the route
+// re-renders with the real page.
+function GuestAutoEnter({ onEnter }: { onEnter: (settings: GuestSettings) => void }) {
+  useEffect(() => {
+    onEnter(DEFAULT_GUEST_SETTINGS);
+  }, [onEnter]);
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+      <div className="spinner" />
+    </div>
+  );
+}
 
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Connect Your League',
@@ -51,7 +70,7 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { league, credentials, isLoading, error, progress, load, refresh, clear } = useLeague();
+  const { league, credentials, isLoading, error, progress, load, refresh, clear, enterGuest, updateGuest } = useLeague();
   const { playLoadComplete, playError } = useSounds();
   const prevLeagueRef = useRef<typeof league>(null);
   // The URL year that's currently being satisfied. Prevents the URL-watch
@@ -116,7 +135,12 @@ function App() {
           saveTokens(tokens);
           setYahooConnected(true);
         } catch (e) {
+          // The redirect looked successful but the payload was unreadable, so
+          // the login did not actually complete. Say so instead of dropping
+          // the user back on the form looking connected when they aren't.
           logger.error('Failed to parse Yahoo tokens:', e);
+          playError();
+          window.alert('Yahoo login did not complete. Please try connecting again.');
         }
       }
       // A header-initiated login stashed where the user was: reload that
@@ -134,7 +158,7 @@ function App() {
           });
         return;
       }
-      // Use react-router navigate so HashRouter's basename is preserved.
+      // Use react-router navigate so the router's basename is preserved.
       // A raw window.history.replaceState('/') would strip the GitHub Pages
       // basename and leave the user on a 404.
       navigate('/', { replace: true });
@@ -143,9 +167,13 @@ function App() {
       logger.error('Yahoo OAuth error:', errorMsg);
       clearOAuthState();
       takeOAuthReturn(); // discard the stash; the login never completed
+      // Tell the user the login failed; otherwise they just bounce back to the
+      // form with no idea Yahoo rejected the attempt.
+      playError();
+      window.alert('Yahoo login failed. Please try connecting again.');
       navigate('/', { replace: true });
     }
-  }, [location, navigate, load]);
+  }, [location, navigate, load, playError]);
 
   const handleLoadLeague = async (credentials: LeagueCredentials) => {
     let loaded = await load(credentials);
@@ -181,6 +209,14 @@ function App() {
     navigate(isEmptyPreseason(loaded) ? '/draft-room' : '/draft');
   };
 
+  // Guest mode: synthesize a league from picked settings (no fetch) and jump
+  // straight to the chosen surface. The route guards treat a guest league like
+  // any loaded league for /rankings and /draft-room.
+  const handleEnterGuest = useCallback((settings: GuestSettings, dest: GuestDest) => {
+    enterGuest(settings);
+    navigate(`/${dest}`);
+  }, [enterGuest, navigate]);
+
   // Header Yahoo control: connect from anywhere in the app (the login powers
   // the draft board's live Yahoo prices even for Sleeper/ESPN leagues).
   const handleYahooConnect = useCallback(async () => {
@@ -193,8 +229,10 @@ function App() {
       window.location.href = authUrl;
     } catch (err) {
       logger.error('Failed to start Yahoo login:', err);
+      playError();
+      window.alert('Could not start Yahoo login. Please try again.');
     }
-  }, [credentials, location.pathname, location.search]);
+  }, [credentials, location.pathname, location.search, playError]);
 
   const handleYahooDisconnect = useCallback(() => {
     if (!window.confirm('Disconnect Yahoo? Live auction prices will stop loading.')) return;
@@ -252,26 +290,40 @@ function App() {
         const seasons = await loadSeasons(credentials, league);
         const match = seasons.find(s => s.year === targetYear);
         if (!match) {
+          // Almost always a hand-edited or shared link with a year this league
+          // doesn't have. Tell the user instead of quietly leaving them on a
+          // different season than the URL asked for.
           logger.warn('[App] URL year not reachable from current league:', targetYear);
+          window.alert(`The ${targetYear} season isn't available for this league. Showing ${league.season} instead.`);
           return;
         }
         await load(credentialsForSeason(credentials, match));
       } catch (err) {
         logger.warn('[App] Failed to resolve URL year:', err);
+        window.alert(`Could not load the ${targetYear} season. Showing ${league.season} instead.`);
       }
     })();
   }, [searchParams, league, credentials, load]);
+
+  // Data pages require a real (non-guest) league. Guests get redirected to
+  // Rankings; no league at all goes home. The render callback receives the
+  // narrowed, non-null league.
+  const dataRoute = (render: (league: League) => ReactNode): ReactNode =>
+    league && !league.isGuest
+      ? render(league)
+      : <Navigate to={league?.isGuest ? '/rankings' : '/'} replace />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <a href="#main-content" className="skip-nav">Skip to main content</a>
       <Header
-        leagueName={league?.name}
-        platform={league?.platform}
+        leagueName={league && !league.isGuest ? league.name : undefined}
+        platform={league && !league.isGuest ? league.platform : undefined}
         league={league}
+        isGuest={!!league?.isGuest}
         onChangeLeague={clear}
-        onRefresh={league ? refresh : undefined}
-        isRefreshing={isLoading && !!league}
+        onRefresh={league && !league.isGuest ? refresh : undefined}
+        isRefreshing={isLoading && !!league && !league.isGuest}
         yahooConnected={yahooConnected}
         onYahooConnect={handleYahooConnect}
         onYahooDisconnect={handleYahooDisconnect}
@@ -284,6 +336,10 @@ function App() {
           />
         ) : undefined}
       />
+
+      {league?.isGuest && location.pathname !== '/' && (
+        <GuestBanner onConnect={() => { clear(); navigate('/'); }} />
+      )}
 
       <main id="main-content" style={{ flex: 1, position: 'relative' }}>
         {isLoading && league && (
@@ -302,11 +358,15 @@ function App() {
           <Route
             path="/"
             element={
-              league ? (
+              league && !league.isGuest ? (
                 <Navigate to={isEmptyPreseason(league) ? '/draft-room' : '/draft'} replace />
               ) : (
+                // No league, or a guest visiting home: show the connect form
+                // and guest entry. This is also where the header's "Connect
+                // your league" CTA lands a guest.
                 <HomePage
                   onLoadLeague={handleLoadLeague}
+                  onGuest={handleEnterGuest}
                   isLoading={isLoading}
                   error={error}
                   progress={progress}
@@ -315,104 +375,25 @@ function App() {
             }
           />
 
-          <Route
-            path="/draft"
-            element={
-              league ? (
-                <DraftPage league={league} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-
+          {/* Public draft-prep surfaces: a no-league visit auto-enters guest
+              mode so these URLs work without logging in (and stay crawlable). */}
           <Route
             path="/draft-room"
-            element={
-              league ? (
-                <DraftRoomPage league={league} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
+            element={league ? <DraftRoomPage league={league} /> : <GuestAutoEnter onEnter={enterGuest} />}
           />
-
           <Route
             path="/rankings"
-            element={
-              league ? (
-                <RankingsPage league={league} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
+            element={league ? <RankingsPage league={league} onUpdateGuest={updateGuest} /> : <GuestAutoEnter onEnter={enterGuest} />}
           />
 
-          <Route
-            path="/trades"
-            element={
-              league ? (
-                <TradesPage league={league} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-
-          <Route
-            path="/waivers"
-            element={
-              league ? (
-                <WaiversPage league={league} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-
-          <Route
-            path="/teams"
-            element={
-              league ? (
-                <TeamsPage league={league} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-
-          <Route
-            path="/history"
-            element={
-              league ? (
-                <HistoryPage league={league} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-
-          <Route
-            path="/awards"
-            element={
-              league ? (
-                <AwardsPage league={league} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-
-          <Route
-            path="/players"
-            element={
-              league ? (
-                <PlayerJourneyPage league={league} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
+          {/* Data pages need a real connection; guests get bounced to Rankings. */}
+          <Route path="/draft" element={dataRoute(l => <DraftPage league={l} />)} />
+          <Route path="/trades" element={dataRoute(l => <TradesPage league={l} />)} />
+          <Route path="/waivers" element={dataRoute(l => <WaiversPage league={l} />)} />
+          <Route path="/teams" element={dataRoute(l => <TeamsPage league={l} />)} />
+          <Route path="/history" element={dataRoute(l => <HistoryPage league={l} />)} />
+          <Route path="/awards" element={dataRoute(l => <AwardsPage league={l} />)} />
+          <Route path="/players" element={dataRoute(l => <PlayerJourneyPage league={l} />)} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

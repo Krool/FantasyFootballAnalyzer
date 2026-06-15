@@ -50,6 +50,24 @@ describe('sleeperAdpFor', () => {
     expect(consensusAvg(both, 'ppr')).toBe(10);
     expect(consensusAvg(both, 'half_ppr')).toBe(12);
   });
+
+  it('uses the 2QB ADP in superflex leagues, overriding the scoring variant', () => {
+    const qb = player({ pos: 'QB', sleeperAdp: 40, sleeperAdpPpr: 38, sleeperAdp2qb: 6 });
+    expect(sleeperAdpFor(qb, 'ppr')).toBe(38);
+    expect(sleeperAdpFor(qb, 'ppr', true)).toBe(6);
+  });
+
+  it('falls back to the scoring variant when 2QB ADP is missing', () => {
+    const noSf = player({ sleeperAdp: 12 });
+    expect(sleeperAdpFor(noSf, 'half_ppr', true)).toBe(12);
+  });
+
+  it('threads superflex through the consensus average and delta', () => {
+    const qb = player({ pos: 'QB', overallRank: 10, espnAdp: 14, sleeperAdp: 30, sleeperAdp2qb: 6 });
+    expect(consensusAvg(qb, 'half_ppr')).toBe(18); // (10+14+30)/3
+    expect(consensusAvg(qb, 'half_ppr', true)).toBe(10); // (10+14+6)/3
+    expect(platformDelta(qb, platformRankSource('sleeper', 'half_ppr', true), 'half_ppr', true)).toBe(-4); // 6 - 10
+  });
 });
 
 describe('platformDelta', () => {

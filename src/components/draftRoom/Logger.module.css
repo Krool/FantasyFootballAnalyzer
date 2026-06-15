@@ -190,6 +190,55 @@
   letter-spacing: 0.15em;
 }
 
+/* Live-bidding focal block: the running price as the big number, leading
+   bidder beside it, expected price and over/under-market underneath. */
+.liveTopRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+}
+
+.livePrice {
+  font-family: var(--font-headline);
+  font-size: 2.2rem;
+  line-height: 0.9;
+  color: var(--lime);
+}
+
+.liveMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.liveBidder {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.05rem;
+  color: var(--bone);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clockMine .liveBidder {
+  color: var(--lime);
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.liveExpRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  margin-top: 0.5rem;
+}
+
 /* Selected-player variant: headshot beside the text block. */
 .playerCard {
   flex-direction: row;

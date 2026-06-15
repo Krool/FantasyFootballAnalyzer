@@ -11,6 +11,8 @@ import { teamForPick } from './snakeOrder';
 export type StarterPos = 'QB' | 'RB' | 'WR' | 'TE' | 'K' | 'DST';
 export const STARTER_POSITIONS: readonly StarterPos[] = ['QB', 'RB', 'WR', 'TE', 'K', 'DST'];
 const FLEX_ELIGIBLE = new Set<string>(['RB', 'WR', 'TE']);
+// Superflex (a.k.a. OP / Q-W-R-T) takes a QB on top of the flex-eligible three.
+const SUPERFLEX_ELIGIBLE = new Set<string>(['QB', 'RB', 'WR', 'TE']);
 
 export interface SlotsFilled {
   QB: number;
@@ -18,6 +20,7 @@ export interface SlotsFilled {
   WR: number;
   TE: number;
   FLEX: number;
+  SUPERFLEX: number;
   K: number;
   DST: number;
   BENCH: number;
@@ -64,22 +67,28 @@ export interface DerivedDraftState {
 
 // Draftable spots per team. IR is excluded: IR stash players aren't drafted.
 export function draftableSlotCount(slots: RosterSlots): number {
-  return slots.QB + slots.RB + slots.WR + slots.TE + slots.FLEX + slots.K + slots.DST + slots.BENCH;
+  return (
+    slots.QB + slots.RB + slots.WR + slots.TE + slots.FLEX + slots.SUPERFLEX +
+    slots.K + slots.DST + slots.BENCH
+  );
 }
 
 function emptySlotsFilled(): SlotsFilled {
-  return { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, K: 0, DST: 0, BENCH: 0 };
+  return { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0 };
 }
 
 // Greedy, deterministic slot assignment in pick order: dedicated starting
-// slot first, then FLEX (RB/WR/TE only), then bench. Good enough to drive
-// "who still needs a TE" and "who is full" without lineup optimization.
+// slot first, then FLEX (RB/WR/TE only), then SUPERFLEX (adds QB), then bench.
+// Good enough to drive "who still needs a TE" and "who is full" without lineup
+// optimization.
 function assignSlot(filled: SlotsFilled, slots: RosterSlots, pos: string): void {
   const starter = pos as StarterPos;
   if (STARTER_POSITIONS.includes(starter) && filled[starter] < slots[starter]) {
     filled[starter]++;
   } else if (FLEX_ELIGIBLE.has(pos) && filled.FLEX < slots.FLEX) {
     filled.FLEX++;
+  } else if (SUPERFLEX_ELIGIBLE.has(pos) && filled.SUPERFLEX < slots.SUPERFLEX) {
+    filled.SUPERFLEX++;
   } else {
     filled.BENCH++;
   }
@@ -95,12 +104,13 @@ export function applyPickToTeam(team: TeamDraftState, pos: string, slots: Roster
     team.starterNeeds[starter] = Math.max(0, slots[starter] - team.slotsFilled[starter]);
     const dedicatedFull = team.slotsFilled[starter] >= slots[starter];
     const flexFull = !FLEX_ELIGIBLE.has(starter) || team.slotsFilled.FLEX >= slots.FLEX;
+    const superflexFull = !SUPERFLEX_ELIGIBLE.has(starter) || team.slotsFilled.SUPERFLEX >= slots.SUPERFLEX;
     const benchFull = team.slotsFilled.BENCH >= slots.BENCH;
-    team.fullAt[starter] = team.openSlots === 0 || (dedicatedFull && flexFull && benchFull);
+    team.fullAt[starter] = team.openSlots === 0 || (dedicatedFull && flexFull && superflexFull && benchFull);
   }
 }
 
-export type LineupSlot = StarterPos | 'FLEX' | 'BENCH';
+export type LineupSlot = StarterPos | 'FLEX' | 'SUPERFLEX' | 'BENCH';
 
 export interface LineupAssignment {
   slot: LineupSlot;
@@ -121,6 +131,9 @@ export function assignLineup(picks: DraftedPlayer[], slots: RosterSlots): Lineup
     } else if (FLEX_ELIGIBLE.has(pos) && filled.FLEX < slots.FLEX) {
       filled.FLEX++;
       slot = 'FLEX';
+    } else if (SUPERFLEX_ELIGIBLE.has(pos) && filled.SUPERFLEX < slots.SUPERFLEX) {
+      filled.SUPERFLEX++;
+      slot = 'SUPERFLEX';
     } else {
       filled.BENCH++;
       slot = 'BENCH';
@@ -138,7 +151,7 @@ export interface LineupRow {
   pick: DraftedPlayer | null;
 }
 
-const SLOT_LABELS: Partial<Record<LineupSlot, string>> = { FLEX: 'FLX', BENCH: 'BN' };
+const SLOT_LABELS: Partial<Record<LineupSlot, string>> = { FLEX: 'FLX', SUPERFLEX: 'SFLX', BENCH: 'BN' };
 
 // A roster rendered lineup-shaped: every starting slot present (filled or
 // open), bench rows below. Holes jump out in a way pick order never shows.
@@ -155,6 +168,7 @@ export function lineupRows(picks: DraftedPlayer[], slots: RosterSlots): LineupRo
   const slotOrder: LineupSlot[] = [
     ...STARTER_POSITIONS.filter(p => p !== 'K' && p !== 'DST'),
     'FLEX',
+    'SUPERFLEX',
     'K',
     'DST',
   ];
@@ -217,8 +231,9 @@ export function deriveDraftState(
       team.starterNeeds[pos] = Math.max(0, slots[pos] - team.slotsFilled[pos]);
       const dedicatedFull = team.slotsFilled[pos] >= slots[pos];
       const flexFull = !FLEX_ELIGIBLE.has(pos) || team.slotsFilled.FLEX >= slots.FLEX;
+      const superflexFull = !SUPERFLEX_ELIGIBLE.has(pos) || team.slotsFilled.SUPERFLEX >= slots.SUPERFLEX;
       const benchFull = team.slotsFilled.BENCH >= benchCap;
-      team.fullAt[pos] = team.openSlots === 0 || (dedicatedFull && flexFull && benchFull);
+      team.fullAt[pos] = team.openSlots === 0 || (dedicatedFull && flexFull && superflexFull && benchFull);
     }
   }
 
@@ -233,30 +248,44 @@ export function deriveDraftState(
   const pickCount = events.length;
   const isComplete = pickCount >= totalPicks;
 
+  // Pre-draft auction keepers are auto-logged as sales at the very start, so
+  // they must not shift the nomination rotation: subtract them out.
+  const keeperSaleCount = events.reduce(
+    (n, e) => (e.kind === 'auction_sale' && e.isKeeper ? n + 1 : n),
+    0,
+  );
+
   let onTheClockId: string | null = null;
   if (!isComplete) {
     const orderedIds = config.teams.map(t => t.id);
+    const n = orderedIds.length;
     onTheClockId =
       config.draftType === 'snake'
-        ? teamForPick(pickCount, orderedIds)
-        : orderedIds[pickCount % orderedIds.length];
+        ? teamForPick(pickCount, orderedIds, config.snakeFormat)
+        : orderedIds[(((pickCount - keeperSaleCount) % n) + n) % n];
   }
 
-  // Keepers are a snake-only mechanic: the auto-pick effect and the
-  // validateEvent exception both key on snake_pick. In an auction draft,
-  // reserving them would only make those players permanently unbuyable
-  // (e.g. left over after switching the draft type in setup), so ignore them.
+  // Keepers are held out of the pool until auto-logged: snake keepers at their
+  // cost round, auction keepers as pre-draft sales the moment the draft starts.
   const reservedPlayerIds = new Set(
-    config.draftType === 'snake'
-      ? (config.keepers ?? [])
-          .filter(k => !draftedPlayerIds.has(k.playerId))
-          .map(k => k.playerId)
-      : [],
+    (config.keepers ?? []).filter(k => !draftedPlayerIds.has(k.playerId)).map(k => k.playerId),
   );
 
+  // Dynasty leagues order by dynasty value, not redraft rank; a rookie draft
+  // narrows the pool to first-year players. Unranked players sink to the
+  // bottom in dynasty mode rather than vanishing.
+  const isDynasty = config.leagueType === 'dynasty';
+  const rookieOnly = isDynasty && config.dynastyMode === 'rookie';
+  const boardRank = (p: PoolPlayer) =>
+    isDynasty ? (p.dynastyRank ?? p.overallRank + 1000) : p.overallRank;
   const available = pool
-    .filter(p => !draftedPlayerIds.has(p.id) && !reservedPlayerIds.has(p.id))
-    .sort((a, b) => a.overallRank - b.overallRank);
+    .filter(
+      p =>
+        !draftedPlayerIds.has(p.id) &&
+        !reservedPlayerIds.has(p.id) &&
+        (!rookieOnly || p.rookie === true),
+    )
+    .sort((a, b) => boardRank(a) - boardRank(b));
 
   return {
     teams,
@@ -290,7 +319,10 @@ export function validateEvent(
   if (state.draftedPlayerIds.has(event.playerId)) return 'That player has already been drafted.';
   if (state.reservedPlayerIds.has(event.playerId)) {
     const keeper = config.keepers?.find(k => k.playerId === event.playerId);
-    const allowed = event.kind === 'snake_pick' && keeper && event.teamId === keeper.teamId;
+    const allowed =
+      !!keeper &&
+      ((event.kind === 'snake_pick' && event.teamId === keeper.teamId) ||
+        (event.kind === 'auction_sale' && event.wonById === keeper.teamId));
     if (!allowed) return 'That player is reserved as a keeper.';
   }
 

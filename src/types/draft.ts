@@ -3,7 +3,8 @@
 // derived from (config, pool, events) by pure functions in
 // src/utils/draftEngine.ts, and undo is simply popping the last event.
 
-import type { DraftType, RosterSlots } from './index';
+import type { DraftType, RosterSlots, ScoringType } from './index';
+import type { SnakeFormat } from '@/utils/snakeOrder';
 
 export interface DraftRoomTeam {
   id: string;
@@ -12,12 +13,16 @@ export interface DraftRoomTeam {
 }
 
 // A pre-draft keeper: the player is reserved for the team and automatically
-// consumes that team's pick in costRound (one round earlier than where he
-// went last year, per the league's keeper rule).
+// logged when the draft starts (auction) or reaches its cost round (snake).
 export interface KeeperAssignment {
   teamId: string;
   playerId: string;
+  // Snake: the round this keeper consumes (escalated from where he went last
+  // year). Ignored for auction keepers.
   costRound: number;
+  // Auction: the price charged to the team pre-draft. Snake keepers leave it
+  // undefined.
+  keeperPrice?: number;
 }
 
 export interface DraftRoomConfig {
@@ -25,18 +30,41 @@ export interface DraftRoomConfig {
   leagueKey: string;
   season: number;
   draftType: DraftType;
+  // Carryover model. Dynasty swaps the board to dynasty values and unlocks the
+  // rookie-draft sub-mode; keeper just enables the keeper section. Default
+  // redraft (older saved sessions).
+  leagueType?: 'redraft' | 'keeper' | 'dynasty';
+  // Dynasty only: a startup draft (full pool, dynasty values) or an annual
+  // rookie draft (rookies only, linear order, no keepers). Default startup.
+  dynastyMode?: 'startup' | 'rookie';
+  // Snake pick-order variant. Ignored for auction drafts. Defaults to standard
+  // when absent (older saved sessions).
+  snakeFormat?: SnakeFormat;
   // Order matters: this is the round-1 snake order / auction nomination order.
   teams: DraftRoomTeam[];
   myTeamId: string;
   rosterSlots: RosterSlots;
+  // Scoring rules that drive the value engine and the mock AI's market. Seeded
+  // from the loaded league but editable in setup (the loaded league is often
+  // last season, or absent entirely in the offseason).
+  scoring: ScoringType;
+  // Premium scoring proxies. The pool has no per-stat components, so these are
+  // coarse multipliers on TE / QB projected points (see projectionValues.ts).
+  tePremium?: boolean;
+  sixPtPassTd?: boolean;
   // Per-team auction budget. Present but unused for snake drafts.
   budget: number;
   // Draftable spots per team (roster slots minus IR).
   rounds: number;
   mode: 'live' | 'mock';
-  // Snake-only for now. Keeper players are held out of the pool and
-  // auto-logged when the draft reaches their cost round.
+  // Keeper players are held out of the pool and auto-logged (snake: at their
+  // cost round; auction: as pre-draft sales when the draft starts).
   keepers?: KeeperAssignment[];
+  // How many keepers each team may hold. Drives the setup UI; default 1.
+  keepersPerTeam?: number;
+  // Snake keeper cost: how many rounds earlier than last year the keeper
+  // costs (1 = one round earlier). Default 1.
+  keeperEscalation?: number;
   // Mock-draft RNG seed. Set it to replay the same AI script after changing
   // strategy; left empty, each mock rolls fresh.
   simSeed?: number;
@@ -58,6 +86,9 @@ export type DraftEvent =
       // log's delta matches what the logger displayed. Older saved sessions
       // lack it; consumers fall back to the raw sheet value.
       expectedValue?: number;
+      // Auto-logged pre-draft keeper sale (not a live purchase). Held out of
+      // the nomination rotation so keepers don't shift whose turn it is.
+      isKeeper?: boolean;
     }
   | {
       kind: 'snake_pick';
@@ -101,6 +132,9 @@ export interface PoolPlayer {
   // market that matches their rules (see sleeperAdpFor in utils/consensus.ts).
   sleeperAdpPpr?: number;
   sleeperAdpStd?: number;
+  // Sleeper 2QB/superflex ADP: QBs go far earlier here. Used when the league
+  // has a SUPERFLEX slot so the board and mock AI price QBs realistically.
+  sleeperAdp2qb?: number;
   // Expert disagreement band around the consensus rank (FantasyPros
   // rank_min/rank_max/rank_std): wide band = the experts can't agree.
   rankMin?: number;
@@ -114,6 +148,10 @@ export interface PoolPlayer {
   // From Sleeper's players dump: id unlocks headshots
   // (sleepercdn.com/content/nfl/players/thumb/<id>.jpg).
   sleeperId?: string;
+  // Dynasty consensus rank/tier (whole-roster value). Drives dynasty startup
+  // ordering and the rookie-draft pool. Absent without a dynasty snapshot.
+  dynastyRank?: number;
+  dynastyTier?: number;
   // Questionable / Out / IR / PUP / Sus — absent when healthy.
   injuryStatus?: string;
   // Why: body part (e.g. "Hamstring"), Sleeper's latest blurb, and when it

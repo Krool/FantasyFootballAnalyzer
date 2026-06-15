@@ -47,9 +47,11 @@ a season from a game's calendar date.
 - **Snake**: order reverses each round. Default everywhere.
 - **Third-round reversal (3RR)**: round 3 repeats round 2's direction
   (1-12, 12-1, 12-1, 1-12, then normal). NFFC/high-stakes; Sleeper setting
-  `settings.reversal_round`. Not supported in our Draft Room v1.
+  `settings.reversal_round`. Supported (Draft Room "Pick Order" = 3RR;
+  auto-detected from Sleeper).
 - **Linear**: same order every round. Rare in redraft; standard for dynasty
-  rookie drafts. Sleeper supports it as a draft type.
+  rookie drafts. Sleeper supports it as a draft type. Supported (Pick Order =
+  Linear; auto-detected from Sleeper, and forced for dynasty rookie drafts).
 - **Auction / salary cap**: see below.
 - **Slow drafts**: any format with hours-long pick clocks.
 - **Best ball**: the draft is the whole game; optimal lineup auto-scored.
@@ -79,9 +81,15 @@ a season from a game's calendar date.
 - **Redraft**: rosters reset annually. Our primary target.
 - **Keeper**: keep 1-3 players at a cost (a draft round, often escalating
   yearly, or last year's auction price +$5/+10-20%). Keepers consume picks
-  or budget before the draft starts.
+  or budget before the draft starts. Supported: the Draft Room takes a
+  configurable keeper count per team, round escalation, and auction keeper
+  prices (auto-logged as pre-draft sales). Auto-detected from Sleeper
+  (`settings.type=1`) and ESPN (`keeperCount`).
 - **Dynasty**: full roster carries over; annual linear rookie drafts; taxi
-  squads (Sleeper-native stash slots for young players).
+  squads (Sleeper-native stash slots for young players). Supported: a dynasty
+  league type (auto-detected from Sleeper `settings.type=2`) orders the board
+  by bundled dynasty rankings, with a rookie-draft sub-mode (rookies-only pool,
+  linear order). Taxi squads are not modeled.
 - **Best ball / guillotine / vampire**: niche formats; not Draft Room targets.
 
 ## Scoring formats and how they shift value
@@ -92,10 +100,13 @@ a season from a game's calendar date.
 - **TE premium**: extra TE reception points; elite TEs jump.
 - **Superflex / 2QB**: QB demand nearly doubles against ~32 startable QBs, so
   QB values explode (top QBs become 1st-rounders / $40-60 auction players).
-  1QB rankings are unusable in superflex. Our `RosterSlots` model has no
-  superflex slot yet, but all three parsers set `league.hasSuperflex`
-  (Sleeper `SUPER_FLEX`, ESPN slot 7 / OP, Yahoo `Q/W/R/T`) and the Draft
-  Room setup shows a loud warning that its QB values are floors.
+  1QB rankings are unusable in superflex. `RosterSlots` now has a real
+  `SUPERFLEX` slot (QB/RB/WR/TE eligible); the parsers populate it (Sleeper
+  `SUPER_FLEX`, ESPN slot 7 / OP, Yahoo `Q/W/R/T`) and the projection value
+  engine drops the QB replacement line so QBs are priced for superflex. The
+  Draft Room also drafts off Sleeper's 2QB ADP in superflex leagues. The setup
+  warning now only nudges you to add the SUPERFLEX slot if the platform flagged
+  superflex but none is configured.
 - **6-pt passing TDs**: modest QB bump even in 1QB.
 - K and DST have near-zero value over replacement: never more than $1 or a
   last-round pick.
@@ -118,9 +129,12 @@ replacement level and value scaling.
 - **VOR/VBD**: value = projected points minus replacement-level points at the
   position. Replacement = best freely available player.
 - **Auction value math**: league cash = teams x budget; reserve $1 per slot;
-  distribute the rest proportional to VOR. Values scale with budget, team
-  count, and roster depth - which is exactly what
-  `src/utils/valueScaling.ts` implements (proportional surplus model).
+  distribute the rest proportional to VOR. The Draft Room computes this from
+  bundled projected points via `src/utils/projectionValues.ts` (projection ->
+  VOR -> dollars), so values react to scoring, superflex, TE premium, and
+  roster depth. `src/utils/valueScaling.ts` (the older proportional surplus
+  model that rescales the FantasyPros salary sheet) is kept as the fallback for
+  players without projections.
 
 ## Platform API behaviors
 

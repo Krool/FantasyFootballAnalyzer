@@ -41,6 +41,7 @@ export function parseSleeperRosterPositions(rosterPositions: string[]): RosterSl
     WR: 0,
     TE: 0,
     FLEX: 0,
+    SUPERFLEX: 0,
     K: 0,
     DST: 0,
     BENCH: 0,
@@ -68,9 +69,10 @@ export function parseSleeperRosterPositions(rosterPositions: string[]): RosterSl
         break;
       case 'SUPER_FLEX':
       case 'SUPERFLEX':
-        // Superflex counts as additional QB opportunity
-        slots.QB += 0.5; // Half value since not guaranteed to be QB
-        slots.FLEX++;
+        // Superflex is its own slot (QB/RB/WR/TE eligible). The draft board's
+        // value engine prices the QB demand it creates; replacement-level math
+        // below folds it in with a QB-dominant share.
+        slots.SUPERFLEX++;
         break;
       case 'K':
         slots.K++;
@@ -107,11 +109,19 @@ export function calculateReplacementLevels(
   const flexWRShare = 0.4;
   const flexTEShare = 0.2;
 
+  // SUPERFLEX is QB-dominant in practice (managers start a second QB), with a
+  // small spillover to the flex-eligible three. Shares mirror DEFAULT_VOR_CONFIG
+  // in utils/projectionValues.ts.
+  const sfQBShare = 0.75;
+  const sfRBShare = 0.08;
+  const sfWRShare = 0.1;
+  const sfTEShare = 0.07;
+
   // Calculate effective starter slots per position
-  const effectiveQB = rosterSlots.QB;
-  const effectiveRB = rosterSlots.RB + (rosterSlots.FLEX * flexRBShare);
-  const effectiveWR = rosterSlots.WR + (rosterSlots.FLEX * flexWRShare);
-  const effectiveTE = rosterSlots.TE + (rosterSlots.FLEX * flexTEShare);
+  const effectiveQB = rosterSlots.QB + (rosterSlots.SUPERFLEX * sfQBShare);
+  const effectiveRB = rosterSlots.RB + (rosterSlots.FLEX * flexRBShare) + (rosterSlots.SUPERFLEX * sfRBShare);
+  const effectiveWR = rosterSlots.WR + (rosterSlots.FLEX * flexWRShare) + (rosterSlots.SUPERFLEX * sfWRShare);
+  const effectiveTE = rosterSlots.TE + (rosterSlots.FLEX * flexTEShare) + (rosterSlots.SUPERFLEX * sfTEShare);
   const effectiveK = rosterSlots.K;
   const effectiveDST = rosterSlots.DST;
 

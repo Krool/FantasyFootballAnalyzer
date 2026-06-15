@@ -204,7 +204,12 @@ function AwardCard({ award, league }: { award: Award; league: League }) {
       <button
         type="button"
         className={styles.awardShareBtn}
-        onClick={() => exportAwardCard(award, league.name, league.season)}
+        onClick={() => {
+          const ok = exportAwardCard(award, league.name, league.season);
+          if (!ok) {
+            window.alert("Couldn't generate the award image. Your browser may have blocked it; try a different browser.");
+          }
+        }}
         title="Download this award as a shareable image"
         aria-label={`Download ${award.name} as an image`}
       >

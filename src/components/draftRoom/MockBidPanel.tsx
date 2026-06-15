@@ -88,29 +88,37 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
     const iAmHigh = highBidderId === config.myTeamId;
     const bidderName = highBidderId
       ? config.teams.find(t => t.id === highBidderId)?.name ?? '?'
-      : 'nobody yet';
+      : null;
     const nextBid = highBid + 1;
+    // How the live price sits against market, so you can judge the bid.
+    const overMarket = highBid - expected;
     return (
       <div className={styles.logger}>
         <h2 className={styles.title}>On The Block</h2>
-        <SelectedPlayerCard player={player} detail={`Exp $${expected} · nominated by ${nominatorName}`} />
+        <SelectedPlayerCard player={player} detail={`Nominated by ${nominatorName}`} />
         <div className={iAmHigh ? styles.clockMine : styles.clock}>
-          <span className={styles.clockKicker}>
-            {highBid > 0 ? `$${highBid} to` : 'Opening bid:'}
-          </span>
-          <span className={styles.clockTeam}>{iAmHigh ? 'YOU' : bidderName}</span>
-        </div>
-        {myComfort !== null && (
-          <div className={styles.expected}>
-            <span
-              className={styles.label}
-              title="Your highest bid that still leaves market price for every open starter slot plus $1 per bench spot"
-            >
-              Your comfort
-            </span>
-            <span className={styles.expectedValue}>${myComfort}</span>
+          <div className={styles.liveTopRow}>
+            <span className={styles.livePrice}>${highBid > 0 ? highBid : nextBid}</span>
+            <div className={styles.liveMeta}>
+              <span className={styles.clockKicker}>{highBid > 0 ? 'High bid' : 'Opening bid'}</span>
+              <span className={styles.liveBidder}>
+                {highBid > 0 ? (iAmHigh ? 'YOU' : bidderName) : 'no bids yet'}
+              </span>
+            </div>
           </div>
-        )}
+          <div className={styles.liveExpRow}>
+            <span className={styles.label}>Exp ${expected}</span>
+            {highBid > 0 && (
+              <span className={overMarket > 0 ? styles.deltaBad : styles.deltaGood}>
+                {overMarket > 0
+                  ? `+$${overMarket} over`
+                  : overMarket < 0
+                    ? `$${-overMarket} under`
+                    : 'at value'}
+              </span>
+            )}
+          </div>
+        </div>
         <div className={styles.priceRow}>
           <button
             type="button"
@@ -136,7 +144,7 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
           </button>
         </div>
         <p className={styles.liveHint}>
-          Say nothing and the hammer falls{iAmHigh ? ' — he is yours' : ''}.
+          Say nothing and the hammer falls{iAmHigh ? ', he is yours.' : '.'}
         </p>
       </div>
     );

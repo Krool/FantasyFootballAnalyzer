@@ -377,3 +377,34 @@
   color: var(--ink);
   border-color: var(--lime);
 }
+
+/* Transient flourish when you land a clear value pick. */
+.spark {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.9rem;
+  background: color-mix(in srgb, var(--lime) 18%, var(--ink));
+  border-left: 3px solid var(--lime);
+  color: var(--lime);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  animation: sparkPop 0.28s ease-out;
+}
+
+@keyframes sparkPop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spark {
+    animation: none;
+  }
+}

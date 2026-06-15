@@ -65,12 +65,17 @@ interface PoolPlayer {
   sleeperAdp?: number; // half-PPR ADP
   sleeperAdpPpr?: number;
   sleeperAdpStd?: number;
+  sleeperAdp2qb?: number; // 2QB/superflex ADP
   // Sleeper season-long projected points by scoring format.
   projPts?: number; // half-PPR
   projPtsPpr?: number;
   projPtsStd?: number;
   // From the Sleeper players dump.
   sleeperId?: string;
+  // Dynasty consensus rank/tier (whole-roster value). Absent when the dynasty
+  // snapshot is missing or the player isn't dynasty-ranked.
+  dynastyRank?: number;
+  dynastyTier?: number;
   injuryStatus?: string; // Questionable / Out / IR / PUP / Sus...
   injuryBodyPart?: string; // e.g. "Hamstring" — only when injuryStatus is set
   injuryNotes?: string; // Sleeper's latest injury blurb, often absent
@@ -335,9 +340,19 @@ joinSource('Sleeper', sleeperSnapshot?.players, (player, row) => {
   if (row.adpHalfPpr !== null) player.sleeperAdp = Math.round(row.adpHalfPpr * 10) / 10;
   if (row.adpPpr !== null) player.sleeperAdpPpr = Math.round(row.adpPpr * 10) / 10;
   if (row.adpStd !== null) player.sleeperAdpStd = Math.round(row.adpStd * 10) / 10;
+  if (row.adp2qb !== null) player.sleeperAdp2qb = Math.round(row.adp2qb * 10) / 10;
   if (row.ptsHalfPpr != null && row.ptsHalfPpr > 0) player.projPts = Math.round(row.ptsHalfPpr * 10) / 10;
   if (row.ptsPpr != null && row.ptsPpr > 0) player.projPtsPpr = Math.round(row.ptsPpr * 10) / 10;
   if (row.ptsStd != null && row.ptsStd > 0) player.projPtsStd = Math.round(row.ptsStd * 10) / 10;
+});
+
+interface DynastyRow {
+  name: string; pos: string; team: string; rank: number; tier: number;
+}
+const dynastySnapshot = loadRawSnapshot<{ players: DynastyRow[] }>(`fp-dynasty.${SEASON}.json`);
+joinSource('Dynasty', dynastySnapshot?.players, (player, row) => {
+  if (Number.isFinite(row.rank)) player.dynastyRank = row.rank;
+  if (Number.isFinite(row.tier) && row.tier > 0) player.dynastyTier = row.tier;
 });
 
 interface SleeperPlayerRow {
