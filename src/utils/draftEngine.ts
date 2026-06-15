@@ -66,10 +66,14 @@ export interface DerivedDraftState {
 }
 
 // Draftable spots per team. IR is excluded: IR stash players aren't drafted.
+// Each field is coerced to 0: a rosterSlots object persisted before a slot
+// (e.g. SUPERFLEX) was added to the schema would otherwise sum to NaN, which
+// silently breaks rounds, maxBid, and totalPicks across the whole room.
 export function draftableSlotCount(slots: RosterSlots): number {
   return (
-    slots.QB + slots.RB + slots.WR + slots.TE + slots.FLEX + slots.SUPERFLEX +
-    slots.K + slots.DST + slots.BENCH
+    (slots.QB ?? 0) + (slots.RB ?? 0) + (slots.WR ?? 0) + (slots.TE ?? 0) +
+    (slots.FLEX ?? 0) + (slots.SUPERFLEX ?? 0) + (slots.K ?? 0) + (slots.DST ?? 0) +
+    (slots.BENCH ?? 0)
   );
 }
 

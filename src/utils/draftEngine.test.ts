@@ -62,6 +62,13 @@ describe('draftableSlotCount', () => {
     // QB1 + RB2 + WR2 + TE1 + FLEX1 + K1 + DST1 + BENCH2 = 11, IR ignored
     expect(draftableSlotCount(SLOTS)).toBe(11);
   });
+
+  it('treats a missing slot field as 0 (stale snapshot), never NaN', () => {
+    // A rosterSlots persisted before SUPERFLEX existed lacks the key; a NaN
+    // here cascades into Pick NaN/NaN and maxBid $0 across the whole room.
+    const { SUPERFLEX: _omit, ...withoutSuperflex } = SLOTS;
+    expect(draftableSlotCount(withoutSuperflex as RosterSlots)).toBe(11);
+  });
 });
 
 describe('deriveDraftState (auction)', () => {

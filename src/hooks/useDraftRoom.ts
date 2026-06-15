@@ -63,7 +63,10 @@ function configFromLeague(league: League): DraftRoomConfig {
           id: `team-${i + 1}`,
           name: `Team ${i + 1}`,
         }));
-  const rosterSlots = league.rosterSlots ?? DEFAULT_ROSTER_SLOTS;
+  // Spread over the defaults rather than fall back wholesale: a league
+  // snapshot cached before a slot field existed (e.g. SUPERFLEX) is present
+  // but missing that key, which would make draftableSlotCount NaN.
+  const rosterSlots = { ...DEFAULT_ROSTER_SLOTS, ...league.rosterSlots };
   // The platform marked which of last season's teams is the user's own;
   // carry that over so setup starts with "me" already correct. For Sleeper
   // also match the remembered user_id at read time: a cached snapshot bakes
@@ -97,6 +100,15 @@ function configFromLeague(league: League): DraftRoomConfig {
   };
 }
 
+// Repair a config that may have been persisted (league snapshot or saved
+// session) before the rosterSlots schema gained a field. Fills missing slots
+// from the defaults and recomputes rounds if it came back non-finite.
+function normalizeConfig(config: DraftRoomConfig): DraftRoomConfig {
+  const rosterSlots = { ...DEFAULT_ROSTER_SLOTS, ...config.rosterSlots };
+  const rounds = Number.isFinite(config.rounds) ? config.rounds : draftableSlotCount(rosterSlots);
+  return { ...config, rosterSlots, rounds };
+}
+
 function reducer(state: DraftRoomState, action: Action): DraftRoomState {
   switch (action.type) {
     case 'UPDATE_CONFIG': {
@@ -115,7 +127,7 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
       // A zero-round config would enter 'drafting' with totalPicks = 0 and
       // reject every event ("already complete") with no way out but Reset.
       // An auction budget under $1/slot can never fill a roster legally.
-      if (state.config.rounds < 1) return state;
+      if (!(state.config.rounds >= 1)) return state;
       if (state.config.draftType === 'auction' && state.config.budget < state.config.rounds) {
         return state;
       }
@@ -150,7 +162,7 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
     case 'RESUME':
       return {
         phase: action.session.phase,
-        config: action.session.config,
+        config: normalizeConfig(action.session.config),
         events: action.session.events,
       };
     default:
