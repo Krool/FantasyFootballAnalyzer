@@ -7,11 +7,16 @@
 // hydrateRoot) replaces it the moment React mounts, so there's no hydration
 // contract to keep; the injected markup is purely for crawlers and first paint.
 //
-// Two pages are emitted:
-//   1. dist/index.html        - homepage hero, manifesto, feature grid.
-//   2. dist/rankings/index.html - a real file (so /rankings is crawlable
-//      without the 404 SPA shim) holding a snapshot of the default half-PPR
-//      consensus rankings table built straight from the bundled pool.
+// Pages emitted:
+//   1. dist/index.html          - homepage hero, manifesto, feature grid.
+//   2. dist/rankings/index.html - top-200 half-PPR consensus rankings table.
+//   3. dist/draft-room/index.html - mock-draft / live-draft-room landing copy.
+//
+// Why real per-route files: GitHub Pages serves 404.html (the SPA shim) with an
+// HTTP 404 status, so crawlers refuse to index shim-routed paths. A real file
+// at dist/<route>/index.html returns 200 and is indexable. So every PUBLIC
+// route (the ones a guest can land on) gets its own prerendered file; gated
+// data routes stay on the shim and aren't meant to be indexed.
 //
 // Home content comes from the pure presentational components (HomeHero,
 // HomeManifesto, HomeFeatures) so SSR never touches the league form, platform
@@ -29,7 +34,6 @@ import { resolve } from 'node:path'
 
 const DIST_DIR = resolve(process.cwd(), 'dist')
 const DIST_HTML = resolve(DIST_DIR, 'index.html')
-const RANKINGS_DIR = resolve(DIST_DIR, 'rankings')
 const ROOT_PLACEHOLDER = '<div id="root"></div>'
 
 function esc(s: unknown): string {
@@ -79,21 +83,40 @@ function buildRankingsMarkup(
   )
 }
 
-// Swap the homepage head for rankings-specific title/description/canonical so
-// the static rankings page is its own indexable document.
-function customizeRankingsHead(html: string, season: number): string {
-  const title = `${season} Fantasy Football Draft Rankings (Free): Sleeper, ESPN, Yahoo`
-  const desc =
-    `Free ${season} fantasy football draft rankings and ADP. FantasyPros, ESPN, and ` +
-    `Sleeper boards side by side with auction values, half PPR by default. Sleeper, ` +
-    `ESPN, and Yahoo leagues, no login.`
-  let out = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
-  // Point canonical, og:url, and the JSON-LD url at /rankings (these all end
+// Crawlable landing copy for the Draft Room (the live page is the interactive
+// setup form, which can't be server-rendered, so this is descriptive content
+// targeting mock-draft / draft-simulator searches).
+function buildDraftRoomMarkup(season: number): string {
+  const features: Array<[string, string]> = [
+    ['Mock drafts', 'Practice snake or auction drafts against AI opponents with their own tendencies. Replay any run by its seed.'],
+    ['Live draft room', 'Track your real draft pick by pick with budget inflation, pick suggestions, and survival odds.'],
+    ['Auction and snake', 'Both formats, any league size, with dollar values and ADP scaled to your budget and roster.'],
+    ['Pick guidance', 'Best available by value, positional need, tiers, and runs as the board moves.'],
+  ]
+  const items = features.map(([h, p]) => `<li><h2>${esc(h)}</h2><p>${esc(p)}</p></li>`).join('')
+  return (
+    `<section><h1>${season} Fantasy Football Mock Draft Simulator and Live Draft Room</h1>` +
+    `<p>Free ${season} fantasy football mock draft simulator and live draft assistant. ` +
+    `Practice snake or auction drafts against AI, or track your live draft with budget ` +
+    `inflation, pick suggestions, and survival odds. Works with Sleeper, ESPN, and Yahoo ` +
+    `leagues. No login required.</p><ul>${items}</ul></section>`
+  )
+}
+
+// Swap the homepage head for per-route title/description/canonical so each
+// prerendered page is its own indexable document. homeDesc is the homepage's
+// description string (shared by meta, og, twitter, and JSON-LD); replacing it
+// updates every copy at once.
+function customizeHead(
+  html: string,
+  homeDesc: string | undefined,
+  page: { title: string; desc: string; path: string },
+): string {
+  let out = html.replace(/<title>[^<]*<\/title>/, `<title>${page.title}</title>`)
+  // Point canonical, og:url, and the JSON-LD url at the route (these all end
   // with the base path + slash; og:image ends with /og.png so it's untouched).
-  out = out.split('FantasyFootballAnalyzer/"').join('FantasyFootballAnalyzer/rankings"')
-  // Replace every copy of the home description (meta, og, twitter, JSON-LD).
-  const descMatch = html.match(/name="description" content="([^"]*)"/)
-  if (descMatch) out = out.split(descMatch[1]).join(desc)
+  out = out.split('FantasyFootballAnalyzer/"').join(`FantasyFootballAnalyzer/${page.path}"`)
+  if (homeDesc) out = out.split(homeDesc).join(page.desc)
   return out
 }
 
@@ -109,15 +132,26 @@ async function prerender() {
   })
 
   try {
-    // Capture the built shell (empty #root) before injecting anything, so both
+    // Capture the built shell (empty #root) before injecting anything, so all
     // pages start from the same template.
     const template = readFileSync(DIST_HTML, 'utf8')
     if (!template.includes(ROOT_PLACEHOLDER)) {
       console.warn('[prerender] #root placeholder not found in dist/index.html; skipping')
       return
     }
+    const homeDesc = template.match(/name="description" content="([^"]*)"/)?.[1]
     const inject = (markup: string) =>
       template.replace(ROOT_PLACEHOLDER, `<div id="root">${markup}</div>`)
+
+    // Write a real static file at dist/<path>/index.html (returns HTTP 200,
+    // so the route is crawlable, unlike the shim-routed 404 fallback).
+    const writeRoute = (page: { path: string; markup: string; title: string; desc: string }) => {
+      const html = customizeHead(inject(page.markup), homeDesc, page)
+      const dir = resolve(DIST_DIR, page.path)
+      mkdirSync(dir, { recursive: true })
+      writeFileSync(resolve(dir, 'index.html'), html)
+      console.log(`[prerender] wrote dist/${page.path}/index.html`)
+    }
 
     // --- Homepage ---
     const { HomeHero } = await vite.ssrLoadModule('/src/pages/HomeHero.tsx')
@@ -135,14 +169,29 @@ async function prerender() {
     writeFileSync(DIST_HTML, inject(homeMarkup))
     console.log(`[prerender] injected ${homeMarkup.length} bytes of homepage HTML`)
 
-    // --- Rankings (static, crawlable file at /rankings) ---
+    // --- Public guest routes (real files so they return 200 and index) ---
     const { POOL } = await vite.ssrLoadModule('/src/data/draftPool.ts')
     const { consensusAvg, sleeperAdpFor } = await vite.ssrLoadModule('/src/utils/consensus.ts')
-    const rankingsMarkup = buildRankingsMarkup(POOL, consensusAvg, sleeperAdpFor)
-    const rankingsHtml = customizeRankingsHead(inject(rankingsMarkup), POOL.season)
-    mkdirSync(RANKINGS_DIR, { recursive: true })
-    writeFileSync(resolve(RANKINGS_DIR, 'index.html'), rankingsHtml)
-    console.log(`[prerender] wrote dist/rankings/index.html (${rankingsMarkup.length} bytes of table)`)
+
+    writeRoute({
+      path: 'rankings',
+      markup: buildRankingsMarkup(POOL, consensusAvg, sleeperAdpFor),
+      title: `${POOL.season} Fantasy Football Draft Rankings (Free): Sleeper, ESPN, Yahoo`,
+      desc:
+        `Free ${POOL.season} fantasy football draft rankings and ADP. FantasyPros, ESPN, and ` +
+        `Sleeper boards side by side with auction values, half PPR by default. Sleeper, ` +
+        `ESPN, and Yahoo leagues, no login.`,
+    })
+
+    writeRoute({
+      path: 'draft-room',
+      markup: buildDraftRoomMarkup(POOL.season),
+      title: `Fantasy Football Mock Draft Simulator & Live Draft Room (Free)`,
+      desc:
+        `Free fantasy football mock draft simulator and live draft assistant. Practice snake ` +
+        `or auction drafts against AI, or track your live draft with budget inflation, pick ` +
+        `suggestions, and survival odds. Sleeper, ESPN, and Yahoo. No login.`,
+    })
   } finally {
     await vite.close()
   }

@@ -25,9 +25,10 @@ function gitSha(): string {
 
 // Emit sitemap.xml at build time so <lastmod> reflects the deploy date
 // automatically (manual `npm run deploy` and the daily rankings Action both
-// run a build). Two indexable URLs: the homepage and /rankings (the latter is
-// a real prerendered file written by scripts/prerender.tsx). Other routes live
-// behind the SPA 404 shim and aren't meant to be indexed.
+// run a build). Indexable URLs are the homepage, /rankings, and /draft-room,
+// each a real prerendered file written by scripts/prerender.tsx (so GitHub
+// Pages returns 200, not the 404 shim). Gated data routes stay on the shim and
+// aren't meant to be indexed.
 function sitemap(): Plugin {
   return {
     name: 'emit-sitemap',
@@ -41,6 +42,7 @@ function sitemap(): Plugin {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${url(SITE_URL, '1.0')}
 ${url(`${SITE_URL}rankings`, '0.9')}
+${url(`${SITE_URL}draft-room`, '0.8')}
 </urlset>
 `
       this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: xml })
