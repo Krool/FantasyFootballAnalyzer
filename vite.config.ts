@@ -1,10 +1,16 @@
 import { defineConfig } from 'vitest/config'
 import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import path from 'path'
 import { execSync } from 'node:child_process'
 
 const SITE_URL = 'https://krool.github.io/FantasyFootballAnalyzer/'
+
+// Source map upload only happens when an auth token is present, which is CI
+// only (GitHub secret). Local builds and PRs see no token, so the Sentry plugin
+// is skipped entirely and no maps are emitted, exactly as before.
+const SENTRY_AUTH_TOKEN = process.env.SENTRY_AUTH_TOKEN
 
 // Short SHA of the build, surfaced as the Sentry release so a production error
 // maps back to an exact deploy. Falls back to 'dev' when git isn't available
@@ -43,8 +49,29 @@ ${url(`${SITE_URL}rankings`, '0.9')}
 }
 
 export default defineConfig({
-  plugins: [react(), sitemap()],
+  plugins: [
+    react(),
+    sitemap(),
+    // De-minifies production stack traces in Sentry. Must come last. Uploads
+    // maps under the same release name as VITE_BUILD_SHA so they attach to the
+    // right deploy, then deletes them from dist so they're never published to
+    // gh-pages. Inert without SENTRY_AUTH_TOKEN (see above).
+    ...(SENTRY_AUTH_TOKEN
+      ? [
+          sentryVitePlugin({
+            org: process.env.SENTRY_ORG,
+            project: process.env.SENTRY_PROJECT,
+            authToken: SENTRY_AUTH_TOKEN,
+            release: { name: gitSha() },
+            sourcemaps: { filesToDeleteAfterUpload: ['./dist/**/*.map'] },
+          }),
+        ]
+      : []),
+  ],
   base: '/FantasyFootballAnalyzer/',
+  // 'hidden' emits maps for upload but no sourceMappingURL comment, so nothing
+  // dangles after the plugin deletes them. Off entirely when not uploading.
+  build: { sourcemap: SENTRY_AUTH_TOKEN ? 'hidden' : false },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

@@ -46,6 +46,12 @@ jobs:
 
       - name: Build
         run: npm run build
+        # Present only on master pushes (PRs from forks can't read secrets), so
+        # source maps upload to Sentry on real deploys and are skipped otherwise.
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
       # The prerender step degrades to an empty SPA on failure (exit 0) so the
       # unattended rankings deploy never breaks. That makes a broken prerender
