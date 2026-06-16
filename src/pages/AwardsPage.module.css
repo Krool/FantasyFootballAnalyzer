@@ -383,16 +383,34 @@
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.awardCard:hover .awardShareBtn,
-.awardShareBtn:focus-visible {
-  opacity: 1;
+/* Hover-reveal only where hover exists. Touch devices have no hover, so on
+   those the button stays visible (opacity: 1 above) instead of vanishing. */
+@media (hover: hover) and (pointer: fine) {
+  .awardShareBtn {
+    opacity: 0;
+  }
+  .awardCard:hover .awardShareBtn,
+  .awardShareBtn:focus-visible {
+    opacity: 1;
+  }
 }
 
 .awardShareBtn:hover {
   color: var(--lime);
   border-color: var(--lime);
+}
+
+/* On the lime-fill cards the default bone-dim button washes out, so ink it.
+   Opacity is left to the base/hover rules so desktop hover-reveal still works. */
+.awardCard:nth-child(3n+2) .awardShareBtn {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.awardCard:nth-child(3n+2) .awardShareBtn:hover {
+  color: var(--ink);
+  border-color: var(--ink);
 }
