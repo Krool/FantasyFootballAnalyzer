@@ -2,6 +2,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { League, LeagueCredentials } from '@/types';
 import {
   buildGuestLeague,
+  clearGuestSettings,
+  saveGuestSettings,
   settingsFromGuestLeague,
   type GuestSettings,
 } from '@/utils/guestLeague';
@@ -135,6 +137,9 @@ export function useLeague(): UseLeagueReturn {
         logger.debug('[useLeague] League loaded successfully:', loadedLeague?.name);
         setLeague(loadedLeague);
         cacheLeague(loadedLeague);
+        // A real connection supersedes any guest session: drop the persisted
+        // guest settings so a later logout + no-league visit starts clean.
+        clearGuestSettings();
         persistESPNCredentials(credentials);
         Analytics.leagueConnected(credentials.platform, credentials.leagueId);
         return loadedLeague;
@@ -230,6 +235,7 @@ export function useLeague(): UseLeagueReturn {
     setError(null);
     setCredentials(null);
     lastCredentialsRef.current = null;
+    clearGuestSettings();
   }, []);
 
   // Enter guest mode: synthesize a league from picked settings, no fetch.
@@ -244,6 +250,9 @@ export function useLeague(): UseLeagueReturn {
     setError(null);
     setIsLoading(false);
     setProgress(null);
+    // Persist so a reload (e.g. the post-redeploy chunk auto-reload) restores
+    // these picks instead of resetting the guest to defaults.
+    saveGuestSettings(settings);
     return guest;
   }, []);
 
@@ -252,7 +261,9 @@ export function useLeague(): UseLeagueReturn {
   const updateGuest = useCallback((patch: Partial<GuestSettings>) => {
     setLeague(prev => {
       if (!prev?.isGuest) return prev;
-      return buildGuestLeague({ ...settingsFromGuestLeague(prev), ...patch });
+      const next = { ...settingsFromGuestLeague(prev), ...patch };
+      saveGuestSettings(next);
+      return buildGuestLeague(next);
     });
   }, []);
 

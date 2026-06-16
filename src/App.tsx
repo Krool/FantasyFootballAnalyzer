@@ -5,7 +5,7 @@ import { GuestBanner } from '@/components/GuestBanner';
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import { HomePage } from '@/pages';
 import type { GuestDest } from '@/pages/GuestEntry';
-import { DEFAULT_GUEST_SETTINGS, type GuestSettings } from '@/utils/guestLeague';
+import { DEFAULT_GUEST_SETTINGS, loadGuestSettings, type GuestSettings } from '@/utils/guestLeague';
 
 // Lazy-load data-heavy pages for smaller initial bundle
 const DraftPage = lazy(() => import('@/pages/DraftPage').then(m => ({ default: m.DraftPage })));
@@ -44,7 +44,9 @@ import { isEmptyPreseason } from '@/utils/leaguePhase';
 // re-renders with the real page.
 function GuestAutoEnter({ onEnter }: { onEnter: (settings: GuestSettings) => void }) {
   useEffect(() => {
-    onEnter(DEFAULT_GUEST_SETTINGS);
+    // Restore a prior guest's picks if this is a reload (e.g. the post-redeploy
+    // chunk auto-reload), otherwise start from defaults.
+    onEnter(loadGuestSettings() ?? DEFAULT_GUEST_SETTINGS);
   }, [onEnter]);
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>

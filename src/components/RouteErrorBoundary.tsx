@@ -46,10 +46,14 @@ export class RouteErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       const error = this.state.error;
       // A dynamic import that 404s after a redeploy (stale chunk hashes on
-      // gh-pages) needs a reload, not a retry.
-      const chunkFailure = /Failed to fetch dynamically imported module|Loading chunk/i.test(
-        error?.message ?? '',
-      );
+      // gh-pages) needs a reload, not a retry. Each browser phrases the failure
+      // differently: Chrome "Failed to fetch dynamically imported module",
+      // Firefox "error loading dynamically imported module", Safari "Importing
+      // a module script failed", plus webpack-era "Loading chunk N failed".
+      const chunkFailure =
+        /(failed to fetch|error loading) dynamically imported module|importing a module script failed|loading chunk/i.test(
+          error?.message ?? '',
+        );
       return (
         <div
           style={{

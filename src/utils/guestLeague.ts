@@ -67,6 +67,43 @@ export function buildGuestLeague(
   };
 }
 
+// Guest state lives only in memory, so a reload (notably the chunk-failure
+// auto-reload after a redeploy) would otherwise drop the visitor back to
+// DEFAULT_GUEST_SETTINGS and lose the scoring/roster/format they just picked.
+// Persist the picked settings per-tab so a reload restores them; sessionStorage
+// (not localStorage) keeps "guest" a single-session notion that clears with the
+// tab. Reads are defensive: a malformed or partial blob falls back to defaults.
+const GUEST_SETTINGS_KEY = 'guest-settings';
+
+export function saveGuestSettings(settings: GuestSettings): void {
+  try {
+    sessionStorage.setItem(GUEST_SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // Private-mode / quota / disabled storage: in-memory state still works.
+  }
+}
+
+export function loadGuestSettings(): GuestSettings | null {
+  try {
+    const raw = sessionStorage.getItem(GUEST_SETTINGS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<GuestSettings>;
+    // Merge over defaults so a blob written by an older build (missing a newer
+    // field) can't produce an undefined setting that breaks the draft room.
+    return { ...DEFAULT_GUEST_SETTINGS, ...parsed };
+  } catch {
+    return null;
+  }
+}
+
+export function clearGuestSettings(): void {
+  try {
+    sessionStorage.removeItem(GUEST_SETTINGS_KEY);
+  } catch {
+    // Nothing to clean up if storage is unavailable.
+  }
+}
+
 // Recover the editable settings from a guest league so updateGuest can merge a
 // partial change and rebuild. scoringType is narrowed back to GuestScoring;
 // a guest league is never built with 'custom'.
