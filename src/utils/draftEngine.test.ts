@@ -131,6 +131,20 @@ describe('deriveDraftState (auction)', () => {
     expect(deriveDraftState(config, pool, two).onTheClockId).toBe('C');
   });
 
+  it('skips a full team in the nomination rotation (forfeited turn)', () => {
+    const cfg = makeConfig({ rounds: 2 });
+    // B wins two players and is rostered out; A and C still have room.
+    const events = [
+      sale('RB1', 'B', 5),
+      sale('RB2', 'B', 5),
+      sale('WR1', 'C', 5),
+      sale('WR2', 'A', 5),
+    ];
+    // The raw round-robin after 4 sales lands on B (index 1), but B is full,
+    // so the nomination forfeits forward to the next open team, C.
+    expect(deriveDraftState(cfg, pool, events).onTheClockId).toBe('C');
+  });
+
   it('undo (dropping the last event) re-derives the prior state exactly', () => {
     const events = [sale('RB1', 'A', 40), sale('WR1', 'B', 20), sale('QB1', 'C', 15)];
     const before = deriveDraftState(config, pool, events.slice(0, 2));

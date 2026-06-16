@@ -372,23 +372,6 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                     instead of submitting one sealed max bid
                   </label>
                 )}
-                <div className={styles.field}>
-                  <span className={styles.label}>Sim Seed (optional)</span>
-                  <input
-                    type="number"
-                    className={styles.input}
-                    placeholder="random"
-                    value={config.simSeed ?? ''}
-                    onChange={e => {
-                      // Number, not ||: 0 is a valid seed.
-                      const n = Number(e.target.value);
-                      updateConfig({
-                        simSeed: e.target.value === '' || Number.isNaN(n) ? undefined : n,
-                      });
-                    }}
-                    title="Same seed = the AI repeats the exact same picks and bids, so you can replay a mock with a different strategy"
-                  />
-                </div>
               </>
             )}
           </section>

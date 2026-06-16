@@ -97,6 +97,16 @@ export function loadDraftArchive(leagueKey: string): DraftRoomSession[] {
   }
 }
 
+// The most recent COMPLETED, real (non-mock) draft for a league: the live draft
+// you logged by hand, usable as the league's draft data. Mock drafts are
+// excluded so a practice run never masquerades as the real thing. Prefers the
+// active session if it finished, otherwise the newest live entry in the archive.
+export function loadCompletedLiveDraft(leagueKey: string): DraftRoomSession | null {
+  const active = loadDraftRoom(leagueKey);
+  if (active && active.phase === 'complete' && active.config.mode === 'live') return active;
+  return loadDraftArchive(leagueKey).find(s => s.config.mode === 'live') ?? null;
+}
+
 export function removeFromDraftArchive(leagueKey: string, savedAt: number): void {
   try {
     const next = loadDraftArchive(leagueKey).filter(s => s.savedAt !== savedAt);

@@ -25,6 +25,15 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
     t.draftPicks?.some(p => p.auctionValue !== undefined && p.auctionValue > 0)
   );
 
+  // A freshly-logged live draft (upcoming season) has no season stats yet, so
+  // grades, position ranks, and "whose draft won" would all be meaningless
+  // (every pick defaults to rank 999 = terrible). Show only the draft facts
+  // (player, team, cost) until results exist.
+  const hasResults = useMemo(
+    () => teams.some(t => t.draftPicks?.some(p => p.seasonPoints !== undefined)),
+    [teams],
+  );
+
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
   const [selectedPosition, setSelectedPosition] = useState<string>('all');
   const [sortField, setSortField] = useState<SortField>(isAuction ? 'cost' : 'pick');
@@ -230,15 +239,17 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
           </select>
         </div>
 
-        <div className={styles.summary}>
-          <span className={`grade-badge great`}>{summary.great} Great</span>
-          <span className={`grade-badge good`}>{summary.good} Good</span>
-          <span className={`grade-badge bad`}>{summary.bad} Bad</span>
-          <span className={`grade-badge terrible`}>{summary.terrible} Terrible</span>
-        </div>
+        {hasResults && (
+          <div className={styles.summary}>
+            <span className={`grade-badge great`}>{summary.great} Great</span>
+            <span className={`grade-badge good`}>{summary.good} Good</span>
+            <span className={`grade-badge bad`}>{summary.bad} Bad</span>
+            <span className={`grade-badge terrible`}>{summary.terrible} Terrible</span>
+          </div>
+        )}
       </div>
 
-      {leaderboard.length > 1 && (
+      {hasResults && leaderboard.length > 1 && (
         <div className={styles.leaderboard}>
           <h3 className={styles.leaderboardTitle}>Whose draft won?</h3>
           <div className={styles.leaderboardGrid}>
@@ -302,20 +313,24 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
               <th onClick={() => handleSort('team')} className={styles.sortable} role="button" aria-label="Sort by Team">
                 Fantasy Team{getSortIndicator('team')}
               </th>
-              <th onClick={() => handleSort('points')} className={styles.sortable} role="button" aria-label="Sort by Points">
-                Season Pts{getSortIndicator('points')}
-              </th>
-              <th onClick={() => handleSort('posRank')} className={styles.sortable} role="button" aria-label="Sort by Position Rank">
-                Pos Rank{getSortIndicator('posRank')}
-              </th>
-              {!isAuction && (
-                <th onClick={() => handleSort('value')} className={styles.sortable} role="button" aria-label="Sort by Value">
-                  Value{getSortIndicator('value')}
-                </th>
+              {hasResults && (
+                <>
+                  <th onClick={() => handleSort('points')} className={styles.sortable} role="button" aria-label="Sort by Points">
+                    Season Pts{getSortIndicator('points')}
+                  </th>
+                  <th onClick={() => handleSort('posRank')} className={styles.sortable} role="button" aria-label="Sort by Position Rank">
+                    Pos Rank{getSortIndicator('posRank')}
+                  </th>
+                  {!isAuction && (
+                    <th onClick={() => handleSort('value')} className={styles.sortable} role="button" aria-label="Sort by Value">
+                      Value{getSortIndicator('value')}
+                    </th>
+                  )}
+                  <th onClick={() => handleSort('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade">
+                    Grade{getSortIndicator('grade')}
+                  </th>
+                </>
               )}
-              <th onClick={() => handleSort('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade">
-                Grade{getSortIndicator('grade')}
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -348,22 +363,26 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
                 <td className={styles.fantasyTeam}>
                   <TeamLink teamId={pick.teamId} name={pick.teamName} />
                 </td>
-                <td className="font-mono text-right">
-                  {pick.seasonPoints !== undefined ? pick.seasonPoints.toFixed(1) : '-'}
-                </td>
-                <td className="font-mono text-center">
-                  {pick.positionRank < 999 ? `${pick.player.position}${pick.positionRank}` : '-'}
-                </td>
-                {!isAuction && (
-                  <td className={`font-mono text-center ${pick.valueOverExpected >= 0 ? 'grade-great' : 'grade-terrible'}`}>
-                    {formatValueOverExpected(pick.valueOverExpected)}
-                  </td>
+                {hasResults && (
+                  <>
+                    <td className="font-mono text-right">
+                      {pick.seasonPoints !== undefined ? pick.seasonPoints.toFixed(1) : '-'}
+                    </td>
+                    <td className="font-mono text-center">
+                      {pick.positionRank < 999 ? `${pick.player.position}${pick.positionRank}` : '-'}
+                    </td>
+                    {!isAuction && (
+                      <td className={`font-mono text-center ${pick.valueOverExpected >= 0 ? 'grade-great' : 'grade-terrible'}`}>
+                        {formatValueOverExpected(pick.valueOverExpected)}
+                      </td>
+                    )}
+                    <td>
+                      <span className={`grade-badge ${pick.grade}`}>
+                        {getGradeDisplayText(pick.grade)}
+                      </span>
+                    </td>
+                  </>
                 )}
-                <td>
-                  <span className={`grade-badge ${pick.grade}`}>
-                    {getGradeDisplayText(pick.grade)}
-                  </span>
-                </td>
               </tr>
             ))}
           </tbody>

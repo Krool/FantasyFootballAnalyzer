@@ -28,6 +28,39 @@
 }
 .subtitle::before { content: '◆ THE BOARD · '; }
 
+.sourceToggle {
+  display: inline-flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border: 2px solid var(--bone-dim);
+}
+
+.sourceOff,
+.sourceOn {
+  padding: 0.55rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--bone-dim);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.sourceOff + .sourceOff,
+.sourceOff + .sourceOn,
+.sourceOn + .sourceOff,
+.sourceOn + .sourceOn {
+  border-left: 2px solid var(--bone-dim);
+}
+.sourceOff:hover { color: var(--bone); }
+.sourceOn {
+  background: var(--lime);
+  color: var(--ink);
+}
+
 .empty {
   text-align: center;
   padding: 4rem 2rem;

@@ -1,14 +1,40 @@
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DraftTable } from '@/components';
 import type { League } from '@/types';
+import { POOL } from '@/data/draftPool';
+import { leagueKeyFor } from '@/hooks/useDraftRoom';
+import { loadCompletedLiveDraft } from '@/utils/draftRoomCache';
+import { liveDraftToTeams } from '@/utils/liveDraftToTeams';
 import styles from './DraftPage.module.css';
 
 interface DraftPageProps {
   league: League;
 }
 
+type Source = 'platform' | 'live';
+
 export function DraftPage({ league }: DraftPageProps) {
-  const hasDraftData = league.teams.some(team => team.draftPicks && team.draftPicks.length > 0);
+  const hasPlatformData = league.teams.some(team => team.draftPicks && team.draftPicks.length > 0);
+
+  // A live draft you logged by hand is read from localStorage and converted in
+  // memory; it never leaves the device. It stands in for (or beside) the
+  // platform's draft data, targeting the upcoming season the pool covers.
+  const liveData = useMemo(() => {
+    const session = loadCompletedLiveDraft(leagueKeyFor(league));
+    return session ? { ...liveDraftToTeams(session, POOL), season: session.config.season } : null;
+  }, [league]);
+
+  // Both sources can exist (last season's real draft + this year's live log).
+  // Default to whichever is present, platform first; the toggle only appears
+  // when there's an actual choice to make.
+  const [source, setSource] = useState<Source>(() => (hasPlatformData ? 'platform' : 'live'));
+  const showToggle = hasPlatformData && liveData !== null;
+  const active: Source = source === 'live' && liveData ? 'live' : hasPlatformData ? 'platform' : 'live';
+
+  const draftType = active === 'live' && liveData ? liveData.draftType : league.draftType;
+  const season = active === 'live' && liveData ? liveData.season : league.season;
+  const hasData = active === 'live' ? liveData !== null : hasPlatformData;
 
   return (
     <div className={styles.page}>
@@ -16,12 +42,38 @@ export function DraftPage({ league }: DraftPageProps) {
         <div className={styles.header}>
           <h1 className={styles.title}>Draft Analysis</h1>
           <p className={styles.subtitle}>
-            {league.season} {league.draftType === 'auction' ? 'Auction' : 'Snake'} Draft
+            {season} {draftType === 'auction' ? 'Auction' : 'Snake'} Draft
+            {active === 'live' && ' · logged live'}
           </p>
         </div>
 
-        {hasDraftData ? (
-          <DraftTable teams={league.teams} totalTeams={league.totalTeams} draftType={league.draftType} />
+        {showToggle && (
+          <div className={styles.sourceToggle} role="group" aria-label="Draft data source">
+            <button
+              type="button"
+              className={active === 'platform' ? styles.sourceOn : styles.sourceOff}
+              onClick={() => setSource('platform')}
+              title={`The draft ${league.platform} has on record for ${league.season}`}
+            >
+              Platform ({league.season})
+            </button>
+            <button
+              type="button"
+              className={active === 'live' ? styles.sourceOn : styles.sourceOff}
+              onClick={() => setSource('live')}
+              title={`The ${liveData?.season} draft you logged live in the Draft Room`}
+            >
+              Live log ({liveData?.season})
+            </button>
+          </div>
+        )}
+
+        {hasData ? (
+          active === 'live' && liveData ? (
+            <DraftTable teams={liveData.teams} totalTeams={liveData.totalTeams} draftType={liveData.draftType} />
+          ) : (
+            <DraftTable teams={league.teams} totalTeams={league.totalTeams} draftType={league.draftType} />
+          )
         ) : (
           <div className={styles.empty}>
             <h2>No Draft Data Available</h2>

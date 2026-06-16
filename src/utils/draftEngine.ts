@@ -263,10 +263,23 @@ export function deriveDraftState(
   if (!isComplete) {
     const orderedIds = config.teams.map(t => t.id);
     const n = orderedIds.length;
-    onTheClockId =
-      config.draftType === 'snake'
-        ? teamForPick(pickCount, orderedIds, config.snakeFormat)
-        : orderedIds[(((pickCount - keeperSaleCount) % n) + n) % n];
+    if (config.draftType === 'snake') {
+      onTheClockId = teamForPick(pickCount, orderedIds, config.snakeFormat);
+    } else {
+      // Auction nomination rotates in draft order, but a team with a full
+      // roster forfeits its turn: walk forward from the round-robin slot to
+      // the next team that can still add a player. Falls back to the raw
+      // slot if somehow every team is full (the draft would be complete).
+      const start = (((pickCount - keeperSaleCount) % n) + n) % n;
+      onTheClockId = orderedIds[start];
+      for (let i = 0; i < n; i++) {
+        const id = orderedIds[(start + i) % n];
+        if ((teams.get(id)?.openSlots ?? 0) > 0) {
+          onTheClockId = id;
+          break;
+        }
+      }
+    }
   }
 
   // Keepers are held out of the pool until auto-logged: snake keepers at their
