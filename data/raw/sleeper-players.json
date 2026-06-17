@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-06-16T12:36:37.692Z",
+ "fetchedAt": "2026-06-17T12:26:35.610Z",
  "data": {
   "players": [
    {
@@ -607,9 +607,9 @@
     "pos": "QB",
     "team": "DAL",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Knee",
+    "injuryNotes": "Soreness",
     "injuryStartDate": null,
     "yearsExp": 10,
     "depthChartOrder": 1
@@ -1145,7 +1145,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "4683",
@@ -1652,7 +1652,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "5638",
@@ -2016,7 +2016,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "6011",
@@ -3826,6 +3826,19 @@
     "depthChartOrder": 1
    },
    {
+    "sleeperId": "8114",
+    "name": "Erik Ezukanma",
+    "pos": "WR",
+    "team": "PHI",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 4,
+    "depthChartOrder": 8
+   },
+   {
     "sleeperId": "8116",
     "name": "Pierre Strong",
     "pos": "RB",
@@ -4304,7 +4317,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 8
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "8177",
@@ -4403,12 +4416,12 @@
     "pos": "WR",
     "team": "DEN",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Leg",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 8
+    "depthChartOrder": null
    },
    {
     "sleeperId": "8204",
@@ -4827,6 +4840,19 @@
     "depthChartOrder": 9
    },
    {
+    "sleeperId": "8755",
+    "name": "Kaden Davis",
+    "pos": "WR",
+    "team": "CHI",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 4,
+    "depthChartOrder": 8
+   },
+   {
     "sleeperId": "8756",
     "name": "Brandon Johnson",
     "pos": "WR",
@@ -4858,8 +4884,8 @@
     "pos": "TE",
     "team": "NO",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Knee",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
@@ -4902,7 +4928,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 3
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "8861",
@@ -5669,7 +5695,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "10228",
@@ -6059,7 +6085,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "11199",
@@ -6852,7 +6878,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "11608",
@@ -7120,8 +7146,8 @@
     "pos": "WR",
     "team": "LAC",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
@@ -7138,7 +7164,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 9
+    "depthChartOrder": 10
    },
    {
     "sleeperId": "11637",
@@ -7463,7 +7489,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 2
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "11821",
@@ -7978,8 +8004,8 @@
     "pos": "RB",
     "team": "NO",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -8121,8 +8147,8 @@
     "pos": "RB",
     "team": "DEN",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Shoulder",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -8451,7 +8477,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "12516",
@@ -8958,7 +8984,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 5
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "12718",
@@ -9494,19 +9520,6 @@
     "depthChartOrder": 7
    },
    {
-    "sleeperId": "12935",
-    "name": "Jakobie Keeney-James",
-    "pos": "WR",
-    "team": "GB",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 1,
-    "depthChartOrder": null
-   },
-   {
     "sleeperId": "12938",
     "name": "Jackson Meeks",
     "pos": "WR",
@@ -9570,19 +9583,6 @@
     "injuryStartDate": null,
     "yearsExp": 1,
     "depthChartOrder": 6
-   },
-   {
-    "sleeperId": "12959",
-    "name": "Bryce Pierre",
-    "pos": "TE",
-    "team": "CAR",
-    "status": "Inactive",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 1,
-    "depthChartOrder": null
    },
    {
     "sleeperId": "12961",
@@ -9719,6 +9719,19 @@
     "name": "Mark Redman",
     "pos": "TE",
     "team": "LAR",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 1,
+    "depthChartOrder": null
+   },
+   {
+    "sleeperId": "13032",
+    "name": "Marshall Lang",
+    "pos": "TE",
+    "team": "MIN",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
@@ -11229,7 +11242,7 @@
     "team": "DET",
     "status": "Active",
     "injuryStatus": "Out",
-    "injuryBodyPart": "Knee",
+    "injuryBodyPart": "Knee - ACL",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
