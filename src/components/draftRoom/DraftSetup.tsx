@@ -1,4 +1,5 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { League, RosterSlots, ScoringType } from '@/types';
 import type { DraftRoomTeam } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
@@ -40,12 +41,76 @@ const SNAKE_FORMAT_OPTIONS: Array<{ value: SnakeFormat; label: string; title: st
   { value: 'linear', label: 'Linear', title: 'Same order every round (common for dynasty rookie drafts)' },
 ];
 
+// Below this width the setup collapses into a scannable accordion: each
+// section shows only its title and a one-line summary until tapped open, and
+// the Start button sticks to the bottom of the viewport.
+const MOBILE_QUERY = '(max-width: 700px)';
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      && window.matchMedia(MOBILE_QUERY).matches,
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const onChange = () => setIsMobile(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return isMobile;
+}
+
+// A settings card whose body collapses behind its title. The header keeps a
+// one-line summary of the current values so the page stays scannable while
+// collapsed. Each card owns its open state from an initial default, so
+// rotating a phone never slams open sections shut.
+function CollapsibleSection({
+  title,
+  summary,
+  count,
+  defaultOpen,
+  children,
+}: {
+  title: string;
+  summary?: string;
+  count?: number;
+  defaultOpen: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className={styles.section}>
+      <h2 className={styles.sectionTitle}>
+        <button
+          type="button"
+          className={styles.sectionToggle}
+          aria-expanded={open}
+          onClick={() => setOpen(o => !o)}
+        >
+          <span className={styles.sectionName}>
+            {title}
+            {count != null && <span className={styles.sectionCount}>{count}</span>}
+          </span>
+          {!open && summary && <span className={styles.sectionSummary}>{summary}</span>}
+          <span className={styles.chevron} data-open={open || undefined} aria-hidden="true">
+            ▾
+          </span>
+        </button>
+      </h2>
+      {open && <div className={styles.sectionBody}>{children}</div>}
+    </section>
+  );
+}
+
 export function DraftSetup({ room, league }: DraftSetupProps) {
   const { config, updateConfig, start, resumable, resume, reset, resumeSession } = room;
   const meGroup = useId();
   const [archive, setArchive] = useState(() => loadDraftArchive(leagueKeyFor(league)));
   const [presets, setPresets] = useState<DraftPreset[]>(() => loadPresets());
   const [presetName, setPresetName] = useState('');
+  const isMobile = useIsMobile();
+  const sectionOpen = !isMobile;
 
   const keepersPerTeam = config.keepersPerTeam ?? 1;
   const escalation = config.keeperEscalation ?? 1;
@@ -183,6 +248,23 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
     .filter(Boolean)
     .join(' · ');
 
+  // One-line recaps shown in each collapsed section header so the whole setup
+  // reads at a glance on a phone without expanding anything.
+  const myTeam = config.teams.find(t => t.id === config.myTeamId);
+  const formatSummary = [
+    LEAGUE_TYPE_OPTIONS.find(o => o.value === leagueType)?.label,
+    isRookieDraft ? 'Rookie' : isAuction ? `$${config.budget} auction` : formatLabel,
+    !league.isGuest ? (config.mode === 'live' ? 'Live' : 'Mock') : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const scoringSummary = [scoringLabel, config.tePremium ? 'TEP' : null, config.sixPtPassTd ? '6pt TD' : null]
+    .filter(Boolean)
+    .join(' · ');
+  const rosterSummary = `${config.rounds} spots${config.rosterSlots.SUPERFLEX > 0 ? ' · Superflex' : ''}`;
+  const keeperSummary = keepersOn ? `On · ${keepersPerTeam}/team` : 'Off';
+  const teamsSummary = myTeam ? `${myTeam.name} is you` : 'Pick your team';
+
   const savedAt = resumable ? new Date(resumable.savedAt) : null;
 
   // Mirrors the reducer's START guards so the button can explain itself
@@ -235,8 +317,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
 
       <div className={styles.columns}>
         <div className={styles.column}>
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Format</h2>
+          <CollapsibleSection title="Format" summary={formatSummary} defaultOpen={sectionOpen}>
             <div className={styles.formatRow}>
               <div className={styles.field}>
                 <span className={styles.label}>League Type</span>
@@ -374,10 +455,9 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                 )}
               </>
             )}
-          </section>
+          </CollapsibleSection>
 
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Scoring</h2>
+          <CollapsibleSection title="Scoring" summary={scoringSummary} defaultOpen={sectionOpen}>
             <div className={styles.field}>
               <span className={styles.label}>Reception Points</span>
               <div className={styles.toggle}>
@@ -414,10 +494,9 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
               passing TDs are estimated from preset projections, not per-play
               scoring, so treat their bumps as approximate.
             </p>
-          </section>
+          </CollapsibleSection>
 
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Roster</h2>
+          <CollapsibleSection title="Roster" summary={rosterSummary} defaultOpen={sectionOpen}>
             <div className={styles.slotGrid}>
               {SLOT_KEYS.map(key => (
                 <div key={key} className={styles.field}>
@@ -436,11 +515,10 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
               {config.rounds} draftable spots per team, {config.teams.length * config.rounds} total
               picks. IR slots are not drafted.
             </p>
-          </section>
+          </CollapsibleSection>
 
           {!isDynasty && anyKeeperCandidates && (
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>Keepers</h2>
+            <CollapsibleSection title="Keepers" summary={keeperSummary} defaultOpen={sectionOpen}>
               <label className={styles.keeperToggle}>
                 <input
                   type="checkbox"
@@ -552,15 +630,17 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                   </div>
                 </>
               )}
-            </section>
+            </CollapsibleSection>
           )}
         </div>
 
         <div className={styles.column}>
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>
-              Teams <span className={styles.sectionCount}>{config.teams.length}</span>
-            </h2>
+          <CollapsibleSection
+            title="Teams"
+            count={config.teams.length}
+            summary={teamsSummary}
+            defaultOpen={sectionOpen}
+          >
             <p className={styles.hint}>
               {config.draftType === 'auction'
                 ? 'Order sets the nomination rotation.'
@@ -610,12 +690,11 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
             <button type="button" className={styles.btn} onClick={addTeam}>
               + Add Team
             </button>
-          </section>
+          </CollapsibleSection>
         </div>
       </div>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Presets</h2>
+      <CollapsibleSection title="Presets" count={presets.length || undefined} defaultOpen={sectionOpen}>
         <p className={styles.hint}>
           Save these settings (scoring, roster, format, budget) to reuse on any league or mock.
           Teams and keepers are not stored.
@@ -656,28 +735,10 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
             ))}
           </div>
         )}
-      </section>
-
-      <div className={styles.startRow}>
-        <div className={styles.summary} title="What you're about to start">
-          {summary}
-        </div>
-        <button
-          type="button"
-          className={styles.btnPrimary}
-          onClick={start}
-          disabled={startBlocked !== null}
-        >
-          Start {config.mode === 'mock' ? 'Mock ' : ''}Draft
-        </button>
-        {startBlocked && <p className={styles.hint}>{startBlocked}</p>}
-      </div>
+      </CollapsibleSection>
 
       {archive.length > 0 && (
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>
-            Past Drafts <span className={styles.sectionCount}>{archive.length}</span>
-          </h2>
+        <CollapsibleSection title="Past Drafts" count={archive.length} defaultOpen={sectionOpen}>
           <p className={styles.hint}>
             Every completed draft is kept here. Open one to revisit its recap and pick log.
           </p>
@@ -715,8 +776,23 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
               </div>
             ))}
           </div>
-        </section>
+        </CollapsibleSection>
       )}
+
+      <div className={styles.startRow}>
+        <div className={styles.summary} title="What you're about to start">
+          {summary}
+        </div>
+        <button
+          type="button"
+          className={styles.btnPrimary}
+          onClick={start}
+          disabled={startBlocked !== null}
+        >
+          Start {config.mode === 'mock' ? 'Mock ' : ''}Draft
+        </button>
+        {startBlocked && <p className={styles.hint}>{startBlocked}</p>}
+      </div>
     </div>
   );
 }

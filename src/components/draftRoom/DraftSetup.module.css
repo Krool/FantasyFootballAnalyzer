@@ -72,16 +72,74 @@
 }
 
 .sectionTitle {
+  margin: 0;
+  line-height: 0.95;
+}
+
+/* The whole header is the collapse toggle, so it has to look like a heading
+   while behaving like a button. */
+.sectionToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--bone);
+  cursor: pointer;
+  text-align: left;
+}
+
+.sectionName {
+  flex: none;
   font-family: var(--font-headline);
   font-size: 1.5rem;
   text-transform: uppercase;
   letter-spacing: -0.02em;
   line-height: 0.95;
-  margin: 0 0 1rem;
   color: var(--bone);
 }
 
+.sectionSummary {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+
+.chevron {
+  flex: none;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--bone-dim);
+  transition: transform 0.18s ease;
+  transform: rotate(-90deg);
+}
+
+.sectionToggle:hover .chevron {
+  color: var(--lime);
+}
+
+.chevron[data-open] {
+  transform: rotate(0deg);
+}
+
+.sectionBody {
+  margin-top: 1.1rem;
+}
+
 .sectionCount {
+  margin-left: 0.4rem;
   font-family: var(--font-mono);
   font-size: 0.9rem;
   color: var(--lime);
@@ -462,4 +520,88 @@
   font-size: 0.72rem;
   letter-spacing: 0.05em;
   color: var(--bone-dim);
+}
+
+/* Mobile: the collapsed accordion headers carry the scanning load, so shrink
+   the headline a touch, let each team row breathe over two lines, and pin the
+   Start action to the bottom of the viewport instead of burying it under every
+   section. */
+@media (max-width: 700px) {
+  .sectionName {
+    font-size: 1.2rem;
+  }
+
+  .teamRow {
+    flex-wrap: wrap;
+    gap: 0.5rem 0.6rem;
+  }
+
+  .teamRow .input {
+    flex: 1 1 200px;
+  }
+
+  .teamButtons {
+    margin-left: auto;
+  }
+
+  .startRow {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    margin-top: 0;
+    padding: 0.8rem 0 max(0.8rem, env(safe-area-inset-bottom));
+    background: var(--ink);
+    border-top: 2px solid var(--bone);
+  }
+
+  .startRow .summary {
+    margin-right: 0;
+    text-align: center;
+  }
+
+  .startRow .btnPrimary {
+    width: 100%;
+    padding: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .startRow .hint {
+    margin: 0;
+    text-align: center;
+  }
+}
+
+/* Touch screens: every interactive control clears the 44px minimum target. */
+@media (pointer: coarse) {
+  .toggleOn,
+  .toggleOff {
+    min-height: 44px;
+  }
+
+  .iconBtn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* 16px keeps iOS Safari from auto-zooming the viewport on focus, which
+     otherwise yanks the layout around every time you tap a field. */
+  .input,
+  .keeperSelect,
+  .keeperPrice {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .meLabel input,
+  .keeperToggle input {
+    width: 20px;
+    height: 20px;
+  }
+
+  .sectionToggle {
+    min-height: 44px;
+  }
 }
