@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-06-22T13:00:03.886Z",
+ "fetchedAt": "2026-06-23T12:02:31.721Z",
  "data": {
   "players": [
    {
@@ -6440,7 +6440,7 @@
    },
    {
     "sleeperId": "11506",
-    "name": "Jalen Cropper",
+    "name": "Jalen Moreno-Cropper",
     "pos": "WR",
     "team": "NO",
     "status": "Active",
@@ -7762,7 +7762,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 6
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "12045",
@@ -8173,8 +8173,8 @@
     "pos": "RB",
     "team": "NYG",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Ankle",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -10877,12 +10877,12 @@
     "pos": "RB",
     "team": "BUF",
     "status": "Inactive",
-    "injuryStatus": "IR",
+    "injuryStatus": "Questionable",
     "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 5
+    "depthChartOrder": null
    },
    {
     "sleeperId": "13328",
