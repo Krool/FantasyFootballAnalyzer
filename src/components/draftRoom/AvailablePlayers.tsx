@@ -117,8 +117,8 @@ export function AvailablePlayers({
   };
 
   // Sorts here are fixed-direction (rank/ADP ascending, money descending).
-  const ariaSortFor = (key: typeof sortBy): 'ascending' | 'descending' | undefined =>
-    sortBy === key ? (key === 'rank' || key === 'adp' ? 'ascending' : 'descending') : undefined;
+  const ariaSortFor = (key: typeof sortBy): 'ascending' | 'descending' | 'none' =>
+    sortBy === key ? (key === 'rank' || key === 'adp' ? 'ascending' : 'descending') : 'none';
 
   const sortKeyDown = (key: typeof sortBy) => (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -218,6 +218,7 @@ export function AvailablePlayers({
         <input
           ref={inputRef}
           className={styles.search}
+          aria-label="Search available players"
           placeholder="Search available players... ( / then ↑↓ Enter )"
           value={query}
           onChange={e => {
@@ -243,6 +244,7 @@ export function AvailablePlayers({
               key={pos}
               type="button"
               className={posFilter === pos ? styles.chipOn : styles.chip}
+              aria-pressed={posFilter === pos}
               onClick={() => {
                 playFilter();
                 setPosFilter(pos);

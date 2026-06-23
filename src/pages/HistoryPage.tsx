@@ -212,7 +212,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
         </div>
 
         {isLoading && (
-          <div className={styles.loading} aria-label="Loading historical data">
+          <div className={styles.loading} role="status" aria-label="Loading historical data">
             {/* Skeletons hold the layout: this page walks several seasons of
                 API calls and a bare spinner reads as broken after 5 seconds. */}
             <div className={styles.skeletonRow}>
@@ -227,7 +227,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
           </div>
         )}
 
-        {error && <div className={styles.error}>{error}</div>}
+        {error && <div className={styles.error} role="alert">{error}</div>}
 
         {!isLoading && history.length > 0 && (
           <>

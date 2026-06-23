@@ -385,6 +385,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                   <input
                     type="number"
                     className={styles.input}
+                    aria-label="Budget per team"
                     min={config.rounds}
                     value={config.budget}
                     onChange={e => updateConfig({ budget: Number(e.target.value) || 0 })}
@@ -504,6 +505,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                   <input
                     type="number"
                     className={styles.input}
+                    aria-label={`${key} roster slots`}
                     min={0}
                     value={config.rosterSlots[key]}
                     onChange={e => setSlot(key, Number(e.target.value) || 0)}
@@ -537,6 +539,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                       <input
                         type="number"
                         className={styles.input}
+                        aria-label="Keepers per team"
                         min={1}
                         max={config.rounds}
                         value={keepersPerTeam}
@@ -549,6 +552,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                         <input
                           type="number"
                           className={styles.input}
+                          aria-label="Rounds earlier"
                           min={0}
                           max={config.rounds}
                           value={escalation}
@@ -589,6 +593,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                                 <div key={i} className={styles.keeperSlot}>
                                   <select
                                     className={styles.keeperSelect}
+                                    aria-label={`Keeper ${i + 1} for ${team.name}`}
                                     value={selectedId}
                                     onChange={e => setTeamKeeperAt(team.id, i, e.target.value)}
                                   >
@@ -612,6 +617,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                                     <input
                                       type="number"
                                       className={styles.keeperPrice}
+                                      aria-label={`Keeper ${i + 1} price for ${team.name}`}
                                       min={1}
                                       value={kept?.keeperPrice ?? 1}
                                       onChange={e =>
@@ -653,6 +659,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                   <span className={styles.teamIndex}>{String(i + 1).padStart(2, '0')}</span>
                   <input
                     className={styles.input}
+                    aria-label={`Team ${i + 1} name`}
                     value={team.name}
                     onChange={e =>
                       setTeams(config.teams.map(t => (t.id === team.id ? { ...t, name: e.target.value } : t)))
@@ -702,6 +709,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
         <div className={styles.presetSave}>
           <input
             className={styles.input}
+            aria-label="Preset name"
             placeholder="Name this setup"
             value={presetName}
             onChange={e => setPresetName(e.target.value)}

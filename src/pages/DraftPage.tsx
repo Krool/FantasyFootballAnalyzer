@@ -52,6 +52,7 @@ export function DraftPage({ league }: DraftPageProps) {
             <button
               type="button"
               className={active === 'platform' ? styles.sourceOn : styles.sourceOff}
+              aria-pressed={active === 'platform'}
               onClick={() => setSource('platform')}
               title={`The draft ${league.platform} has on record for ${league.season}`}
             >
@@ -60,6 +61,7 @@ export function DraftPage({ league }: DraftPageProps) {
             <button
               type="button"
               className={active === 'live' ? styles.sourceOn : styles.sourceOff}
+              aria-pressed={active === 'live'}
               onClick={() => setSource('live')}
               title={`The ${liveData?.season} draft you logged live in the Draft Room`}
             >

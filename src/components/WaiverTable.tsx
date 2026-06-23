@@ -204,6 +204,17 @@ export function WaiverTable({ teams, platform, pointsBasis }: WaiverTableProps) 
     return sortDirection === 'asc' ? ' ↑' : ' ↓';
   };
 
+  // Keyboard activation for the role="button" sortable headers (Enter/Space).
+  const handleSortKeyDown = (field: SortField) => (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleSort(field);
+    }
+  };
+
+  const ariaSortFor = (field: SortField): 'ascending' | 'descending' | 'none' =>
+    sortField === field ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none';
+
   // Calculate team totals
   const teamTotals = useMemo(() => {
     const totals = new Map<string, { points: number; par: number; pickups: number; faab: number }>();
@@ -298,30 +309,30 @@ export function WaiverTable({ teams, platform, pointsBasis }: WaiverTableProps) 
         <table className={`table ${styles.table}`}>
           <thead>
             <tr>
-              <th onClick={() => handleSort('week')} className={styles.sortable} role="button" aria-label="Sort by Week">
+              <th onClick={() => handleSort('week')} onKeyDown={handleSortKeyDown('week')} tabIndex={0} aria-sort={ariaSortFor('week')} className={styles.sortable} role="button" aria-label="Sort by Week">
                 Week{getSortIndicator('week')}
               </th>
-              <th onClick={() => handleSort('team')} className={styles.sortable} role="button" aria-label="Sort by Team">
+              <th onClick={() => handleSort('team')} onKeyDown={handleSortKeyDown('team')} tabIndex={0} aria-sort={ariaSortFor('team')} className={styles.sortable} role="button" aria-label="Sort by Team">
                 Fantasy Team{getSortIndicator('team')}
               </th>
-              <th onClick={() => handleSort('player')} className={styles.sortable} role="button" aria-label="Sort by Player">
+              <th onClick={() => handleSort('player')} onKeyDown={handleSortKeyDown('player')} tabIndex={0} aria-sort={ariaSortFor('player')} className={styles.sortable} role="button" aria-label="Sort by Player">
                 Player{getSortIndicator('player')}
               </th>
-              <th onClick={() => handleSort('type')} className={styles.sortable} role="button" aria-label="Sort by Type">
+              <th onClick={() => handleSort('type')} onKeyDown={handleSortKeyDown('type')} tabIndex={0} aria-sort={ariaSortFor('type')} className={styles.sortable} role="button" aria-label="Sort by Type">
                 Type{getSortIndicator('type')}
               </th>
-              <th onClick={() => handleSort('par')} className={styles.sortable} role="button" aria-label="Sort by PAR">
+              <th onClick={() => handleSort('par')} onKeyDown={handleSortKeyDown('par')} tabIndex={0} aria-sort={ariaSortFor('par')} className={styles.sortable} role="button" aria-label="Sort by PAR">
                 PAR{getSortIndicator('par')}
               </th>
-              <th onClick={() => handleSort('points')} className={styles.sortable} role="button" aria-label="Sort by Points" title={pointsTitle}>
+              <th onClick={() => handleSort('points')} onKeyDown={handleSortKeyDown('points')} tabIndex={0} aria-sort={ariaSortFor('points')} className={styles.sortable} role="button" aria-label="Sort by Points" title={pointsTitle}>
                 {pointsLabel}{getSortIndicator('points')}
               </th>
               {hasGamesData && (
                 <>
-                  <th onClick={() => handleSort('games')} className={styles.sortable} role="button" aria-label="Sort by Games">
+                  <th onClick={() => handleSort('games')} onKeyDown={handleSortKeyDown('games')} tabIndex={0} aria-sort={ariaSortFor('games')} className={styles.sortable} role="button" aria-label="Sort by Games">
                     Games{getSortIndicator('games')}
                   </th>
-                  <th onClick={() => handleSort('ppg')} className={styles.sortable} role="button" aria-label="Sort by PPG">
+                  <th onClick={() => handleSort('ppg')} onKeyDown={handleSortKeyDown('ppg')} tabIndex={0} aria-sort={ariaSortFor('ppg')} className={styles.sortable} role="button" aria-label="Sort by PPG">
                     PPG{getSortIndicator('ppg')}
                   </th>
                 </>
@@ -380,7 +391,7 @@ export function WaiverTable({ teams, platform, pointsBasis }: WaiverTableProps) 
 
       {displayPickups.length === 0 && (
         <div className={styles.empty}>
-          <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
             <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
             <circle cx="8.5" cy="7" r="4" />
             <path d="M20 8v6" />

@@ -168,7 +168,7 @@ export function TeamsPage({ league }: TeamsPageProps) {
                   <tr>
                     <th />
                     {sortedTeams.map(t => (
-                      <th key={t.id} title={t.name}>
+                      <th key={t.id} scope="col" title={t.name}>
                         {shortName(t.name)}
                       </th>
                     ))}
@@ -177,7 +177,7 @@ export function TeamsPage({ league }: TeamsPageProps) {
                 <tbody>
                   {sortedTeams.map(row => (
                     <tr key={row.id}>
-                      <th title={row.name}>{shortName(row.name)}</th>
+                      <th scope="row" title={row.name}>{shortName(row.name)}</th>
                       {sortedTeams.map(col => {
                         if (row.id === col.id) {
                           return <td key={col.id} className={styles.matrixSelf}>—</td>;

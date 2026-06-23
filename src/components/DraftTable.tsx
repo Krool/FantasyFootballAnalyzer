@@ -148,6 +148,19 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
     return sortDirection === 'asc' ? ' ↑' : ' ↓';
   };
 
+  // Keyboard activation for the role="button" sortable headers (Enter/Space),
+  // so they're operable without a mouse.
+  const handleSortKeyDown = (field: SortField) => (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleSort(field);
+    }
+  };
+
+  // aria-sort for the column currently driving the order; 'none' otherwise.
+  const ariaSortFor = (field: SortField): 'ascending' | 'descending' | 'none' =>
+    sortField === field ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none';
+
   // Calculate summary stats. Keepers are excluded: a kept league-winner is
   // last year's skill, not this draft's.
   const summary = useMemo(() => {
@@ -291,42 +304,42 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
           <thead>
             <tr>
               {isAuction ? (
-                <th onClick={() => handleSort('cost')} className={styles.sortable} role="button" aria-label="Sort by Cost">
+                <th onClick={() => handleSort('cost')} onKeyDown={handleSortKeyDown('cost')} tabIndex={0} aria-sort={ariaSortFor('cost')} className={styles.sortable} role="button" aria-label="Sort by Cost">
                   Cost{getSortIndicator('cost')}
                 </th>
               ) : (
                 <>
-                  <th onClick={() => handleSort('pick')} className={styles.sortable} role="button" aria-label="Sort by Pick">
+                  <th onClick={() => handleSort('pick')} onKeyDown={handleSortKeyDown('pick')} tabIndex={0} aria-sort={ariaSortFor('pick')} className={styles.sortable} role="button" aria-label="Sort by Pick">
                     Pick{getSortIndicator('pick')}
                   </th>
-                  <th onClick={() => handleSort('round')} className={styles.sortable} role="button" aria-label="Sort by Round">
+                  <th onClick={() => handleSort('round')} onKeyDown={handleSortKeyDown('round')} tabIndex={0} aria-sort={ariaSortFor('round')} className={styles.sortable} role="button" aria-label="Sort by Round">
                     Rd{getSortIndicator('round')}
                   </th>
                 </>
               )}
-              <th onClick={() => handleSort('player')} className={styles.sortable} role="button" aria-label="Sort by Player">
+              <th onClick={() => handleSort('player')} onKeyDown={handleSortKeyDown('player')} tabIndex={0} aria-sort={ariaSortFor('player')} className={styles.sortable} role="button" aria-label="Sort by Player">
                 Player{getSortIndicator('player')}
               </th>
-              <th onClick={() => handleSort('position')} className={styles.sortable} role="button" aria-label="Sort by Position">
+              <th onClick={() => handleSort('position')} onKeyDown={handleSortKeyDown('position')} tabIndex={0} aria-sort={ariaSortFor('position')} className={styles.sortable} role="button" aria-label="Sort by Position">
                 Pos{getSortIndicator('position')}
               </th>
-              <th onClick={() => handleSort('team')} className={styles.sortable} role="button" aria-label="Sort by Team">
+              <th onClick={() => handleSort('team')} onKeyDown={handleSortKeyDown('team')} tabIndex={0} aria-sort={ariaSortFor('team')} className={styles.sortable} role="button" aria-label="Sort by Team">
                 Fantasy Team{getSortIndicator('team')}
               </th>
               {hasResults && (
                 <>
-                  <th onClick={() => handleSort('points')} className={styles.sortable} role="button" aria-label="Sort by Points">
+                  <th onClick={() => handleSort('points')} onKeyDown={handleSortKeyDown('points')} tabIndex={0} aria-sort={ariaSortFor('points')} className={styles.sortable} role="button" aria-label="Sort by Points">
                     Season Pts{getSortIndicator('points')}
                   </th>
-                  <th onClick={() => handleSort('posRank')} className={styles.sortable} role="button" aria-label="Sort by Position Rank">
+                  <th onClick={() => handleSort('posRank')} onKeyDown={handleSortKeyDown('posRank')} tabIndex={0} aria-sort={ariaSortFor('posRank')} className={styles.sortable} role="button" aria-label="Sort by Position Rank">
                     Pos Rank{getSortIndicator('posRank')}
                   </th>
                   {!isAuction && (
-                    <th onClick={() => handleSort('value')} className={styles.sortable} role="button" aria-label="Sort by Value">
+                    <th onClick={() => handleSort('value')} onKeyDown={handleSortKeyDown('value')} tabIndex={0} aria-sort={ariaSortFor('value')} className={styles.sortable} role="button" aria-label="Sort by Value">
                       Value{getSortIndicator('value')}
                     </th>
                   )}
-                  <th onClick={() => handleSort('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade">
+                  <th onClick={() => handleSort('grade')} onKeyDown={handleSortKeyDown('grade')} tabIndex={0} aria-sort={ariaSortFor('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade">
                     Grade{getSortIndicator('grade')}
                   </th>
                 </>
@@ -391,7 +404,7 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
 
       {displayPicks.length === 0 && (
         <div className={styles.empty}>
-          <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
             <path d="M12 2L2 7l10 5 10-5-10-5z" />
             <path d="M2 17l10 5 10-5" />
             <path d="M2 12l10 5 10-5" />

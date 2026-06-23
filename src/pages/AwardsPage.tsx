@@ -130,15 +130,15 @@ export function AwardsPage({ league }: AwardsPageProps) {
               <table>
                 <thead>
                   <tr>
-                    <th>Team</th>
-                    <th>Record</th>
-                    <th>Expected</th>
-                    <th>Luck</th>
-                    <th title="Points-for rank vs wins rank: scoring like the #2 team while sitting #7 in wins is the schedule's fault">
+                    <th scope="col">Team</th>
+                    <th scope="col">Record</th>
+                    <th scope="col">Expected</th>
+                    <th scope="col">Luck</th>
+                    <th scope="col" title="Points-for rank vs wins rank: scoring like the #2 team while sitting #7 in wins is the schedule's fault">
                       PF vs W
                     </th>
-                    <th>All-Play</th>
-                    <th>Close Games</th>
+                    <th scope="col">All-Play</th>
+                    <th scope="col">Close Games</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -15,7 +15,9 @@ import { normalizeName } from '@/utils/playerNames';
 import { draftValues } from '@/utils/projectionValues';
 import styles from './RankingsPage.module.css';
 
-const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST'];
+const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DST'];
+// FLEX collapses the three flex-eligible positions into one filter.
+const FLEX_POSITIONS = new Set(['RB', 'WR', 'TE']);
 const MAX_ROWS = 300;
 
 type SortKey =
@@ -66,6 +68,33 @@ export function RankingsPage({ league, onUpdateGuest }: RankingsPageProps) {
   // Superflex leagues read Sleeper's 2QB ADP market (QBs go far earlier), so
   // the board's ADP column, sort, and delta match the mock AI's behavior.
   const superflex = (league.rosterSlots?.SUPERFLEX ?? 0) > 0;
+  // Hide a position chip when the league rosters no slot that can play it.
+  // Leagues without rosterSlots (and guests) fall back to the default slots,
+  // which cover every position. A flex spot keeps RB/WR/TE alive without a
+  // dedicated starter; superflex keeps QB alive.
+  const positions = useMemo(() => {
+    const slots = league.rosterSlots ?? DEFAULT_ROSTER_SLOTS;
+    const hasFlex = slots.FLEX > 0 || slots.SUPERFLEX > 0;
+    const playable = (pos: string) => {
+      switch (pos) {
+        case 'QB':
+          return slots.QB > 0 || slots.SUPERFLEX > 0;
+        case 'RB':
+        case 'WR':
+        case 'TE':
+          return slots[pos] > 0 || hasFlex;
+        case 'FLEX':
+          return hasFlex;
+        case 'K':
+          return slots.K > 0;
+        case 'DST':
+          return slots.DST > 0;
+        default:
+          return true; // ALL
+      }
+    };
+    return POSITIONS.filter(playable);
+  }, [league.rosterSlots]);
   const source = platformRankSource(league.platform, scoring, superflex);
   const yahoo = useYahooValues(POOL);
 
@@ -120,7 +149,10 @@ export function RankingsPage({ league, onUpdateGuest }: RankingsPageProps) {
   const rows = useMemo(() => {
     const q = normalizeName(deferredQuery);
     const filtered = POOL.players
-      .filter(p => posFilter === 'ALL' || p.pos === posFilter)
+      .filter(p =>
+        posFilter === 'ALL' ||
+        (posFilter === 'FLEX' ? FLEX_POSITIONS.has(p.pos) : p.pos === posFilter),
+      )
       .filter(p => q === '' || normalizeName(p.name).includes(q));
     const avg = (p: PoolPlayer) => avgById.get(p.id) ?? p.overallRank;
     const stat = (p: PoolPlayer): number | undefined => {
@@ -167,8 +199,16 @@ export function RankingsPage({ league, onUpdateGuest }: RankingsPageProps) {
       <th
         className={`${styles.num} ${styles.sortable} ${active ? styles.sorted : ''}`}
         onClick={() => setSort(key)}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setSort(key);
+          }
+        }}
+        role="button"
+        tabIndex={0}
         title={`${title}. ${active ? 'Click to reverse the order.' : 'Click to sort.'}`}
-        aria-sort={active ? (desc ? 'descending' : 'ascending') : undefined}
+        aria-sort={active ? (desc ? 'descending' : 'ascending') : 'none'}
       >
         {label}
         {active && <span className={styles.sortArrow}>{desc ? '▼' : '▲'}</span>}
@@ -254,6 +294,7 @@ export function RankingsPage({ league, onUpdateGuest }: RankingsPageProps) {
           <button
             type="button"
             className={viewTab === 'snake' ? styles.tabOn : styles.tab}
+            aria-pressed={viewTab === 'snake'}
             onClick={() => setView('snake')}
             title="Pick-position view: each site's ADP side by side"
           >
@@ -262,13 +303,14 @@ export function RankingsPage({ league, onUpdateGuest }: RankingsPageProps) {
           <button
             type="button"
             className={viewTab === 'auction' ? styles.tabOn : styles.tab}
+            aria-pressed={viewTab === 'auction'}
             onClick={() => setView('auction')}
             title="Dollar view: each site's auction price side by side"
           >
             Auction
           </button>
           {auctionView && (
-            <span className={styles.yahooStatus}>
+            <span className={styles.yahooStatus} role="status">
               {yahoo.status === 'ready' &&
                 `Yahoo prices on (${yahoo.costs?.size ?? 0} players matched)`}
               {yahoo.status === 'loading' && 'Loading Yahoo prices...'}
@@ -282,21 +324,29 @@ export function RankingsPage({ league, onUpdateGuest }: RankingsPageProps) {
         <div className={styles.controls}>
           <input
             className={styles.search}
+            aria-label="Search players"
             placeholder="Search players..."
             value={query}
             onChange={e => setQuery(e.target.value)}
           />
           <div className={styles.chips}>
-            {POSITIONS.map(pos => (
+            {positions.map(pos => (
               <button
                 key={pos}
                 type="button"
                 className={posFilter === pos ? styles.chipOn : styles.chip}
+                aria-pressed={posFilter === pos}
                 onClick={() => {
                   playFilter();
                   setPosFilter(pos);
                 }}
-                title={pos === 'ALL' ? 'Show every position' : `Show only ${pos}s`}
+                title={
+                  pos === 'ALL'
+                    ? 'Show every position'
+                    : pos === 'FLEX'
+                      ? 'Show flex-eligible players (RB, WR, TE)'
+                      : `Show only ${pos}s`
+                }
               >
                 {pos}
               </button>
