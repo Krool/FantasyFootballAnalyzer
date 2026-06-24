@@ -51,6 +51,8 @@ interface PoolPlayer {
   pos: string;
   posRank: number;
   overallRank: number;
+  // FantasyPros superflex (2QB) consensus overall rank; QBs sit far higher here.
+  overallRankSF?: number;
   tier: number;
   bye: number | null;
   // FantasyPros auction $ at BASELINE; null below the salary sheet's cutoff.
@@ -353,6 +355,14 @@ const dynastySnapshot = loadRawSnapshot<{ players: DynastyRow[] }>(`fp-dynasty.$
 joinSource('Dynasty', dynastySnapshot?.players, (player, row) => {
   if (Number.isFinite(row.rank)) player.dynastyRank = row.rank;
   if (Number.isFinite(row.tier) && row.tier > 0) player.dynastyTier = row.tier;
+});
+
+interface SuperflexRow {
+  name: string; pos: string; team: string; rank: number;
+}
+const superflexSnapshot = loadRawSnapshot<{ players: SuperflexRow[] }>(`fp-superflex.${SEASON}.json`);
+joinSource('Superflex', superflexSnapshot?.players, (player, row) => {
+  if (Number.isFinite(row.rank)) player.overallRankSF = row.rank;
 });
 
 interface SleeperPlayerRow {

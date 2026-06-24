@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState, Suspense, lazy, type ReactNode } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams, useParams } from 'react-router-dom';
 import { Header, YearSelector, SeasonLoadingOverlay } from '@/components';
 import { GuestBanner } from '@/components/GuestBanner';
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import { HomePage } from '@/pages';
+import { ToolLanding } from '@/pages/ToolLanding';
+import { TOOL_LANDINGS } from '@/pages/toolLandings';
 import type { GuestDest } from '@/pages/GuestEntry';
 import { DEFAULT_GUEST_SETTINGS, loadGuestSettings, type GuestSettings } from '@/utils/guestLeague';
 
@@ -55,6 +57,39 @@ function GuestAutoEnter({ onEnter }: { onEnter: (settings: GuestSettings) => voi
   );
 }
 
+// Per-position rankings landing routes (/rankings/qb etc.). Each is a real,
+// crawlable, prerendered page (see scripts/prerender.tsx) that opens the live
+// board pre-filtered to one position. Keep these slugs in sync with the
+// prerender variant list and the sitemap in vite.config.ts.
+const RANKINGS_VARIANTS: Record<string, string> = {
+  qb: 'QB',
+  rb: 'RB',
+  wr: 'WR',
+  te: 'TE',
+  k: 'K',
+  dst: 'DST',
+  flex: 'FLEX',
+};
+
+// Resolves /rankings/:variant. A known position slug renders the board filtered
+// to it; an unknown slug falls back to the all-positions board (not a 404). No
+// league yet (direct link or crawler) drops into guest mode like /rankings.
+function RankingsVariantRoute({
+  league,
+  onUpdateGuest,
+  onEnterGuest,
+}: {
+  league: League | null;
+  onUpdateGuest: (patch: Partial<GuestSettings>) => void;
+  onEnterGuest: (settings: GuestSettings) => void;
+}) {
+  const { variant } = useParams();
+  const pos = variant ? RANKINGS_VARIANTS[variant.toLowerCase()] : undefined;
+  if (variant && !pos) return <Navigate to="/rankings" replace />;
+  if (!league) return <GuestAutoEnter onEnter={onEnterGuest} />;
+  return <RankingsPage league={league} onUpdateGuest={onUpdateGuest} initialPos={pos} />;
+}
+
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Connect Your League',
   '/draft': 'Draft Analysis',
@@ -66,6 +101,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/history': 'History',
   '/awards': 'Awards',
   '/players': 'Player Journey',
+  '/trade-analyzer': 'Trade Analyzer',
+  '/draft-grades': 'Draft Grades',
 };
 
 function App() {
@@ -89,7 +126,10 @@ function App() {
 
   // Per-page document titles so tabs and browser history are tellable apart.
   useEffect(() => {
-    const page = PAGE_TITLES[location.pathname];
+    const variant = location.pathname.startsWith('/rankings/')
+      ? RANKINGS_VARIANTS[location.pathname.slice('/rankings/'.length).toLowerCase()]
+      : undefined;
+    const page = variant ? `${variant} Rankings` : PAGE_TITLES[location.pathname];
     document.title = page
       ? `${page} · Fantasy Football Analyzer`
       : 'Fantasy Football Analyzer';
@@ -387,6 +427,23 @@ function App() {
             path="/rankings"
             element={league ? <RankingsPage league={league} onUpdateGuest={updateGuest} /> : <GuestAutoEnter onEnter={enterGuest} />}
           />
+          {/* Per-position landing pages: /rankings/qb, /rb, /wr, /te, /k, /dst,
+              /flex. Real prerendered files; unknown slugs fall back to /rankings. */}
+          <Route
+            path="/rankings/:variant"
+            element={
+              <RankingsVariantRoute
+                league={league}
+                onUpdateGuest={updateGuest}
+                onEnterGuest={enterGuest}
+              />
+            }
+          />
+
+          {/* Public tool landing pages (prerendered) for high-intent queries
+              the gated features serve but had no front door. */}
+          <Route path="/trade-analyzer" element={<ToolLanding content={TOOL_LANDINGS['trade-analyzer']} />} />
+          <Route path="/draft-grades" element={<ToolLanding content={TOOL_LANDINGS['draft-grades']} />} />
 
           {/* Data pages need a real connection; guests get bounced to Rankings. */}
           <Route path="/draft" element={dataRoute(l => <DraftPage league={l} />)} />

@@ -31,12 +31,18 @@ export function consensusAvg(
   scoring: ScoringType = 'half_ppr',
   superflex = false,
 ): number {
-  const signals = [
-    player.overallRank,
-    player.espnAdp,
-    sleeperAdpFor(player, scoring, superflex),
-  ].filter((n): n is number => n != null);
-  // overallRank is always present, so signals is never empty.
+  // In superflex the only QB-aware signals are FantasyPros' superflex rank and
+  // Sleeper's 2QB ADP. ESPN ADP and the 1QB FantasyPros rank are dropped: both
+  // are 1QB markets that drag QBs back down, which is the whole bug. The SF
+  // rank falls back to the 1QB overall rank for players without a superflex
+  // snapshot entry (and for the deep pool where the two boards agree anyway).
+  const signals = (
+    superflex
+      ? [player.overallRankSF ?? player.overallRank, sleeperAdpFor(player, scoring, true)]
+      : [player.overallRank, player.espnAdp, sleeperAdpFor(player, scoring, false)]
+  ).filter((n): n is number => n != null);
+  // The lead signal (overallRank / overallRankSF fallback) is always present,
+  // so signals is never empty.
   return signals.reduce((sum, n) => sum + n, 0) / signals.length;
 }
 
@@ -76,7 +82,7 @@ export function platformRankSource(
         label: 'FP',
         describe:
           'No Yahoo rankings in the pool yet, so this is FantasyPros rank minus the consensus average. Positive: experts are lower on him than the ADP market.',
-        value: p => p.overallRank,
+        value: p => (superflex ? p.overallRankSF ?? p.overallRank : p.overallRank),
       };
   }
 }

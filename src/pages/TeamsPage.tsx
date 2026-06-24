@@ -121,8 +121,8 @@ export function TeamsPage({ league }: TeamsPageProps) {
           <section className={styles.skillSection}>
             <h2 className={styles.sectionTitle}>Manager Skill Score</h2>
             <p className={styles.sectionHint}>
-              Draft value (30%), waiver PAR (20%), trade PAR (15%), all-play results (35%) —
-              each scored 0-100 against this league.
+              Draft value (30%), waiver PAR (20%), trade PAR (15%), all-play results (35%).
+              Each scored 0-100 against this league.
             </p>
             <div className={styles.skillList}>
               {scores.map((s, i) => (

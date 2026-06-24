@@ -140,8 +140,8 @@
 }
 
 .search {
-  flex: 1;
-  min-width: 220px;
+  flex: 0 1 360px;
+  min-width: 200px;
   padding: 0.75rem 0.9rem;
   background: var(--ink);
   border: 2px solid var(--bone-dim);

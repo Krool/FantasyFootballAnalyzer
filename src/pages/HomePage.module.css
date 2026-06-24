@@ -75,6 +75,52 @@
 /* Kicker badge before the title */
 .hero > *:first-child::before { content: none; }
 
+/* No-login quick links: the homepage's path into the public draft-prep pages. */
+.heroLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 1.6rem;
+  position: relative;
+  z-index: 1;
+}
+.heroLinks a {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--lime);
+  padding: 0.6rem 1rem;
+  border: 2px solid var(--lime);
+  box-shadow: 4px 4px 0 var(--bone);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.heroLinks a:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--bone);
+}
+.heroLinks a:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--bone);
+}
+.heroLinks a + a {
+  color: var(--bone);
+  background: transparent;
+  border-color: var(--bone);
+  box-shadow: 4px 4px 0 var(--lime);
+}
+.heroLinksNote {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
 /* ── MANIFESTO ── */
 .manifesto {
   max-width: 720px;
@@ -219,12 +265,17 @@
 
 .feature {
   position: relative;
+  display: block;
   padding: 1.75rem 1.5rem 1.85rem;
   background: var(--ink);
   border-right: 2px solid var(--bone);
   border-bottom: 2px solid var(--bone);
   transition: background .2s ease, transform .2s ease;
   overflow: hidden;
+  /* Two of these cards are anchors (links to the tool landing pages); keep
+     them visually identical to the plain cards. */
+  text-decoration: none;
+  color: inherit;
 }
 .feature::before {
   content: '';

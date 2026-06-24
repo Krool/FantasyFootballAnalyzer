@@ -30,7 +30,7 @@ window.addEventListener('vite:preloadError', (event) => {
 // BrowserRouter (not HashRouter) so routes are real paths the crawler can
 // index, e.g. /rankings. GitHub Pages has no server rewrites, so deep links
 // rely on the public/404.html SPA redirect plus the decode snippet in
-// index.html. basename is the Vite base ('/FantasyFootballAnalyzer/').
+// index.html. basename is the Vite base (the custom-domain apex serves at '/').
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>

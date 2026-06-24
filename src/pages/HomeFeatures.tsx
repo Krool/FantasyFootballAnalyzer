@@ -5,9 +5,12 @@ import styles from './HomePage.module.css';
 // titles and descriptions are the homepage's main crawlable, keyword-rich
 // copy. Single source of truth: HomePage and the prerender both render this.
 export function HomeFeatures() {
+  // Base path in both the live build and the SSR prerender, so the two cards
+  // that double as links to the tool landing pages resolve under GitHub Pages.
+  const base = import.meta.env.BASE_URL;
   return (
     <div className={styles.features}>
-      <div className={styles.feature}>
+      <a className={styles.feature} href={`${base}draft-grades`}>
         <div className={styles.featureIcon}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 2L2 7l10 5 10-5-10-5z" />
@@ -20,7 +23,7 @@ export function HomeFeatures() {
           Grade every pick based on actual season production.
           See who got value and who reached.
         </p>
-      </div>
+      </a>
 
       <div className={styles.feature}>
         <div className={styles.featureIcon}>
@@ -79,7 +82,7 @@ export function HomeFeatures() {
         </p>
       </div>
 
-      <div className={styles.feature}>
+      <a className={styles.feature} href={`${base}trade-analyzer`}>
         <div className={styles.featureIcon}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M7 16l-4-4 4-4M17 8l4 4-4 4M3 12h18" />
@@ -90,7 +93,7 @@ export function HomeFeatures() {
           Evaluate every trade by points generated after the deal.
           Grade each side and crown the winner.
         </p>
-      </div>
+      </a>
 
       <div className={styles.feature}>
         <div className={styles.featureIcon}>

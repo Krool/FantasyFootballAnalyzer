@@ -63,10 +63,24 @@ describe('sleeperAdpFor', () => {
   });
 
   it('threads superflex through the consensus average and delta', () => {
+    // Superflex drops the 1QB signals (ESPN ADP and the 1QB FantasyPros rank)
+    // and blends the SF rank with the 2QB ADP. With no SF rank, the 1QB
+    // overallRank stands in.
     const qb = player({ pos: 'QB', overallRank: 10, espnAdp: 14, sleeperAdp: 30, sleeperAdp2qb: 6 });
-    expect(consensusAvg(qb, 'half_ppr')).toBe(18); // (10+14+30)/3
-    expect(consensusAvg(qb, 'half_ppr', true)).toBe(10); // (10+14+6)/3
-    expect(platformDelta(qb, platformRankSource('sleeper', 'half_ppr', true), 'half_ppr', true)).toBe(-4); // 6 - 10
+    expect(consensusAvg(qb, 'half_ppr')).toBe(18); // 1QB: (10+14+30)/3
+    expect(consensusAvg(qb, 'half_ppr', true)).toBe(8); // SF: (10+6)/2, espnAdp dropped
+    expect(platformDelta(qb, platformRankSource('sleeper', 'half_ppr', true), 'half_ppr', true)).toBe(-2); // 6 - 8
+  });
+
+  it('prefers the superflex rank over the 1QB rank in superflex', () => {
+    // A QB the 1QB board buries (rank 26) but the SF board loves (rank 1).
+    const qb = player({ pos: 'QB', overallRank: 26, overallRankSF: 1, espnAdp: 24, sleeperAdp2qb: 3 });
+    expect(consensusAvg(qb, 'half_ppr')).toBe(25); // 1QB ignores SF rank: (26+24)/2
+    expect(consensusAvg(qb, 'half_ppr', true)).toBe(2); // SF: (1+3)/2
+    // The Yahoo "FP" column tracks the SF rank in superflex so its delta stays
+    // consistent with the consensus.
+    expect(platformRankSource('yahoo', 'half_ppr', true).value(qb)).toBe(1);
+    expect(platformRankSource('yahoo', 'half_ppr', false).value(qb)).toBe(26);
   });
 });
 

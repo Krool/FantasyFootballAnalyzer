@@ -115,6 +115,10 @@ export interface PoolPlayer {
   pos: string;
   posRank: number;
   overallRank: number;
+  // FantasyPros superflex (2QB) consensus overall rank, where QBs sit far
+  // higher than on the 1QB board. Used by the consensus blend when the league
+  // has a SUPERFLEX slot. Absent without a superflex snapshot.
+  overallRankSF?: number;
   tier: number;
   bye: number | null;
   // FantasyPros auction $ at the pool file's baseline league shape; null

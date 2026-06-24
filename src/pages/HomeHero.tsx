@@ -6,6 +6,13 @@ import styles from './HomePage.module.css';
 // in HomeManifesto so the page can render it below the form. Single source of
 // truth: HomePage and the prerender both render this.
 export function HomeHero() {
+  // Base path ('/FantasyFootballAnalyzer/') in both the live build and the SSR
+  // prerender, so these links resolve under GitHub Pages either way. Plain
+  // anchors (not react-router Link) because HomeHero is rendered outside a
+  // Router during prerender; a full navigation to the prerendered target is
+  // fine. These are the homepage's only internal links to the public draft-prep
+  // pages, so they pass crawl equity and give no-login visitors a way in.
+  const base = import.meta.env.BASE_URL;
   return (
     <header className={styles.hero}>
       <h1 className={styles.title}>
@@ -20,6 +27,11 @@ export function HomeHero() {
         waiver receipts, luck scores, and a trophy case for your league.
         Bring your league ID. Settle the group chat.
       </p>
+      <nav className={styles.heroLinks} aria-label="Start here">
+        <a href={`${base}rankings`}>Draft Rankings</a>
+        <a href={`${base}draft-room`}>Mock Draft</a>
+        <span className={styles.heroLinksNote}>No login required</span>
+      </nav>
     </header>
   );
 }

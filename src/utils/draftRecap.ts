@@ -136,7 +136,7 @@ export function gradeDraftSession(
 
 // Plain-text roster for clipboard export (pos, name, price where auction).
 export function rosterAsText(recap: TeamRecap, season: number): string {
-  const lines = [`${recap.name} — ${season} draft (grade ${recap.grade})`];
+  const lines = [`${recap.name}, ${season} draft (grade ${recap.grade})`];
   for (const line of recap.picks) {
     const price = line.price !== null ? ` $${line.price}` : '';
     lines.push(`${line.pick.player.pos.padEnd(3)} ${line.pick.player.name}${price}`);

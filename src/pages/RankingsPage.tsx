@@ -18,6 +18,17 @@ import styles from './RankingsPage.module.css';
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DST'];
 // FLEX collapses the three flex-eligible positions into one filter.
 const FLEX_POSITIONS = new Set(['RB', 'WR', 'TE']);
+// Long-form position names for the per-position landing-page heading (the
+// /rankings/<pos> routes). Keep in sync with the prerender's variant list.
+const POS_LABELS: Record<string, string> = {
+  QB: 'Quarterback',
+  RB: 'Running Back',
+  WR: 'Wide Receiver',
+  TE: 'Tight End',
+  K: 'Kicker',
+  DST: 'Defense',
+  FLEX: 'Flex',
+};
 const MAX_ROWS = 300;
 
 type SortKey =
@@ -46,16 +57,23 @@ interface RankingsPageProps {
   // Present only in guest mode: lets the settings bar edit the synthetic
   // league (scoring, teams, delta lens) so the board reprices live.
   onUpdateGuest?: (patch: Partial<GuestSettings>) => void;
+  // Set by the per-position landing routes (/rankings/qb etc.) so the page
+  // opens pre-filtered to one position and titles itself accordingly. The
+  // crawler reads the prerendered position table; this keeps the live page
+  // consistent with it instead of redirecting (which would read as a doorway).
+  initialPos?: string;
 }
 
 // Read-only view of the bundled draft pool: every ranking source side by
 // side, with no draft session required. Auto-sorted by the consensus average
 // so the delta column surfaces where the user's platform disagrees.
-export function RankingsPage({ league, onUpdateGuest }: RankingsPageProps) {
+export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPageProps) {
   // Guests have no real league, so their draft shape is editable inline.
   const isGuest = !!league.isGuest && !!onUpdateGuest;
+  // A valid per-position landing slug seeds the filter and the heading.
+  const landingPos = initialPos && POSITIONS.includes(initialPos) ? initialPos : undefined;
   const [query, setQuery] = useState('');
-  const [posFilter, setPosFilter] = useState('ALL');
+  const [posFilter, setPosFilter] = useState(landingPos ?? 'ALL');
   const [sortBy, setSortBy] = useState<SortKey>('avg');
   const [sortRev, setSortRev] = useState(false);
   const { playFilter, playSort } = useSounds();
@@ -222,7 +240,9 @@ export function RankingsPage({ league, onUpdateGuest }: RankingsPageProps) {
     <div className={styles.page}>
       <div className="container">
         <div className={styles.header}>
-          <h1 className={styles.title}>Rankings</h1>
+          <h1 className={styles.title}>
+            {landingPos ? `${POS_LABELS[landingPos] ?? landingPos} Rankings` : 'Rankings'}
+          </h1>
           <p className={styles.subtitle}>
             {isGuest ? 'Guest mode' : league.name} · {POOL.season} Draft Prep
           </p>

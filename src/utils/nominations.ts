@@ -40,7 +40,7 @@ export function suggestNominations(
     return wants.map(player => ({
       player,
       kind: 'endgame' as const,
-      reasons: [`endgame: no one can bid past $${maxOpponentBid} — take him cheap`],
+      reasons: [`endgame: no one can bid past $${maxOpponentBid}, take him cheap`],
     }));
   }
 

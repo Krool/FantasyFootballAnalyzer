@@ -1,0 +1,129 @@
+.page {
+  padding: 3rem 0 5rem;
+}
+
+.hero {
+  border-bottom: 3px solid var(--bone);
+  padding-bottom: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.kicker {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin-bottom: 0.9rem;
+}
+
+.heading {
+  font-family: var(--font-headline);
+  font-size: clamp(40px, 7vw, 92px);
+  font-weight: 400;
+  line-height: 0.9;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  color: var(--bone);
+  margin: 0 0 1.25rem;
+}
+
+.intro {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+  line-height: 1.45;
+  color: var(--bone);
+  max-width: 62ch;
+  border-left: 3px solid var(--lime);
+  padding-left: 1.1rem;
+  margin: 0 0 1.75rem;
+}
+
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.ctaPrimary,
+.ctaSecondary {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.7rem 1.15rem;
+  border: 2px solid var(--lime);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.ctaPrimary {
+  color: var(--ink);
+  background: var(--lime);
+  box-shadow: 4px 4px 0 var(--bone);
+}
+.ctaSecondary {
+  color: var(--bone);
+  background: transparent;
+  border-color: var(--bone);
+  box-shadow: 4px 4px 0 var(--lime);
+}
+.ctaPrimary:hover,
+.ctaSecondary:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--bone);
+}
+.ctaPrimary:active,
+.ctaSecondary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--bone);
+}
+
+.points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border: 2px solid var(--bone);
+}
+@media (max-width: 760px) {
+  .points { grid-template-columns: 1fr; }
+}
+
+.point {
+  padding: 1.6rem 1.4rem;
+  background: var(--ink);
+  border-right: 2px solid var(--bone);
+}
+.point:last-child { border-right: none; }
+@media (max-width: 760px) {
+  .point { border-right: none; border-bottom: 2px solid var(--bone); }
+  .point:last-child { border-bottom: none; }
+}
+
+.pointTitle {
+  font-family: var(--font-headline);
+  font-size: 1.3rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--bone);
+  margin: 0 0 0.65rem;
+}
+
+.pointBody {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--bone);
+  opacity: 0.8;
+  margin: 0;
+}

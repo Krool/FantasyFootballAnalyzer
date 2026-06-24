@@ -157,6 +157,33 @@ async function fetchFantasyProsDynasty(): Promise<void> {
   writeRaw(`fp-dynasty.${SEASON}.json`, { scoring: FP_SCORING, players });
 }
 
+// Superflex (2QB) consensus ranking. FantasyPros exposes it as position=OP
+// ("offensive player": QB+RB+WR+TE in one list), where QBs rank far higher
+// than on the standard 1QB board. Folded in as overallRankSF so the consensus
+// blend can price QBs for superflex demand. Non-fatal on its own — a missing
+// snapshot just means superflex leagues fall back to the 1QB overall rank.
+async function fetchFantasyProsSuperflex(): Promise<void> {
+  const url = `https://api.fantasypros.com/v2/json/nfl/${SEASON}/consensus-rankings?type=draft&scoring=${FP_SCORING}&position=OP&week=0`;
+  const json = (await getJson(url, { 'x-api-key': FP_API_KEY })) as {
+    players: Array<{
+      player_name: string;
+      player_team_id: string;
+      player_position_id: string;
+      rank_ecr: number;
+    }>;
+  };
+  if (!Array.isArray(json.players)) throw new Error('FantasyPros superflex payload has no players array');
+  const players = json.players.map(p => ({
+    name: p.player_name,
+    team: p.player_team_id,
+    pos: p.player_position_id,
+    rank: p.rank_ecr,
+  }));
+  assertMinRows('FantasyPros superflex', players.length, MIN_ROWS.fp);
+  console.log(`FantasyPros superflex: ${players.length} players (${FP_SCORING})`);
+  writeRaw(`fp-superflex.${SEASON}.json`, { scoring: FP_SCORING, players });
+}
+
 async function fetchEspn(): Promise<void> {
   const url = `https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/${SEASON}/segments/0/leaguedefaults/3?view=kona_player_info`;
   const filter = { players: { limit: 400, sortAdp: { sortAsc: true, sortPriority: 1 } } };
@@ -281,9 +308,15 @@ for (const r of results) {
   }
 }
 
-const dynasty = await Promise.allSettled([fetchFantasyProsDynasty()]);
-if (dynasty[0].status === 'rejected') {
-  console.warn('Dynasty rankings unavailable (non-fatal):', dynasty[0].reason);
+const optional = await Promise.allSettled([
+  fetchFantasyProsDynasty(),
+  fetchFantasyProsSuperflex(),
+]);
+if (optional[0].status === 'rejected') {
+  console.warn('Dynasty rankings unavailable (non-fatal):', optional[0].reason);
+}
+if (optional[1].status === 'rejected') {
+  console.warn('Superflex rankings unavailable (non-fatal):', optional[1].reason);
 }
 
 if (failed) {

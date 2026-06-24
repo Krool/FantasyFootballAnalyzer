@@ -5,7 +5,7 @@ import { sentryVitePlugin } from '@sentry/vite-plugin'
 import path from 'path'
 import { execSync } from 'node:child_process'
 
-const SITE_URL = 'https://krool.github.io/FantasyFootballAnalyzer/'
+const SITE_URL = 'https://fantasyfootballanalyzer.app/'
 
 // Source map upload only happens when an auth token is present, which is CI
 // only (GitHub secret). Local builds and PRs see no token, so the Sentry plugin
@@ -23,12 +23,16 @@ function gitSha(): string {
   }
 }
 
+// Per-position rankings landing pages (prerendered by scripts/prerender.tsx).
+// Keep in sync with RANKINGS_VARIANTS there and in src/App.tsx.
+const RANKINGS_SLUGS = ['qb', 'rb', 'wr', 'te', 'k', 'dst', 'flex']
+
 // Emit sitemap.xml at build time so <lastmod> reflects the deploy date
 // automatically (manual `npm run deploy` and the daily rankings Action both
-// run a build). Indexable URLs are the homepage, /rankings, and /draft-room,
-// each a real prerendered file written by scripts/prerender.tsx (so GitHub
-// Pages returns 200, not the 404 shim). Gated data routes stay on the shim and
-// aren't meant to be indexed.
+// run a build). Indexable URLs are the homepage, /rankings (+ per-position
+// pages), and /draft-room, each a real prerendered file written by
+// scripts/prerender.tsx (so GitHub Pages returns 200, not the 404 shim). Gated
+// data routes stay on the shim and aren't meant to be indexed.
 function sitemap(): Plugin {
   return {
     name: 'emit-sitemap',
@@ -38,11 +42,15 @@ function sitemap(): Plugin {
       const url = (loc: string, priority: string) =>
         `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n` +
         `    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>`
+      const positionUrls = RANKINGS_SLUGS.map(s => url(`${SITE_URL}rankings/${s}`, '0.7')).join('\n')
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${url(SITE_URL, '1.0')}
 ${url(`${SITE_URL}rankings`, '0.9')}
 ${url(`${SITE_URL}draft-room`, '0.8')}
+${url(`${SITE_URL}trade-analyzer`, '0.8')}
+${url(`${SITE_URL}draft-grades`, '0.8')}
+${positionUrls}
 </urlset>
 `
       this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: xml })
@@ -70,7 +78,7 @@ export default defineConfig({
         ]
       : []),
   ],
-  base: '/FantasyFootballAnalyzer/',
+  base: '/',
   // 'hidden' emits maps for upload but no sourceMappingURL comment, so nothing
   // dangles after the plugin deletes them. Off entirely when not uploading.
   build: { sourcemap: SENTRY_AUTH_TOKEN ? 'hidden' : false },
