@@ -113,6 +113,19 @@ function App() {
   // page load, so a fresh mount always reads the latest token state.
   const [yahooConnected, setYahooConnected] = useState(isAuthenticated);
 
+  // Reveal the app once mounted. The homepage (and the other prerendered
+  // routes) ship static markup that createRoot() discards and rebuilds on mount
+  // - it does not hydrate - so keeping #root at opacity 0 until after that first
+  // commit hides the teardown, and the load reads as a clean fade instead of a
+  // flash. Runs once; in-app navigation keeps #root visible. Double rAF so the
+  // opacity-0 frame paints before the flip and the CSS transition can animate.
+  useEffect(() => {
+    const id = requestAnimationFrame(() =>
+      requestAnimationFrame(() => document.documentElement.classList.add('app-ready')),
+    );
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   // Per-page document titles so tabs and browser history are tellable apart.
   useEffect(() => {
     const rankPos = location.pathname.startsWith('/rankings/')
