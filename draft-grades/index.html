@@ -31,14 +31,14 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Fantasy Football Analyzer">
     <meta property="og:url" content="https://fantasyfootballanalyzer.app/draft-grades">
-    <meta property="og:title" content="Fantasy Football Analyzer">
+    <meta property="og:title" content="Fantasy Football Draft Grades &amp; Grader (Free): Sleeper, ESPN, Yahoo">
     <meta property="og:description" content="Free fantasy football draft grades for Sleeper, ESPN, and Yahoo. Grade every pick on actual season production, see who found value and who reached, and run mock drafts. No login.">
     <meta property="og:image" content="https://fantasyfootballanalyzer.app/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Fantasy Football Analyzer: draft grades, trade verdicts, and league analysis">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Fantasy Football Analyzer">
+    <meta name="twitter:title" content="Fantasy Football Draft Grades &amp; Grader (Free): Sleeper, ESPN, Yahoo">
     <meta name="twitter:description" content="Free fantasy football draft grades for Sleeper, ESPN, and Yahoo. Grade every pick on actual season production, see who found value and who reached, and run mock drafts. No login.">
     <meta name="twitter:image" content="https://fantasyfootballanalyzer.app/og.png">
     <meta name="twitter:image:alt" content="Fantasy Football Analyzer: draft grades, trade verdicts, and league analysis">
@@ -50,7 +50,15 @@
       gtag('js', new Date());
       // github.io is a public-suffix domain, so gtag's default cookie_domain
       // of 'auto' tries (and fails) to set cookies on github.io itself.
-      gtag('config', 'G-SXG8M67HPV', { cookie_domain: window.location.hostname, content_group: 'Fantasy Football Analyzer' });
+      // send_page_view:false: gtag's automatic pageview reports page_location =
+      // the raw URL, which on the /yahoo-success OAuth return carries tokens.
+      // The app sends sanitized, path-only page_views itself (src/utils/analytics).
+      gtag('config', 'G-SXG8M67HPV', {
+        cookie_domain: window.location.hostname,
+        content_group: 'Fantasy Football Analyzer',
+        send_page_view: false,
+        page_location: window.location.origin + window.location.pathname,
+      });
     </script>
     <!-- Self-hosted brand fonts (@font-face lives in src/fonts.css). Preload the
          two critical faces so they paint without the swap the old Google Fonts
@@ -79,8 +87,8 @@
         }
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-Bvi0TlMI.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DU1vXYpT.css">
+    <script type="module" crossorigin src="/assets/index-BTBq0XbS.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DDudxWju.css">
   </head>
   <body>
     <div id="root"><div class="_page_zwl2f_1"><div class="container"><header class="_hero_zwl2f_5"><span class="_kicker_zwl2f_11">▌ DRAFT GRADES</span><h1 class="_heading_zwl2f_22">Fantasy Football Draft Grades</h1><p class="_intro_zwl2f_33">Find out who won your draft on the only evidence that counts: how the picks actually scored. Connect your Sleeper, ESPN, or Yahoo league for a letter grade on every pick and every team, or run a mock draft first to pressure-test your board.</p><nav class="_ctas_zwl2f_45" aria-label="Get started"><a href="/" class="_ctaPrimary_zwl2f_51">Connect your league</a><a href="/draft-room" class="_ctaSecondary_zwl2f_52">Run a mock draft</a></nav></header><ul class="_points_zwl2f_85"><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Graded on production</h2><p class="_pointBody_zwl2f_120">Each pick is scored against what it returned in started games, so value and reaches are obvious.</p></li><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Team draft leaderboard</h2><p class="_pointBody_zwl2f_120">See which manager drafted best, who reached early, and who stole value late.</p></li><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Mock first</h2><p class="_pointBody_zwl2f_120">Practice snake or auction drafts against AI opponents, then grade the real thing.</p></li></ul></div></div></div>

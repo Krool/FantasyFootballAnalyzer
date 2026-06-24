@@ -31,14 +31,14 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Fantasy Football Analyzer">
     <meta property="og:url" content="https://fantasyfootballanalyzer.app/draft-room">
-    <meta property="og:title" content="Fantasy Football Analyzer">
+    <meta property="og:title" content="Fantasy Football Mock Draft Simulator &amp; Live Draft Room (Free)">
     <meta property="og:description" content="Free fantasy football mock draft simulator and live draft assistant. Practice snake or auction drafts against AI, or track your live draft with budget inflation, pick suggestions, and survival odds. Sleeper, ESPN, and Yahoo. No login.">
     <meta property="og:image" content="https://fantasyfootballanalyzer.app/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Fantasy Football Analyzer: draft grades, trade verdicts, and league analysis">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Fantasy Football Analyzer">
+    <meta name="twitter:title" content="Fantasy Football Mock Draft Simulator &amp; Live Draft Room (Free)">
     <meta name="twitter:description" content="Free fantasy football mock draft simulator and live draft assistant. Practice snake or auction drafts against AI, or track your live draft with budget inflation, pick suggestions, and survival odds. Sleeper, ESPN, and Yahoo. No login.">
     <meta name="twitter:image" content="https://fantasyfootballanalyzer.app/og.png">
     <meta name="twitter:image:alt" content="Fantasy Football Analyzer: draft grades, trade verdicts, and league analysis">
@@ -50,7 +50,15 @@
       gtag('js', new Date());
       // github.io is a public-suffix domain, so gtag's default cookie_domain
       // of 'auto' tries (and fails) to set cookies on github.io itself.
-      gtag('config', 'G-SXG8M67HPV', { cookie_domain: window.location.hostname, content_group: 'Fantasy Football Analyzer' });
+      // send_page_view:false: gtag's automatic pageview reports page_location =
+      // the raw URL, which on the /yahoo-success OAuth return carries tokens.
+      // The app sends sanitized, path-only page_views itself (src/utils/analytics).
+      gtag('config', 'G-SXG8M67HPV', {
+        cookie_domain: window.location.hostname,
+        content_group: 'Fantasy Football Analyzer',
+        send_page_view: false,
+        page_location: window.location.origin + window.location.pathname,
+      });
     </script>
     <!-- Self-hosted brand fonts (@font-face lives in src/fonts.css). Preload the
          two critical faces so they paint without the swap the old Google Fonts
@@ -79,11 +87,11 @@
         }
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-Bvi0TlMI.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DU1vXYpT.css">
+    <script type="module" crossorigin src="/assets/index-BTBq0XbS.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DDudxWju.css">
   </head>
   <body>
-    <div id="root"><section><h1>2026 Fantasy Football Mock Draft Simulator and Live Draft Room</h1><p>Free 2026 fantasy football mock draft simulator and live draft assistant. Practice snake or auction drafts against AI, or track your live draft with budget inflation, pick suggestions, and survival odds. Works with Sleeper, ESPN, and Yahoo leagues. No login required.</p><ul><li><h2>Mock drafts</h2><p>Practice snake or auction drafts against AI opponents with their own tendencies. Replay any run by its seed.</p></li><li><h2>Live draft room</h2><p>Track your real draft pick by pick with budget inflation, pick suggestions, and survival odds.</p></li><li><h2>Auction and snake</h2><p>Both formats, any league size, with dollar values and ADP scaled to your budget and roster.</p></li><li><h2>Pick guidance</h2><p>Best available by value, positional need, tiers, and runs as the board moves.</p></li></ul></section><script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is the mock draft simulator free?","acceptedAnswer":{"@type":"Answer","text":"Yes. No account and no signup. The project is open source."}},{"@type":"Question","name":"Does it support auction and snake drafts?","acceptedAnswer":{"@type":"Answer","text":"Both. Any league size, with dollar values and ADP scaled to your budget and roster."}},{"@type":"Question","name":"Can I track a live draft?","acceptedAnswer":{"@type":"Answer","text":"Yes. The live draft room follows your real draft pick by pick with budget inflation, pick suggestions, and survival odds."}},{"@type":"Question","name":"Which platforms work with the draft room?","acceptedAnswer":{"@type":"Answer","text":"Sleeper, ESPN, and Yahoo. You can also run it in guest mode with no league connected."}}]}</script></div>
+    <div id="root"><section><h1>2026 Fantasy Football Mock Draft Simulator and Live Draft Room</h1><p>Free 2026 fantasy football mock draft simulator and live draft assistant. Practice snake or auction drafts against AI, or track your live draft with budget inflation, pick suggestions, and survival odds. Works with Sleeper, ESPN, and Yahoo leagues. No login required.</p><ul><li><h2>Mock drafts</h2><p>Practice snake or auction drafts against AI opponents with their own tendencies, at your own pace.</p></li><li><h2>Live draft room</h2><p>Track your real draft pick by pick with budget inflation, pick suggestions, and survival odds.</p></li><li><h2>Auction and snake</h2><p>Both formats, any league size, with dollar values and ADP scaled to your budget and roster.</p></li><li><h2>Pick guidance</h2><p>Best available by value, positional need, tiers, and runs as the board moves.</p></li></ul></section><script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is the mock draft simulator free?","acceptedAnswer":{"@type":"Answer","text":"Yes. No account and no signup. The project is open source."}},{"@type":"Question","name":"Does it support auction and snake drafts?","acceptedAnswer":{"@type":"Answer","text":"Both. Any league size, with dollar values and ADP scaled to your budget and roster."}},{"@type":"Question","name":"Can I track a live draft?","acceptedAnswer":{"@type":"Answer","text":"Yes. The live draft room follows your real draft pick by pick with budget inflation, pick suggestions, and survival odds."}},{"@type":"Question","name":"Which platforms work with the draft room?","acceptedAnswer":{"@type":"Answer","text":"Sleeper, ESPN, and Yahoo. You can also run it in guest mode with no league connected."}}]}</script></div>
     <!-- Safety net for the opacity-0 #root fade-in: if the bundle never mounts
          (failed JS load), still reveal #root so the prerendered content shows
          instead of a blank screen. The app flips this class on mount, long

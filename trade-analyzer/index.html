@@ -31,14 +31,14 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Fantasy Football Analyzer">
     <meta property="og:url" content="https://fantasyfootballanalyzer.app/trade-analyzer">
-    <meta property="og:title" content="Fantasy Football Analyzer">
+    <meta property="og:title" content="Fantasy Football Trade Analyzer (Free): Sleeper, ESPN, Yahoo">
     <meta property="og:description" content="Free fantasy football trade analyzer for Sleeper, ESPN, and Yahoo. Grade every trade by the points each side actually scored after the deal, and crown the winner. No login.">
     <meta property="og:image" content="https://fantasyfootballanalyzer.app/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Fantasy Football Analyzer: draft grades, trade verdicts, and league analysis">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Fantasy Football Analyzer">
+    <meta name="twitter:title" content="Fantasy Football Trade Analyzer (Free): Sleeper, ESPN, Yahoo">
     <meta name="twitter:description" content="Free fantasy football trade analyzer for Sleeper, ESPN, and Yahoo. Grade every trade by the points each side actually scored after the deal, and crown the winner. No login.">
     <meta name="twitter:image" content="https://fantasyfootballanalyzer.app/og.png">
     <meta name="twitter:image:alt" content="Fantasy Football Analyzer: draft grades, trade verdicts, and league analysis">
@@ -50,7 +50,15 @@
       gtag('js', new Date());
       // github.io is a public-suffix domain, so gtag's default cookie_domain
       // of 'auto' tries (and fails) to set cookies on github.io itself.
-      gtag('config', 'G-SXG8M67HPV', { cookie_domain: window.location.hostname, content_group: 'Fantasy Football Analyzer' });
+      // send_page_view:false: gtag's automatic pageview reports page_location =
+      // the raw URL, which on the /yahoo-success OAuth return carries tokens.
+      // The app sends sanitized, path-only page_views itself (src/utils/analytics).
+      gtag('config', 'G-SXG8M67HPV', {
+        cookie_domain: window.location.hostname,
+        content_group: 'Fantasy Football Analyzer',
+        send_page_view: false,
+        page_location: window.location.origin + window.location.pathname,
+      });
     </script>
     <!-- Self-hosted brand fonts (@font-face lives in src/fonts.css). Preload the
          two critical faces so they paint without the swap the old Google Fonts
@@ -79,8 +87,8 @@
         }
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-Bvi0TlMI.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DU1vXYpT.css">
+    <script type="module" crossorigin src="/assets/index-BTBq0XbS.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DDudxWju.css">
   </head>
   <body>
     <div id="root"><div class="_page_zwl2f_1"><div class="container"><header class="_hero_zwl2f_5"><span class="_kicker_zwl2f_11">▌ TRADE VERDICTS</span><h1 class="_heading_zwl2f_22">Fantasy Football Trade Analyzer</h1><p class="_intro_zwl2f_33">Settle every trade with the only number that matters: points scored after the deal. Connect your Sleeper, ESPN, or Yahoo league and the trade analyzer grades each side on what their players produced once they changed teams, then names the winner.</p><nav class="_ctas_zwl2f_45" aria-label="Get started"><a href="/" class="_ctaPrimary_zwl2f_51">Connect your league</a><a href="/rankings" class="_ctaSecondary_zwl2f_52">Browse rankings</a></nav></header><ul class="_points_zwl2f_85"><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Judged on real production</h2><p class="_pointBody_zwl2f_120">Not preseason hype. Each side is scored on the fantasy points its acquired players put up after the trade.</p></li><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Both sides graded</h2><p class="_pointBody_zwl2f_120">A clear verdict for each side and a winner named, so the group chat argument is over.</p></li><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Every league, every season</h2><p class="_pointBody_zwl2f_120">Works across Sleeper, ESPN, and Yahoo, for the current season and your league history.</p></li></ul></div></div></div>
