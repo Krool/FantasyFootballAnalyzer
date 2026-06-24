@@ -25,21 +25,21 @@
          and React replaces it. -->
     <style>html,body{margin:0;background-color:#0a0a0a;color:#f4efe6;font-family:Georgia,"Times New Roman",serif}</style>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://fantasy-football-analyzer-mu.vercel.app https://lm-api-reads.fantasy.espn.com https://api.sleeper.app https://www.google-analytics.com https://*.ingest.us.sentry.io; img-src 'self' data: https://sleepercdn.com https://a.espncdn.com;" />
-    <meta name="description" content="Free fantasy football mock draft simulator and live draft assistant. Practice snake or auction drafts against AI, or track your live draft with budget inflation, pick suggestions, and survival odds. Sleeper, ESPN, and Yahoo. No login.">
-    <link rel="canonical" href="https://fantasyfootballanalyzer.app/draft-room">
+    <meta name="description" content="Free fantasy football draft grades for Sleeper, ESPN, and Yahoo. Grade every pick on actual season production, see who found value and who reached, and run mock drafts. No login.">
+    <link rel="canonical" href="https://fantasyfootballanalyzer.app/draft-grades">
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Fantasy Football Analyzer">
-    <meta property="og:url" content="https://fantasyfootballanalyzer.app/draft-room">
+    <meta property="og:url" content="https://fantasyfootballanalyzer.app/draft-grades">
     <meta property="og:title" content="Fantasy Football Analyzer">
-    <meta property="og:description" content="Free fantasy football mock draft simulator and live draft assistant. Practice snake or auction drafts against AI, or track your live draft with budget inflation, pick suggestions, and survival odds. Sleeper, ESPN, and Yahoo. No login.">
+    <meta property="og:description" content="Free fantasy football draft grades for Sleeper, ESPN, and Yahoo. Grade every pick on actual season production, see who found value and who reached, and run mock drafts. No login.">
     <meta property="og:image" content="https://fantasyfootballanalyzer.app/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Fantasy Football Analyzer: draft grades, trade verdicts, and league analysis">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Fantasy Football Analyzer">
-    <meta name="twitter:description" content="Free fantasy football mock draft simulator and live draft assistant. Practice snake or auction drafts against AI, or track your live draft with budget inflation, pick suggestions, and survival odds. Sleeper, ESPN, and Yahoo. No login.">
+    <meta name="twitter:description" content="Free fantasy football draft grades for Sleeper, ESPN, and Yahoo. Grade every pick on actual season production, see who found value and who reached, and run mock drafts. No login.">
     <meta name="twitter:image" content="https://fantasyfootballanalyzer.app/og.png">
     <meta name="twitter:image:alt" content="Fantasy Football Analyzer: draft grades, trade verdicts, and league analysis">
     <!-- Google Analytics -->
@@ -57,15 +57,15 @@
     <!-- Fraunces italics 300/500 are the app's body and player-name styles;
          without them browsers synthesize slanted obliques. -->
     <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,900;1,9..144,300;1,9..144,500;1,9..144,900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <title>Fantasy Football Mock Draft Simulator & Live Draft Room (Free)</title>
+    <title>Fantasy Football Draft Grades & Grader (Free): Sleeper, ESPN, Yahoo</title>
     <!-- Structured data: free web app, helps rich results understand the tool. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Fantasy Football Analyzer",
-        "url": "https://fantasyfootballanalyzer.app/draft-room",
-        "description": "Free fantasy football mock draft simulator and live draft assistant. Practice snake or auction drafts against AI, or track your live draft with budget inflation, pick suggestions, and survival odds. Sleeper, ESPN, and Yahoo. No login.",
+        "url": "https://fantasyfootballanalyzer.app/draft-grades",
+        "description": "Free fantasy football draft grades for Sleeper, ESPN, and Yahoo. Grade every pick on actual season production, see who found value and who reached, and run mock drafts. No login.",
         "applicationCategory": "SportsApplication",
         "operatingSystem": "Web",
         "browserRequirements": "Requires JavaScript",
@@ -81,6 +81,6 @@
     <link rel="stylesheet" crossorigin href="/assets/index-BowdKVYc.css">
   </head>
   <body>
-    <div id="root"><section><h1>2026 Fantasy Football Mock Draft Simulator and Live Draft Room</h1><p>Free 2026 fantasy football mock draft simulator and live draft assistant. Practice snake or auction drafts against AI, or track your live draft with budget inflation, pick suggestions, and survival odds. Works with Sleeper, ESPN, and Yahoo leagues. No login required.</p><ul><li><h2>Mock drafts</h2><p>Practice snake or auction drafts against AI opponents with their own tendencies. Replay any run by its seed.</p></li><li><h2>Live draft room</h2><p>Track your real draft pick by pick with budget inflation, pick suggestions, and survival odds.</p></li><li><h2>Auction and snake</h2><p>Both formats, any league size, with dollar values and ADP scaled to your budget and roster.</p></li><li><h2>Pick guidance</h2><p>Best available by value, positional need, tiers, and runs as the board moves.</p></li></ul></section><script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is the mock draft simulator free?","acceptedAnswer":{"@type":"Answer","text":"Yes. No account and no signup. The project is open source."}},{"@type":"Question","name":"Does it support auction and snake drafts?","acceptedAnswer":{"@type":"Answer","text":"Both. Any league size, with dollar values and ADP scaled to your budget and roster."}},{"@type":"Question","name":"Can I track a live draft?","acceptedAnswer":{"@type":"Answer","text":"Yes. The live draft room follows your real draft pick by pick with budget inflation, pick suggestions, and survival odds."}},{"@type":"Question","name":"Which platforms work with the draft room?","acceptedAnswer":{"@type":"Answer","text":"Sleeper, ESPN, and Yahoo. You can also run it in guest mode with no league connected."}}]}</script></div>
+    <div id="root"><div class="_page_zwl2f_1"><div class="container"><header class="_hero_zwl2f_5"><span class="_kicker_zwl2f_11">▌ DRAFT GRADES</span><h1 class="_heading_zwl2f_22">Fantasy Football Draft Grades</h1><p class="_intro_zwl2f_33">Find out who won your draft on the only evidence that counts: how the picks actually scored. Connect your Sleeper, ESPN, or Yahoo league for a letter grade on every pick and every team, or run a mock draft first to pressure-test your board.</p><nav class="_ctas_zwl2f_45" aria-label="Get started"><a href="/" class="_ctaPrimary_zwl2f_51">Connect your league</a><a href="/draft-room" class="_ctaSecondary_zwl2f_52">Run a mock draft</a></nav></header><ul class="_points_zwl2f_85"><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Graded on production</h2><p class="_pointBody_zwl2f_120">Each pick is scored against what it returned in started games, so value and reaches are obvious.</p></li><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Team draft leaderboard</h2><p class="_pointBody_zwl2f_120">See which manager drafted best, who reached early, and who stole value late.</p></li><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Mock first</h2><p class="_pointBody_zwl2f_120">Practice snake or auction drafts against AI opponents, then grade the real thing.</p></li></ul></div></div></div>
   </body>
 </html>

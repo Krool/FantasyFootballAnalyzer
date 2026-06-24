@@ -5,14 +5,14 @@
     <title>Fantasy Football Analyzer</title>
     <!--
       GitHub Pages SPA redirect (rafrex/spa-github-pages technique).
-      Pages has no server-side rewrites, so a deep link like
-      /FantasyFootballAnalyzer/rankings 404s. This page encodes the path into a
-      query and bounces to the app root, where the decode snippet in index.html
-      restores it before BrowserRouter reads the URL. pathSegmentsToKeep = 1
-      keeps the project base segment (FantasyFootballAnalyzer).
+      Pages has no server-side rewrites, so a deep link like /rankings 404s.
+      This page encodes the path into a query and bounces to the app root,
+      where the decode snippet in index.html restores it before BrowserRouter
+      reads the URL. pathSegmentsToKeep = 0 because the site is served at the
+      apex (custom domain), so there is no project base segment to keep.
     -->
     <script>
-      var pathSegmentsToKeep = 1;
+      var pathSegmentsToKeep = 0;
       var l = window.location;
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +

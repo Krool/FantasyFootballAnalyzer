@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- GitHub Pages SPA redirect decode (pairs with public/404.html). Restores
+         the real path from the ?/ query the 404 shim produced, before
+         BrowserRouter reads the URL. No-op on normal loads. -->
+    <script>
+      (function () {
+        var l = window.location;
+        if (l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function (s) {
+            return s.replace(/~and~/g, '&');
+          }).join('?');
+          window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
+        }
+      })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Critical background so the prerendered homepage (injected into #root at
+         build time for crawlers) paints on-brand before the bundle's CSS loads
+         and React replaces it. -->
+    <style>html,body{margin:0;background-color:#0a0a0a;color:#f4efe6;font-family:Georgia,"Times New Roman",serif}</style>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://fantasy-football-analyzer-mu.vercel.app https://lm-api-reads.fantasy.espn.com https://api.sleeper.app https://www.google-analytics.com https://*.ingest.us.sentry.io; img-src 'self' data: https://sleepercdn.com https://a.espncdn.com;" />
+    <meta name="description" content="Free 2026 TE rankings and ADP for fantasy football. FantasyPros, ESPN, and Sleeper tight end consensus, half PPR, with auction values. No login.">
+    <link rel="canonical" href="https://fantasyfootballanalyzer.app/rankings/te">
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Fantasy Football Analyzer">
+    <meta property="og:url" content="https://fantasyfootballanalyzer.app/rankings/te">
+    <meta property="og:title" content="Fantasy Football Analyzer">
+    <meta property="og:description" content="Free 2026 TE rankings and ADP for fantasy football. FantasyPros, ESPN, and Sleeper tight end consensus, half PPR, with auction values. No login.">
+    <meta property="og:image" content="https://fantasyfootballanalyzer.app/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Fantasy Football Analyzer: draft grades, trade verdicts, and league analysis">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Fantasy Football Analyzer">
+    <meta name="twitter:description" content="Free 2026 TE rankings and ADP for fantasy football. FantasyPros, ESPN, and Sleeper tight end consensus, half PPR, with auction values. No login.">
+    <meta name="twitter:image" content="https://fantasyfootballanalyzer.app/og.png">
+    <meta name="twitter:image:alt" content="Fantasy Football Analyzer: draft grades, trade verdicts, and league analysis">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SXG8M67HPV"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      // github.io is a public-suffix domain, so gtag's default cookie_domain
+      // of 'auto' tries (and fails) to set cookies on github.io itself.
+      gtag('config', 'G-SXG8M67HPV', { cookie_domain: window.location.hostname, content_group: 'Fantasy Football Analyzer' });
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Fraunces italics 300/500 are the app's body and player-name styles;
+         without them browsers synthesize slanted obliques. -->
+    <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,900;1,9..144,300;1,9..144,500;1,9..144,900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>2026 Fantasy Football TE Rankings (Free): Sleeper, ESPN, Yahoo</title>
+    <!-- Structured data: free web app, helps rich results understand the tool. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Fantasy Football Analyzer",
+        "url": "https://fantasyfootballanalyzer.app/rankings/te",
+        "description": "Free 2026 TE rankings and ADP for fantasy football. FantasyPros, ESPN, and Sleeper tight end consensus, half PPR, with auction values. No login.",
+        "applicationCategory": "SportsApplication",
+        "operatingSystem": "Web",
+        "browserRequirements": "Requires JavaScript",
+        "image": "https://fantasyfootballanalyzer.app/og.png",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+    <script type="module" crossorigin src="/assets/index-dK5BDEGi.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BowdKVYc.css">
+  </head>
+  <body>
+    <div id="root"><section><h1>2026 Fantasy Football TE Rankings</h1><p>Free 2026 fantasy football tight end rankings and ADP. Consensus of FantasyPros, ESPN, and Sleeper, half PPR by default, with snake ADP and auction values for Sleeper, ESPN, and Yahoo leagues. No login required.</p><nav aria-label="Rankings by position"><p>Rankings by position: <a href="/rankings">All</a> · <a href="/rankings/qb">QB</a> · <a href="/rankings/rb">RB</a> · <a href="/rankings/wr">WR</a> · <strong>TE</strong> · <a href="/rankings/k">K</a> · <a href="/rankings/dst">DST</a> · <a href="/rankings/flex">FLEX</a></p></nav><table><thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Team</th><th>Bye</th><th>AVG</th><th>FP Rank</th><th>Tier</th><th>ESPN ADP</th><th>Sleeper ADP</th></tr></thead><tbody><tr><td>1</td><td>Trey McBride</td><td>TE2</td><td>ARI</td><td>14</td><td>20.5</td><td>20</td><td>3</td><td>20.8</td><td>20.7</td></tr><tr><td>2</td><td>Brock Bowers</td><td>TE1</td><td>LV</td><td>13</td><td>22.9</td><td>16</td><td>3</td><td>23.7</td><td>28.9</td></tr><tr><td>3</td><td>Colston Loveland</td><td>TE3</td><td>CHI</td><td>10</td><td>45.3</td><td>42</td><td>5</td><td>44.2</td><td>49.7</td></tr><tr><td>4</td><td>Tyler Warren</td><td>TE4</td><td>IND</td><td>13</td><td>54.9</td><td>60</td><td>6</td><td>47.3</td><td>57.3</td></tr><tr><td>5</td><td>Harold Fannin Jr.</td><td>TE6</td><td>CLE</td><td>11</td><td>69.9</td><td>77</td><td>7</td><td>66</td><td>66.7</td></tr><tr><td>6</td><td>Kyle Pitts Sr.</td><td>TE8</td><td>ATL</td><td>11</td><td>76.5</td><td>85</td><td>7</td><td>68.3</td><td>76.2</td></tr><tr><td>7</td><td>Sam LaPorta</td><td>TE7</td><td>DET</td><td>6</td><td>81.8</td><td>84</td><td>7</td><td>74.8</td><td>86.6</td></tr><tr><td>8</td><td>Tucker Kraft</td><td>TE5</td><td>GB</td><td>11</td><td>82.8</td><td>64</td><td>6</td><td>109.8</td><td>74.5</td></tr><tr><td>9</td><td>George Kittle</td><td>TE12</td><td>SF</td><td>8</td><td>102.2</td><td>113</td><td>8</td><td>86.1</td><td>107.6</td></tr><tr><td>10</td><td>Travis Kelce</td><td>TE9</td><td>KC</td><td>5</td><td>102.6</td><td>105</td><td>8</td><td>90.1</td><td>112.6</td></tr><tr><td>11</td><td>Jake Ferguson</td><td>TE11</td><td>DAL</td><td>14</td><td>107.5</td><td>109</td><td>8</td><td>108.3</td><td>105.3</td></tr><tr><td>12</td><td>Dallas Goedert</td><td>TE13</td><td>PHI</td><td>10</td><td>108.2</td><td>118</td><td>9</td><td>102.8</td><td>103.7</td></tr><tr><td>13</td><td>Dalton Kincaid</td><td>TE10</td><td>BUF</td><td>7</td><td>115.9</td><td>106</td><td>8</td><td>154.4</td><td>87.3</td></tr><tr><td>14</td><td>Isaiah Likely</td><td>TE14</td><td>NYG</td><td>8</td><td>122.7</td><td>119</td><td>9</td><td>128.6</td><td>120.5</td></tr><tr><td>15</td><td>Mark Andrews</td><td>TE15</td><td>BAL</td><td>13</td><td>124.3</td><td>129</td><td>9</td><td>138.3</td><td>105.6</td></tr><tr><td>16</td><td>Oronde Gadsden II</td><td>TE16</td><td>LAC</td><td>7</td><td>132.1</td><td>137</td><td>9</td><td>168.7</td><td>90.5</td></tr><tr><td>17</td><td>Hunter Henry</td><td>TE19</td><td>NE</td><td>11</td><td>136.4</td><td>148</td><td>9</td><td>161</td><td>100.1</td></tr><tr><td>18</td><td>Juwan Johnson</td><td>TE17</td><td>NO</td><td>8</td><td>138.5</td><td>140</td><td>9</td><td>165.3</td><td>110.3</td></tr><tr><td>19</td><td>Brenton Strange</td><td>TE18</td><td>JAC</td><td>7</td><td>141.6</td><td>145</td><td>9</td><td>168.1</td><td>111.6</td></tr><tr><td>20</td><td>Kenyon Sadiq (R)</td><td>TE22</td><td>NYJ</td><td>13</td><td>145.5</td><td>178</td><td>10</td><td>143.5</td><td>114.9</td></tr><tr><td>21</td><td>Dalton Schultz</td><td>TE20</td><td>HOU</td><td>8</td><td>146.0</td><td>163</td><td>10</td><td>168.8</td><td>106.2</td></tr><tr><td>22</td><td>T.J. Hockenson</td><td>TE24</td><td>MIN</td><td>6</td><td>157.3</td><td>185</td><td>10</td><td>150.5</td><td>136.3</td></tr><tr><td>23</td><td>Chig Okonkwo</td><td>TE21</td><td>WAS</td><td>7</td><td>159.9</td><td>164</td><td>10</td><td>168.6</td><td>147.1</td></tr><tr><td>24</td><td>AJ Barner</td><td>TE23</td><td>SEA</td><td>11</td><td>162.0</td><td>184</td><td>10</td><td>169.5</td><td>132.6</td></tr><tr><td>25</td><td>David Njoku</td><td>TE27</td><td>LAC</td><td>7</td><td>178.8</td><td>229</td><td>11</td><td>169.4</td><td>138.1</td></tr><tr><td>26</td><td>Terrance Ferguson</td><td>TE26</td><td>LAR</td><td>11</td><td>180.6</td><td>220</td><td>11</td><td>169.3</td><td>152.6</td></tr><tr><td>27</td><td>Gunnar Helm</td><td>TE25</td><td>TEN</td><td>9</td><td>180.7</td><td>211</td><td>11</td><td>169.8</td><td>161.4</td></tr><tr><td>28</td><td>Cade Otton</td><td>TE29</td><td>TB</td><td>10</td><td>187.7</td><td>236</td><td>12</td><td>170</td><td>157.2</td></tr><tr><td>29</td><td>Eli Stowers (R)</td><td>TE32</td><td>PHI</td><td>10</td><td>194.6</td><td>263</td><td>12</td><td>169.9</td><td>150.8</td></tr><tr><td>30</td><td>Colby Parkinson</td><td>TE30</td><td>LAR</td><td>11</td><td>196.4</td><td>246</td><td>12</td><td></td><td>146.8</td></tr><tr><td>31</td><td>Pat Freiermuth</td><td>TE28</td><td>PIT</td><td>9</td><td>200.1</td><td>231</td><td>11</td><td>169.1</td><td></td></tr><tr><td>32</td><td>Mason Taylor</td><td>TE34</td><td>NYJ</td><td>13</td><td>208.1</td><td>268</td><td>12</td><td></td><td>148.1</td></tr><tr><td>33</td><td>Theo Johnson</td><td>TE33</td><td>NYG</td><td>8</td><td>209.7</td><td>265</td><td>12</td><td></td><td>154.3</td></tr><tr><td>34</td><td>Evan Engram</td><td>TE31</td><td>DEN</td><td>10</td><td>215.9</td><td>262</td><td>12</td><td>169.8</td><td></td></tr><tr><td>35</td><td>Jake Tonges</td><td>TE39</td><td>SF</td><td>8</td><td>220.2</td><td>304</td><td>13</td><td>169.9</td><td>186.6</td></tr><tr><td>36</td><td>Darnell Washington</td><td>TE40</td><td>PIT</td><td>9</td><td>251.8</td><td>334</td><td>14</td><td>169.5</td><td></td></tr><tr><td>37</td><td>Max Klare (R)</td><td>TE35</td><td>LAR</td><td>11</td><td>259.6</td><td>285</td><td>12</td><td></td><td>234.3</td></tr><tr><td>38</td><td>Cole Kmet</td><td>TE42</td><td>CHI</td><td>10</td><td>261.4</td><td>353</td><td>14</td><td>169.9</td><td></td></tr><tr><td>39</td><td>Luke Musgrave</td><td>TE52</td><td>GB</td><td>11</td><td>281.9</td><td>394</td><td>15</td><td>169.9</td><td></td></tr><tr><td>40</td><td>Greg Dulcich</td><td>TE36</td><td>MIA</td><td>6</td><td>296.0</td><td>296</td><td>13</td><td></td><td></td></tr><tr><td>41</td><td>Oscar Delp (R)</td><td>TE37</td><td>NO</td><td>8</td><td>298.0</td><td>298</td><td>13</td><td></td><td></td></tr><tr><td>42</td><td>Eli Raridon (R)</td><td>TE58</td><td>NE</td><td>11</td><td>298.9</td><td>428</td><td>15</td><td>169.9</td><td></td></tr><tr><td>43</td><td>Mike Gesicki</td><td>TE38</td><td>CIN</td><td>6</td><td>301.0</td><td>301</td><td>13</td><td></td><td></td></tr><tr><td>44</td><td>Michael Trigg (R)</td><td>TE80</td><td>DAL</td><td>14</td><td>303.0</td><td>504</td><td>16</td><td>169.8</td><td>235.3</td></tr><tr><td>45</td><td>Erick All Jr.</td><td>TE65</td><td>CIN</td><td>6</td><td>314.5</td><td>459</td><td>16</td><td>170</td><td></td></tr><tr><td>46</td><td>Adam Trautman</td><td>TE67</td><td>DEN</td><td>10</td><td>316.5</td><td>463</td><td>16</td><td>170</td><td></td></tr><tr><td>47</td><td>Luke Schoonmaker</td><td>TE68</td><td>DAL</td><td>14</td><td>319.9</td><td>470</td><td>16</td><td>169.9</td><td></td></tr><tr><td>48</td><td>Brock Wright</td><td>TE69</td><td>DET</td><td>6</td><td>320.9</td><td>472</td><td>16</td><td>169.9</td><td></td></tr><tr><td>49</td><td>Tyler Conklin</td><td>TE74</td><td>DET</td><td>6</td><td>328.5</td><td>487</td><td>16</td><td>170</td><td></td></tr><tr><td>50</td><td>Tyler Higbee</td><td>TE41</td><td>LAR</td><td>11</td><td>346.0</td><td>346</td><td>14</td><td></td><td></td></tr><tr><td>51</td><td>Noah Gray</td><td>TE43</td><td>KC</td><td>5</td><td>356.0</td><td>356</td><td>14</td><td></td><td></td></tr><tr><td>52</td><td>Michael Mayer</td><td>TE44</td><td>LV</td><td>13</td><td>358.0</td><td>358</td><td>14</td><td></td><td></td></tr><tr><td>53</td><td>Ja'Tavion Sanders</td><td>TE45</td><td>CAR</td><td>5</td><td>359.0</td><td>359</td><td>14</td><td></td><td></td></tr><tr><td>54</td><td>Elijah Arroyo</td><td>TE46</td><td>SEA</td><td>11</td><td>361.0</td><td>361</td><td>14</td><td></td><td></td></tr><tr><td>55</td><td>Dawson Knox</td><td>TE47</td><td>BUF</td><td>7</td><td>365.0</td><td>365</td><td>14</td><td></td><td></td></tr><tr><td>56</td><td>Justin Joly (R)</td><td>TE48</td><td>DEN</td><td>10</td><td>370.0</td><td>370</td><td>14</td><td></td><td></td></tr><tr><td>57</td><td>Tommy Myers</td><td>TE49</td><td>FA</td><td></td><td>381.0</td><td>381</td><td>14</td><td></td><td></td></tr><tr><td>58</td><td>John Bates</td><td>TE50</td><td>WAS</td><td>7</td><td>389.0</td><td>389</td><td>15</td><td></td><td></td></tr><tr><td>59</td><td>Darren Waller</td><td>TE51</td><td>FA</td><td></td><td>392.0</td><td>392</td><td>15</td><td></td><td></td></tr><tr><td>60</td><td>Noah Fant</td><td>TE53</td><td>NO</td><td>8</td><td>398.0</td><td>398</td><td>15</td><td></td><td></td></tr><tr><td>61</td><td>Ben Sinnott</td><td>TE54</td><td>WAS</td><td>7</td><td>406.0</td><td>406</td><td>15</td><td></td><td></td></tr><tr><td>62</td><td>Jonnu Smith</td><td>TE55</td><td>FA</td><td></td><td>410.0</td><td>410</td><td>15</td><td></td><td></td></tr><tr><td>63</td><td>Austin Hooper</td><td>TE56</td><td>ATL</td><td>11</td><td>416.0</td><td>416</td><td>15</td><td></td><td></td></tr><tr><td>64</td><td>Zach Ertz</td><td>TE57</td><td>FA</td><td></td><td>422.0</td><td>422</td><td>15</td><td></td><td></td></tr><tr><td>65</td><td>Tommy Tremble</td><td>TE59</td><td>CAR</td><td>5</td><td>432.0</td><td>432</td><td>15</td><td></td><td></td></tr><tr><td>66</td><td>Daniel Bellinger</td><td>TE60</td><td>TEN</td><td>9</td><td>433.0</td><td>433</td><td>15</td><td></td><td></td></tr><tr><td>67</td><td>Josh Oliver</td><td>TE61</td><td>MIN</td><td>6</td><td>438.0</td><td>438</td><td>15</td><td></td><td></td></tr><tr><td>68</td><td>Marlin Klein (R)</td><td>TE62</td><td>HOU</td><td>8</td><td>439.0</td><td>439</td><td>15</td><td></td><td></td></tr><tr><td>69</td><td>Elijah Higgins</td><td>TE63</td><td>ARI</td><td>14</td><td>442.0</td><td>442</td><td>15</td><td></td><td></td></tr><tr><td>70</td><td>Durham Smythe</td><td>TE64</td><td>BAL</td><td>13</td><td>456.0</td><td>456</td><td>16</td><td></td><td></td></tr><tr><td>71</td><td>Mitchell Evans</td><td>TE66</td><td>CAR</td><td>5</td><td>460.0</td><td>460</td><td>16</td><td></td><td></td></tr><tr><td>72</td><td>Jackson Hawes</td><td>TE70</td><td>BUF</td><td>7</td><td>476.0</td><td>476</td><td>16</td><td></td><td></td></tr><tr><td>73</td><td>Will Kacmarek (R)</td><td>TE71</td><td>MIA</td><td>6</td><td>480.0</td><td>480</td><td>16</td><td></td><td></td></tr><tr><td>74</td><td>Drew Sample</td><td>TE72</td><td>CIN</td><td>6</td><td>481.0</td><td>481</td><td>16</td><td></td><td></td></tr><tr><td>75</td><td>Will Dissly</td><td>TE73</td><td>FA</td><td></td><td>482.0</td><td>482</td><td>16</td><td></td><td></td></tr></tbody></table></section><script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Are these TE rankings free?","acceptedAnswer":{"@type":"Answer","text":"Yes. No account and no signup. The project is open source."}},{"@type":"Question","name":"How often do the TE rankings update?","acceptedAnswer":{"@type":"Answer","text":"Daily, from a consensus of FantasyPros, ESPN, and Sleeper for the 2026 season."}},{"@type":"Question","name":"What scoring is used?","acceptedAnswer":{"@type":"Answer","text":"Half PPR by default, with standard and full PPR available, plus superflex."}}]}</script></div>
+  </body>
+</html>
