@@ -61,9 +61,14 @@ createRoot(document.getElementById('root')!).render(
 // fetched chunk instead of flashing the Suspense spinner. Best-effort; a stale
 // chunk hash is still caught by the preloadError reload above.
 const warmRouteChunks = () => {
-  void import('@/pages/RankingsPage')
-  void import('@/pages/DraftRoomPage')
-  void import('@/pages/DraftPage')
+  // Swallow rejections: warming is best-effort, and a stale chunk hash here is
+  // already handled by the vite:preloadError reload above. Without the .catch,
+  // a failed warm-up import is an uncaught rejection (no Suspense boundary
+  // sits over a fire-and-forget import) that surfaces via window's
+  // unhandledrejection handler and reports to Sentry as noise the user never saw.
+  void import('@/pages/RankingsPage').catch(() => {})
+  void import('@/pages/DraftRoomPage').catch(() => {})
+  void import('@/pages/DraftPage').catch(() => {})
 }
 const ric = (window as unknown as {
   requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void

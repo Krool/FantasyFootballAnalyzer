@@ -1,6 +1,10 @@
 import { captureError, captureMessage } from './sentry';
 
 const isDev = import.meta.env.DEV;
+// Vitest runs with MODE 'test'. Keep debug/info quiet there so test output
+// isn't buried under per-call traces (e.g. the loadLeague dispatch logs);
+// warn/error still surface so a real regression's noise is never hidden.
+const isTest = import.meta.env.MODE === 'test';
 
 // Identical failures can fire on a tight loop (a live-sync poll erroring every
 // 10s, a retrying fetch). Throttle repeats of the same message so one outage
@@ -44,10 +48,10 @@ function report(level: 'warning' | 'error', args: unknown[]): void {
 
 export const logger = {
   debug: (...args: unknown[]) => {
-    if (isDev) console.log(...args);
+    if (isDev && !isTest) console.log(...args);
   },
   info: (...args: unknown[]) => {
-    if (isDev) console.info(...args);
+    if (isDev && !isTest) console.info(...args);
   },
   warn: (...args: unknown[]) => {
     console.warn(...args);

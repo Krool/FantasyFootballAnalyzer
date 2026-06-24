@@ -50,7 +50,15 @@
       gtag('js', new Date());
       // github.io is a public-suffix domain, so gtag's default cookie_domain
       // of 'auto' tries (and fails) to set cookies on github.io itself.
-      gtag('config', 'G-SXG8M67HPV', { cookie_domain: window.location.hostname, content_group: 'Fantasy Football Analyzer' });
+      // send_page_view:false: gtag's automatic pageview reports page_location =
+      // the raw URL, which on the /yahoo-success OAuth return carries tokens.
+      // The app sends sanitized, path-only page_views itself (src/utils/analytics).
+      gtag('config', 'G-SXG8M67HPV', {
+        cookie_domain: window.location.hostname,
+        content_group: 'Fantasy Football Analyzer',
+        send_page_view: false,
+        page_location: window.location.origin + window.location.pathname,
+      });
     </script>
     <!-- Self-hosted brand fonts (@font-face lives in src/fonts.css). Preload the
          two critical faces so they paint without the swap the old Google Fonts

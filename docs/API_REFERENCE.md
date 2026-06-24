@@ -7,9 +7,13 @@ HTTP verification (marked **verified**) and community sources (marked
 beat both platforms' own documentation.
 
 Architecture context for everything below: the app is a static site on GitHub
-Pages. There is no backend except the small Vercel serverless layer in `api/`
-(deployed at `https://fantasy-football-analyzer-mu.vercel.app`), which exists
-solely to hold secrets and bypass CORS where a platform forces it.
+Pages, served at the custom domain `https://fantasyfootballanalyzer.app`. There
+is no backend except the small Vercel serverless layer in `api/` (deployed
+separately at `https://fantasy-football-analyzer-mu.vercel.app`), which exists
+solely to hold secrets and bypass CORS where a platform forces it. The CORS and
+verified-behavior notes below were captured when the frontend still served from
+`https://krool.github.io`; the browser-origin specifics carry over to the custom
+domain unchanged.
 
 ---
 

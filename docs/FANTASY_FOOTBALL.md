@@ -119,6 +119,24 @@ and 12 standard, 8 and 14 exist. IR slots don't count against the roster and
 aren't drafted. Total draftable pool = teams x roster size; that sets
 replacement level and value scaling.
 
+## Games started vs games played
+
+The analysis pages measure a player's value to a fantasy team by **games
+started** (weeks in that team's starting lineup), not NFL games played. A player
+scoring on the bench did nothing for the manager. This drives waiver receipts and
+trade verdicts:
+
+- **Games started** = weeks the player was in this team's starting lineup (not
+  bench, not IR), counted from pickup/trade onward for since-acquired math.
+- **Max games started** for a pickup = `current_week - pickup_week + 1`. A week-6
+  pickup in week 14 can have started at most 9 weeks.
+- **Points/PPG** for value purposes use only started weeks, so PPG measures what
+  the manager actually banked.
+
+Data sources for starts: Sleeper matchup `starters`, ESPN weekly rosters by
+`lineupSlotId`, Yahoo `roster;week` (unused, so games-started is unavailable on
+Yahoo). See `docs/API_REFERENCE.md` for the weekly-data reality per platform.
+
 ## Value concepts
 
 - **ADP**: market consensus from real drafts; platform-specific (ESPN, Yahoo,

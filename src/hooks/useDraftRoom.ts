@@ -37,6 +37,9 @@ interface DraftRoomState {
   phase: DraftRoomPhase;
   config: DraftRoomConfig;
   events: DraftEvent[];
+  // True while viewing a resumed ARCHIVED (read-only) draft, so the persist and
+  // archive effects don't write it over the league's active in-progress session.
+  readOnly: boolean;
 }
 
 type Action =
@@ -45,8 +48,7 @@ type Action =
   | { type: 'LOG_EVENT'; event: DraftEvent }
   | { type: 'UNDO' }
   | { type: 'RESET' }
-  | { type: 'RESTART' }
-  | { type: 'RESUME'; session: DraftRoomSession };
+  | { type: 'RESUME'; session: DraftRoomSession; readOnly?: boolean };
 
 // Draft sessions are keyed (and labeled) by the POOL season, not the loaded
 // league's season: in June you're looking at last year's completed league
@@ -131,7 +133,7 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
       if (state.config.draftType === 'auction' && state.config.budget < state.config.rounds) {
         return state;
       }
-      return { ...state, phase: 'drafting', events: [] };
+      return { ...state, phase: 'drafting', events: [], readOnly: false };
     }
     case 'LOG_EVENT': {
       if (state.phase !== 'drafting') return state;
@@ -140,6 +142,9 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
       return { ...state, events, phase: events.length >= total ? 'complete' : 'drafting' };
     }
     case 'UNDO': {
+      // A read-only resumed archive is for viewing; editing it wouldn't persist
+      // (the persist effect skips readOnly), so the work would silently evaporate.
+      if (state.readOnly) return state;
       // Auto-logged keeper events would instantly re-log themselves, so undo
       // skips past them to the last human action (snake keeper picks and
       // auction keeper sales alike).
@@ -153,17 +158,13 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
       return { ...state, events: state.events.slice(0, cut - 1), phase: 'drafting' };
     }
     case 'RESET':
-      return { phase: 'setup', config: { ...state.config }, events: [] };
-    // Replay: drop every pick but stay in the draft (the sim re-seeds from the
-    // same seed, so a mock reruns its exact script for a what-if).
-    case 'RESTART':
-      if (state.phase === 'setup') return state;
-      return { ...state, phase: 'drafting', events: [] };
+      return { phase: 'setup', config: { ...state.config }, events: [], readOnly: false };
     case 'RESUME':
       return {
         phase: action.session.phase,
         config: normalizeConfig(action.session.config),
         events: action.session.events,
+        readOnly: action.readOnly ?? false,
       };
     default:
       return state;
@@ -189,8 +190,6 @@ export interface UseDraftRoomReturn {
   logEvent: (event: DraftEventInput) => string | null;
   undo: () => void;
   reset: () => void;
-  // Replay the draft from scratch without leaving the room (mock: same seed).
-  restart: () => void;
   resume: () => void;
   // Load an archived (completed) session, e.g. to revisit its recap.
   resumeSession: (session: DraftRoomSession) => void;
@@ -201,6 +200,7 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
     phase: 'setup' as DraftRoomPhase,
     config: configFromLeague(l),
     events: [],
+    readOnly: false,
   }));
 
   const [resumable, setResumable] = useState<DraftRoomSession | null>(() => {
@@ -272,7 +272,7 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
   // Persist any in-progress or finished draft; setup-phase tweaking is not
   // worth saving and would overwrite a resumable session.
   useEffect(() => {
-    if (state.phase === 'setup') return;
+    if (state.phase === 'setup' || state.readOnly) return;
     saveDraftRoom({ config: state.config, events: state.events, phase: state.phase });
   }, [state]);
 
@@ -280,9 +280,9 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
   // Reset can no longer destroy the only record of a real draft (the
   // archive dedupes identical event logs).
   useEffect(() => {
-    if (state.phase !== 'complete') return;
+    if (state.phase !== 'complete' || state.readOnly) return;
     archiveDraftRoom({ config: state.config, events: state.events, phase: 'complete' });
-  }, [state.phase, state.config, state.events]);
+  }, [state.phase, state.config, state.events, state.readOnly]);
 
   const logEvent = useCallback(
     (partial: DraftEventInput): string | null => {
@@ -342,10 +342,16 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
   }, [state.phase, state.config, derived, logEvent]);
 
   const reset = useCallback(() => {
+    // Viewing a read-only archived draft must NOT clear the league's active
+    // in-progress session (same leagueKey); just exit the view back to setup.
+    if (state.readOnly) {
+      dispatch({ type: 'RESET' });
+      return;
+    }
     clearDraftRoom(state.config.leagueKey);
     setResumable(null);
     dispatch({ type: 'RESET' });
-  }, [state.config.leagueKey]);
+  }, [state.config.leagueKey, state.readOnly]);
 
   return {
     phase: state.phase,
@@ -362,13 +368,12 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
     logEvent,
     undo: useCallback(() => dispatch({ type: 'UNDO' }), []),
     reset,
-    restart: useCallback(() => dispatch({ type: 'RESTART' }), []),
     resume: useCallback(() => {
       const session = loadDraftRoom(leagueKeyFor(league));
       if (session) dispatch({ type: 'RESUME', session });
     }, [league]),
     resumeSession: useCallback((session: DraftRoomSession) => {
-      dispatch({ type: 'RESUME', session });
+      dispatch({ type: 'RESUME', session, readOnly: true });
     }, []),
   };
 }

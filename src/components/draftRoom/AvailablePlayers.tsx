@@ -278,7 +278,7 @@ export function AvailablePlayers({
               >
                 Tier
               </th>
-              <th>Player</th>
+              <th className={styles.playerHead}>Player</th>
               <th title="Position and consensus rank within it: RB12 is the experts' 12th-ranked RB.">
                 Pos
               </th>

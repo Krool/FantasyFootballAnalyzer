@@ -223,44 +223,87 @@ console.log(
     : `Rankings from CSV export, season ${SEASON} (run npm run fetch:rankings for fresher data)`,
 );
 
-// Two distinct players can share a normalized name+pos (it has happened:
-// Lamar Jackson, Mike Williams). Disambiguate by franchise, then bail loudly
-// rather than ship colliding ids.
+// Distinct players can share a normalized name+pos (it has happened: Lamar
+// Jackson, Mike Williams; and 3+ when deep rookies/FAs churn in preseason).
+// Group by base id, suffix EVERY member of a colliding group with its franchise,
+// then assert the final id set is unique - so a true duplicate (same name+pos+
+// team) bails loudly instead of silently shipping a duplicate/unstable id.
 {
-  const seen = new Map<string, PoolPlayer>();
+  const byBase = new Map<string, PoolPlayer[]>();
   for (const player of players) {
-    const prior = seen.get(player.id);
-    if (prior) {
-      prior.id = `${prior.id}-${canonicalTeam(prior.team).toLowerCase()}`;
+    const group = byBase.get(player.id);
+    if (group) group.push(player);
+    else byBase.set(player.id, [player]);
+  }
+  for (const group of byBase.values()) {
+    if (group.length < 2) continue;
+    for (const player of group) {
       player.id = `${player.id}-${canonicalTeam(player.team).toLowerCase()}`;
-      if (prior.id === player.id) {
-        console.error(`FAILED: id collision ${player.id} (${prior.name} vs ${player.name})`);
-        process.exit(1);
-      }
-    } else {
-      seen.set(player.id, player);
     }
+  }
+  const finalIds = new Map<string, PoolPlayer>();
+  for (const player of players) {
+    const clash = finalIds.get(player.id);
+    if (clash) {
+      console.error(`FAILED: id collision ${player.id} (${clash.name} vs ${player.name})`);
+      process.exit(1);
+    }
+    finalIds.set(player.id, player);
   }
 }
 
+// When a hand-maintained salary row fails to match, point at the likely fix:
+// ranking rows that share the surname. This catches the common drift modes
+// (first name vs nickname like Kenneth -> Kenny, a suffix appearing or
+// vanishing). Returns null when nothing is close.
+function suggestMatch(name: string, candidates: PoolPlayer[]): string | null {
+  const surname = normalizeName(name).split(' ').pop();
+  if (!surname) return null;
+  const near = candidates.filter(c => normalizeName(c.name).split(' ').includes(surname));
+  if (near.length === 0) return null;
+  return near.map(c => `'${c.name}' (${c.pos} ${c.team})`).join(', ');
+}
+
 // --- Salary values joined onto rankings ---
+// The salary sheet is hand-kept against FantasyPros names, which drift over a
+// season. A couple of stale rows must not blackhole the whole daily refresh:
+// the position-curve reprojection just below rebuilds every dollar value from
+// its position rank, so one missing salary point barely moves the board. So
+// tolerate a few unmatched rows (recorded with a suggested fix in the misses
+// report so we can mend them), and only abort when a miss is expensive enough
+// to be a renamed star or when so many miss that the sheet or the export
+// drifted structurally.
+const SALARY_MISS_TOLERANCE = 5;
+const SALARY_MISS_VALUE_FLOOR = 30; // a miss worth this much is a real asset, not deep-bench drift
 const salaryRows = readRows(salaryPath).slice(1); // skip header
-const unmatched: string[] = [];
+const salaryMisses: { line: string; value: number }[] = [];
 let matched = 0;
 for (const row of salaryRows) {
   const [, name, team, value] = row.map(f => f.trim());
   const hit = matchPlayer({ name, team }, players);
   if (!hit) {
-    unmatched.push(`${name} (${team}) $${value}`);
+    const suggestion = suggestMatch(name, players);
+    salaryMisses.push({
+      value: Number(value),
+      line: `${name} (${team}) $${value}${suggestion ? ` -> did you mean ${suggestion}?` : ''}`,
+    });
     continue;
   }
   hit.baseValue = Number(value);
   matched++;
 }
+console.log(
+  `Salary: ${matched}/${salaryRows.length} matched${salaryMisses.length ? `, ${salaryMisses.length} unmatched` : ''}`,
+);
+for (const miss of salaryMisses) console.warn(`  unmatched salary row: ${miss.line}`);
 
-if (unmatched.length > 0) {
-  console.error(`FAILED: ${unmatched.length} salary row(s) did not match any ranking row:`);
-  for (const line of unmatched) console.error(`  - ${line}`);
+const expensiveMiss = salaryMisses.find(m => m.value >= SALARY_MISS_VALUE_FLOOR);
+if (expensiveMiss || salaryMisses.length > SALARY_MISS_TOLERANCE) {
+  console.error(
+    expensiveMiss
+      ? `FAILED: an expensive salary row did not match (${expensiveMiss.line}). A miss worth $${expensiveMiss.value} is likely a renamed starter, not deep-bench drift.`
+      : `FAILED: ${salaryMisses.length} salary rows did not match (tolerance ${SALARY_MISS_TOLERANCE}). This many misses means the sheet or the rankings export drifted structurally.`,
+  );
   console.error('Fix the names in data/salary_cap_values.csv (or the matcher) and rerun.');
   process.exit(1);
 }
@@ -293,7 +336,12 @@ console.log(
 // from FantasyPros at the deep end. The full miss list lands in
 // data/raw/misses.<season>.json so join drift is visible in the repo, not
 // just in CI logs nobody reads.
-const missReport: Record<string, string[]> = {};
+const missReport: Record<string, string[]> = {
+  // Salary join ran above; carry any tolerated drift into the same report so it
+  // lands in misses.<season>.json next to the cross-source misses, where it is
+  // diffable in the repo instead of buried in a CI log.
+  Salary: salaryMisses.map(m => m.line),
+};
 
 function joinSource<T extends { name: string; pos: string; team: string }>(
   label: string,

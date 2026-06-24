@@ -62,8 +62,6 @@ export interface UseDraftSimReturn {
   setAutoPickMe: (v: boolean) => void;
   // Advance one AI pick while paused (snake).
   step: () => void;
-  // Replay the mock from scratch with the same seed (same script).
-  restart: () => void;
 }
 
 // Drives mock drafts: auto-picks for AI teams in snake, auto-nominates and
@@ -75,9 +73,6 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
   const [speed, setSpeed] = useState<SimSpeed>('normal');
   const [paused, setPaused] = useState(false);
   const [autoPickMe, setAutoPickMe] = useState(false);
-  // Bumped by restart() to re-seed the RNG and re-roll personas for an
-  // identical replay.
-  const [restartNonce, setRestartNonce] = useState(0);
   const tickMs = SPEED_MS[speed];
 
   // Lazy init so the RNG isn't rebuilt (and discarded) on every render. A
@@ -105,7 +100,7 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
   // when a draft starts (phase dep) so a typed-in seed applies.
   const personas = useMemo(
     () => makePersonas(config.teams.map(t => t.id), mulberry32((seedRef.current ?? 1) ^ 0x9e3779b9)),
-    [config.teams, phase, restartNonce], // eslint-disable-line react-hooks/exhaustive-deps
+    [config.teams, phase], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   // Market position for the league's scoring; the snake AI drafts off this.
@@ -298,9 +293,9 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
       }
       setLiveBid(null);
       setPending(null);
-    }, 1100);
+    }, tickMs);
     return () => clearTimeout(timer);
-  }, [liveMode, paused, liveBid, pending, derived.teams, derived.available, scaledValues, inflation.rate, config.myTeamId, logEvent, rng, personas]);
+  }, [liveMode, paused, tickMs, liveBid, pending, derived.teams, derived.available, scaledValues, inflation.rate, config.myTeamId, logEvent, rng, personas]);
 
   const placeBid = useCallback(
     (amount: number) => {
@@ -358,17 +353,6 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
     doSnakePick(derived.onTheClockId);
   }, [active, config.draftType, derived.onTheClockId, doSnakePick]);
 
-  // Replay from scratch with the same seed: reset the RNG and re-roll personas
-  // off the same seed so the AI repeats its exact script, then clear the board.
-  const restart = useCallback(() => {
-    rngRef.current = mulberry32(seedRef.current ?? 1);
-    setRestartNonce(n => n + 1);
-    setPending(null);
-    setLiveBid(null);
-    setNotice(null);
-    room.restart();
-  }, [room]);
-
   return {
     pending,
     awaitingMyNomination: active && config.draftType === 'auction' && !pending && isMyTurn,
@@ -385,6 +369,5 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
     autoPickMe,
     setAutoPickMe,
     step,
-    restart,
   };
 }

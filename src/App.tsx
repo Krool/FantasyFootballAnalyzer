@@ -7,6 +7,7 @@ import { HomePage } from '@/pages';
 import { ToolLanding } from '@/pages/ToolLanding';
 import { TOOL_LANDINGS } from '@/pages/toolLandings';
 import { posForSlug, labelForPos } from '@/data/rankingsVariants';
+import { Analytics } from '@/utils/analytics';
 import type { GuestDest } from '@/pages/GuestEntry';
 import { DEFAULT_GUEST_SETTINGS, loadGuestSettings, type GuestSettings } from '@/utils/guestLeague';
 
@@ -135,6 +136,9 @@ function App() {
     document.title = page
       ? `${page} · Fantasy Football Analyzer`
       : 'Fantasy Football Analyzer';
+    // Sanitized, path-only page_view (gtag's automatic one is disabled so the
+    // token-bearing /yahoo-success URL never reaches GA). Fires per SPA route.
+    Analytics.pageView(location.pathname);
   }, [location.pathname]);
 
   // Play sounds on league load success/error
@@ -147,6 +151,15 @@ function App() {
     }
     prevLeagueRef.current = league;
   }, [league, error, playLoadComplete, playError]);
+
+  // Clear an abandoned Yahoo OAuth stash on a fresh app load. The stash can
+  // carry ESPN cookies (so the league reloads after the round trip); if the user
+  // abandoned the flow it would otherwise linger in localStorage. A legitimate
+  // return mounts on /yahoo-success, where the handler below consumes it instead.
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path !== '/yahoo-success' && path !== '/yahoo-error') takeOAuthReturn();
+  }, []);
 
   // Handle Yahoo OAuth callback. Guarded by oauthHandledRef so React 18
   // StrictMode's double-invoke (and any subsequent location changes) don't

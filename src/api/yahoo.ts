@@ -333,7 +333,9 @@ export async function getUserLeagues(season: number = new Date().getFullYear()):
       }
     }
   } catch (e) {
-    logger.error('Error parsing leagues:', e, data);
+    // Don't forward the raw Yahoo payload (it carries league names) to the prod
+    // logger/Sentry - the "anonymized error logs" promise. Log a safe shape hint.
+    logger.error('Error parsing leagues:', e, `(parsed ${leagues.length} so far)`);
   }
 
   logger.debug('[Yahoo] Returning', leagues.length, 'leagues');
@@ -380,7 +382,19 @@ export async function getAvailableSeasons(
     results.push(...settled);
   }
 
-  return results.filter((s): s is SeasonOption => s !== null);
+  // Dedup by leagueId: in the offseason the current-year 'nfl' alias resolves to
+  // last season's game, so the current-year probe and the explicit prior-year
+  // key return the SAME leagueId tagged with two different years. Keep the entry
+  // whose explicit game key matches the id (the lower year), dropping the phantom
+  // current-year row that would otherwise load last season's data under this
+  // year's label.
+  const byLeagueId = new Map<string, SeasonOption>();
+  for (const opt of results) {
+    if (!opt) continue;
+    const existing = byLeagueId.get(opt.leagueId);
+    if (!existing || opt.year < existing.year) byLeagueId.set(opt.leagueId, opt);
+  }
+  return [...byLeagueId.values()];
 }
 
 // Parse roster settings to get position slot counts
@@ -1006,12 +1020,17 @@ export async function enrichPlayersWithStats(
 
   // Calculate replacement level for each position
   // Replacement = (starters * teams) + 1
-  // FLEX counts toward RB/WR since they're most commonly flexed
+  // FLEX counts toward RB/WR since they're most commonly flexed. SUPERFLEX is
+  // mostly a second QB (0.75) with the rest spilling into the flex pool (0.25),
+  // matching par.ts; without this QB replacement sits far too high and QB PAR
+  // (and every QB-involving trade/waiver verdict) is understated in superflex.
+  const sf = rosterSlots.SUPERFLEX || 0;
+  const flexPool = (rosterSlots.FLEX + sf * 0.25) * totalTeamsCount;
   const replacementRank: Record<string, number> = {
-    QB: rosterSlots.QB * totalTeamsCount + 1,
-    RB: (rosterSlots.RB * totalTeamsCount) + Math.floor(rosterSlots.FLEX * totalTeamsCount * 0.6) + 1,
-    WR: (rosterSlots.WR * totalTeamsCount) + Math.floor(rosterSlots.FLEX * totalTeamsCount * 0.3) + 1,
-    TE: (rosterSlots.TE * totalTeamsCount) + Math.floor(rosterSlots.FLEX * totalTeamsCount * 0.1) + 1,
+    QB: Math.round((rosterSlots.QB + sf * 0.75) * totalTeamsCount) + 1,
+    RB: (rosterSlots.RB * totalTeamsCount) + Math.floor(flexPool * 0.6) + 1,
+    WR: (rosterSlots.WR * totalTeamsCount) + Math.floor(flexPool * 0.3) + 1,
+    TE: (rosterSlots.TE * totalTeamsCount) + Math.floor(flexPool * 0.1) + 1,
     K: rosterSlots.K * totalTeamsCount + 1,
     DEF: rosterSlots.DST * totalTeamsCount + 1,
   };

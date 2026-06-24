@@ -284,6 +284,28 @@
   white-space: nowrap;
 }
 
+/* Frozen name column on phones. The player name sits mid-table (6th column),
+   so it's the first thing you lose when you scroll right to reach ADP/value.
+   Pin it to the left edge so each row keeps its identity while the stats
+   scroll under it. z-index order: scrolling body cells (auto) < pinned name
+   (1) < sticky header row (2) < the name header, which pins on both axes (3). */
+@media (max-width: 640px) {
+  .table .player {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--ink);
+    border-right: 2px solid var(--bone-dim);
+  }
+  .table thead th { z-index: 2; }
+  .table thead th.playerHead {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    border-right: 2px solid var(--bone-dim);
+  }
+}
+
 .dim {
   color: var(--bone-dim);
 }

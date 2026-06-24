@@ -130,7 +130,7 @@ function buildRankingsMarkup(
 // targeting mock-draft / draft-simulator searches).
 function buildDraftRoomMarkup(season: number): string {
   const features: Array<[string, string]> = [
-    ['Mock drafts', 'Practice snake or auction drafts against AI opponents with their own tendencies. Replay any run by its seed.'],
+    ['Mock drafts', 'Practice snake or auction drafts against AI opponents with their own tendencies, at your own pace.'],
     ['Live draft room', 'Track your real draft pick by pick with budget inflation, pick suggestions, and survival odds.'],
     ['Auction and snake', 'Both formats, any league size, with dollar values and ADP scaled to your budget and roster.'],
     ['Pick guidance', 'Best available by value, positional need, tiers, and runs as the board moves.'],
@@ -156,6 +156,15 @@ function customizeHead(
   page: { title: string; desc: string; path: string },
 ): string {
   let out = html.replace(/<title>[^<]*<\/title>/, `<title>${page.title}</title>`)
+  // Per-route social-card headline. og:title/twitter:title both carry the bare
+  // brand name in the shell, so without this every shared sub-page (rankings,
+  // tools, draft room) unfurls with the generic homepage title. Swap in the
+  // route title so the card headline matches the page. Targeted to the two
+  // title tags so og:site_name and the JSON-LD name (also the brand) stay put;
+  // esc() because page.title can contain & (e.g. the draft-room title).
+  out = out
+    .replace(/(<meta property="og:title" content=")[^"]*(">)/, `$1${esc(page.title)}$2`)
+    .replace(/(<meta name="twitter:title" content=")[^"]*(">)/, `$1${esc(page.title)}$2`)
   // Point canonical, og:url, and the JSON-LD url at the route. The homepage
   // copies all end with the site root + slash; og:image ends with /og.png so
   // it's untouched. siteRoot is read from the built page, so this holds whether

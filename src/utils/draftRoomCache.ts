@@ -72,7 +72,16 @@ export function archiveDraftRoom(session: Omit<DraftRoomSession, 'savedAt'>): vo
     if (existing.some(s => s.savedAt === entry.savedAt || sameEvents(s.events, entry.events))) {
       return;
     }
-    const next = [entry, ...existing].slice(0, ARCHIVE_CAP);
+    const combined = [entry, ...existing];
+    const next = combined.slice(0, ARCHIVE_CAP);
+    // Never let mock-draft churn evict the most recent real (live) draft: it's
+    // the league's actual hand-logged draft data, not a disposable practice run.
+    // If the cap pushed it out, keep it by dropping the oldest mock instead.
+    const newestLive = combined.find(s => s.config.mode === 'live');
+    if (newestLive && !next.includes(newestLive)) {
+      const oldestMockIdx = next.map(s => s.config.mode).lastIndexOf('mock');
+      if (oldestMockIdx !== -1) next[oldestMockIdx] = newestLive;
+    }
     localStorage.setItem(archiveKeyFor(session.config.leagueKey), JSON.stringify(next));
   } catch (err) {
     logger.warn('[draftRoomCache] Failed to archive draft session:', err);

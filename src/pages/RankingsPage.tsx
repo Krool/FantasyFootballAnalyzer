@@ -395,7 +395,10 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
                 >
                   Tier
                 </th>
-                <th title="Player name. R marks rookies; an injury tag shows current status">
+                <th
+                  className={styles.playerHead}
+                  title="Player name. R marks rookies; an injury tag shows current status"
+                >
                   Player
                 </th>
                 <th title="Position, with the player's rank at that position">Pos</th>

@@ -164,4 +164,29 @@ describe('auction keeper prices', () => {
     const keepers = guessKeepers([team], POOL, 2, 6);
     expect(keepers[0].keeperPrice).toBe(27);
   });
+
+  it('surfaces a round-1 auction keeper (the round gate must not drop it)', () => {
+    const team: Team = {
+      id: 'A',
+      name: 'Team A',
+      draftPicks: [
+        {
+          pickNumber: 1,
+          round: 1,
+          player: leaguePlayer('Star Back', 'RB'),
+          teamId: 'A',
+          teamName: 'Team A',
+          auctionValue: 22,
+        },
+      ],
+    };
+    // Sleeper assigns round 1 to auction picks; with the default escalation 1
+    // rawCostRound is 0, which the old round gate silently dropped. Auction
+    // keepers cost money, so the candidate must still surface and auto-fill.
+    const byTeam = keeperCandidates([team], POOL, 2, 6);
+    expect(byTeam.get('A')).toHaveLength(1);
+    const keepers = guessKeepers([team], POOL, 2, 6);
+    expect(keepers).toHaveLength(1);
+    expect(keepers[0].keeperPrice).toBe(27);
+  });
 });

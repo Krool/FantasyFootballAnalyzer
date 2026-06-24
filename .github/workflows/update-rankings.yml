@@ -51,6 +51,28 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # Surface salary-sheet drift the build tolerated (rows it rode through and
+      # recorded in the misses report) so we mend the name before the gap grows.
+      # Non-fatal: a run warning + job-summary note, only when something changed
+      # this run, so known drift is flagged once rather than re-pinged daily.
+      - name: Surface salary drift
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          file=$(ls data/raw/misses.*.json 2>/dev/null | head -1 || true)
+          if [ -n "$file" ]; then
+            misses=$(node -e "const s=(require('./'+process.argv[1]).Salary||[]); if (s.length) console.log(s.join('\n'))" "$file" 2>/dev/null || true)
+            if [ -n "$misses" ]; then
+              echo "::warning title=Salary sheet drift::Some salary rows did not match current rankings; see the job summary to mend them."
+              {
+                echo "### Salary sheet drift (non-fatal)"
+                echo "These rows in data/salary_cap_values.csv did not match current rankings and were skipped (their value still comes from the position curve). Mend the names:"
+                echo '```'
+                echo "$misses"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+
       - name: Run tests
         if: steps.diff.outputs.changed == 'true'
         run: npm run test:run
@@ -75,6 +97,14 @@ jobs:
           # commit on top rather than failing the push.
           git pull --rebase origin master
           git push
+
+      # The pre-commit "Build site" step gated OUR data tree, but the rebase
+      # above may have pulled in a concurrently-pushed human commit. Rebuild
+      # from the rebased tree so the deployed dist/ matches what was actually
+      # pushed - otherwise that human change is silently dropped from production.
+      - name: Rebuild rebased tree for deploy
+        if: steps.diff.outputs.changed == 'true'
+        run: npm run build
 
       # This job must deploy its own commit. The push above uses the default
       # GITHUB_TOKEN, and GitHub does not trigger workflows (including ci.yml)

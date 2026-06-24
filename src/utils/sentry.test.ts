@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { scrub, scrubString } from './sentry';
+import { scrub, scrubString, isBenignError } from './sentry';
+import type { ErrorEvent } from '@sentry/react';
 
 // The homepage manifesto promises "anonymized error logs". These tests pin the
 // scrubbing that backs that claim: a regression here would leak ESPN/Yahoo
@@ -24,6 +25,22 @@ describe('scrubString', () => {
     expect(scrubString(`Cookie SWID=${SWID} sent`)).not.toContain('419BAD61');
     expect(scrubString('id 419bad61-fe0d-4590-827b-bae6a00e5289 here')).toContain(
       '[redacted]',
+    );
+  });
+
+  it('redacts a bare credential assignment outside a query string', () => {
+    // A cookie header or a token spilled into an error message has no leading
+    // `?` and espn_s2 is not a GUID, so only the key=value rule catches it.
+    const cookie = `espn_s2=${ESPN_S2}; SWID=${SWID}`;
+    const scrubbed = scrubString(cookie);
+    expect(scrubbed).not.toContain(ESPN_S2);
+    expect(scrubbed).not.toContain('419BAD61');
+    expect(scrubbed).toContain('espn_s2=[redacted]');
+  });
+
+  it('redacts a token spilled into a free-form message', () => {
+    expect(scrubString('fetch failed with access_token=ya29.SECRETvalue here')).not.toContain(
+      'ya29.SECRETvalue',
     );
   });
 
@@ -74,5 +91,37 @@ describe('scrub', () => {
     const serialized = JSON.stringify(scrub(event));
     expect(serialized).not.toContain(ESPN_S2);
     expect(serialized).not.toContain('419BAD61');
+  });
+});
+
+describe('isBenignError', () => {
+  const exception = (value: string): ErrorEvent =>
+    ({ exception: { values: [{ value }] } }) as ErrorEvent;
+
+  it('drops stale-chunk failures in every browser phrasing', () => {
+    // Chrome / Firefox / Safari / webpack-era, plus the CSS-chunk variant.
+    expect(isBenignError(exception('Failed to fetch dynamically imported module: https://x/assets/Page-abc.js'))).toBe(true);
+    expect(isBenignError(exception('error loading dynamically imported module'))).toBe(true);
+    expect(isBenignError(exception('Importing a module script failed.'))).toBe(true);
+    expect(isBenignError(exception('Loading chunk 42 failed'))).toBe(true);
+    expect(isBenignError(exception('Unable to preload CSS for /assets/PosBadge-Bag3PyET.css'))).toBe(true);
+  });
+
+  it('drops dropped-fetch network blips', () => {
+    expect(isBenignError(exception('Load failed'))).toBe(true);
+    expect(isBenignError(exception('Failed to fetch'))).toBe(true);
+    expect(isBenignError(exception('NetworkError when attempting to fetch resource.'))).toBe(true);
+  });
+
+  it('matches the top-level message too, not just exceptions', () => {
+    expect(isBenignError({ message: 'Load failed' } as ErrorEvent)).toBe(true);
+  });
+
+  it('keeps real application errors', () => {
+    expect(isBenignError(exception("Cannot read properties of undefined (reading 'name')"))).toBe(false);
+    // A real server error returns a response and throws a descriptive message,
+    // so it must survive the filter.
+    expect(isBenignError(exception('Sleeper season stats 2024: 500 Internal Server Error'))).toBe(false);
+    expect(isBenignError({} as ErrorEvent)).toBe(false);
   });
 });

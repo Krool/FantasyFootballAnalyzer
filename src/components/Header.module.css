@@ -276,13 +276,32 @@
 }
 
 @media (max-width: 1000px) {
+  /* Phones lay the masthead out as a few stacked rows. A true column stranded
+     the sound button on a row of its own (it sorts before the order:10 nav, so
+     it landed between the league group and the tab bar). Instead keep a
+     wrapping row and drive the breaks with order + width:100%: row 1 is the
+     logo with the sound button parked at its right edge; the league group and
+     the nav each take a full row below. */
+  .headerContent {
+    align-items: center;
+    gap: 0.55rem 1rem;
+  }
+  .logo { font-size: 1.1rem; }
+
+  .soundButton {
+    order: 1;
+    margin-left: auto;
+  }
+  .leagueGroup {
+    order: 2;
+    width: 100%;
+  }
   /* A wrapped 8-link nav permanently stuck atop a phone viewport eats
      200px of screen; one scroll-snap row keeps it to ~50px. The eight season
-     tabs plus the export and sound buttons stop fitting one row around
-     1000px, so the scroll row takes over there rather than wrapping. */
-  .headerContent { flex-direction: column; align-items: flex-start; }
-  .logo { font-size: 1.1rem; }
+     tabs plus the export button stop fitting one row around 1000px, so the
+     scroll row takes over there rather than wrapping. */
   .nav {
+    order: 3;
     width: 100%;
     justify-content: flex-start;
     flex-wrap: nowrap;
@@ -293,6 +312,11 @@
   }
   .nav::-webkit-scrollbar { display: none; }
   .nav > * { flex-shrink: 0; scroll-snap-align: start; }
+  /* Page tabs cluster on the left; the Yahoo connect chip sits off at the
+     right edge. Once the full league nav overflows there is no free space, so
+     the auto margin collapses and it falls back inline at the row's end. */
+  .yahooButton,
+  .yahooButtonOn { margin-left: auto; }
 }
 
 @media (max-width: 600px) {
@@ -300,7 +324,7 @@
      sticky header swallows the viewport. Swap to the "FFA" monogram (middle
      F keeps the accent) and trim the masthead padding to claw back space. */
   .header { padding: 0.65rem 0 0.55rem; }
-  .headerContent { gap: 0.9rem; }
+  .headerContent { gap: 0.55rem 0.9rem; }
   .logoFull { display: none; }
   .logoShort { display: inline; }
   .logo { font-size: 1.5rem; letter-spacing: 0; }

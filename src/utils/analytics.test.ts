@@ -31,7 +31,7 @@ describe('trackEvent', () => {
 });
 
 describe('Analytics named helpers', () => {
-  it('leagueConnected emits with platform + league_id', () => {
+  it('leagueConnected emits platform only (no league id, for privacy)', () => {
     const gtag = vi.fn();
     window.gtag = gtag;
 
@@ -39,7 +39,6 @@ describe('Analytics named helpers', () => {
 
     expect(gtag).toHaveBeenCalledWith('event', 'league_connected', {
       platform: 'sleeper',
-      league_id: 'L1',
     });
   });
 

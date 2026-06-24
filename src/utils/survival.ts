@@ -15,7 +15,7 @@ import type { TeamDraftState } from './draftEngine';
 import { applyPickToTeam } from './draftEngine';
 import { mulberry32, simSnakePick } from './draftSim';
 import { picksUntilMine } from './pickPreview';
-import { roundForPick } from './snakeOrder';
+import { roundForPick, type SnakeFormat } from './snakeOrder';
 
 const DEFAULT_SIMS = 200;
 // Matches the suggestion engine's candidate depth: odds below the top of the
@@ -30,6 +30,10 @@ export interface SurvivalContext {
   totalRounds: number;
   teams: ReadonlyMap<string, TeamDraftState>;
   rosterSlots: RosterSlots;
+  // The league's snake direction (3rr / linear / standard) so the replayed
+  // opponent picks match the real turn order; without it the sim defaults to
+  // 'standard' and computes the wrong intervening picks for 3rr/linear leagues.
+  snakeFormat?: SnakeFormat;
   // Rank-sorted, reserved keepers already excluded (deriveDraftState shape).
   available: PoolPlayer[];
   scaledValues: Map<string, number>;
@@ -64,6 +68,7 @@ export function simulateTakenOdds(ctx: SurvivalContext): Map<string, number> | n
     ctx.totalPicks,
     ctx.keepers ?? [],
     ctx.draftedPlayerIds ?? new Set(),
+    ctx.snakeFormat ?? 'standard',
   );
   if (stretch.length === 0) return null;
   // Keeper-reserved picks are spoken for and the user's own picks aren't a

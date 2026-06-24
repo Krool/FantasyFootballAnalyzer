@@ -13,8 +13,8 @@ const SPEEDS: Array<{ value: SimSpeed; label: string }> = [
   { value: 'instant', label: 'Instant' },
 ];
 
-// The mock-draft control strip: pace, pause/step, auto-pick-for-me, replay.
-// Lets the room double as a practice tool you can fast-sim and rerun.
+// The mock-draft control strip: pace, pause/step, auto-pick-for-me.
+// Lets the room double as a practice tool you can fast-sim and review.
 export function MockControls({ sim, isSnake }: MockControlsProps) {
   return (
     <div className={styles.bar}>
@@ -62,16 +62,6 @@ export function MockControls({ sim, isSnake }: MockControlsProps) {
           Auto-pick me
         </label>
       )}
-
-      <span className={styles.spacer} />
-      <button
-        type="button"
-        className={styles.btn}
-        onClick={sim.restart}
-        title="Replay this mock from the first pick with the same seed (same AI script)"
-      >
-        ↻ Replay
-      </button>
     </div>
   );
 }

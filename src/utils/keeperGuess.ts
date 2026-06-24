@@ -86,9 +86,17 @@ export function keeperCandidates(
   for (const team of leagueTeams) {
     const candidates: KeeperCandidate[] = [];
     for (const pick of team.draftPicks ?? []) {
-      const costRound = pick.round - escalation;
-      // Round 1 picks can't get cheaper; cost rounds beyond the draft don't exist.
-      if (costRound < 1 || costRound > rounds) continue;
+      const rawCostRound = pick.round - escalation;
+      // Snake keepers cost a draft round, so a round-1 pick can't get cheaper and
+      // a cost round past the draft doesn't exist. Auction keepers cost MONEY
+      // (keeperPrice below), not a round, so the round bounds must not gate them
+      // out - Sleeper assigns round 1 to auction picks, which would otherwise
+      // drop every auction keeper at the default escalation.
+      const isAuction = pick.auctionValue != null;
+      if (!isAuction && (rawCostRound < 1 || rawCostRound > rounds)) continue;
+      // Clamp so the round-based slot/surplus math stays in range; for auction
+      // picks costRound is display-only ("ignored for auction keepers").
+      const costRound = Math.min(Math.max(1, rawCostRound), rounds);
       // League rule: must have finished the season on the drafting team.
       if (!onRoster(team.roster, pick.player)) continue;
       const player = matchPlayer(
@@ -107,9 +115,18 @@ export function keeperCandidates(
       const marketWorth = valueAtRank(rankSorted, market);
       const playerWorth = (expertWorth + marketWorth) / 2;
       const consensusRank = (expert + market) / 2;
-      const surplus = playerWorth - valueAtRank(rankSorted, slotRank);
       const logRankDelta = Math.log((slotRank + 1) / (consensusRank + 1));
       const lastPrice = pick.auctionValue != null ? Math.round(pick.auctionValue) : undefined;
+      const keeperPrice = lastPrice != null ? lastPrice + AUCTION_KEEPER_BUMP : undefined;
+      // Snake keepers are valued against their cost ROUND; auction keepers cost
+      // DOLLARS, so value them on price surplus (worth beats the keeper price).
+      // Using the round-based surplus for auction makes it negative at the
+      // round-1 clamp, so guessKeepers (score > 0) would drop every one.
+      const surplus =
+        isAuction && keeperPrice != null
+          ? playerWorth - keeperPrice
+          : playerWorth - valueAtRank(rankSorted, slotRank);
+      const score = isAuction ? surplus : surplus + logRankDelta;
       candidates.push({
         teamId: team.id,
         player,
@@ -119,9 +136,9 @@ export function keeperCandidates(
         expertRound: Math.max(1, Math.ceil(expert / teamCount)),
         surplus,
         lastPrice,
-        keeperPrice: lastPrice != null ? lastPrice + AUCTION_KEEPER_BUMP : undefined,
+        keeperPrice,
         keptLastYear: pick.isKeeper === true,
-        score: surplus + logRankDelta,
+        score,
       });
     }
     candidates.sort((a, b) => b.score - a.score);

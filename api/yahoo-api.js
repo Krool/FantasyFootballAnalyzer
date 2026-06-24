@@ -50,7 +50,10 @@ export default async function handler(req, res) {
 
     if (!yahooResponse.ok) {
       const errorText = await yahooResponse.text();
-      console.error('Yahoo API error:', yahooResponse.status, errorText);
+      // Log only the status, never the body: Yahoo error payloads carry league/
+      // team/manager names and these logs persist server-side ("no server keeps
+      // your league data"). The body still goes back to the user's own browser.
+      console.error('Yahoo API error:', yahooResponse.status);
 
       if (yahooResponse.status === 401) {
         return res.status(401).json({ error: 'Token expired or invalid' });

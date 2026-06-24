@@ -183,6 +183,31 @@
   white-space: nowrap;
 }
 
+/* Frozen name column on phones. The name is the 4th column, so it's visible
+   on load but scrolls away the moment you reach for ADP / the money columns.
+   Pin it left so a row keeps its identity while the stats scroll under it. The
+   selected (tap) and cursor (row 0 by default) rows tint their background, so
+   the pinned cell has to match or it reads as a gap in the highlight. z-index:
+   body cells (auto) < pinned name (1) < header row (2) < name header (3). */
+@media (max-width: 640px) {
+  .table .player {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--ink);
+    border-right: 2px solid var(--bone-dim);
+  }
+  .rowCursor .player { background: var(--ink-3); }
+  .rowSelected .player { background: var(--ink-2); }
+  .table thead th { z-index: 2; }
+  .table thead th.playerHead {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    border-right: 2px solid var(--bone-dim);
+  }
+}
+
 .tierBreak {
   display: inline-block;
   font-family: var(--font-mono);
@@ -388,5 +413,18 @@
   .chipOn,
   .quickBtn {
     min-height: 44px;
+  }
+
+  /* Star/avoid is a primary action on the live board too; the 0.15rem-padded
+     glyph is a ~20px target. Match the Rankings page and give it the full
+     44px so a mis-tap during a draft doesn't star the wrong player. */
+  .star,
+  .starOn,
+  .starAvoid {
+    font-size: 1rem;
+    padding: 0.6rem 0.5rem;
+  }
+  .starCell {
+    width: 2.4rem;
   }
 }

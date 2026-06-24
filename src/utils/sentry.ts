@@ -28,7 +28,16 @@ export function scrubString(value: string): string {
     // Drop query strings entirely: league ids, oauth codes, access tokens.
     .replace(/\?[^\s"']+/g, '?' + REDACTED)
     // SWID-style GUIDs, with or without the wrapping braces.
-    .replace(/\{?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}?/gi, REDACTED);
+    .replace(/\{?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}?/gi, REDACTED)
+    // Credential assignments outside a query string: a cookie header
+    // (`espn_s2=...; SWID=...`) or a token spilled into an error message. The
+    // query-string and GUID rules above miss these (espn_s2 and Yahoo tokens
+    // are base64 blobs, not GUIDs, and a cookie has no leading `?`), so redact
+    // the value of any known credential key wherever `key=value` appears.
+    .replace(
+      /\b(espn_s2|swid|access_token|refresh_token|oauth_token|code)=[^\s;"'&]+/gi,
+      '$1=' + REDACTED,
+    );
 }
 
 // Recursively scrub an arbitrary structure: redact sensitive keys outright,
@@ -47,6 +56,32 @@ export function scrub<T>(value: T): T {
   return value;
 }
 
+// Expected churn, not actionable signal, and reporting it only drains the
+// free-tier quota:
+//   - Stale-chunk failures after a redeploy: a visitor on an old tab asks for a
+//     chunk hash the new build rehashed away. The app already self-heals these
+//     (the vite:preloadError reload in main.tsx and RouteErrorBoundary's manual
+//     Reload), so the report adds noise without a fix. Each browser phrases the
+//     failure differently, hence the alternation; "unable to preload css" is the
+//     stylesheet-chunk variant.
+//   - Dropped third-party fetches: a user's network blip, an ad blocker, or a
+//     momentary upstream 5xx/CORS. "Load failed" (WebKit) and "Failed to fetch"
+//     (Chrome) are the bare network-failure messages, raised only when the
+//     request never completed. Every caller already degrades gracefully. A real
+//     server error returns a response and throws a descriptive message instead
+//     (e.g. "Sleeper season stats 2024: 500"), so this never masks an API bug.
+const BENIGN_ERROR =
+  /(failed to fetch|error loading) dynamically imported module|importing a module script failed|loading chunk \d+ failed|unable to preload css|load failed|failed to fetch|networkerror when attempting to fetch/i;
+
+// True when the event's only signal is one of the benign messages above. Checks
+// both the exception value (thrown Errors) and the top-level message (captured
+// strings). Exported for tests.
+export function isBenignError(event: Sentry.ErrorEvent): boolean {
+  const fromException = event.exception?.values?.some(v => BENIGN_ERROR.test(v.value ?? '')) ?? false;
+  const fromMessage = typeof event.message === 'string' && BENIGN_ERROR.test(event.message);
+  return fromException || fromMessage;
+}
+
 export function initSentry() {
   if (!ENABLED) return;
   Sentry.init({
@@ -59,6 +94,9 @@ export function initSentry() {
     // Errors only. Performance tracing would burn the free-tier quota.
     tracesSampleRate: 0,
     beforeSend(event) {
+      // Drop self-healing deploy churn and dropped-fetch noise before it counts
+      // against quota. Scrub everything that survives.
+      if (isBenignError(event)) return null;
       return scrub(event);
     },
     beforeBreadcrumb(crumb) {

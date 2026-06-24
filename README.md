@@ -18,7 +18,11 @@ platform APIs.
   instant grades
 - Live Sync pulls picks straight from a running Sleeper draft
 - Rankings: FantasyPros, ESPN, and Sleeper side by side, refreshed daily by
-  a GitHub Action, with a target/avoid list that follows you into the draft
+  a GitHub Action, with a target/avoid list that follows you into the draft,
+  plus per-position views (`/rankings/qb` .. `/rankings/flex`)
+
+The Rankings board and the Draft Room work with no login at all (guest mode).
+A loaded league is only needed for the league-analysis tools below.
 
 **League analysis (any loaded season)**
 
@@ -43,11 +47,15 @@ npm run deploy       # publish dist/ to gh-pages
 Draft data lives in `src/data/draftPool.<season>.json`, built by
 `npm run update:rankings` (see CLAUDE.md for pipeline details). The Yahoo
 OAuth and ESPN proxy serverless functions in `api/` deploy to Vercel;
-everything else is a static site on GitHub Pages.
+everything else is a static site on GitHub Pages at the custom domain. The
+Vercel functions read `FRONTEND_URL`, the Yahoo client id/secret, and an
+optional `VITE_SENTRY_DSN` from env; see CLAUDE.md for the full list.
 
 ## Docs
 
+- `CLAUDE.md` — architecture, deployment, and contributor guide (start here)
 - `docs/FANTASY_FOOTBALL.md` — domain rules, season calendar, platform API
   behaviors
 - `docs/DESIGN_SYSTEM.md` — the GRIDIRON design language
 - `docs/API_REFERENCE.md` — platform endpoint notes
+- `docs/archive/` — superseded and historical docs

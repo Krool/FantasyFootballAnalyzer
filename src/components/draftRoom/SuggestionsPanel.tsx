@@ -54,6 +54,7 @@ export function SuggestionsPanel({ room, onSelect }: SuggestionsPanelProps) {
       totalRounds: config.rounds,
       teams: derived.teams,
       rosterSlots: config.rosterSlots,
+      snakeFormat: config.snakeFormat,
       available: derived.available,
       scaledValues,
       adpOf,

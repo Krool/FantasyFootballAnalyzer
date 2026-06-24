@@ -7,6 +7,7 @@ import {
   keyForCredentials,
   loadCachedLeague,
   loadCachedLeagueForCredentials,
+  sweepStaleCacheVersions,
 } from './leagueCache';
 import type { League, LeagueCredentials } from '@/types';
 
@@ -101,6 +102,102 @@ describe('loadCachedLeagueForCredentials', () => {
     cacheLeague(makeLeague({ id: 'L1', platform: 'espn', season: 2024 }));
     const creds: LeagueCredentials = { platform: 'sleeper', leagueId: 'L1' };
     expect(loadCachedLeagueForCredentials(creds)).toBeNull();
+  });
+});
+
+describe('cacheLeague quota eviction', () => {
+  // jsdom's localStorage is a Proxy that maps property assignment to storage
+  // entries, so the only reliable way to make setItem throw a quota error is to
+  // spy on Storage.prototype. The mock throws once, then delegates to the real
+  // method so the post-eviction retry actually persists.
+  function failFirstSetItem() {
+    const realSetItem = Storage.prototype.setItem;
+    let firstCall = true;
+    return vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+      this: Storage,
+      k: string,
+      v: string,
+    ) {
+      if (firstCall) {
+        firstCall = false;
+        throw new DOMException('exceeded quota', 'QuotaExceededError');
+      }
+      realSetItem.call(this, k, v);
+    });
+  }
+
+  // Plant a real entry under a versioned key with an explicit savedAt so
+  // "oldest" is deterministic (cacheLeague itself stamps Date.now()).
+  function plant(id: string, season: number, savedAt: number) {
+    localStorage.setItem(
+      `ffa:league:v3:sleeper:${id}:${season}`,
+      JSON.stringify({ league: makeLeague({ id, season }), savedAt }),
+    );
+  }
+
+  it('evicts the oldest cached league and retries once on a quota error', () => {
+    plant('OLD', 2020, 100);
+    plant('NEW', 2024, 5000);
+
+    const spy = failFirstSetItem();
+    cacheLeague(makeLeague({ id: 'L1', season: 2024 }));
+    spy.mockRestore();
+
+    // Retry after eviction persisted the new league...
+    expect(loadCachedLeague('sleeper', 'L1', 2024)).not.toBeNull();
+    // ...the oldest entry was evicted...
+    expect(localStorage.getItem('ffa:league:v3:sleeper:OLD:2020')).toBeNull();
+    // ...and the newer sibling survived.
+    expect(loadCachedLeague('sleeper', 'NEW', 2024)).not.toBeNull();
+  });
+
+  it('evicts an unparseable entry first (it is the best eviction candidate)', () => {
+    plant('GOOD', 2024, 5000);
+    localStorage.setItem('ffa:league:v3:sleeper:BAD:2024', '{corrupt');
+
+    const spy = failFirstSetItem();
+    cacheLeague(makeLeague({ id: 'L1', season: 2024 }));
+    spy.mockRestore();
+
+    expect(localStorage.getItem('ffa:league:v3:sleeper:BAD:2024')).toBeNull();
+    expect(loadCachedLeague('sleeper', 'L1', 2024)).not.toBeNull();
+  });
+
+  it('swallows the error (no throw) when quota is hit with nothing to evict', () => {
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('exceeded quota', 'QuotaExceededError');
+    });
+
+    expect(() => cacheLeague(makeLeague({ id: 'L1', season: 2024 }))).not.toThrow();
+    spy.mockRestore();
+
+    expect(loadCachedLeague('sleeper', 'L1', 2024)).toBeNull();
+  });
+});
+
+describe('sweepStaleCacheVersions', () => {
+  it('removes prior-version league keys but keeps the current version and unrelated keys', () => {
+    localStorage.setItem('ffa:league:v1:sleeper:L1:2023', 'old');
+    localStorage.setItem('ffa:league:v2:sleeper:L1:2023', 'older');
+    cacheLeague(makeLeague({ season: 2024 })); // current v3 entry
+    localStorage.setItem('unrelated', 'keep me');
+
+    sweepStaleCacheVersions();
+
+    expect(localStorage.getItem('ffa:league:v1:sleeper:L1:2023')).toBeNull();
+    expect(localStorage.getItem('ffa:league:v2:sleeper:L1:2023')).toBeNull();
+    expect(loadCachedLeague('sleeper', 'L1', 2024)).not.toBeNull();
+    expect(localStorage.getItem('unrelated')).toBe('keep me');
+  });
+
+  it('is a no-op when only current-version and unrelated keys exist', () => {
+    cacheLeague(makeLeague({ season: 2024 }));
+    localStorage.setItem('unrelated', 'keep me');
+
+    sweepStaleCacheVersions();
+
+    expect(loadCachedLeague('sleeper', 'L1', 2024)).not.toBeNull();
+    expect(localStorage.getItem('unrelated')).toBe('keep me');
   });
 });
 

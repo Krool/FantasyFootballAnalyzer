@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import type { League, LeagueCredentials } from '@/types';
 import { getCachedSeasons } from '@/utils/seasonsCache';
@@ -38,7 +38,7 @@ function LocationProbe() {
 }
 
 describe('YearSelector draft prep entry', () => {
-  it('shows the upcoming draft year and navigates to the draft room', () => {
+  it('shows the upcoming draft year and navigates to the draft room', async () => {
     render(
       <MemoryRouter initialEntries={['/draft']}>
         <YearSelector league={league} credentials={credentials} onPick={() => {}} />
@@ -48,8 +48,12 @@ describe('YearSelector draft prep entry', () => {
       </MemoryRouter>,
     );
 
-    // Open the dropdown
-    fireEvent.click(screen.getByTitle('Switch season'));
+    // Open the dropdown. The toggle kicks off loadSeasons(), which the mock
+    // rejects; awaiting an async act() flushes that rejection's state update
+    // (setSeasons/setLoading) so it settles inside act() instead of warning.
+    await act(async () => {
+      fireEvent.click(screen.getByTitle('Switch season'));
+    });
 
     const draftYear = new Date().getFullYear();
     const entry = screen.getByText(String(draftYear));
@@ -59,14 +63,16 @@ describe('YearSelector draft prep entry', () => {
     expect(screen.getByTestId('location').textContent).toBe('/draft-room');
   });
 
-  it('hides the entry when the loaded league already covers the draft year', () => {
+  it('hides the entry when the loaded league already covers the draft year', async () => {
     const current = { ...league, season: new Date().getFullYear() };
     render(
       <MemoryRouter>
         <YearSelector league={current} credentials={credentials} onPick={() => {}} />
       </MemoryRouter>,
     );
-    fireEvent.click(screen.getByTitle('Switch season'));
+    await act(async () => {
+      fireEvent.click(screen.getByTitle('Switch season'));
+    });
     expect(screen.queryByText('draft prep')).toBeNull();
   });
 
@@ -81,7 +87,7 @@ describe('YearSelector draft prep entry', () => {
     expect(trigger.textContent).not.toContain('2025');
   });
 
-  it('returns to the season view when picking the loaded season from the draft room', () => {
+  it('returns to the season view when picking the loaded season from the draft room', async () => {
     render(
       <MemoryRouter initialEntries={['/draft-room']}>
         <YearSelector league={league} credentials={credentials} onPick={() => {}} />
@@ -90,7 +96,9 @@ describe('YearSelector draft prep entry', () => {
         </Routes>
       </MemoryRouter>,
     );
-    fireEvent.click(screen.getByTitle('Switch season'));
+    await act(async () => {
+      fireEvent.click(screen.getByTitle('Switch season'));
+    });
     // The seasons list hasn't loaded (network mocked away); the loaded
     // season comes from the fetch fallback after failure, so use the draft
     // prep entry's sibling: pick the loaded 2025 season via fallback render.

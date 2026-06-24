@@ -1,6 +1,13 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DraftEvent, DraftRoomConfig } from '@/types/draft';
-import { clearDraftRoom, loadDraftRoom, saveDraftRoom } from './draftRoomCache';
+import {
+  archiveDraftRoom,
+  clearDraftRoom,
+  loadCompletedLiveDraft,
+  loadDraftArchive,
+  loadDraftRoom,
+  saveDraftRoom,
+} from './draftRoomCache';
 
 const config: DraftRoomConfig = {
   leagueKey: 'yahoo:99:2026',
@@ -49,5 +56,34 @@ describe('draftRoomCache', () => {
   it('rejects entries missing required fields', () => {
     localStorage.setItem('ffa:draftroom:v1:yahoo:99:2026', JSON.stringify({ config: {} }));
     expect(loadDraftRoom('yahoo:99:2026')).toBeNull();
+  });
+
+  it('keeps the real live draft when mock-draft churn exceeds the archive cap', () => {
+    const key = 'yahoo:99:2026';
+    let clock = 1;
+    const nowSpy = vi.spyOn(Date, 'now').mockImplementation(() => clock++);
+    try {
+      // The user's real live draft, archived first (so it's the oldest entry).
+      archiveDraftRoom({
+        config: { ...config, mode: 'live' },
+        events: [{ kind: 'auction_sale', seq: 0, ts: 1, playerId: 'real-live', nominatedById: 'A', wonById: 'A', price: 60 }],
+        phase: 'complete',
+      });
+      // 25 distinct mock replays push well past ARCHIVE_CAP (20).
+      for (let i = 0; i < 25; i++) {
+        archiveDraftRoom({
+          config: { ...config, mode: 'mock' },
+          events: [{ kind: 'auction_sale', seq: 0, ts: 1, playerId: `mock-${i}`, nominatedById: 'A', wonById: 'A', price: 10 }],
+          phase: 'complete',
+        });
+      }
+      // The live draft must survive eviction and still be the league's draft data.
+      const live = loadCompletedLiveDraft(key);
+      expect(live?.config.mode).toBe('live');
+      expect(live?.events[0].playerId).toBe('real-live');
+      expect(loadDraftArchive(key).filter(s => s.config.mode === 'live')).toHaveLength(1);
+    } finally {
+      nowSpy.mockRestore();
+    }
   });
 });

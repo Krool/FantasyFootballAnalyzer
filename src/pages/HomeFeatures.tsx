@@ -44,7 +44,7 @@ export function HomeFeatures() {
         <h3 className={styles.featureTitle}>Mock Drafts</h3>
         <p className={styles.featureDesc}>
           Practice snake or auction drafts against AI opponents
-          with their own tendencies. Replay any run by its seed.
+          with their own tendencies, at your own pace.
         </p>
       </div>
 

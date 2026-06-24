@@ -90,6 +90,14 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  /* Stop iOS Safari auto-inflating mono text in landscape, and kill the blue
+     tap-flash on every button/row (both inherit down from the root). */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   font-family: var(--font-body);
   background-color: var(--ink);
@@ -115,6 +123,11 @@ input, select, textarea { font-family: inherit; color: var(--bone); }
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 1.5rem;
+}
+
+/* Phones can't spare 48px of gutter on the dense draft tables; hand it back. */
+@media (max-width: 640px) {
+  .container { padding: 0 1rem; }
 }
 
 /* ─── Headlines (utility for inline use) ─── */

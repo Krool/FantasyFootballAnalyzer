@@ -30,6 +30,29 @@ jobs:
       contents: write # the deploy step pushes the build to the gh-pages branch
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # need the parent commit to detect a draft-pool timestamp regression
+
+      # Guard against the clobber that bit us once (af2bb49): a human commit that
+      # carries a stale, locally-built draft pool and silently reverts the bot's
+      # daily data. The bot and any fresh rebuild only move generatedAt forward;
+      # an untouched commit leaves it equal. So if this push moves any
+      # draftPool.<season>.json generatedAt BACKWARD versus its parent commit,
+      # stop before deploying. ISO-8601 timestamps compare correctly as strings.
+      # Deliberately rolling data back? Rebuild fresh (npm run update:rankings)
+      # so it moves forward, or use the npm run deploy break-glass.
+      - name: Guard against stale draft-pool clobber
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          for f in src/data/draftPool.*.json; do
+            [ -f "$f" ] || continue
+            cur=$(grep -m1 '"generatedAt"' "$f" | sed -E 's/.*"generatedAt": *"([^"]+)".*/\1/' || true)
+            prev=$(git show "HEAD~1:$f" 2>/dev/null | grep -m1 '"generatedAt"' | sed -E 's/.*"generatedAt": *"([^"]+)".*/\1/' || true)
+            if [ -n "$prev" ] && [ -n "$cur" ] && [[ "$cur" < "$prev" ]]; then
+              echo "::error::$f generatedAt moved backward ($prev -> $cur). This looks like a stale local pool clobbering the bot's update. Run 'git checkout origin/master -- src/data' or 'npm run update:rankings', then recommit."
+              exit 1
+            fi
+          done
 
       - uses: actions/setup-node@v4
         with:

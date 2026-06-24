@@ -14,11 +14,13 @@ export function trackEvent(eventName: string, params?: Record<string, unknown>) 
 
 // Fantasy Football Analyzer specific events
 export const Analytics = {
-  // Track league connected
-  leagueConnected: (platform: string, leagueId: string) => {
+  // Track league connected. Only the platform, never the league id: the raw id
+  // re-identifies which specific league a visitor analyzed, which the
+  // "anonymized" privacy promise forbids. The id param stays in the signature so
+  // call sites don't change, but it is deliberately not sent.
+  leagueConnected: (platform: string, _leagueId?: string) => {
     trackEvent("league_connected", {
       platform, // 'espn', 'sleeper', 'yahoo'
-      league_id: leagueId,
     });
   },
 
@@ -61,6 +63,18 @@ export const Analytics = {
   pageViewed: (pageName: string) => {
     trackEvent("page_view", {
       page_name: pageName,
+    });
+  },
+
+  // SPA page_view with a path-only location. gtag's automatic page_view is off
+  // (send_page_view:false in index.html) because its page_location is the raw
+  // URL, which on the /yahoo-success OAuth return carries tokens; we send the
+  // pathname only so credentials never reach Google Analytics.
+  pageView: (path: string) => {
+    trackEvent("page_view", {
+      page_path: path,
+      page_location: (typeof window !== "undefined" ? window.location.origin : "") + path,
+      page_title: typeof document !== "undefined" ? document.title : undefined,
     });
   },
 };
