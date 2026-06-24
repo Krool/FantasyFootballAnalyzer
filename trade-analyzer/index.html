@@ -23,7 +23,7 @@
     <!-- Critical background so the prerendered homepage (injected into #root at
          build time for crawlers) paints on-brand before the bundle's CSS loads
          and React replaces it. -->
-    <style>html,body{margin:0;background-color:#0a0a0a;color:#f4efe6;font-family:Georgia,"Times New Roman",serif}</style>
+    <style>html,body{margin:0;background-color:#0a0a0a;color:#f4efe6;font-family:Georgia,"Times New Roman",serif}#root{opacity:0}html.app-ready #root{opacity:1;transition:opacity .22s ease-out}</style>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://fantasy-football-analyzer-mu.vercel.app https://lm-api-reads.fantasy.espn.com https://api.sleeper.app https://www.google-analytics.com https://*.ingest.us.sentry.io; img-src 'self' data: https://sleepercdn.com https://a.espncdn.com;" />
     <meta name="description" content="Free fantasy football trade analyzer for Sleeper, ESPN, and Yahoo. Grade every trade by the points each side actually scored after the deal, and crown the winner. No login.">
     <link rel="canonical" href="https://fantasyfootballanalyzer.app/trade-analyzer">
@@ -79,10 +79,15 @@
         }
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-C91_QqER.js"></script>
+    <script type="module" crossorigin src="/assets/index-Bvi0TlMI.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-DU1vXYpT.css">
   </head>
   <body>
     <div id="root"><div class="_page_zwl2f_1"><div class="container"><header class="_hero_zwl2f_5"><span class="_kicker_zwl2f_11">▌ TRADE VERDICTS</span><h1 class="_heading_zwl2f_22">Fantasy Football Trade Analyzer</h1><p class="_intro_zwl2f_33">Settle every trade with the only number that matters: points scored after the deal. Connect your Sleeper, ESPN, or Yahoo league and the trade analyzer grades each side on what their players produced once they changed teams, then names the winner.</p><nav class="_ctas_zwl2f_45" aria-label="Get started"><a href="/" class="_ctaPrimary_zwl2f_51">Connect your league</a><a href="/rankings" class="_ctaSecondary_zwl2f_52">Browse rankings</a></nav></header><ul class="_points_zwl2f_85"><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Judged on real production</h2><p class="_pointBody_zwl2f_120">Not preseason hype. Each side is scored on the fantasy points its acquired players put up after the trade.</p></li><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Both sides graded</h2><p class="_pointBody_zwl2f_120">A clear verdict for each side and a winner named, so the group chat argument is over.</p></li><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Every league, every season</h2><p class="_pointBody_zwl2f_120">Works across Sleeper, ESPN, and Yahoo, for the current season and your league history.</p></li></ul></div></div></div>
+    <!-- Safety net for the opacity-0 #root fade-in: if the bundle never mounts
+         (failed JS load), still reveal #root so the prerendered content shows
+         instead of a blank screen. The app flips this class on mount, long
+         before this fires. -->
+    <script>setTimeout(function(){document.documentElement.classList.add('app-ready')},2500)</script>
   </body>
 </html>

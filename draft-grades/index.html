@@ -23,7 +23,7 @@
     <!-- Critical background so the prerendered homepage (injected into #root at
          build time for crawlers) paints on-brand before the bundle's CSS loads
          and React replaces it. -->
-    <style>html,body{margin:0;background-color:#0a0a0a;color:#f4efe6;font-family:Georgia,"Times New Roman",serif}</style>
+    <style>html,body{margin:0;background-color:#0a0a0a;color:#f4efe6;font-family:Georgia,"Times New Roman",serif}#root{opacity:0}html.app-ready #root{opacity:1;transition:opacity .22s ease-out}</style>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://fantasy-football-analyzer-mu.vercel.app https://lm-api-reads.fantasy.espn.com https://api.sleeper.app https://www.google-analytics.com https://*.ingest.us.sentry.io; img-src 'self' data: https://sleepercdn.com https://a.espncdn.com;" />
     <meta name="description" content="Free fantasy football draft grades for Sleeper, ESPN, and Yahoo. Grade every pick on actual season production, see who found value and who reached, and run mock drafts. No login.">
     <link rel="canonical" href="https://fantasyfootballanalyzer.app/draft-grades">
@@ -79,10 +79,15 @@
         }
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-C91_QqER.js"></script>
+    <script type="module" crossorigin src="/assets/index-Bvi0TlMI.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-DU1vXYpT.css">
   </head>
   <body>
     <div id="root"><div class="_page_zwl2f_1"><div class="container"><header class="_hero_zwl2f_5"><span class="_kicker_zwl2f_11">▌ DRAFT GRADES</span><h1 class="_heading_zwl2f_22">Fantasy Football Draft Grades</h1><p class="_intro_zwl2f_33">Find out who won your draft on the only evidence that counts: how the picks actually scored. Connect your Sleeper, ESPN, or Yahoo league for a letter grade on every pick and every team, or run a mock draft first to pressure-test your board.</p><nav class="_ctas_zwl2f_45" aria-label="Get started"><a href="/" class="_ctaPrimary_zwl2f_51">Connect your league</a><a href="/draft-room" class="_ctaSecondary_zwl2f_52">Run a mock draft</a></nav></header><ul class="_points_zwl2f_85"><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Graded on production</h2><p class="_pointBody_zwl2f_120">Each pick is scored against what it returned in started games, so value and reaches are obvious.</p></li><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Team draft leaderboard</h2><p class="_pointBody_zwl2f_120">See which manager drafted best, who reached early, and who stole value late.</p></li><li class="_point_zwl2f_85"><h2 class="_pointTitle_zwl2f_109">Mock first</h2><p class="_pointBody_zwl2f_120">Practice snake or auction drafts against AI opponents, then grade the real thing.</p></li></ul></div></div></div>
+    <!-- Safety net for the opacity-0 #root fade-in: if the bundle never mounts
+         (failed JS load), still reveal #root so the prerendered content shows
+         instead of a blank screen. The app flips this class on mount, long
+         before this fires. -->
+    <script>setTimeout(function(){document.documentElement.classList.add('app-ready')},2500)</script>
   </body>
 </html>
