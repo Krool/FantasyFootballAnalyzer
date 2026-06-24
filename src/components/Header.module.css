@@ -275,6 +275,12 @@
   box-shadow: 4px 4px 0 var(--bone);
 }
 
+/* The button reads "Connect your league" by default and collapses to
+   "Connect" on phones (see the narrow media query) so the chip can ride the
+   logo row. The aria-label keeps the full name for screen readers either way. */
+.connectCtaFull { display: inline; }
+.connectCtaShort { display: none; }
+
 @media (max-width: 1000px) {
   /* Phones lay the masthead out as a few stacked rows. A true column stranded
      the sound button on a row of its own (it sorts before the order:10 nav, so
@@ -328,6 +334,20 @@
   .logoFull { display: none; }
   .logoShort { display: inline; }
   .logo { font-size: 1.5rem; letter-spacing: 0; }
+
+  /* The "FFA" monogram is short enough to share row 1 with the guest chip, so
+     pull "Guest [Connect]" up beside it (order:0 + auto width override the
+     own-row full-width rule from the ≤1000 query). The sound button's
+     margin-left:auto still parks it at the right edge, so the chip lands
+     between the logo and the sound control and we save a stacked row. If the
+     row can't fit, flex-wrap drops the sound button instead, same height as
+     before. */
+  .guestGroup {
+    order: 0;
+    width: auto;
+  }
+  .connectCtaFull { display: none; }
+  .connectCtaShort { display: inline; }
 }
 
 @media (pointer: coarse) {

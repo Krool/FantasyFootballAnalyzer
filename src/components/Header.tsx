@@ -147,14 +147,16 @@ export function Header({
         )}
 
         {isGuest && (
-          <div className={styles.leagueGroup}>
+          <div className={`${styles.leagueGroup} ${styles.guestGroup}`}>
             <span className={styles.guestTag}>Guest</span>
             <button
               onClick={handleChangeLeague}
               className={styles.connectCta}
               title="Connect your real league for team names, grades, and history"
+              aria-label="Connect your league"
             >
-              Connect your league
+              <span className={styles.connectCtaFull}>Connect your league</span>
+              <span className={styles.connectCtaShort} aria-hidden="true">Connect</span>
             </button>
           </div>
         )}
