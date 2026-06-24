@@ -5,7 +5,7 @@ ESPN, and Yahoo fantasy football leagues. No accounts, no ads, no server-side
 storage: credentials stay in the browser and pass straight through to the
 platform APIs.
 
-**Live:** https://krool.github.io/FantasyFootballAnalyzer/
+**Live:** https://fantasyfootballanalyzer.app/
 
 ## What it does
 

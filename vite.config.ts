@@ -23,8 +23,10 @@ function gitSha(): string {
   }
 }
 
-// Per-position rankings landing pages (prerendered by scripts/prerender.tsx).
-// Keep in sync with RANKINGS_VARIANTS there and in src/App.tsx.
+// Per-position rankings landing slugs, for the sitemap. The canonical list is
+// RANKINGS_VARIANTS in src/data/rankingsVariants.ts, but the tsconfig project
+// boundary (tsconfig.node.json is composite and lists only vite.config.ts) stops
+// this file importing from src/, so this mirrors it. Keep the two in sync.
 const RANKINGS_SLUGS = ['qb', 'rb', 'wr', 'te', 'k', 'dst', 'flex']
 
 // Emit sitemap.xml at build time so <lastmod> reflects the deploy date

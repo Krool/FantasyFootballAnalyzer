@@ -38,7 +38,7 @@ export const TOOL_LANDINGS: Record<'trade-analyzer' | 'draft-grades', ToolLandin
       'players produced once they changed teams, then names the winner.',
     points: [
       { h: 'Judged on real production', p: 'Not preseason hype. Each side is scored on the fantasy points its acquired players put up after the trade.' },
-      { h: 'Both sides graded', p: 'A letter grade per manager and a clear verdict, so the group chat argument is over.' },
+      { h: 'Both sides graded', p: 'A clear verdict for each side and a winner named, so the group chat argument is over.' },
       { h: 'Every league, every season', p: 'Works across Sleeper, ESPN, and Yahoo, for the current season and your league history.' },
     ],
     ctas: [

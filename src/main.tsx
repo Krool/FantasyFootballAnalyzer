@@ -5,6 +5,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { sweepStaleCacheVersions } from './utils/leagueCache'
 import { initSentry } from './utils/sentry'
 import App from './App.tsx'
+import './fonts.css'
 import './index.css'
 
 initSentry()
@@ -27,6 +28,20 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload();
 });
 
+// GitHub Pages 301-redirects a prerendered directory route to a trailing slash
+// (/draft-room -> /draft-room/), so a full-page entry (the homepage hero's plain
+// <a> links, a shared link, a crawler) boots the app at the slashed path. The
+// app's internal links and path checks use the slashless form, so without this
+// the route-derived UI flashes the wrong state - notably the Header rendering
+// the full league nav instead of the focused draft-prep nav. Normalize once,
+// before BrowserRouter reads the URL, so the first render is already correct.
+{
+  const { pathname, search, hash } = window.location;
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    window.history.replaceState(null, '', pathname.slice(0, -1) + search + hash);
+  }
+}
+
 // BrowserRouter (not HashRouter) so routes are real paths the crawler can
 // index, e.g. /rankings. GitHub Pages has no server rewrites, so deep links
 // rely on the public/404.html SPA redirect plus the decode snippet in
@@ -40,3 +55,18 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>,
 )
+
+// Warm the heaviest route chunks during idle so the first navigation to them
+// (and the prerendered /rankings and /draft-room handoff) lands on an already
+// fetched chunk instead of flashing the Suspense spinner. Best-effort; a stale
+// chunk hash is still caught by the preloadError reload above.
+const warmRouteChunks = () => {
+  void import('@/pages/RankingsPage')
+  void import('@/pages/DraftRoomPage')
+  void import('@/pages/DraftPage')
+}
+const ric = (window as unknown as {
+  requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void
+}).requestIdleCallback
+if (ric) ric(warmRouteChunks, { timeout: 4000 })
+else setTimeout(warmRouteChunks, 2500)

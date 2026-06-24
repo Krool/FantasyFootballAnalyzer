@@ -361,6 +361,10 @@ interface SuperflexRow {
   name: string; pos: string; team: string; rank: number;
 }
 const superflexSnapshot = loadRawSnapshot<{ players: SuperflexRow[] }>(`fp-superflex.${SEASON}.json`);
+// The OP (superflex) board is offense-only (QB/RB/WR/TE), so K and DST never
+// get an overallRankSF and fall back to their 1QB overallRank in the superflex
+// consensus. Both sit deep on the offensive and 1QB boards alike, so the mixed
+// scale only nudges the very bottom of the order.
 joinSource('Superflex', superflexSnapshot?.players, (player, row) => {
   if (Number.isFinite(row.rank)) player.overallRankSF = row.rank;
 });

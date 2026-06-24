@@ -6,8 +6,8 @@ import styles from './HomePage.module.css';
 // in HomeManifesto so the page can render it below the form. Single source of
 // truth: HomePage and the prerender both render this.
 export function HomeHero() {
-  // Base path ('/FantasyFootballAnalyzer/') in both the live build and the SSR
-  // prerender, so these links resolve under GitHub Pages either way. Plain
+  // import.meta.env.BASE_URL ('/' on the custom-domain apex) in both the live
+  // build and the SSR prerender, so these links resolve either way. Plain
   // anchors (not react-router Link) because HomeHero is rendered outside a
   // Router during prerender; a full navigation to the prerendered target is
   // fine. These are the homepage's only internal links to the public draft-prep

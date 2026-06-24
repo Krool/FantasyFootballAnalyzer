@@ -10,25 +10,15 @@ import { useSounds } from '@/hooks/useSounds';
 import { useTargets } from '@/hooks/useTargets';
 import { useYahooValues } from '@/hooks/useYahooValues';
 import { consensusAvg, platformDelta, platformRankSource, sleeperAdpFor } from '@/utils/consensus';
+import { FLEX_POSITIONS, labelForPos } from '@/data/rankingsVariants';
 import { draftableSlotCount } from '@/utils/draftEngine';
 import { normalizeName } from '@/utils/playerNames';
 import { draftValues } from '@/utils/projectionValues';
 import styles from './RankingsPage.module.css';
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DST'];
-// FLEX collapses the three flex-eligible positions into one filter.
-const FLEX_POSITIONS = new Set(['RB', 'WR', 'TE']);
-// Long-form position names for the per-position landing-page heading (the
-// /rankings/<pos> routes). Keep in sync with the prerender's variant list.
-const POS_LABELS: Record<string, string> = {
-  QB: 'Quarterback',
-  RB: 'Running Back',
-  WR: 'Wide Receiver',
-  TE: 'Tight End',
-  K: 'Kicker',
-  DST: 'Defense',
-  FLEX: 'Flex',
-};
+// FLEX_POSITIONS and the long-form position labels live in
+// @/data/rankingsVariants (the single source the routes and prerender share).
 const MAX_ROWS = 300;
 
 type SortKey =
@@ -70,7 +60,8 @@ interface RankingsPageProps {
 export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPageProps) {
   // Guests have no real league, so their draft shape is editable inline.
   const isGuest = !!league.isGuest && !!onUpdateGuest;
-  // A valid per-position landing slug seeds the filter and the heading.
+  // A valid per-position landing slug seeds the initial position filter (and so
+  // the initial heading, which derives from the filter).
   const landingPos = initialPos && POSITIONS.includes(initialPos) ? initialPos : undefined;
   const [query, setQuery] = useState('');
   const [posFilter, setPosFilter] = useState(landingPos ?? 'ALL');
@@ -180,7 +171,7 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
         case 'delta':
           return platformDelta(p, source, scoring, superflex);
         case 'rank':
-          return p.overallRank;
+          return superflex ? (p.overallRankSF ?? p.overallRank) : p.overallRank;
         case 'espnAdp':
           return p.espnAdp;
         case 'sleeperAdp':
@@ -241,7 +232,7 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
       <div className="container">
         <div className={styles.header}>
           <h1 className={styles.title}>
-            {landingPos ? `${POS_LABELS[landingPos] ?? landingPos} Rankings` : 'Rankings'}
+            {posFilter !== 'ALL' ? `${labelForPos(posFilter)} Rankings` : 'Rankings'}
           </h1>
           <p className={styles.subtitle}>
             {isGuest ? 'Guest mode' : league.name} · {POOL.season} Draft Prep
@@ -386,10 +377,18 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
                 {sortableTh(
                   'avg',
                   'AVG',
-                  'Consensus average of FantasyPros rank, ESPN ADP, and Sleeper ADP',
+                  superflex
+                    ? 'Consensus average of the FantasyPros superflex rank and Sleeper superflex ADP'
+                    : 'Consensus average of FantasyPros rank, ESPN ADP, and Sleeper ADP',
                 )}
                 {sortableTh('delta', `Δ ${source.label}`, source.describe)}
-                {sortableTh('rank', 'FP RK', 'FantasyPros expert consensus rank')}
+                {sortableTh(
+                  'rank',
+                  'FP RK',
+                  superflex
+                    ? 'FantasyPros superflex (2QB) consensus rank'
+                    : 'FantasyPros expert consensus rank',
+                )}
                 <th
                   className={styles.num}
                   title="FantasyPros tier: players in the same tier are seen as close in value, so the breaks between tiers matter more than rank order within one"
@@ -413,7 +412,9 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
                     {sortableTh(
                       'sleeperAdp',
                       'SLPR ADP',
-                      `Sleeper average draft position (${scoring.replace('_', ' ')} scoring)`,
+                      superflex
+                        ? 'Sleeper superflex average draft position (the 2QB market where available)'
+                        : `Sleeper average draft position (${scoring.replace('_', ' ')} scoring)`,
                     )}
                   </>
                 )}
@@ -443,7 +444,10 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
             <tbody>
               {visible.map((p, i) => {
                 const avg = avgById.get(p.id) ?? p.overallRank;
-                const delta = platformDelta(p, source, scoring);
+                const delta = platformDelta(p, source, scoring, superflex);
+                // In superflex the FP RK column tracks the superflex rank so it
+                // matches the delta and consensus (which use overallRankSF).
+                const fpRank = superflex ? (p.overallRankSF ?? p.overallRank) : p.overallRank;
                 // Tier separators only when the order follows the tiers
                 // (FantasyPros rank sort); drafting hinges on these breaks.
                 const showTierBreak =
@@ -491,7 +495,7 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
                     >
                       {delta === undefined ? '-' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)}`}
                     </td>
-                    <td className={`${styles.num} ${styles.dim}`}>{p.overallRank}</td>
+                    <td className={`${styles.num} ${styles.dim}`}>{fpRank}</td>
                     <td className={`${styles.num} ${styles.dim}`}>{p.tier}</td>
                     <td className={styles.player}>
                       {p.name}

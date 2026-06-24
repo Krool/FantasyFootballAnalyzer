@@ -7,10 +7,12 @@
 // hydrateRoot) replaces it the moment React mounts, so there's no hydration
 // contract to keep; the injected markup is purely for crawlers and first paint.
 //
-// Pages emitted:
-//   1. dist/index.html          - homepage hero, manifesto, feature grid.
-//   2. dist/rankings/index.html - top-200 half-PPR consensus rankings table.
-//   3. dist/draft-room/index.html - mock-draft / live-draft-room landing copy.
+// Pages emitted (each a real dist/<route>/index.html that returns HTTP 200):
+//   - index.html              - homepage hero, manifesto, feature grid.
+//   - rankings/               - top-200 half-PPR consensus rankings table.
+//   - rankings/<pos>/         - one per position (qb, rb, wr, te, k, dst, flex).
+//   - trade-analyzer/, draft-grades/ - tool landing pages.
+//   - draft-room/             - mock-draft / live-draft-room landing copy.
 //
 // Why real per-route files: GitHub Pages serves 404.html (the SPA shim) with an
 // HTTP 404 status, so crawlers refuse to index shim-routed paths. A real file
@@ -31,6 +33,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { createElement, Fragment } from 'react'
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { RANKINGS_VARIANTS, FLEX_POSITIONS } from '../src/data/rankingsVariants'
 
 const DIST_DIR = resolve(process.cwd(), 'dist')
 const DIST_HTML = resolve(DIST_DIR, 'index.html')
@@ -56,19 +59,6 @@ function faqJsonLd(qa: Array<[string, string]>): string {
   }
   return `<script type="application/ld+json">${JSON.stringify(data)}</script>`
 }
-
-// The per-position landing pages. Slugs must match RANKINGS_VARIANTS in
-// src/App.tsx (the live routes) and the sitemap in vite.config.ts.
-const RANKINGS_VARIANTS: Array<{ slug: string; pos: string; label: string }> = [
-  { slug: 'qb', pos: 'QB', label: 'quarterback' },
-  { slug: 'rb', pos: 'RB', label: 'running back' },
-  { slug: 'wr', pos: 'WR', label: 'wide receiver' },
-  { slug: 'te', pos: 'TE', label: 'tight end' },
-  { slug: 'k', pos: 'K', label: 'kicker' },
-  { slug: 'dst', pos: 'DST', label: 'defense' },
-  { slug: 'flex', pos: 'FLEX', label: 'flex' },
-]
-const FLEX_POSITIONS = new Set(['RB', 'WR', 'TE'])
 
 // Inline nav linking the rankings pages to each other, so crawlers discover
 // every position page from any one of them (internal links spread crawl/equity).
@@ -272,7 +262,7 @@ async function prerender() {
             limit: 75,
             heading: `${POOL.season} Fantasy Football ${v.pos} Rankings`,
             intro:
-              `Free ${POOL.season} fantasy football ${v.label} rankings and ADP. Consensus of ` +
+              `Free ${POOL.season} fantasy football ${v.label.toLowerCase()} rankings and ADP. Consensus of ` +
               `FantasyPros, ESPN, and Sleeper, half PPR by default, with snake ADP and auction ` +
               `values for Sleeper, ESPN, and Yahoo leagues. No login required.`,
             nav: rankingsNav(v.slug, basePath),
@@ -285,7 +275,7 @@ async function prerender() {
         title: `${POOL.season} Fantasy Football ${v.pos} Rankings (Free): Sleeper, ESPN, Yahoo`,
         desc:
           `Free ${POOL.season} ${v.pos} rankings and ADP for fantasy football. FantasyPros, ESPN, ` +
-          `and Sleeper ${v.label} consensus, half PPR, with auction values. No login.`,
+          `and Sleeper ${v.label.toLowerCase()} consensus, half PPR, with auction values. No login.`,
       })
     }
 

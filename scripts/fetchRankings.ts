@@ -160,7 +160,7 @@ async function fetchFantasyProsDynasty(): Promise<void> {
 // Superflex (2QB) consensus ranking. FantasyPros exposes it as position=OP
 // ("offensive player": QB+RB+WR+TE in one list), where QBs rank far higher
 // than on the standard 1QB board. Folded in as overallRankSF so the consensus
-// blend can price QBs for superflex demand. Non-fatal on its own — a missing
+// blend can price QBs for superflex demand. Non-fatal on its own: a missing
 // snapshot just means superflex leagues fall back to the 1QB overall rank.
 async function fetchFantasyProsSuperflex(): Promise<void> {
   const url = `https://api.fantasypros.com/v2/json/nfl/${SEASON}/consensus-rankings?type=draft&scoring=${FP_SCORING}&position=OP&week=0`;

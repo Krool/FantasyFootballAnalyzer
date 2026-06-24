@@ -5,8 +5,9 @@ import styles from './HomePage.module.css';
 // titles and descriptions are the homepage's main crawlable, keyword-rich
 // copy. Single source of truth: HomePage and the prerender both render this.
 export function HomeFeatures() {
-  // Base path in both the live build and the SSR prerender, so the two cards
-  // that double as links to the tool landing pages resolve under GitHub Pages.
+  // import.meta.env.BASE_URL ('/' on the custom-domain apex) in both the live
+  // build and the SSR prerender, so the two cards that double as links to the
+  // tool landing pages resolve either way.
   const base = import.meta.env.BASE_URL;
   return (
     <div className={styles.features}>

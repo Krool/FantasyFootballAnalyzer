@@ -6,6 +6,7 @@ import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import { HomePage } from '@/pages';
 import { ToolLanding } from '@/pages/ToolLanding';
 import { TOOL_LANDINGS } from '@/pages/toolLandings';
+import { posForSlug, labelForPos } from '@/data/rankingsVariants';
 import type { GuestDest } from '@/pages/GuestEntry';
 import { DEFAULT_GUEST_SETTINGS, loadGuestSettings, type GuestSettings } from '@/utils/guestLeague';
 
@@ -57,23 +58,11 @@ function GuestAutoEnter({ onEnter }: { onEnter: (settings: GuestSettings) => voi
   );
 }
 
-// Per-position rankings landing routes (/rankings/qb etc.). Each is a real,
-// crawlable, prerendered page (see scripts/prerender.tsx) that opens the live
-// board pre-filtered to one position. Keep these slugs in sync with the
-// prerender variant list and the sitemap in vite.config.ts.
-const RANKINGS_VARIANTS: Record<string, string> = {
-  qb: 'QB',
-  rb: 'RB',
-  wr: 'WR',
-  te: 'TE',
-  k: 'K',
-  dst: 'DST',
-  flex: 'FLEX',
-};
-
-// Resolves /rankings/:variant. A known position slug renders the board filtered
-// to it; an unknown slug falls back to the all-positions board (not a 404). No
-// league yet (direct link or crawler) drops into guest mode like /rankings.
+// Resolves /rankings/:variant (slug -> position via @/data/rankingsVariants).
+// A known position slug renders the board filtered to it; an unknown slug falls
+// back to the all-positions board (not a 404). No league yet (direct link or
+// crawler) drops into guest mode like /rankings. The key forces a remount when
+// the position changes so the board re-seeds its filter from the new slug.
 function RankingsVariantRoute({
   league,
   onUpdateGuest,
@@ -84,10 +73,10 @@ function RankingsVariantRoute({
   onEnterGuest: (settings: GuestSettings) => void;
 }) {
   const { variant } = useParams();
-  const pos = variant ? RANKINGS_VARIANTS[variant.toLowerCase()] : undefined;
+  const pos = posForSlug(variant);
   if (variant && !pos) return <Navigate to="/rankings" replace />;
   if (!league) return <GuestAutoEnter onEnter={onEnterGuest} />;
-  return <RankingsPage league={league} onUpdateGuest={onUpdateGuest} initialPos={pos} />;
+  return <RankingsPage key={pos ?? 'all'} league={league} onUpdateGuest={onUpdateGuest} initialPos={pos} />;
 }
 
 const PAGE_TITLES: Record<string, string> = {
@@ -126,10 +115,10 @@ function App() {
 
   // Per-page document titles so tabs and browser history are tellable apart.
   useEffect(() => {
-    const variant = location.pathname.startsWith('/rankings/')
-      ? RANKINGS_VARIANTS[location.pathname.slice('/rankings/'.length).toLowerCase()]
+    const rankPos = location.pathname.startsWith('/rankings/')
+      ? posForSlug(location.pathname.slice('/rankings/'.length).replace(/\/+$/, ''))
       : undefined;
-    const page = variant ? `${variant} Rankings` : PAGE_TITLES[location.pathname];
+    const page = rankPos ? `${labelForPos(rankPos)} Rankings` : PAGE_TITLES[location.pathname];
     document.title = page
       ? `${page} · Fantasy Football Analyzer`
       : 'Fantasy Football Analyzer';

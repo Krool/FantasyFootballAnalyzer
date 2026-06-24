@@ -10,7 +10,7 @@ export function HomeManifesto() {
       <span className={styles.manifestoKicker}>★ Completely Free & Open Source</span>
       <p className={styles.manifestoBody}>
         No accounts. No ads. No server keeps your league data, only anonymized
-        error logs we use to fix bugs.
+        error logs I use to fix bugs.
       </p>
       <p className={styles.manifestoBody}>
         Your credentials stay in your browser and are passed through to
