@@ -176,8 +176,12 @@ function App() {
     if (path === '/yahoo-success') {
       // Tokens ride in the URL fragment (never sent to the server or in a
       // Referer header); state stays in the query. See api/yahoo-callback.js.
+      // Fall back to the query string so login keeps working during the window
+      // between the frontend deploy (GitHub Pages) and the api deploy (Vercel),
+      // which ship on separate pipelines; once both are live, tokens only ever
+      // arrive in the fragment and the query fallback is dormant.
       const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
-      const tokensParam = hashParams.get('tokens');
+      const tokensParam = hashParams.get('tokens') || search.get('tokens');
       const stateParam = search.get('state');
 
       // Validate CSRF state
