@@ -310,15 +310,21 @@ export async function loadLeague(leagueId: string): Promise<League> {
   const rosterOwnerMap = new Map<number, string>();
   rosters.forEach(roster => rosterOwnerMap.set(roster.roster_id, roster.owner_id));
 
-  // Determine scoring type from settings
+  // Determine scoring type from settings. A standard league may send rec: 0 OR
+  // omit the key entirely; both mean "no reception scoring", so treat a missing
+  // rec as standard rather than letting it fall through to 'custom'. A genuinely
+  // unusual rec value (e.g. 0.75) still lands on 'custom'.
   const scoringSettings = leagueData.scoring_settings;
-  let scoringType: League['scoringType'] = 'custom';
-  if (scoringSettings.rec === 1) {
+  const rec = scoringSettings?.rec;
+  let scoringType: League['scoringType'];
+  if (rec === 1) {
     scoringType = 'ppr';
-  } else if (scoringSettings.rec === 0.5) {
+  } else if (rec === 0.5) {
     scoringType = 'half_ppr';
-  } else if (scoringSettings.rec === 0) {
+  } else if (rec === 0 || rec == null) {
     scoringType = 'standard';
+  } else {
+    scoringType = 'custom';
   }
 
   // Parse roster slots for PAR calculation

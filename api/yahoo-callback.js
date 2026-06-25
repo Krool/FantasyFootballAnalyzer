@@ -79,9 +79,13 @@ export default async function handler(req, res) {
 
     const tokens = await tokenResponse.json();
 
-    // Redirect to the frontend route with tokens in the query string.
-    // BrowserRouter resolves /yahoo-success via the GitHub Pages 404 shim.
-    // Include state for CSRF validation on the client side.
+    // Redirect to the frontend route with tokens in the URL FRAGMENT (#), not
+    // the query string. A fragment is never sent to the server, so the freshly
+    // minted access/refresh tokens can't leak via GitHub Pages / CDN access
+    // logs or the Referer header of any subresource /yahoo-success loads before
+    // the SPA consumes and clears them. Both the GitHub Pages 404 shim and the
+    // index.html decode snippet preserve location.hash. state stays in the
+    // query string for CSRF validation (a single-use nonce, not a secret).
     const tokenData = encodeURIComponent(JSON.stringify({
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
@@ -89,7 +93,7 @@ export default async function handler(req, res) {
       token_type: tokens.token_type
     }));
 
-    res.redirect(`${FRONTEND_URL}/yahoo-success?tokens=${tokenData}&state=${encodeURIComponent(state)}`);
+    res.redirect(`${FRONTEND_URL}/yahoo-success?state=${encodeURIComponent(state)}#tokens=${tokenData}`);
   } catch (err) {
     console.error('OAuth callback error:', err);
     res.redirect(`${FRONTEND_URL}/yahoo-error?error=server_error`);

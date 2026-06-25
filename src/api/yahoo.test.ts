@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { League } from '@/types';
-import { NFL_GAME_KEYS, loadLeague, enrichPlayersWithStats } from './yahoo';
+import { NFL_GAME_KEYS, loadLeague, enrichPlayersWithStats, parseRosterSettings } from './yahoo';
 
 describe('NFL_GAME_KEYS', () => {
   it('covers last season so the year dropdown can reach it', () => {
@@ -16,6 +16,59 @@ describe('NFL_GAME_KEYS', () => {
     for (let year = 2015; year <= lastSeason; year++) {
       expect(NFL_GAME_KEYS[year], `missing game key for ${year}`).toBeTruthy();
     }
+  });
+});
+
+describe('parseRosterSettings', () => {
+  const rosterSettings = (positions: Array<{ position: string; count: string }>) => ({
+    roster_positions: { roster_position: positions },
+  });
+
+  it('respects a real no-kicker / no-defense league instead of forcing K and DST', () => {
+    // Modern Yahoo leagues can drop K and DST entirely. The old code forced
+    // K=1/DST=1 whenever they parsed as 0, inventing a phantom slot the user
+    // then saw in the depth chart and had to fill in the Draft Room.
+    const slots = parseRosterSettings(rosterSettings([
+      { position: 'QB', count: '1' },
+      { position: 'RB', count: '2' },
+      { position: 'WR', count: '3' },
+      { position: 'TE', count: '1' },
+      { position: 'W/R/T', count: '2' },
+      { position: 'BN', count: '5' },
+    ]));
+    expect(slots.K).toBe(0);
+    expect(slots.DST).toBe(0);
+    expect(slots.WR).toBe(3);
+    expect(slots.FLEX).toBe(2);
+    expect(slots.BENCH).toBe(5);
+  });
+
+  it('keeps K and DST when the league actually rosters them', () => {
+    const slots = parseRosterSettings(rosterSettings([
+      { position: 'QB', count: '1' },
+      { position: 'K', count: '1' },
+      { position: 'DEF', count: '1' },
+      { position: 'BN', count: '6' },
+    ]));
+    expect(slots.K).toBe(1);
+    expect(slots.DST).toBe(1);
+  });
+
+  it('falls back to a standard lineup when nothing parses', () => {
+    // An empty / unrecognized settings blob should still yield a usable
+    // standard roster rather than an all-zero one.
+    const slots = parseRosterSettings(rosterSettings([]));
+    expect(slots).toMatchObject({ QB: 1, RB: 2, WR: 2, TE: 1, K: 1, DST: 1, BENCH: 6, IR: 1 });
+  });
+
+  it('flags superflex from a Q/W/R/T slot', () => {
+    const slots = parseRosterSettings(rosterSettings([
+      { position: 'QB', count: '1' },
+      { position: 'Q/W/R/T', count: '1' },
+      { position: 'BN', count: '5' },
+    ]));
+    expect(slots.SUPERFLEX).toBe(1);
+    expect(slots.hasSuperflex).toBe(true);
   });
 });
 

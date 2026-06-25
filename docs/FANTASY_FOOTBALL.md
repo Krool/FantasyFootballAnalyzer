@@ -119,6 +119,27 @@ and 12 standard, 8 and 14 exist. IR slots don't count against the roster and
 aren't drafted. Total draftable pool = teams x roster size; that sets
 replacement level and value scaling.
 
+`RosterSlots` is a fixed schema: QB, RB, WR, TE, FLEX, SUPERFLEX, K, DST,
+BENCH, IR. The parsers map each platform's roster onto it and the Draft Room,
+depth chart, and rankings all read it.
+
+- **No-kicker / no-DST leagues** (a growing modern format, especially on
+  Sleeper) are supported: a parsed count of 0 at K or DST is respected, so the
+  depth chart shows no such row and the Draft Room doesn't make you fill a
+  phantom slot. The parsers fall back to a standard 1 K / 1 DST lineup *only*
+  when the platform returned no usable roster settings at all. (Earlier code
+  forced K=1/DST=1 on Yahoo and ESPN whenever the count read 0; Sleeper was
+  already correct.)
+- **FLEX variants** REC_FLEX (WR/TE) and WRRB_FLEX (RB/WR) collapse into the
+  generic FLEX slot, which spreads value 40/40/20 across RB/WR/TE. Slot counts
+  and the depth chart are correct; the value split is a deliberate
+  approximation for the rarer flex types.
+- **IDP leagues** (DL/LB/DB and IDP flex slots) are not modeled: there is no
+  IDP slot in the schema and no IDP players in the bundled pool. Loading does
+  not crash. Offense parses normally; defensive players land on the bench in
+  the depth chart, and IDP starter slots are not counted toward roster size.
+  Treat full IDP support as out of scope until the pool carries IDP rankings.
+
 ## Games started vs games played
 
 The analysis pages measure a player's value to a fantasy team by **games

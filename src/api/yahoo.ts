@@ -398,7 +398,7 @@ export async function getAvailableSeasons(
 }
 
 // Parse roster settings to get position slot counts
-function parseRosterSettings(settings: any): { QB: number; RB: number; WR: number; TE: number; FLEX: number; SUPERFLEX: number; K: number; DST: number; BENCH: number; IR: number; hasSuperflex: boolean } {
+export function parseRosterSettings(settings: any): { QB: number; RB: number; WR: number; TE: number; FLEX: number; SUPERFLEX: number; K: number; DST: number; BENCH: number; IR: number; hasSuperflex: boolean } {
   const rosterPositions = settings?.roster_positions?.roster_position || [];
   const posList = Array.isArray(rosterPositions) ? rosterPositions : [rosterPositions];
 
@@ -428,18 +428,22 @@ function parseRosterSettings(settings: any): { QB: number; RB: number; WR: numbe
     }
   }
 
-  // Defaults if nothing parsed
-  if (slots.QB === 0) slots.QB = 1;
-  if (slots.RB === 0) slots.RB = 2;
-  if (slots.WR === 0) slots.WR = 2;
-  if (slots.TE === 0) slots.TE = 1;
-  if (slots.K === 0) slots.K = 1;
-  if (slots.DST === 0) slots.DST = 1;
-  // Bench/IR default only when the settings response gave us nothing at
-  // all; a parsed league with a real 0 IR keeps its 0 (a real bench of 0
-  // does not exist on Yahoo).
+  // When we parsed real roster positions, trust them - including a legitimate
+  // 0 at K or DST (modern no-kicker / no-defense leagues are increasingly
+  // common). Only synthesize a standard lineup when the settings response
+  // gave us nothing usable, so we never invent a phantom kicker the user has
+  // to fill in the Draft Room or see in the depth chart.
+  if (!parsedAny) {
+    slots.QB = 1;
+    slots.RB = 2;
+    slots.WR = 2;
+    slots.TE = 1;
+    slots.K = 1;
+    slots.DST = 1;
+    slots.IR = 1;
+  }
+  // Yahoo always rosters a bench; a parsed 0 means the BN row was missing.
   if (slots.BENCH === 0) slots.BENCH = 6;
-  if (!parsedAny && slots.IR === 0) slots.IR = 1;
 
   return slots;
 }
@@ -474,7 +478,11 @@ export async function loadLeague(leagueKey: string): Promise<League> {
 
   // Parse scoring type
   let scoringType: 'standard' | 'ppr' | 'half_ppr' | 'custom' = 'standard';
-  const scoringSettings = leagueInfo.settings?.stat_modifiers?.stat || [];
+  // fast-xml-parser returns a lone object (not an array) when a league defines
+  // exactly one stat modifier, so normalize before .find - same guard the teams
+  // and standings parsing below already uses.
+  const statData = leagueInfo.settings?.stat_modifiers?.stat || [];
+  const scoringSettings = Array.isArray(statData) ? statData : [statData];
   const receptionStat = scoringSettings.find((s: any) => s.stat_id === '21'); // Receptions
   if (receptionStat) {
     const recValue = parseFloat(receptionStat.value);

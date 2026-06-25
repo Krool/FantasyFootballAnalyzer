@@ -174,7 +174,10 @@ function App() {
     const search = new URLSearchParams(location.search);
 
     if (path === '/yahoo-success') {
-      const tokensParam = search.get('tokens');
+      // Tokens ride in the URL fragment (never sent to the server or in a
+      // Referer header); state stays in the query. See api/yahoo-callback.js.
+      const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+      const tokensParam = hashParams.get('tokens');
       const stateParam = search.get('state');
 
       // Validate CSRF state
@@ -436,7 +439,19 @@ function App() {
               mode so these URLs work without logging in (and stay crawlable). */}
           <Route
             path="/draft-room"
-            element={league ? <DraftRoomPage league={league} /> : <GuestAutoEnter onEnter={enterGuest} />}
+            element={league ? (
+              // Key on the league fingerprint so a year switch (Header
+              // YearSelector) or a guest-settings change, which swaps `league`
+              // in place without unmounting this route, remounts the Draft Room
+              // with fresh config. useDraftRoom derives config only on mount, so
+              // without this the board keeps the previous league's teams /
+              // scoring / roster slots. (league.season covers ESPN/Yahoo year
+              // switches that keep the same id; leagueKeyFor uses POOL.season.)
+              <DraftRoomPage
+                key={`${league.platform}:${league.id}:${league.season}:${league.totalTeams}:${league.scoringType}:${league.rosterSlots?.SUPERFLEX ?? 0}`}
+                league={league}
+              />
+            ) : <GuestAutoEnter onEnter={enterGuest} />}
           />
           <Route
             path="/rankings"

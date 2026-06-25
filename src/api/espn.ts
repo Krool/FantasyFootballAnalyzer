@@ -180,6 +180,36 @@ function buildPlayerMap(leagueData: ESPNAPI.League, season: number): Map<string,
 // Progress callback type
 type ProgressCallback = (progress: { stage: string; current: number; total: number; detail?: string }) => void;
 
+// Map ESPN's rosterSettings.positionLimits into our RosterSlots.
+// ESPN lineup slot IDs: 0=QB, 2=RB, 4=WR, 6=TE, 7=OP (superflex), 16=D/ST,
+// 17=K, 20=Bench, 21=IR, 23=FLEX. positionLimits carries an explicit 0 for
+// slots the league does not use. Respect that 0 (modern no-kicker / no-DST /
+// non-superflex leagues) instead of `value || fallback`, which masked a real
+// 0 as a phantom slot the user then had to fill in the Draft Room. Fall back
+// to a standard count only when the key is absent, and tolerate ESPN's
+// occasional junk negatives by treating them as "absent".
+export function parseEspnRosterSlots(
+  positionLimits: Record<string, number> | undefined
+): RosterSlots {
+  const posLimits = positionLimits || {};
+  const slotLimit = (id: number, fallback: number): number => {
+    const v = posLimits[id];
+    return typeof v === 'number' && v >= 0 ? v : fallback;
+  };
+  return {
+    QB: slotLimit(0, 1),
+    RB: slotLimit(2, 2),
+    WR: slotLimit(4, 2),
+    TE: slotLimit(6, 1),
+    FLEX: slotLimit(23, 1),
+    SUPERFLEX: slotLimit(7, 0),
+    K: slotLimit(17, 1),
+    DST: slotLimit(16, 1),
+    BENCH: slotLimit(20, 6),
+    IR: slotLimit(21, 1),
+  };
+}
+
 export async function loadLeague(
   leagueId: string,
   season: number = new Date().getFullYear(),
@@ -224,10 +254,13 @@ export async function loadLeague(
   const totalSteps = (currentWeek * 2) + 2; // roster weeks + transaction weeks + processing
   let currentStep = 0;
 
-  // ESPN lineup slot IDs for starters (not bench/IR)
-  // 0=QB, 2=RB, 4=WR, 6=TE, 16=D/ST, 17=K, 23=FLEX
-  // 20=Bench, 21=IR - these are NOT starters
-  const STARTER_SLOTS = new Set([0, 2, 4, 6, 16, 17, 23]);
+  // ESPN lineup slot IDs for starters (not bench/IR).
+  // 0=QB, 2=RB, 4=WR, 6=TE, 16=D/ST, 17=K, 23=FLEX, plus the flex variants
+  // 3=RB/WR, 5=WR/TE and 7=OP (superflex / QB-eligible flex). 20=Bench and
+  // 21=IR are NOT starters. Omitting 7 silently dropped every started week a
+  // manager filled with a second QB, undercounting games-started - and so
+  // PPG/PAR - on waiver receipts and trade verdicts in superflex leagues.
+  const STARTER_SLOTS = new Set([0, 2, 3, 4, 5, 6, 7, 16, 17, 23]);
 
   // Concurrency limiter - run up to 5 requests in parallel
   async function withConcurrency<T>(tasks: (() => Promise<T>)[], limit: number): Promise<T[]> {
@@ -1040,11 +1073,20 @@ export async function loadLeague(
     DST: 1,
   };
 
+  // SUPERFLEX (ESPN "OP" = slot 7) is QB-dominant: managers start a second QB,
+  // so fold it into the QB replacement depth at a 0.75 share (matching par.ts
+  // and the VOR config). Without this a superflex QB is measured against ~QB13
+  // instead of ~QB24 and shows far too little PAR, undervaluing QBs in trade
+  // grades and waivers. positionLimits[7] is read as in the returned rosterSlots
+  // below; the guard tolerates ESPN's odd/negative limit values.
+  const superflexSlots = Math.max(0, leagueData.settings.rosterSettings?.positionLimits?.[7] || 0);
+  const sfQBShare = 0.75;
+
   // Calculate replacement level for each position
   // Replacement = (starters * teams) + 1
   // FLEX counts toward RB/WR since they're most commonly flexed
   const replacementRank: Record<string, number> = {
-    QB: rosterSlotsForPAR.QB * totalTeamsCount + 1,
+    QB: (rosterSlotsForPAR.QB + superflexSlots * sfQBShare) * totalTeamsCount + 1,
     RB: (rosterSlotsForPAR.RB + rosterSlotsForPAR.FLEX * 0.6) * totalTeamsCount + 1, // 60% of flex to RB
     WR: (rosterSlotsForPAR.WR + rosterSlotsForPAR.FLEX * 0.3) * totalTeamsCount + 1, // 30% of flex to WR
     TE: (rosterSlotsForPAR.TE + rosterSlotsForPAR.FLEX * 0.1) * totalTeamsCount + 1, // 10% of flex to TE
@@ -1308,22 +1350,10 @@ export async function loadLeague(
     scoringType = 'standard';
   }
 
-  // Extract roster slot settings for PAR calculation
-  // ESPN lineup slot IDs: 0=QB, 2=RB, 4=WR, 6=TE, 16=D/ST, 17=K, 20=Bench, 21=IR, 23=FLEX
-  const posLimits = leagueData.settings.rosterSettings?.positionLimits || {};
-  const rosterSlots: RosterSlots = {
-    QB: posLimits[0] || 1,
-    RB: posLimits[2] || 2,
-    WR: posLimits[4] || 2,
-    TE: posLimits[6] || 1,
-    FLEX: posLimits[23] || 1,
-    // Slot 7 is OP (offensive player), ESPN's QB-eligible superflex.
-    SUPERFLEX: posLimits[7] || 0,
-    K: posLimits[17] || 1,
-    DST: posLimits[16] || 1,
-    BENCH: posLimits[20] || 6,
-    IR: posLimits[21] || 1,
-  };
+  // Extract roster slot settings for PAR calculation (see parseEspnRosterSlots).
+  const rosterSlots: RosterSlots = parseEspnRosterSlots(
+    leagueData.settings.rosterSettings?.positionLimits
+  );
   const hasSuperflex = rosterSlots.SUPERFLEX > 0;
   logger.debug('[ESPN] Roster slots:', rosterSlots, hasSuperflex ? '(superflex)' : '');
 
@@ -1591,9 +1621,15 @@ export async function loadHeadToHeadRecords(
         const opponentId = isHome ? matchup.away.teamId : matchup.home.teamId;
         const opponentName = teamNameMap.get(opponentId) || `Team ${opponentId}`;
 
-        // Skip if no points (game not played yet)
+        // Exclude unplayed/future games (winner UNDECIDED) and playoff games,
+        // exactly as weeklyMatchups does above. The old 0-0 guard let a future
+        // matchup ESPN populated with a stray nonzero totalPoints record as a
+        // real win/loss before it was played, and playoff meetings double-count
+        // points and skew the regular-season rivalry record.
+        const played = matchup.winner && matchup.winner !== 'UNDECIDED';
+        const regularSeason = !matchup.playoffTierType || matchup.playoffTierType === 'NONE';
+        if (!played || !regularSeason) return;
         if (teamPoints === undefined || opponentPoints === undefined) return;
-        if (teamPoints === 0 && opponentPoints === 0) return;
 
         // Get or create record for this opponent
         let record = recordsByName.get(opponentName);

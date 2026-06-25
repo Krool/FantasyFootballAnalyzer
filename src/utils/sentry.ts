@@ -37,7 +37,13 @@ export function scrubString(value: string): string {
     .replace(
       /\b(espn_s2|swid|access_token|refresh_token|oauth_token|code)=[^\s;"'&]+/gi,
       '$1=' + REDACTED,
-    );
+    )
+    // Bare numeric league ids interpolated into messages or breadcrumb paths
+    // (e.g. "Could not load season for league 1086342..." or "/leagues/123456/").
+    // These are re-identifying, carry no `?` or `key=`, and are not GUIDs, so the
+    // rules above miss them. ESPN league ids run ~8 digits, Sleeper ids ~18; the
+    // 7+ floor clears those while leaving years, weeks, scores, and HTTP statuses.
+    .replace(/\b\d{7,}\b/g, REDACTED);
 }
 
 // Recursively scrub an arbitrary structure: redact sensitive keys outright,

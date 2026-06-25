@@ -25,6 +25,11 @@ export interface InflationState {
   openSlots: number;
 }
 
+// Upper bound on the inflation multiplier. Generous headroom over the ~1.5x a
+// hot real room reaches, while preventing a tiny end-game surplusValue from
+// producing a runaway rate.
+export const MAX_INFLATION_RATE = 4;
+
 export const NEUTRAL_INFLATION: InflationState = {
   rate: 1,
   remainingBudget: 0,
@@ -56,7 +61,13 @@ export function computeInflation(
 
   const surplusMoney = Math.max(0, remainingBudget - openSlots);
   const surplusValue = remainingValue - openSlots;
-  const rate = surplusValue > 0 ? surplusMoney / surplusValue : 1;
+  // Clamp the rate: near the end of an auction surplusValue can shrink to a
+  // dollar or two while money is still in the room, which sends the raw ratio
+  // to absurd multiples (a $5 player "expected" at $300). Real-room inflation
+  // tops out well under 2x; cap generously so a degenerate end state can't
+  // blow up the displayed expected prices and bid guidance.
+  const rawRate = surplusValue > 0 ? surplusMoney / surplusValue : 1;
+  const rate = Math.min(rawRate, MAX_INFLATION_RATE);
   return { rate, remainingBudget, remainingValue, openSlots };
 }
 

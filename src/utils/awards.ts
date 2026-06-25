@@ -38,9 +38,18 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
 
   // ============ PERFORMANCE AWARDS ============
 
+  // These need at least one completed game. On an unplayed (preseason) league
+  // every team is 0-0 with 0 points, and the tie-break in getBestRecord /
+  // getWorstRecord keeps the incumbent, so teams[0] would be crowned BOTH best
+  // and worst record (and highest and lowest scorer). The all-play luck awards
+  // below already guard the same way.
+  const hasPlayedGames = league.teams.some(
+    t => (t.wins ?? 0) + (t.losses ?? 0) + (t.ties ?? 0) > 0,
+  );
+
   // Best Record
   const bestRecord = getBestRecord(league.teams);
-  if (bestRecord) {
+  if (hasPlayedGames && bestRecord) {
     awards.push({
       id: 'best_record',
       name: 'Best Record',
@@ -54,7 +63,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
 
   // Most Points For
   const mostPointsFor = getMostPointsFor(league.teams);
-  if (mostPointsFor && mostPointsFor.pointsFor !== undefined) {
+  if (hasPlayedGames && mostPointsFor && mostPointsFor.pointsFor !== undefined) {
     awards.push({
       id: 'most_points',
       name: 'Highest Scorer',
@@ -68,7 +77,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
 
   // Worst Record
   const worstRecord = getWorstRecord(league.teams);
-  if (worstRecord) {
+  if (hasPlayedGames && worstRecord) {
     awards.push({
       id: 'worst_record',
       name: 'Basement Dweller',
@@ -82,7 +91,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
 
   // Most Points Against (Punching Bag)
   const mostPointsAgainst = getMostPointsAgainst(league.teams);
-  if (mostPointsAgainst && mostPointsAgainst.pointsAgainst !== undefined) {
+  if (hasPlayedGames && mostPointsAgainst && mostPointsAgainst.pointsAgainst !== undefined) {
     awards.push({
       id: 'most_pa',
       name: 'Punching Bag',
@@ -96,7 +105,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
 
   // Least Points Against (Easy Street)
   const leastPointsAgainst = getLeastPointsAgainst(league.teams);
-  if (leastPointsAgainst && leastPointsAgainst.pointsAgainst !== undefined) {
+  if (hasPlayedGames && leastPointsAgainst && leastPointsAgainst.pointsAgainst !== undefined) {
     awards.push({
       id: 'least_pa',
       name: 'Easy Street',
@@ -110,7 +119,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
 
   // Lowest Scorer
   const lowestScorer = getLowestScorer(league.teams);
-  if (lowestScorer && lowestScorer.pointsFor !== undefined) {
+  if (hasPlayedGames && lowestScorer && lowestScorer.pointsFor !== undefined) {
     awards.push({
       id: 'lowest_scorer',
       name: 'Offensive Struggles',

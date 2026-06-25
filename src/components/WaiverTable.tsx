@@ -101,11 +101,18 @@ export function WaiverTable({ teams, platform, pointsBasis }: WaiverTableProps) 
       const existing = consolidated.get(key);
 
       if (existing) {
-        // Already have this player for this team - DON'T add points again
-        // The points/games are already cumulative from the API, just increment pickup count
-        // Use the earliest week's transaction for display
+        // Same player picked up more than once by this team. Each pickup record
+        // carries its own since-pickup points/PAR/games (computed from that
+        // pickup's week onward), so the displayed week and the displayed stats
+        // must come from the SAME record. Adopt the earliest pickup wholesale
+        // (it spans the widest window); don't sum, which would double-count the
+        // overlapping weeks.
         if (pickup.transaction.week < existing.transaction.week) {
           existing.transaction = pickup.transaction;
+          existing.totalPoints = pickup.points;
+          existing.gamesStarted = pickup.games;
+          existing.pointsPerGame = pickup.games > 0 ? pickup.points / pickup.games : 0;
+          existing.par = pickup.par;
         }
         existing.pickupCount += 1;
       } else {

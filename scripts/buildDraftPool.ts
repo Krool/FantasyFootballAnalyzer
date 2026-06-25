@@ -289,7 +289,16 @@ for (const row of salaryRows) {
     });
     continue;
   }
-  hit.baseValue = Number(value);
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    // A non-numeric salary cell (a stray '$', a typo) would otherwise write NaN
+    // into baseValue, which survives the `!== null` curve filter below and
+    // poisons the position curve via the unstable NaN sort. Surface it as a
+    // miss instead of shipping garbage prices on a green build.
+    salaryMisses.push({ value: 0, line: `${name} (${team}) "${value}" is not a number` });
+    continue;
+  }
+  hit.baseValue = numericValue;
   matched++;
 }
 console.log(

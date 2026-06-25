@@ -62,6 +62,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Malformed cookie header encoding' });
   }
 
+  // A decoded value containing a `;` (or a raw newline) would inject extra
+  // cookie pairs into the outbound Cookie header below. ESPN's s2/SWID never
+  // contain these, so reject them rather than smuggle attacker-controlled pairs.
+  if ((espnS2 && /[;\r\n]/.test(espnS2)) || (swid && /[;\r\n]/.test(swid))) {
+    return res.status(400).json({ error: 'Malformed cookie value' });
+  }
+
   try {
     // Build ESPN URL
     const queryParams = [];

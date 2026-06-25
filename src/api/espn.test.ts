@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { ESPNAPI, League } from '@/types';
-import { loadLeague } from './espn';
+import { loadLeague, parseEspnRosterSlots } from './espn';
 
 // Fixture: a 4-team public ESPN auction league, season 2025 (a past season,
 // so status derives to final). Schedule has weeks 1-3 played, week 14
@@ -207,6 +207,37 @@ function routeESPN(url: string): unknown {
   }
   throw new Error(`Unexpected ESPN URL in test: ${url}`);
 }
+
+describe('parseEspnRosterSlots', () => {
+  it('respects an explicit 0 for no-kicker / no-defense leagues', () => {
+    // ESPN sends 0 for slots the league does not use. The old `value || 1`
+    // masked that as a phantom K/DST slot the user then had to fill.
+    const slots = parseEspnRosterSlots({
+      0: 1, 2: 2, 4: 3, 6: 1, 16: 0, 17: 0, 20: 6, 21: 1, 23: 2,
+    });
+    expect(slots.K).toBe(0);
+    expect(slots.DST).toBe(0);
+    expect(slots.WR).toBe(3);
+    expect(slots.FLEX).toBe(2);
+  });
+
+  it('reads superflex from slot 7 (OP)', () => {
+    const slots = parseEspnRosterSlots({ 0: 1, 2: 2, 4: 2, 6: 1, 7: 1, 16: 1, 17: 1, 20: 5, 23: 1 });
+    expect(slots.SUPERFLEX).toBe(1);
+  });
+
+  it('falls back to a standard lineup when positionLimits is missing', () => {
+    expect(parseEspnRosterSlots(undefined)).toMatchObject({
+      QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 0, K: 1, DST: 1, BENCH: 6, IR: 1,
+    });
+  });
+
+  it('ignores junk negative limits and uses the fallback', () => {
+    const slots = parseEspnRosterSlots({ 0: -1, 17: -1 });
+    expect(slots.QB).toBe(1);
+    expect(slots.K).toBe(1);
+  });
+});
 
 describe('espn loadLeague', () => {
   let league: League;

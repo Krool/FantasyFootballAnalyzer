@@ -241,7 +241,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
                     .map(s => {
                       const champ = s.teams.find(t => t.id === s.championTeamId);
                       return (
-                        <div key={s.season} className={styles.championCard}>
+                        <div key={`${s.leagueId}-${s.season}`} className={styles.championCard}>
                           <span className={styles.championYear}>{s.season}</span>
                           <span className={styles.championTrophy} role="img" aria-label="Champion">
                             🏆

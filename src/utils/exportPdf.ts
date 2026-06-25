@@ -332,7 +332,7 @@ export async function exportLeagueReport(league: League) {
       pick.teamName.length > 12 ? pick.teamName.substring(0, 11) + '.' : pick.teamName,
       String(pick.pickNumber),
       (pick.seasonPoints || 0).toFixed(0),
-      `+${pick.valueOverExpected}`,
+      `${pick.valueOverExpected >= 0 ? '+' : ''}${pick.valueOverExpected}`,
       getGradeDisplayText(pick.grade),
     ]);
 
