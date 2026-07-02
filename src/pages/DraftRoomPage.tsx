@@ -8,6 +8,7 @@ import { useSounds } from '@/hooks/useSounds';
 import { useYahooValues } from '@/hooks/useYahooValues';
 import { AuctionLogger } from '@/components/draftRoom/AuctionLogger';
 import { AvailablePlayers } from '@/components/draftRoom/AvailablePlayers';
+import { ConnectedBanner } from '@/components/draftRoom/ConnectedBanner';
 import { DraftRecap } from '@/components/draftRoom/DraftRecap';
 import { DraftSetup } from '@/components/draftRoom/DraftSetup';
 import { LeagueNeeds } from '@/components/draftRoom/LeagueNeeds';
@@ -66,10 +67,16 @@ const BOARD_TABS: Array<{ key: BoardTab; label: string; title: string }> = [
 
 interface DraftRoomPageProps {
   league: League;
+  // True only for the first render after a fresh successful connect landed
+  // here because the league has no draft data yet (App's isEmptyPreseason
+  // routing). Shows a one-time confirmation so the connect doesn't look like
+  // it silently failed.
+  justConnected?: boolean;
 }
 
-export function DraftRoomPage({ league }: DraftRoomPageProps) {
+export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
   const room = useDraftRoom(league);
+  const [showConnectedBanner, setShowConnectedBanner] = useState(!!justConnected);
   const sim = useDraftSim(room);
   const yahoo = useYahooValues(room.pool);
   const liveSync = useLiveDraftSync(league, room);
@@ -333,6 +340,10 @@ export function DraftRoomPage({ league }: DraftRoomPageProps) {
             {isMock ? ' · Mock' : ''}
           </p>
         </div>
+
+        {showConnectedBanner && (
+          <ConnectedBanner onDismiss={() => setShowConnectedBanner(false)} />
+        )}
 
         <div aria-live="polite" className="visually-hidden">
           {announcement}

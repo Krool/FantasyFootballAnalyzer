@@ -88,6 +88,11 @@ export function DraftPage({ league }: DraftPageProps) {
               <li>The league is from a previous season without accessible draft history</li>
               <li>The platform doesn't provide draft data for this league type</li>
             </ul>
+            {league.status === 'preseason' && (
+              <p className={styles.offseasonNote}>
+                Most leagues draft in August or September. Check back once your league's draft is set.
+              </p>
+            )}
             {league.status !== 'final' && (
               <div className={styles.ctaBlock}>
                 <p>Drafting soon? Track it live and see values, budgets, and needs as you go.</p>

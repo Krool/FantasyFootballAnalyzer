@@ -274,6 +274,51 @@ describe('useLeague.load - error mapping', () => {
   });
 });
 
+describe('useLeague.load - connect_error analytics', () => {
+  beforeEach(() => {
+    mockedLoadCachedLeague.mockReturnValue(null);
+    delete (window as { gtag?: unknown }).gtag;
+  });
+
+  it.each([
+    ['espn', new Error('Request failed: 401'), 'private_league'],
+    ['yahoo', new Error('Request failed: 401'), 'auth_expired'],
+    ['sleeper', new Error('League 404 not found'), 'not_found'],
+    ['sleeper', new Error('network request failed'), 'network'],
+    ['sleeper', new Error('rate limit exceeded (429)'), 'rate_limited'],
+    ['sleeper', new Error('Sleeper said no'), 'other'],
+  ] as const)('classifies a %s failure as %s', async (platform, err, expectedType) => {
+    const gtag = vi.fn();
+    window.gtag = gtag;
+    mockedLoadLeague.mockRejectedValue(err);
+
+    const { result } = renderHook(() => useLeague());
+    await act(async () => {
+      await result.current.load({ platform, leagueId: 'L1', season: 2024 });
+    });
+
+    expect(gtag).toHaveBeenCalledWith('event', 'connect_error', {
+      platform,
+      error_type: expectedType,
+    });
+  });
+
+  it('does not fire connect_error when a background refresh fails silently', async () => {
+    const gtag = vi.fn();
+    window.gtag = gtag;
+    mockedLoadCachedLeague.mockReturnValue(makeLeague({ name: 'Stale Cached' }));
+    mockedIsStale.mockReturnValue(true);
+    mockedLoadLeague.mockRejectedValue(new Error('network down'));
+
+    const { result } = renderHook(() => useLeague());
+    await act(async () => {
+      await result.current.load(sleeperCreds);
+    });
+
+    expect(gtag).not.toHaveBeenCalledWith('event', 'connect_error', expect.anything());
+  });
+});
+
 describe('useLeague.load - ESPN season fallback', () => {
   // The form defaults the ESPN season to the calendar year, but the league
   // may not be rolled over to it yet; a 404 on that default retries last
@@ -305,6 +350,29 @@ describe('useLeague.load - ESPN season fallback', () => {
     expect(returned).toEqual(fallback);
     expect(result.current.error).toBeNull();
     expect(result.current.league).toEqual(fallback);
+    // The silent retry still needs a visible (dismissible) trace: the user
+    // asked for `year` and got `year - 1` instead.
+    expect(result.current.seasonFallbackNotice).toMatch(String(year - 1));
+    expect(result.current.seasonFallbackNotice).toMatch(String(year));
+  });
+
+  it('clears a stale fallback notice once a fresh load starts', async () => {
+    const fallback = makeLeague({ platform: 'espn', season: year - 1 });
+    mockedLoadLeague
+      .mockRejectedValueOnce(new ESPNAPIError('ESPN API error: 404 Not Found', 404))
+      .mockResolvedValueOnce(fallback)
+      .mockResolvedValueOnce(makeLeague({ platform: 'sleeper', name: 'Fresh' }));
+
+    const { result } = renderHook(() => useLeague());
+    await act(async () => {
+      await result.current.load({ platform: 'espn', leagueId: 'L1', season: year });
+    });
+    expect(result.current.seasonFallbackNotice).not.toBeNull();
+
+    await act(async () => {
+      await result.current.load(sleeperCreds);
+    });
+    expect(result.current.seasonFallbackNotice).toBeNull();
   });
 
   it('does not retry an explicitly picked past season', async () => {

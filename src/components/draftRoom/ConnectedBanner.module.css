@@ -1,0 +1,47 @@
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--ink-2);
+  border: 2px solid var(--lime);
+  padding: 0.75rem 1rem;
+  margin-bottom: 2rem;
+}
+
+.tag {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--lime);
+  padding: 0.18rem 0.45rem;
+}
+
+.text {
+  flex: 1;
+  min-width: 260px;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--bone);
+}
+
+.close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--bone-dim);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+}
+.close:hover {
+  color: var(--bone);
+}

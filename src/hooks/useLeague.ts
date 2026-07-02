@@ -26,9 +26,31 @@ export interface LoadingProgress {
   detail?: string;
 }
 
+// Coarse error class for analytics only - never the raw error text or a
+// league id (see connect_error in src/utils/analytics.ts).
+type ConnectErrorType = 'not_found' | 'private_league' | 'auth_expired' | 'network' | 'rate_limited' | 'other';
+
+function connectErrorTypeFor(err: unknown, platform: LeagueCredentials['platform']): ConnectErrorType {
+  if (!(err instanceof Error)) return 'other';
+  const text = err.message.toLowerCase();
+  if (text.includes('429') || text.includes('rate limit')) return 'rate_limited';
+  if (text.includes('401') || text.includes('unauthorized')) {
+    // ESPN 401s mean missing/expired cookies (a private league the visitor
+    // hasn't proven access to); Yahoo and generic 401s mean the login lapsed.
+    return platform === 'espn' ? 'private_league' : 'auth_expired';
+  }
+  if (text.includes('404') || text.includes('not found')) return 'not_found';
+  if (text.includes('network') || text.includes('fetch') || text.includes('timeout')) return 'network';
+  return 'other';
+}
+
 interface LoadOptions {
   // Skip the cache entirely and re-fetch from the platform.
   forceRefresh?: boolean;
+  // Internal: set on the recursive call the ESPN season-1 fallback makes, so
+  // the notice it sets isn't cleared by the top-of-loadImpl reset meant for
+  // fresh, externally-triggered loads.
+  isFallbackRetry?: boolean;
 }
 
 interface UseLeagueReturn {
@@ -47,6 +69,10 @@ interface UseLeagueReturn {
   // rebuilds (no-op unless the current league is a guest).
   enterGuest: (settings: GuestSettings) => League;
   updateGuest: (patch: Partial<GuestSettings>) => void;
+  // Set when the ESPN current-year 404 fallback silently loaded last season
+  // instead. Null once a fresh load starts or the caller dismisses it.
+  seasonFallbackNotice: string | null;
+  dismissSeasonFallbackNotice: () => void;
 }
 
 export function useLeague(): UseLeagueReturn {
@@ -55,6 +81,7 @@ export function useLeague(): UseLeagueReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<LoadingProgress | null>(null);
+  const [seasonFallbackNotice, setSeasonFallbackNotice] = useState<string | null>(null);
 
   // Track if component is mounted to prevent state updates after unmount
   const isMountedRef = useRef(true);
@@ -78,6 +105,13 @@ export function useLeague(): UseLeagueReturn {
     logger.debug('[useLeague] load() called with credentials:', credentials, options);
     lastCredentialsRef.current = credentials;
     setCredentials(credentials);
+
+    // A fresh, externally-triggered load supersedes any stale fallback
+    // notice; the fallback's own recursive call skips this so its notice
+    // survives to land alongside the season it actually loaded.
+    if (!options?.isFallbackRetry) {
+      setSeasonFallbackNotice(null);
+    }
 
     // Bump the request counter for every load attempt, including cache hits,
     // so an in-flight network load can't clobber a more recent cache hit when
@@ -171,8 +205,13 @@ export function useLeague(): UseLeagueReturn {
           err.status === 404
         ) {
           logger.debug('[useLeague] ESPN current-year season missing; retrying previous season');
-          return loadImpl({ ...credentials, season: credentials.season - 1 }, options);
+          const fallbackSeason = credentials.season - 1;
+          setSeasonFallbackNotice(
+            `Showing ${fallbackSeason} data - the ${credentials.season} season isn't set up yet.`,
+          );
+          return loadImpl({ ...credentials, season: fallbackSeason }, { ...options, isFallbackRetry: true });
         }
+        Analytics.connectError(credentials.platform, connectErrorTypeFor(err, credentials.platform));
         let message = 'Failed to load league. Please try again.';
 
         if (err instanceof Error) {
@@ -234,8 +273,13 @@ export function useLeague(): UseLeagueReturn {
     setLeague(null);
     setError(null);
     setCredentials(null);
+    setSeasonFallbackNotice(null);
     lastCredentialsRef.current = null;
     clearGuestSettings();
+  }, []);
+
+  const dismissSeasonFallbackNotice = useCallback(() => {
+    setSeasonFallbackNotice(null);
   }, []);
 
   // Enter guest mode: synthesize a league from picked settings, no fetch.
@@ -270,5 +314,6 @@ export function useLeague(): UseLeagueReturn {
   return {
     league, credentials, isLoading, error, progress,
     load, refresh, clear, enterGuest, updateGuest,
+    seasonFallbackNotice, dismissSeasonFallbackNotice,
   };
 }
