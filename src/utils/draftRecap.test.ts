@@ -90,6 +90,41 @@ describe('gradeDraftSession', () => {
   });
 });
 
+describe('gradeDraftSession edge cases', () => {
+  it('leaves bestBuy and biggestOverpay null for a snake-mode session', () => {
+    const snakeConfig: DraftRoomConfig = { ...config, draftType: 'snake' };
+    const pick = (playerId: string, teamId: string, seq: number): DraftEvent => ({
+      kind: 'snake_pick', seq, ts: seq, playerId, teamId,
+    });
+    const events = [
+      pick(rb1.id, 'a', 0),
+      pick(wr1.id, 'b', 1),
+      pick(wr2.id, 'a', 2),
+      pick(rb2.id, 'b', 3),
+    ];
+    const derived = deriveDraftState(snakeConfig, pool, events);
+    expect(() => gradeDraftSession(snakeConfig, derived, values)).not.toThrow();
+
+    const recaps = gradeDraftSession(snakeConfig, derived, values);
+    for (const recap of recaps) {
+      expect(recap.bestBuy).toBeNull();
+      expect(recap.biggestOverpay).toBeNull();
+      expect(recap.spent).toBe(0); // snake picks have no price
+    }
+  });
+
+  it('falls back to the 0.5-percentile grade for a single-team room', () => {
+    // scored.length === 1: the percentile has nothing to compare against, so
+    // gradeDraftSession defaults pct to 0.5, which the GRADE_LADDER maps to 'B'.
+    const soloConfig: DraftRoomConfig = { ...config, teams: [{ id: 'a', name: 'Alpha' }] };
+    const events = [sale(rb1.id, 'a', 25, 0)];
+    const derived = deriveDraftState(soloConfig, pool, events);
+    const recaps = gradeDraftSession(soloConfig, derived, values);
+    expect(recaps).toHaveLength(1);
+    expect(recaps[0].grade).toBe('B');
+  });
+});
+
 describe('rosterAsText', () => {
   it('renders a copyable roster with prices', () => {
     const events = [sale(rb1.id, 'a', 25, 0)];

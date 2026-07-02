@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PoolPlayer } from '@/types/draft';
-import { computeInflation, inflateValue } from './inflation';
+import { computeInflation, inflateValue, MAX_INFLATION_RATE } from './inflation';
 
 function player(id: string, rank: number): PoolPlayer {
   return {
@@ -80,6 +80,16 @@ describe('computeInflation', () => {
     const values = valuesFor(pool, [1, 1]);
     expect(computeInflation([], pool, values).rate).toBe(1);
     expect(computeInflation([{ remaining: 4, openSlots: 2 }], pool, values).rate).toBe(1);
+  });
+
+  it('clamps a degenerate late-auction blowup to MAX_INFLATION_RATE', () => {
+    const pool = poolOf(1);
+    const values = valuesFor(pool, [2]);
+    // 1 open slot, a huge remaining budget, and a tiny surplus value ($1):
+    // the raw ratio (surplusMoney / surplusValue) would be enormous.
+    const teams = [{ remaining: 500, openSlots: 1 }];
+    const state = computeInflation(teams, pool, values);
+    expect(state.rate).toBe(MAX_INFLATION_RATE);
   });
 });
 

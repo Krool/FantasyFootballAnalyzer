@@ -171,4 +171,23 @@ describe('projectionValues', () => {
     expect(v.get('sheet')).toBe(25);
     expect(v.get('nothing')).toBe(1);
   });
+
+  it('returns an empty map for an empty pool with no throw', () => {
+    expect(() => projectionValues([], league())).not.toThrow();
+    const v = projectionValues([], league());
+    expect(v.size).toBe(0);
+  });
+
+  it('prices everyone at $1 when the whole pool sits at replacement level (sumVor <= 0)', () => {
+    // Every player has the identical projection, so each one's VOR is exactly
+    // 0 against the replacement line: sumVor collapses to 0.
+    const flatPlayers = Array.from({ length: 5 }, (_, i) =>
+      player({ id: `flat${i}`, pos: 'WR', projPtsStd: 80, projPts: 80, projPtsPpr: 80 }),
+    );
+    const v = projectionValues(flatPlayers, league());
+    for (const p of flatPlayers) {
+      expect(v.get(p.id)).toBe(1);
+    }
+    expect([...v.values()].some(n => Number.isNaN(n))).toBe(false);
+  });
 });

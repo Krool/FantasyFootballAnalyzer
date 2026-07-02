@@ -67,6 +67,7 @@ describe('draftableSlotCount', () => {
     // A rosterSlots persisted before SUPERFLEX existed lacks the key; a NaN
     // here cascades into Pick NaN/NaN and maxBid $0 across the whole room.
     const { SUPERFLEX: _omit, ...withoutSuperflex } = SLOTS;
+    void _omit;
     expect(draftableSlotCount(withoutSuperflex as RosterSlots)).toBe(11);
   });
 });

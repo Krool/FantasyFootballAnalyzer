@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { League, Player, DraftPick } from '@/types';
 import { NflTeamLabel, PosBadge } from '@/components';
@@ -41,7 +41,8 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
   const [selectedPlayerId, setSelectedPlayerIdState] = useState<string | null>(
     () => searchParams.get('player'),
   );
-  const setSelectedPlayerId = (id: string | null) => {
+  // Stable identity so effects can list it as a dependency.
+  const setSelectedPlayerId = useCallback((id: string | null) => {
     setSelectedPlayerIdState(id);
     setSearchParams(prev => {
       const params = new URLSearchParams(prev);
@@ -49,7 +50,7 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
       else params.delete('player');
       return params;
     }, { replace: true });
-  };
+  }, [setSearchParams]);
   const [positionFilter, setPositionFilter] = useState<string>('all');
   // How many of the filtered list to actually render. Restart when the filters
   // change so the user lands at the top of the new result set.
@@ -263,7 +264,7 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
     if (!selectedPlayerId) return;
     const stillVisible = filteredPlayers.some(p => p.player.id === selectedPlayerId);
     if (!stillVisible) setSelectedPlayerId(null);
-  }, [filteredPlayers, selectedPlayerId]);
+  }, [filteredPlayers, selectedPlayerId, setSelectedPlayerId]);
 
   // Whenever the filters change the result set, snap the visible window back
   // to the first page. Otherwise typing a search that returns 5 players would

@@ -6,6 +6,7 @@ import {
   enrichPlayersWithStats,
   parseRosterSettings,
   getUserLeagues,
+  getAvailableSeasons,
   getAccessToken,
   getRefreshToken,
   isAuthenticated,
@@ -643,6 +644,80 @@ const REFRESHED_TOKENS = {
   expires_in: 3600,
   token_type: 'bearer',
 };
+
+describe('yahoo getUserLeagues bare-object normalization', () => {
+  beforeEach(() => {
+    localStorage.setItem('yahoo_access_token', 'test-token');
+    localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('parses a league list when games.game and leagues.league are bare objects, not arrays', async () => {
+    // fast-xml-parser collapses a single child into a bare object instead of
+    // a one-element array. Both games.game (one requested game key) and
+    // leagues.league (one league in that game) hit this shape for a user in
+    // exactly one league, and getUserLeagues must normalize both.
+    vi.stubGlobal('fetch', vi.fn(async () =>
+      jsonResponse(usersLeaguesBody('461.l.999', 'Solo League'))
+    ));
+
+    const leagues = await getUserLeagues(new Date().getFullYear());
+
+    expect(leagues).toEqual([{ id: '461.l.999', name: 'Solo League' }]);
+  });
+});
+
+describe('yahoo getAvailableSeasons dedup', () => {
+  const currentYear = new Date().getFullYear();
+  // The current-year probe always resolves via the 'nfl' alias; priorYear is
+  // guaranteed an explicit key by the NFL_GAME_KEYS coverage test above.
+  const priorYear = currentYear - 1;
+  const priorGameKey = NFL_GAME_KEYS[priorYear];
+  const MATCH_LEAGUE_NAME = 'Krool Dynasty';
+  const MATCH_LEAGUE_ID = `${priorGameKey}.l.555`;
+
+  beforeEach(() => {
+    localStorage.setItem('yahoo_access_token', 'test-token');
+    localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function gameKeyFromUrl(url: string): string {
+    const match = url.match(/\/api\/yahoo-api\?endpoint=([^&]+)/);
+    if (!match) throw new Error(`Unexpected Yahoo URL in test: ${url}`);
+    const endpoint = decodeURIComponent(match[1]);
+    const gk = endpoint.match(/game_keys=([^/]+)/);
+    if (!gk) throw new Error(`Unexpected Yahoo endpoint in test: ${endpoint}`);
+    return gk[1];
+  }
+
+  it('collapses the current-year nfl-alias probe into the explicit prior-year match, keeping the lower year', async () => {
+    // In the offseason the current-year 'nfl' alias resolves to the SAME
+    // league as the explicit prior-year game key. Both probes should match
+    // by name, but only the lower-year (explicit-key) entry should survive.
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const gameKey = gameKeyFromUrl(String(input));
+      if (gameKey === 'nfl' || gameKey === priorGameKey) {
+        return jsonResponse(usersLeaguesBody(MATCH_LEAGUE_ID, MATCH_LEAGUE_NAME));
+      }
+      // Every other probed year: no leagues at all, so it never matches.
+      return jsonResponse({ fantasy_content: {} });
+    }));
+
+    const seasons = await getAvailableSeasons('unused-current-league-key', MATCH_LEAGUE_NAME);
+
+    expect(seasons).toHaveLength(1);
+    expect(seasons[0].leagueId).toBe(MATCH_LEAGUE_ID);
+    expect(seasons[0].year).toBe(priorYear);
+    expect(seasons[0].status).toBe('final');
+  });
+});
 
 describe('yahoo OAuth refresh flow', () => {
   const currentYear = new Date().getFullYear();

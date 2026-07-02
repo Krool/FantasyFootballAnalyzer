@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { RosterSlots } from '@/types';
 import type { DraftEvent, DraftRoomConfig, PoolPlayer } from '@/types/draft';
 import { deriveDraftState, draftableSlotCount, validateEvent } from './draftEngine';
-import { mulberry32, simAuctionResult, simNomination, simSnakePick } from './draftSim';
+import type { TeamDraftState } from './draftEngine';
+import { aiWillingness, makePersonas, mulberry32, simAuctionResult, simNomination, simSnakePick } from './draftSim';
+import type { AiPersona } from './draftSim';
 import { roundForPick } from './snakeOrder';
 import { scaleValues } from './valueScaling';
 
@@ -49,6 +51,24 @@ function makeConfig(draftType: 'snake' | 'auction'): DraftRoomConfig {
 }
 
 const BASELINE = { budget: 200, teams: 12, rounds: 14 };
+
+// A standalone TeamDraftState, for persona tests that need tight control over
+// need/openSlots inputs without running a full draft through deriveDraftState.
+function makeTeam(partial: Partial<TeamDraftState> = {}): TeamDraftState {
+  return {
+    teamId: 't1',
+    picks: [],
+    openSlots: 10,
+    spent: 0,
+    remaining: 200,
+    maxBid: 190,
+    avgPrice: 0,
+    slotsFilled: { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0 },
+    starterNeeds: { QB: 0, RB: 0, WR: 0, TE: 0, K: 0, DST: 0 },
+    fullAt: { QB: false, RB: false, WR: false, TE: false, K: false, DST: false },
+    ...partial,
+  };
+}
 
 describe('mulberry32', () => {
   it('is deterministic for a seed', () => {
@@ -189,5 +209,55 @@ describe('simAuctionResult', () => {
     expect(result.winnerId).not.toBeNull();
     expect(result.winnerId).not.toBe('t1');
     expect(result.price).toBe(1);
+  });
+});
+
+describe('makePersonas', () => {
+  it('is deterministic for the same seed', () => {
+    const ids = ['t1', 't2', 't3'];
+    const a = makePersonas(ids, mulberry32(5));
+    const b = makePersonas(ids, mulberry32(5));
+    expect([...a.entries()]).toEqual([...b.entries()]);
+  });
+});
+
+describe('aiWillingness persona effects', () => {
+  it('a high-aggression, stars-biased persona bids at least as much as a low-aggression one', () => {
+    const pool = makePool();
+    const star = pool[0];
+    const expectedPrice = 40;
+    const team = makeTeam();
+    const low: AiPersona = { aggression: 0.85, starsBias: 0.9, baitiness: 0 };
+    const high: AiPersona = { aggression: 1.15, starsBias: 1.25, baitiness: 0 };
+
+    // Fresh rng of the same seed for each call: the base draw is identical,
+    // so any gap between the two bids comes only from the persona.
+    const lowBid = aiWillingness(star, expectedPrice, team, 0, mulberry32(21), low);
+    const highBid = aiWillingness(star, expectedPrice, team, 0, mulberry32(21), high);
+
+    expect(highBid).toBeGreaterThanOrEqual(lowBid);
+  });
+});
+
+describe('simNomination baiting', () => {
+  it('a persona with baitiness forced to 1 nominates a player it does not need over one it does', () => {
+    const needed: PoolPlayer = {
+      id: 'qb-needed', name: 'QB Needed', team: 'FA', pos: 'QB',
+      posRank: 1, overallRank: 1, tier: 1, bye: null, baseValue: 40,
+    };
+    const notNeeded: PoolPlayer = {
+      id: 'wr-not-needed', name: 'WR Not Needed', team: 'FA', pos: 'WR',
+      posRank: 1, overallRank: 2, tier: 1, bye: null, baseValue: 40,
+    };
+    const available = [needed, notNeeded];
+    const scaled = new Map([
+      [needed.id, 10],
+      [notNeeded.id, 10],
+    ]);
+    const nominator = makeTeam({ starterNeeds: { QB: 1, RB: 0, WR: 0, TE: 0, K: 0, DST: 0 } });
+    const persona: AiPersona = { aggression: 1, starsBias: 1, baitiness: 1 };
+
+    const pick = simNomination(available, scaled, nominator, [nominator], mulberry32(2), persona);
+    expect(pick?.id).toBe(notNeeded.id);
   });
 });

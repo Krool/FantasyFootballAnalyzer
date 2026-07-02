@@ -175,4 +175,56 @@ describe('suggestPicks', () => {
     const top = suggestPicks(pool, me, SLOTS, values(pool, { qb1: 40, rb1: 10 }), opts());
     expect(top.map(s => s.player.id)).not.toContain('qb1');
   });
+
+  it('flags a spare QB as SUPERFLEX-eligible when the QB slot is full but SUPERFLEX is open', () => {
+    const superflexSlots: RosterSlots = { ...SLOTS, SUPERFLEX: 1 };
+    const pool = [player({ id: 'qb2', pos: 'QB' })];
+    // QB starter already filled, SUPERFLEX still open: qb2 is a starter, not bench.
+    const me = team({
+      slotsFilled: { QB: 1, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0 },
+      starterNeeds: { QB: 0, RB: 2, WR: 2, TE: 1, K: 1, DST: 1 },
+    });
+    const top = suggestPicks(pool, me, superflexSlots, values(pool, { qb2: 30 }), opts());
+    expect(top[0].reasons).toContain('SUPERFLEX-eligible');
+  });
+
+  it('boosts a starred player above an identical twin and sinks an avoided one', () => {
+    const pool = [
+      player({ id: 'wr-starred', pos: 'WR' }),
+      player({ id: 'wr-plain', pos: 'WR' }),
+      player({ id: 'wr-avoided', pos: 'WR' }),
+    ];
+    const top = suggestPicks(
+      pool,
+      team(),
+      SLOTS,
+      values(pool, { 'wr-starred': 20, 'wr-plain': 20, 'wr-avoided': 20 }),
+      opts({ starred: new Set(['wr-starred']), avoided: new Set(['wr-avoided']) }),
+    );
+    expect(top.map(s => s.player.id)).toEqual(['wr-starred', 'wr-plain', 'wr-avoided']);
+    expect(top[0].reasons).toContain('on your target list');
+    expect(top[2].reasons).toContain('on your avoid list');
+  });
+
+  it('penalizes a third same-week bye and ranks it behind an identical different-bye candidate', () => {
+    // Two roster spots already tied up on a week-7 bye.
+    const rosteredA = player({ id: 'rb-rostered-a', pos: 'RB', bye: 7 });
+    const rosteredB = player({ id: 'wr-rostered-b', pos: 'WR', bye: 7 });
+    const pool = [
+      player({ id: 'wr-same-bye', pos: 'WR', bye: 7 }),
+      player({ id: 'wr-diff-bye', pos: 'WR', bye: 8 }),
+    ];
+    const top = suggestPicks(
+      pool,
+      team(),
+      SLOTS,
+      values(pool, { 'wr-same-bye': 20, 'wr-diff-bye': 20 }),
+      opts({ keeperPlayers: [rosteredA, rosteredB] }),
+    );
+    const sameBye = top.find(s => s.player.id === 'wr-same-bye')!;
+    const diffBye = top.find(s => s.player.id === 'wr-diff-bye')!;
+    expect(sameBye.reasons).toContain('third week-7 bye');
+    expect(diffBye.reasons.join(' ')).not.toMatch(/bye/);
+    expect(sameBye.score).toBeLessThan(diffBye.score);
+  });
 });

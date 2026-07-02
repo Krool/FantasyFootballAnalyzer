@@ -119,6 +119,36 @@ describe('calculateAllAwards - Performance', () => {
     const easyStreet = awards.find(a => a.id === 'least_pa');
     expect(easyStreet!.winner.teamId).toBe('t1');
   });
+
+  it('emits zero performance awards for an all-unplayed league (regression, commit 6597b9c)', () => {
+    // Every team is 0-0-0 with 0 points, matching a preseason cache. Before
+    // the fix, getBestRecord/getWorstRecord kept the incumbent on every tie,
+    // so teams[0] was crowned best AND worst record (and top AND bottom
+    // scorer) at once.
+    const teams = [
+      makeTeam({ id: 't1', name: 'Alpha', wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0 }),
+      makeTeam({ id: 't2', name: 'Bravo', wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0 }),
+    ];
+    const awards = calculateAllAwards({ league: makeLeague(teams) });
+
+    expect(awards.filter(a => a.category === 'performance')).toEqual([]);
+  });
+
+  it('breaks a tied record deterministically by array order', () => {
+    // Same wins and same pointsFor: the array-first team must win, not
+    // whichever team happens to sort first by id or name.
+    const teams = [
+      makeTeam({ id: 't2', name: 'Second In Array', wins: 8, losses: 5, pointsFor: 1500 }),
+      makeTeam({ id: 't1', name: 'First In Array', wins: 8, losses: 5, pointsFor: 1500 }),
+    ];
+    const awards = calculateAllAwards({ league: makeLeague(teams) });
+
+    const bestRecord = awards.find(a => a.id === 'best_record');
+    expect(bestRecord!.winner.teamId).toBe('t2');
+
+    const worstRecord = awards.find(a => a.id === 'worst_record');
+    expect(worstRecord!.winner.teamId).toBe('t2');
+  });
 });
 
 describe('calculateAllAwards - Luck', () => {
@@ -299,6 +329,15 @@ describe('calculateAllAwards - Draft', () => {
     expect(hero!.detail).toContain('LateGem');
     expect(hero!.detail).toContain('Rd 8');
   });
+
+  it('emits zero draft awards and does not throw for a league with no draftPicks', () => {
+    const teams = [makeTeam({ id: 't1' }), makeTeam({ id: 't2' })];
+
+    expect(() => calculateAllAwards({ league: makeLeague(teams) })).not.toThrow();
+
+    const awards = calculateAllAwards({ league: makeLeague(teams) });
+    expect(awards.filter(a => a.category === 'draft')).toEqual([]);
+  });
 });
 
 describe('calculateAllAwards - Trades', () => {
@@ -382,6 +421,28 @@ describe('calculateAllAwards - Trades', () => {
     expect(loneWolf!.winner.teamId).toBe('t2');
   });
 
+  it('suppresses lone wolf when more than one team made zero trades', () => {
+    // 4 teams, but only t1 and t2 ever trade (twice, with each other). t3
+    // and t4 both sit at zero trades, so crowning either as "Lone Wolf"
+    // would be an arbitrary pick by array order. The award must not fire.
+    const teams = [
+      makeTeam({ id: 't1', name: 'Trader A' }),
+      makeTeam({ id: 't2', name: 'Trader B' }),
+      makeTeam({ id: 't3', name: 'Bystander 1' }),
+      makeTeam({ id: 't4', name: 'Bystander 2' }),
+    ];
+    const trades: Trade[] = Array.from({ length: 2 }, (_, i) => ({
+      id: `trade${i}`, timestamp: Date.now(), week: i + 1, status: 'completed' as const,
+      teams: [
+        { teamId: 't1', teamName: 'Trader A', playersReceived: [], playersSent: [], parGained: 5, parLost: 5, netPAR: 0, pointsGained: 0, pointsLost: 0, netValue: 0 },
+        { teamId: 't2', teamName: 'Trader B', playersReceived: [], playersSent: [], parGained: 5, parLost: 5, netPAR: 0, pointsGained: 0, pointsLost: 0, netValue: 0 },
+      ],
+    }));
+
+    const awards = calculateAllAwards({ league: makeLeague(teams, trades) });
+    expect(awards.find(a => a.id === 'trade_avoider')).toBeUndefined();
+  });
+
   it('skips trade awards when no trades exist', () => {
     const teams = [makeTeam({ id: 't1' })];
     const awards = calculateAllAwards({ league: makeLeague(teams) });
@@ -449,6 +510,35 @@ describe('calculateAllAwards - Waivers', () => {
     const worst = awards.find(a => a.id === 'worst_waiver');
     expect(worst).toBeDefined();
     expect(worst!.detail).toBe('RealDud');
+  });
+
+  it('treats a missing gamesSincePickup as eligible for worst waiver (Yahoo parity)', () => {
+    // Yahoo never reports gamesSincePickup at all, so it comes through as
+    // undefined rather than a real count. getWorstWaiverPickup only skips a
+    // pickup when games IS reported AND below 2, so an undefined-games add
+    // must still be able to win the award.
+    const yahooAdd = {
+      id: 'p1', platformId: 'p1', name: 'YahooDud', position: 'WR', team: 'XX',
+      pointsAboveReplacement: -90,
+      // gamesSincePickup intentionally omitted.
+    };
+    const teams = [
+      makeTeam({
+        id: 't1',
+        transactions: [
+          makeTx('t1', 'T1', 'tx1', [yahooAdd as any], -90),
+          // A real dud with reported games and a smaller negative PAR: if
+          // the undefined-games add were wrongly filtered out, this one
+          // would win the award instead.
+          makeTx('t1', 'T1', 'tx2', [makeAdd({ id: 'p2', name: 'RealDud', par: -20, games: 3 })], -20),
+        ],
+      }),
+    ];
+    const awards = calculateAllAwards({ league: makeLeague(teams) });
+
+    const worst = awards.find(a => a.id === 'worst_waiver');
+    expect(worst).toBeDefined();
+    expect(worst!.detail).toBe('YahooDud');
   });
 
   it('awards waiver wire king and slacker by total PAR across pickups', () => {

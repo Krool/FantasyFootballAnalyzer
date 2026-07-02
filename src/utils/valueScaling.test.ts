@@ -48,4 +48,16 @@ describe('scaleValues', () => {
     expect(scoringScalar('WR', 'half_ppr')).toBe(1);
     expect(scoringScalar('RB', 'standard')).toBe(1);
   });
+
+  it('floors every player at $1 with no NaN when the baseline discretionary pool is 0', () => {
+    // budget === rounds: teams*budget - teams*rounds = 0, so basePool <= 0
+    // and the ratio falls back to 0 instead of dividing by it.
+    const degenerateBaseline = { budget: 14, teams: 12, rounds: 14 };
+    const players = [player('a', 66), player('b', 28), player('c', 200)];
+    const scaled = scaleValues(players, degenerateBaseline, BASELINE);
+    for (const p of players) {
+      expect(scaled.get(p.id)).toBe(1);
+      expect(Number.isNaN(scaled.get(p.id))).toBe(false);
+    }
+  });
 });

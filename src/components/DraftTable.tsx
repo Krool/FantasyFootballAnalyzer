@@ -17,6 +17,9 @@ interface DraftTableProps {
 type SortField = 'pick' | 'round' | 'player' | 'position' | 'team' | 'points' | 'posRank' | 'value' | 'grade' | 'cost';
 type SortDirection = 'asc' | 'desc';
 
+// FLEX positions (RB/WR/TE)
+const FLEX_POSITIONS = ['RB', 'WR', 'TE'];
+
 export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTableProps) {
   const { playFilter, playSort } = useSounds();
 
@@ -62,9 +65,6 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
     gradedPicks.forEach(pick => posSet.add(pick.player.position));
     return Array.from(posSet).sort();
   }, [gradedPicks]);
-
-  // FLEX positions (RB/WR/TE)
-  const FLEX_POSITIONS = ['RB', 'WR', 'TE'];
 
   // Filter and sort picks
   const displayPicks = useMemo(() => {

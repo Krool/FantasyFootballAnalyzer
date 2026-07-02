@@ -606,16 +606,8 @@ export async function loadLeague(
       }
     );
 
-    // The communication endpoint shows ALL trade activity including proposals
-    // We need to match with TRADE_ACCEPT transactions to only get completed trades
-    // Build a set of TRADE_ACCEPT timestamps to filter against
-    const acceptedTradeTimestamps = new Set<number>();
-    tradeAccepts.forEach(tx => {
-      if (tx.proposedDate) {
-        // Allow some tolerance for timestamp matching (within 1 hour)
-        acceptedTradeTimestamps.add(tx.proposedDate);
-      }
-    });
+    // The communication endpoint shows ALL trade activity including proposals;
+    // the accepted-trade timestamp matching happens per-topic further below.
 
     // Find all ACTIVITY_TRANSACTIONS with 2+ teams involved
     type TopicType = { id: string; type: string; messages?: Array<{ messageTypeId: number; targetId: string | number; for?: number; from?: number; to?: number }>; date: number };

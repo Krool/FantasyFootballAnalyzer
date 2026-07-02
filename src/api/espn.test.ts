@@ -640,3 +640,116 @@ describe('espn loadLeague PAR replacement baseline', () => {
     expect(par).toBe(65);
   });
 });
+
+describe('espn loadLeague trade detection Priority 2 (communication endpoint)', () => {
+  // A pre-draft league (drafted: false) skips every weekly roster and
+  // transaction fetch, so Priority 1's week-over-week roster diff has
+  // nothing to compare and rosterDetectedTrades stays empty. That isolates
+  // Priority 2 (kona_league_communication) without needing 17+ weeks of
+  // matching roster fixtures. This is its own local fixture, not a variant
+  // of the shared one above.
+  const P2_LEAGUE_ID = 'E-P2';
+  const P2_SEASON = 2025;
+  const TOPIC_DATE = 1730000000000;
+
+  const p2LeagueBody = {
+    id: 99001,
+    seasonId: P2_SEASON,
+    scoringPeriodId: 1,
+    status: { currentMatchupPeriod: 0, isActive: false },
+    settings: {
+      name: 'Comm Trade League',
+      draftSettings: { type: 'SNAKE' },
+      rosterSettings: {
+        positionLimits: { 0: 1, 2: 2, 4: 2, 6: 1, 16: 1, 17: 1, 20: 5, 21: 1, 23: 1 },
+      },
+      scoringSettings: { scoringItems: [{ statId: 53, points: 1 }] },
+    },
+    teams: [
+      {
+        id: 1, name: 'Team Alpha', abbrev: 'ALP', owners: ['m1'],
+        roster: {
+          entries: [{
+            playerId: 701, lineupSlotId: 2,
+            playerPoolEntry: { id: 701, appliedStatTotal: 0, player: { id: 701, fullName: 'Trade Player A', defaultPositionId: 2, proTeamId: 2 } },
+          }],
+        },
+        record: { overall: { wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0 } },
+      },
+      {
+        id: 2, name: 'Team Beta', abbrev: 'BET', owners: ['m2'],
+        roster: {
+          entries: [{
+            playerId: 702, lineupSlotId: 4,
+            playerPoolEntry: { id: 702, appliedStatTotal: 0, player: { id: 702, fullName: 'Trade Player B', defaultPositionId: 3, proTeamId: 5 } },
+          }],
+        },
+        record: { overall: { wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0 } },
+      },
+    ],
+    members: [
+      { id: 'm1', displayName: 'Manager One' },
+      { id: 'm2', displayName: 'Manager Two' },
+    ],
+    draftDetail: { drafted: false, picks: [] },
+  };
+
+  // currentWeek is 0, so only one transaction fetch happens (week 0). The
+  // TRADE_UPHOLD's proposedDate landing within an hour of the communication
+  // topic's date is what marks that topic a completed trade, not a bare
+  // proposal.
+  const p2TransactionsBody = {
+    transactions: [
+      { id: 5001, scoringPeriodId: 0, type: 'TRADE_UPHOLD', status: 'EXECUTED', items: [], proposedDate: TOPIC_DATE },
+    ],
+  };
+
+  // 'for' is the receiving team, 'from' is the sending team. Team 1 receives
+  // player 701 from team 2; team 2 receives player 702 from team 1.
+  const p2CommBody = {
+    topics: [
+      {
+        id: 'topic-1',
+        type: 'ACTIVITY_TRANSACTIONS',
+        date: TOPIC_DATE,
+        messages: [
+          { messageTypeId: 178, targetId: '701', for: 1, from: 2 },
+          { messageTypeId: 178, targetId: '702', for: 2, from: 1 },
+        ],
+      },
+    ],
+  };
+
+  function routeP2(url: string): unknown {
+    if (url.includes('kona_league_communication')) return p2CommBody;
+    if (url.includes('view=mTransactions2')) return p2TransactionsBody;
+    if (url.includes('view=mTeam')) return p2LeagueBody;
+    throw new Error(`Unexpected ESPN URL in Priority-2 test: ${url}`);
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('surfaces a trade from the communication endpoint when no roster swap is detectable', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      jsonResponse(routeP2(String(input)))
+    ));
+
+    const league = await loadLeague(P2_LEAGUE_ID, P2_SEASON);
+
+    expect(league.trades).toHaveLength(1);
+    const trade = league.trades![0];
+    expect(trade.teams).toHaveLength(2);
+
+    const team1 = trade.teams.find(t => t.teamId === '1')!;
+    expect(team1.teamName).toBe('Team Alpha');
+    expect(team1.playersReceived.map(p => p.name)).toEqual(['Trade Player A']);
+    expect(team1.playersSent.map(p => p.name)).toEqual(['Trade Player B']);
+
+    const team2 = trade.teams.find(t => t.teamId === '2')!;
+    expect(team2.teamName).toBe('Team Beta');
+    expect(team2.playersReceived.map(p => p.name)).toEqual(['Trade Player B']);
+    expect(team2.playersSent.map(p => p.name)).toEqual(['Trade Player A']);
+  });
+});

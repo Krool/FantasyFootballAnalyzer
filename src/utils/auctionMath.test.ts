@@ -93,4 +93,33 @@ describe('comfortBid', () => {
     const v = values([[rb1, 50]]);
     expect(comfortBid(rb1, t, [rb1], v)).toBeLessThanOrEqual(9);
   });
+
+  it('returns 0 when the team has no money and no bid room left', () => {
+    const rb1 = player({ pos: 'RB' });
+    const t = team({
+      remaining: 0,
+      openSlots: 1,
+      maxBid: 0,
+      starterNeeds: { QB: 0, RB: 1, WR: 0, TE: 0, K: 0, DST: 0 },
+    });
+    const v = values([[rb1, 20]]);
+    expect(comfortBid(rb1, t, [rb1], v)).toBe(0);
+  });
+
+  it('falls back to a $1 released-slot cost when no pool player fills a still-needed position', () => {
+    const rb1 = player({ pos: 'RB' });
+    const t = team({
+      remaining: 50,
+      openSlots: 3,
+      maxBid: 48,
+      starterNeeds: { QB: 0, RB: 1, WR: 0, TE: 0, K: 0, DST: 0 },
+    });
+    const v = values([[rb1, 15]]);
+    // `available` has no RB at all: starterPlanCost is 0, and the released-slot
+    // cost falls back to $1 instead of Math.min() over an empty array.
+    // Plan = 0. Comfort = 50 - (0 - 1) - 2 bench = 49, capped by maxBid 48.
+    const result = comfortBid(rb1, t, [], v);
+    expect(result).toBe(48);
+    expect(Number.isFinite(result)).toBe(true);
+  });
 });
