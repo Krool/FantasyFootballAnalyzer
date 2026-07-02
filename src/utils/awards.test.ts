@@ -643,6 +643,42 @@ describe('calculateAllAwards - Activity', () => {
     expect(leastActive).toBeDefined();
     expect(leastActive!.winner.teamId).toBe('t2');
   });
+
+  it('skips waiver and activity awards when nobody made a move', () => {
+    // No transactions and no trades on any team. The old code still crowned
+    // teams[0] as Waiver Wire King / Most Active with "0 pickups".
+    const teams = [makeTeam({ id: 't1', name: 'Alpha' }), makeTeam({ id: 't2', name: 'Bravo' })];
+    const ids = calculateAllAwards({ league: makeLeague(teams) }).map(a => a.id);
+    expect(ids).not.toContain('waiver_king');
+    expect(ids).not.toContain('waiver_slacker');
+    expect(ids).not.toContain('most_active');
+    expect(ids).not.toContain('least_active');
+  });
+
+  it('still names the Slacker when all real pickups busted and an idle team tops PAR', () => {
+    // Team A worked the wire and lost value (negative PAR); Team B never picked
+    // anyone up, so B "wins" the PAR max at 0.0. The league HAD activity: the
+    // Slacker (A, least PAR) must render, and a 0-pickup King must not.
+    const teams = [
+      makeTeam({
+        id: 't1', name: 'Churner',
+        transactions: [{
+          id: 'tx1', type: 'waiver' as const, timestamp: 1, week: 3,
+          teamId: 't1', teamName: 'Churner',
+          adds: [{ id: 'p1', name: 'Bust', position: 'RB', team: 'FA' }], drops: [],
+          // totalPAR rides on the tx object the platform loaders attach.
+          ...( { totalPAR: -12 } as object),
+        }],
+      }),
+      makeTeam({ id: 't2', name: 'Idle' }),
+    ];
+    const awards = calculateAllAwards({ league: makeLeague(teams) });
+    const slacker = awards.find(a => a.id === 'waiver_slacker');
+    expect(slacker).toBeDefined();
+    expect(slacker!.winner.teamId).toBe('t1');
+    // The PAR-max team made zero pickups; crowning it King would be nonsense.
+    expect(awards.find(a => a.id === 'waiver_king')).toBeUndefined();
+  });
 });
 
 describe('groupAwardsByCategory', () => {

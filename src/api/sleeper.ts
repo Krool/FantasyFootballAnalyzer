@@ -87,6 +87,15 @@ function toLeagueStatus(status: string, season: number, nflSeason: number): Leag
   return 'live';
 }
 
+// The earliest league in a chain terminates previous_league_id with null OR the
+// string "0" (Sleeper is inconsistent). A real league id is a long numeric
+// snowflake, never "0", so normalize both to undefined. Without this the season
+// walks treat "0" as a valid id, fetch league "0", get a 404, and log a spurious
+// warning ("getAvailableSeasons: stopped at 0") that only burns Sentry quota.
+function prevLeagueId(id: string | null | undefined): string | undefined {
+  return id && id !== '0' ? id : undefined;
+}
+
 // A renewed league points backward via previous_league_id; nothing points
 // forward. To find the renewal, check league members' league lists for the
 // next season and match the back-pointer. The first few members are enough:
@@ -706,7 +715,9 @@ export async function loadLeague(leagueId: string): Promise<League> {
     totalTeams: leagueData.total_rosters,
     currentWeek: nflState.week,
     isLoaded: true,
-    previousLeagueId: leagueData.previous_league_id,
+    // Normalized: Sleeper's "0" chain terminator must not leak out as a
+    // truthy "there is a prior season" signal.
+    previousLeagueId: prevLeagueId(leagueData.previous_league_id),
     rosterSlots,
     leagueType,
     draftFormat,
@@ -745,7 +756,7 @@ export async function getAvailableSeasons(leagueId: string): Promise<SeasonOptio
         status: toLeagueStatus(data.status, year, nflSeason),
         leagueName: data.name,
       });
-      id = data.previous_league_id;
+      id = prevLeagueId(data.previous_league_id);
       hops++;
     } catch (err) {
       logger.warn(`[Sleeper] getAvailableSeasons: stopped at ${id}:`, err);
@@ -849,7 +860,7 @@ export async function loadLeagueHistory(leagueId: string, maxSeasons: number = 5
         teams: teamsWithStandings,
       });
 
-      currentLeagueId = leagueData.previous_league_id;
+      currentLeagueId = prevLeagueId(leagueData.previous_league_id);
       seasonsLoaded++;
     } catch (error) {
       logger.warn(`Could not load season for league ${currentLeagueId}:`, error);
@@ -912,7 +923,7 @@ export async function loadHeadToHeadRecords(
       }
 
       if (!ourRosterId) {
-        currentLeagueId = leagueData.previous_league_id;
+        currentLeagueId = prevLeagueId(leagueData.previous_league_id);
         seasonsLoaded++;
         continue;
       }
@@ -984,7 +995,7 @@ export async function loadHeadToHeadRecords(
         }
       }
 
-      currentLeagueId = leagueData.previous_league_id;
+      currentLeagueId = prevLeagueId(leagueData.previous_league_id);
       seasonsLoaded++;
     } catch (error) {
       logger.warn(`Could not load matchups for league ${currentLeagueId}:`, error);

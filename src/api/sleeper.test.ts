@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import type { League, SleeperAPI } from '@/types';
-import { findSuccessorLeague, loadLeague } from './sleeper';
+import {
+  findSuccessorLeague,
+  getAvailableSeasons,
+  loadHeadToHeadRecords,
+  loadLeague,
+  loadLeagueHistory,
+} from './sleeper';
 
 // Fixture: a 4-team half-PPR superflex league, season complete.
 // Weeks 1-3 played, weeks 4-14 unplayed (0-0), playoffs start week 15
@@ -148,6 +154,18 @@ function jsonResponse(body: unknown): Response {
   } as Response;
 }
 
+// Path-table fetch stub shared by the describes below. Returns the mock so a
+// test can assert which URLs were (not) hit.
+function stubRoutes(routes: Record<string, unknown>) {
+  const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const path = String(input).replace('https://api.sleeper.app/v1', '');
+    if (path in routes) return jsonResponse(routes[path]);
+    throw new Error(`Unexpected Sleeper URL in test: ${path}`);
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+}
+
 function routeSleeper(url: string): unknown {
   const path = url.replace('https://api.sleeper.app/v1', '');
 
@@ -187,14 +205,6 @@ describe('sleeper findSuccessorLeague', () => {
     status: 'pre_draft',
     previous_league_id: 'some-other-league',
   };
-
-  function stubRoutes(routes: Record<string, unknown>) {
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const path = String(input).replace('https://api.sleeper.app/v1', '');
-      if (path in routes) return jsonResponse(routes[path]);
-      throw new Error(`Unexpected Sleeper URL in test: ${path}`);
-    }));
-  }
 
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -250,6 +260,44 @@ describe('sleeper findSuccessorLeague', () => {
   it('returns null when the user list itself fails', async () => {
     stubRoutes({});
     expect(await findSuccessorLeague(LEAGUE_ID, 2025)).toBeNull();
+  });
+});
+
+describe('sleeper getAvailableSeasons', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('terminates the chain at previous_league_id "0" without fetching league 0', async () => {
+    // Sleeper marks the earliest league with previous_league_id "0" (not null).
+    // The walk must stop there; fetching /league/0 404s and logs a warning that
+    // surfaced in Sentry as "getAvailableSeasons: stopped at 0".
+    const fetchMock = stubRoutes({
+      '/state/nfl': { season: '2025', week: 1, season_type: 'regular' },
+      '/league/L1': { ...leagueFixture, previous_league_id: '0' },
+    });
+
+    const seasons = await getAvailableSeasons('L1');
+
+    expect(seasons).toEqual([
+      { year: 2025, leagueId: 'L1', status: 'final', leagueName: 'Sleeper Test League' },
+    ]);
+    const fetched = fetchMock.mock.calls.map(call => String(call[0]));
+    expect(fetched.some(url => url.includes('/league/0'))).toBe(false);
+  });
+
+  it('walks previous_league_id back through real prior seasons', async () => {
+    const fetchMock = stubRoutes({
+      '/state/nfl': { season: '2025', week: 1, season_type: 'regular' },
+      '/league/L1': { ...leagueFixture, previous_league_id: 'L0' },
+      '/league/L0': { ...leagueFixture, league_id: 'L0', season: '2024', previous_league_id: '0' },
+    });
+
+    const seasons = await getAvailableSeasons('L1');
+
+    expect(seasons.map(s => s.year)).toEqual([2025, 2024]);
+    const fetched = fetchMock.mock.calls.map(call => String(call[0]));
+    expect(fetched.some(url => url.includes('/league/0'))).toBe(false);
   });
 });
 
@@ -425,5 +473,172 @@ describe('sleeper loadLeague my-team detection', () => {
     ));
     const league = await loadLeague(LEAGUE_ID);
     expect(league.teams.every(t => t.isMyTeam === undefined)).toBe(true);
+  });
+});
+
+describe('sleeper loadLeague scoring detection', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // Reuse the full loadLeague route table, overriding only the league's
+  // scoring_settings.rec so each run exercises the real detection branch.
+  async function loadWithRec(rec: number | undefined): Promise<League> {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.replace('https://api.sleeper.app/v1', '') === `/league/${LEAGUE_ID}`) {
+        return jsonResponse({ ...leagueFixture, scoring_settings: rec === undefined ? {} : { rec } });
+      }
+      return jsonResponse(routeSleeper(url));
+    }));
+    return loadLeague(LEAGUE_ID);
+  }
+
+  it.each([
+    [1, 'ppr'],
+    [0.5, 'half_ppr'],
+    [0, 'standard'],
+    [undefined, 'standard'], // rec omitted entirely is standard, not custom
+    [0.75, 'custom'],
+  ] as const)('maps scoring_settings.rec %s to %s', async (rec, expected) => {
+    const league = await loadWithRec(rec);
+    expect(league.scoringType).toBe(expected);
+  });
+
+  it('normalizes the previous_league_id "0" terminator off the League object', async () => {
+    // The season walks already treat "0" as terminal; the surfaced field must
+    // agree, or a future consumer keying off truthiness re-fetches league 0.
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.replace('https://api.sleeper.app/v1', '') === `/league/${LEAGUE_ID}`) {
+        return jsonResponse({ ...leagueFixture, previous_league_id: '0' });
+      }
+      return jsonResponse(routeSleeper(url));
+    }));
+    const league = await loadLeague(LEAGUE_ID);
+    expect(league.previousLeagueId).toBeUndefined();
+  });
+});
+
+describe('sleeper loadLeagueHistory / loadHeadToHeadRecords', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  interface LeagueFix {
+    league: Record<string, unknown>;
+    users: Array<{ user_id: string; display_name: string }>;
+    rosters: Array<Record<string, unknown>>;
+    bracket?: Array<Record<string, unknown>>;
+    matchups?: Record<number, Array<Record<string, unknown>>>;
+  }
+
+  // Router over an explicit per-league fixture map, since the season walk
+  // changes league id on every hop.
+  function stubHistory(fixtures: Record<string, LeagueFix>) {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input).replace('https://api.sleeper.app/v1', '');
+      const bracket = path.match(/^\/league\/([^/]+)\/winners_bracket$/);
+      if (bracket) return jsonResponse(fixtures[bracket[1]]?.bracket ?? []);
+      const users = path.match(/^\/league\/([^/]+)\/users$/);
+      if (users) return jsonResponse(fixtures[users[1]]?.users ?? []);
+      const rosters = path.match(/^\/league\/([^/]+)\/rosters$/);
+      if (rosters) return jsonResponse(fixtures[rosters[1]]?.rosters ?? []);
+      const matchup = path.match(/^\/league\/([^/]+)\/matchups\/(\d+)$/);
+      if (matchup) return jsonResponse(fixtures[matchup[1]]?.matchups?.[parseInt(matchup[2])] ?? []);
+      const league = path.match(/^\/league\/([^/]+)$/);
+      if (league) {
+        const fix = fixtures[league[1]];
+        if (!fix) throw new Error(`No fixture for league ${league[1]}`);
+        return jsonResponse(fix.league);
+      }
+      throw new Error(`Unexpected Sleeper URL in test: ${path}`);
+    }));
+  }
+
+  it('pins the metadata champion to standing 1, ignoring regular-season order', async () => {
+    stubHistory({
+      H1: {
+        league: {
+          league_id: 'H1', name: 'League', season: '2025', status: 'complete',
+          previous_league_id: '0', metadata: { latest_league_winner_roster_id: '2' },
+        },
+        users: [{ user_id: 'u1', display_name: 'Alice' }, { user_id: 'u2', display_name: 'Bob' }],
+        rosters: [
+          { roster_id: 1, owner_id: 'u1', settings: { wins: 10, losses: 0, ties: 0, fpts: 1500 } },
+          { roster_id: 2, owner_id: 'u2', settings: { wins: 3, losses: 7, ties: 0, fpts: 1200 } },
+        ],
+      },
+    });
+
+    const history = await loadLeagueHistory('H1', 1);
+    expect(history).toHaveLength(1);
+    expect(history[0].championTeamId).toBe('2');
+    // Roster 2 is the champ, so it is pinned to #1 despite roster 1's better record.
+    expect(history[0].teams[0].id).toBe('2');
+    expect(history[0].teams[0].standing).toBe(1);
+    expect(history[0].teams.find(t => t.id === '1')!.standing).toBe(2);
+  });
+
+  it('falls back to the winners bracket champion when metadata is absent', async () => {
+    stubHistory({
+      H1: {
+        league: {
+          league_id: 'H1', name: 'League', season: '2025', status: 'complete', previous_league_id: '0',
+        },
+        users: [{ user_id: 'u1', display_name: 'Alice' }, { user_id: 'u2', display_name: 'Bob' }],
+        rosters: [
+          { roster_id: 1, owner_id: 'u1', settings: { wins: 3, losses: 7, ties: 0, fpts: 1200 } },
+          { roster_id: 2, owner_id: 'u2', settings: { wins: 10, losses: 0, ties: 0, fpts: 1500 } },
+        ],
+        bracket: [{ r: 3, m: 1, p: 1, w: 1, l: 2 }], // championship: roster 1 wins
+      },
+    });
+
+    const history = await loadLeagueHistory('H1', 1);
+    expect(history[0].championTeamId).toBe('1');
+    // Champ pinned to #1 even though roster 1 had the worst regular-season record.
+    expect(history[0].teams[0].id).toBe('1');
+  });
+
+  it('follows a manager by owner_id across a renewal that renumbers roster ids', async () => {
+    stubHistory({
+      H1: {
+        league: {
+          league_id: 'H1', name: 'League', season: '2025', status: 'complete',
+          previous_league_id: 'H0', settings: { playoff_week_start: 2 },
+        },
+        users: [{ user_id: 'u1', display_name: 'Alice' }, { user_id: 'u2', display_name: 'Bob' }],
+        rosters: [
+          { roster_id: 1, owner_id: 'u1', settings: {} },
+          { roster_id: 2, owner_id: 'u2', settings: {} },
+        ],
+        matchups: { 1: [{ roster_id: 1, matchup_id: 1, points: 100 }, { roster_id: 2, matchup_id: 1, points: 90 }] },
+      },
+      H0: {
+        league: {
+          league_id: 'H0', name: 'League', season: '2024', status: 'complete',
+          previous_league_id: '0', settings: { playoff_week_start: 2 },
+        },
+        users: [{ user_id: 'u1', display_name: 'Alice' }, { user_id: 'u2', display_name: 'Bob' }],
+        // Roster ids are renumbered between seasons: u1 3->was 1, u2 4->was 2.
+        rosters: [
+          { roster_id: 3, owner_id: 'u1', settings: {} },
+          { roster_id: 4, owner_id: 'u2', settings: {} },
+        ],
+        matchups: { 1: [{ roster_id: 3, matchup_id: 1, points: 80 }, { roster_id: 4, matchup_id: 1, points: 110 }] },
+      },
+    });
+
+    // Our team in 2025 is roster_id 1 (Alice / u1).
+    const { records, teamName } = await loadHeadToHeadRecords('H1', '1', 2);
+    expect(teamName).toBe('Alice');
+    const vsBob = records.get('u2');
+    expect(vsBob).toBeDefined();
+    // Won 100-90 in 2025, lost 80-110 in 2024: accumulated across the renumber.
+    expect(vsBob!.wins).toBe(1);
+    expect(vsBob!.losses).toBe(1);
+    expect(vsBob!.matchups).toHaveLength(2);
+    expect(vsBob!.opponentName).toBe('Bob');
   });
 });

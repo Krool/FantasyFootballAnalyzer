@@ -17,6 +17,9 @@ export interface WeekHeadline {
   detail?: string;
 }
 
+// One played game, pre-resolved to winner/loser. CAUTION: on a tie the >=
+// comparison makes winnerId/loserId arbitrary slot order (team1/team2), so
+// any consumer that frames a game as won/lost must check `tie` first.
 interface GameView {
   week: number;
   winnerId: string;
@@ -53,24 +56,34 @@ export function seasonRecords(league: League): SeasonRecord[] {
 
   const records: SeasonRecord[] = [];
 
+  // Highest single-team score of the season. winnerPts is the larger score in
+  // every game, so its max is the max score across all teams. When that game
+  // was a tie, both teams posted the identical season high, so credit both
+  // instead of arbitrarily naming the team1 slot.
   const highest = all.reduce((best, g) => (g.winnerPts > best.winnerPts ? g : best));
   records.push({
     label: 'Highest score',
-    holder: nameOf(highest.winnerId),
+    holder: highest.tie
+      ? `${nameOf(highest.winnerId)} and ${nameOf(highest.loserId)}`
+      : nameOf(highest.winnerId),
     detail: `${highest.winnerPts.toFixed(1)} pts`,
     week: highest.week,
   });
 
-  const blowout = all.reduce((best, g) => (g.margin > best.margin ? g : best));
-  records.push({
-    label: 'Biggest blowout',
-    holder: nameOf(blowout.winnerId),
-    detail: `${blowout.winnerPts.toFixed(1)}-${blowout.loserPts.toFixed(1)} over ${nameOf(blowout.loserId)} (+${blowout.margin.toFixed(1)})`,
-    week: blowout.week,
-  });
-
+  // Blowout, closest game, and "most points in a loss" are win/loss framed, so
+  // they only make sense for decided games. A true tie has no winner or loser;
+  // folding it in mislabels it (e.g. "still lost to" a team it actually tied,
+  // or a headline "blowout" when every game was a draw).
   const decided = all.filter(g => !g.tie);
   if (decided.length > 0) {
+    const blowout = decided.reduce((best, g) => (g.margin > best.margin ? g : best));
+    records.push({
+      label: 'Biggest blowout',
+      holder: nameOf(blowout.winnerId),
+      detail: `${blowout.winnerPts.toFixed(1)}-${blowout.loserPts.toFixed(1)} over ${nameOf(blowout.loserId)} (+${blowout.margin.toFixed(1)})`,
+      week: blowout.week,
+    });
+
     const closest = decided.reduce((best, g) => (g.margin < best.margin ? g : best));
     records.push({
       label: 'Closest game',
@@ -78,21 +91,29 @@ export function seasonRecords(league: League): SeasonRecord[] {
       detail: `edged ${nameOf(closest.loserId)} by ${closest.margin.toFixed(1)}`,
       week: closest.week,
     });
-  }
 
-  const bestLoss = all.reduce((best, g) => (g.loserPts > best.loserPts ? g : best));
-  records.push({
-    label: 'Most points in a loss',
-    holder: nameOf(bestLoss.loserId),
-    detail: `${bestLoss.loserPts.toFixed(1)} pts and still lost to ${nameOf(bestLoss.winnerId)}`,
-    week: bestLoss.week,
-  });
+    const bestLoss = decided.reduce((best, g) => (g.loserPts > best.loserPts ? g : best));
+    records.push({
+      label: 'Most points in a loss',
+      holder: nameOf(bestLoss.loserId),
+      detail: `${bestLoss.loserPts.toFixed(1)} pts and still lost to ${nameOf(bestLoss.winnerId)}`,
+      week: bestLoss.week,
+    });
+  }
 
   // Longest win streak across the season.
   const byWeek = [...all].sort((a, b) => a.week - b.week);
   const streaks = new Map<string, { current: number; best: number; bestEndWeek: number }>();
   for (const g of byWeek) {
-    if (g.tie) continue;
+    if (g.tie) {
+      // A tie is not a win, so it ends either team's active win streak. A team
+      // with no entry has no streak to end, so only touch existing entries.
+      for (const id of [g.winnerId, g.loserId]) {
+        const s = streaks.get(id);
+        if (s) s.current = 0;
+      }
+      continue;
+    }
     const w = streaks.get(g.winnerId) ?? { current: 0, best: 0, bestEndWeek: 0 };
     w.current += 1;
     if (w.current > w.best) {
@@ -143,6 +164,8 @@ export function seasonTimeline(league: League): WeekHeadline[] {
       detail = `${rout.winnerPts.toFixed(1)}-${rout.loserPts.toFixed(1)}`;
     } else if (squeaker && squeaker.margin <= 2) {
       headline = `${nameOf(squeaker.winnerId)} survives ${nameOf(squeaker.loserId)} by ${squeaker.margin.toFixed(1)}`;
+    } else if (top.tie) {
+      headline = `${nameOf(top.winnerId)} and ${nameOf(top.loserId)} tie ${top.winnerPts.toFixed(1)}-${top.loserPts.toFixed(1)}`;
     } else {
       headline = `${nameOf(top.winnerId)} hangs ${top.winnerPts.toFixed(1)}`;
       detail = `beats ${nameOf(top.loserId)} ${top.winnerPts.toFixed(1)}-${top.loserPts.toFixed(1)}`;

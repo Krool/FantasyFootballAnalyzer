@@ -323,3 +323,35 @@ describe('validateEvent', () => {
     expect(validateEvent(config2, state, pick('RB4', 'A'))).toMatch(/already complete/);
   });
 });
+
+describe('deriveDraftState (superflex)', () => {
+  const pool = makePool();
+  const SF_SLOTS: RosterSlots = { ...SLOTS, SUPERFLEX: 1 };
+  const config = makeConfig({
+    draftType: 'snake',
+    rosterSlots: SF_SLOTS,
+    rounds: draftableSlotCount(SF_SLOTS), // 12
+  });
+
+  it('lands a second QB in the SUPERFLEX slot, not the bench', () => {
+    // The standard-league complement (SUPERFLEX: 0) benches QB2; here it starts.
+    const a = deriveDraftState(config, pool, [pick('QB1', 'A'), pick('QB2', 'A')]).teams.get('A')!;
+    expect(a.slotsFilled.QB).toBe(1);
+    expect(a.slotsFilled.SUPERFLEX).toBe(1);
+    expect(a.slotsFilled.BENCH).toBe(0);
+    // A superflex slot is still a startable QB spot, so the team is not full at QB.
+    expect(a.fullAt.QB).toBe(false);
+  });
+
+  it('marks QB full only once QB, SUPERFLEX, and bench can hold no more', () => {
+    // BENCH is 2. QB1->QB, QB2->SUPERFLEX, QB3->BENCH(1of2): still room for a QB.
+    const three = deriveDraftState(config, pool, [pick('QB1', 'A'), pick('QB2', 'A'), pick('QB3', 'A')]).teams.get('A')!;
+    expect(three.slotsFilled).toMatchObject({ QB: 1, SUPERFLEX: 1, BENCH: 1 });
+    expect(three.fullAt.QB).toBe(false);
+
+    // QB4->BENCH(2of2): QB slot, SUPERFLEX, and bench are all full for QBs now.
+    const four = deriveDraftState(config, pool, [pick('QB1', 'A'), pick('QB2', 'A'), pick('QB3', 'A'), pick('QB4', 'A')]).teams.get('A')!;
+    expect(four.slotsFilled).toMatchObject({ QB: 1, SUPERFLEX: 1, BENCH: 2 });
+    expect(four.fullAt.QB).toBe(true);
+  });
+});

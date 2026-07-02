@@ -557,9 +557,21 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
     });
   }
 
-  // Waiver Wire King (most total PAR from waivers)
+  // League-level activity predicates, in the same style as hasPlayedGames:
+  // whether ANY team did the thing, independent of who wins the award. The
+  // King's own pickupCount is not a league proxy (he is picked by max PAR, so
+  // an idle team at 0.0 PAR can out-rank teams whose pickups all busted).
+  const leagueHadPickups = league.teams.some(
+    t => (t.transactions || []).some(tx => tx.adds && tx.adds.length > 0),
+  );
+  const leagueHadMoves = league.teams.some(
+    t => (t.transactions || []).length + (t.trades || []).length > 0,
+  );
+
+  // Waiver Wire King (most total PAR from waivers). A king with zero pickups
+  // is nonsense copy, so the winner himself must have picked someone up.
   const waiverKing = getWaiverWireKing(league.teams);
-  if (waiverKing) {
+  if (waiverKing && waiverKing.pickupCount > 0) {
     awards.push({
       id: 'waiver_king',
       name: 'Waiver Wire King',
@@ -572,9 +584,11 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
     });
   }
 
-  // Waiver Wire Slacker (least PAR from waivers)
+  // Waiver Wire Slacker (least PAR from waivers). Only meaningful if the league
+  // had any waiver activity at all; a slacker with 0 pickups while rivals
+  // worked the wire is the award's whole point, so gate on the league.
   const waiverSlacker = getWaiverWireSlacker(league.teams);
-  if (waiverSlacker) {
+  if (waiverSlacker && leagueHadPickups) {
     awards.push({
       id: 'waiver_slacker',
       name: 'Waiver Wire Slacker',
@@ -589,9 +603,9 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
 
   // ============ ACTIVITY AWARDS ============
 
-  // Most Active
+  // Most Active. Skip a league with no transactions or trades at all.
   const mostActive = getMostActive(league.teams);
-  if (mostActive) {
+  if (mostActive && leagueHadMoves) {
     awards.push({
       id: 'most_active',
       name: 'Most Active',
@@ -603,9 +617,10 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
     });
   }
 
-  // Least Active
+  // Least Active. Only meaningful when the league had activity (a real couch
+  // potato at 0 is fine, but not when literally nobody made a move).
   const leastActive = getLeastActive(league.teams);
-  if (leastActive) {
+  if (leastActive && leagueHadMoves) {
     awards.push({
       id: 'least_active',
       name: 'Least Active',

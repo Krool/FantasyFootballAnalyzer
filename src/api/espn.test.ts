@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { ESPNAPI, League } from '@/types';
-import { loadLeague, parseEspnRosterSlots } from './espn';
+import { loadHeadToHeadRecords, loadLeague, loadLeagueHistory, parseEspnRosterSlots } from './espn';
 
 // Fixture: a 4-team public ESPN auction league, season 2025 (a past season,
 // so status derives to final). Schedule has weeks 1-3 played, week 14
@@ -408,5 +408,235 @@ describe('espn loadLeague my-team detection (cookies)', () => {
     const league = await loadLeague(LEAGUE_ID, SEASON, { espnS2: 's2-cookie', swid: '{M2}' });
     expect(league.teams.find(t => t.id === '2')!.isMyTeam).toBe(true);
     expect(league.teams.find(t => t.id === '1')!.isMyTeam).toBeUndefined();
+  });
+});
+
+describe('espn loadLeague scoring detection', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // Reuse the full loadLeague route table, overriding only the reception points
+  // (statId 53). `null` means "no scoringItems at all".
+  async function loadWithReception(points: number | null): Promise<League> {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('view=mTeam')) {
+        return jsonResponse({
+          ...mainLeagueBody,
+          settings: {
+            ...mainLeagueBody.settings,
+            scoringSettings: points === null ? {} : { scoringItems: [{ statId: 53, points }] },
+          },
+        });
+      }
+      return jsonResponse(routeESPN(url));
+    }));
+    return loadLeague(LEAGUE_ID, SEASON);
+  }
+
+  it.each([
+    [1, 'ppr'],
+    [0.5, 'half_ppr'],
+    [0, 'standard'],
+    [null, 'standard'], // no reception scoring item at all -> standard
+    [0.25, 'custom'],   // an unusual reception value falls through to custom
+  ] as const)('maps statId-53 reception points %s to %s', async (points, expected) => {
+    const league = await loadWithReception(points);
+    expect(league.scoringType).toBe(expected);
+  });
+});
+
+describe('espn loadLeagueHistory', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('pins the rankCalculatedFinal champion to #1 over regular-season order', async () => {
+    // Every team ranked (all rankCalculatedFinal > 0) means the playoffs are
+    // done, so final rank (1 = champion) drives standings, not win totals.
+    const body = {
+      id: 12345,
+      settings: { name: 'ESPN Test League' },
+      teams: [
+        {
+          id: 1, name: 'Regular Season King', owners: ['m1'], rankCalculatedFinal: 2,
+          record: { overall: { wins: 12, losses: 1, ties: 0, pointsFor: 1600, pointsAgainst: 1200 } },
+        },
+        {
+          id: 2, name: 'Playoff Champ', owners: ['m2'], rankCalculatedFinal: 1,
+          record: { overall: { wins: 8, losses: 5, ties: 0, pointsFor: 1400, pointsAgainst: 1300 } },
+        },
+      ],
+    };
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(body)));
+
+    const history = await loadLeagueHistory(LEAGUE_ID, 1);
+    expect(history).toHaveLength(1);
+    expect(history[0].isComplete).toBe(true);
+    expect(history[0].championTeamId).toBe('2');
+    // Champ (final rank 1) sorts to #1 despite the 12-1 team's better record.
+    expect(history[0].teams[0].id).toBe('2');
+    expect(history[0].teams[0].standing).toBe(1);
+    // The stable member id is surfaced for all-time aggregation.
+    expect(history[0].teams[0].ownerId).toBe('m2');
+  });
+});
+
+describe('espn loadHeadToHeadRecords', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('follows the manager and opponents by owner id across a rename + renumber', async () => {
+    const y0 = new Date().getFullYear();
+    const y1 = y0 - 1;
+    // Season y0: our team id 1 "Alpha" (owner m1) beats "Bravo" id 2 (owner m2) 100-90.
+    const season0 = {
+      id: 12345,
+      settings: { name: 'League' },
+      teams: [
+        { id: 1, name: 'Alpha', owners: ['m1'], record: { overall: {} } },
+        { id: 2, name: 'Bravo', owners: ['m2'], record: { overall: {} } },
+      ],
+      schedule: [
+        { matchupPeriodId: 1, winner: 'HOME', home: { teamId: 1, totalPoints: 100 }, away: { teamId: 2, totalPoints: 90 } },
+      ],
+    };
+    // Season y1: BOTH teams renamed AND renumbered, but owners persist. We
+    // (owner m1, now id 5 "Alpha 2.0") lose to owner m2 (now id 6 "Bravo FC") 80-110.
+    const season1 = {
+      id: 12345,
+      settings: { name: 'League' },
+      teams: [
+        { id: 5, name: 'Alpha 2.0', owners: ['m1'], record: { overall: {} } },
+        { id: 6, name: 'Bravo FC', owners: ['m2'], record: { overall: {} } },
+      ],
+      schedule: [
+        { matchupPeriodId: 1, winner: 'AWAY', home: { teamId: 6, totalPoints: 110 }, away: { teamId: 5, totalPoints: 80 } },
+      ],
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes(`/seasons/${y0}/`)) return jsonResponse(season0);
+      if (url.includes(`/seasons/${y1}/`)) return jsonResponse(season1);
+      throw new Error(`Unexpected ESPN season URL in test: ${url}`);
+    }));
+
+    const { records, teamName } = await loadHeadToHeadRecords(LEAGUE_ID, '1', 2);
+
+    expect(teamName).toBe('Alpha');
+    // One rivalry (owner m2), not split into two by the rename.
+    expect(records.size).toBe(1);
+    const vsM2 = records.get('m2');
+    expect(vsM2).toBeDefined();
+    expect(vsM2!.wins).toBe(1); // y0 win
+    // The y1 loss is only captured because we follow owner m1, not the old name.
+    expect(vsM2!.losses).toBe(1);
+    expect(vsM2!.matchups).toHaveLength(2);
+    // The most recent season's name is shown.
+    expect(vsM2!.opponentName).toBe('Bravo');
+  });
+
+  it('survives an ownerless legacy season via the id fallback and name alias', async () => {
+    const y0 = new Date().getFullYear();
+    const y1 = y0 - 1;
+    // Season y0: normal owners. Season y1: a legacy payload with NO owners
+    // anywhere, our team renamed to boot. We must resolve ourselves by team id
+    // and merge the opponent into the owner-keyed record via the name alias.
+    const season0 = {
+      id: 12345,
+      settings: { name: 'League' },
+      teams: [
+        { id: 1, name: 'Alpha', owners: ['m1'], record: { overall: {} } },
+        { id: 2, name: 'Bravo', owners: ['m2'], record: { overall: {} } },
+      ],
+      schedule: [
+        { matchupPeriodId: 1, winner: 'HOME', home: { teamId: 1, totalPoints: 100 }, away: { teamId: 2, totalPoints: 90 } },
+      ],
+    };
+    const season1 = {
+      id: 12345,
+      settings: { name: 'League' },
+      teams: [
+        { id: 1, name: 'Omega', record: { overall: {} } }, // us, renamed, no owners
+        { id: 2, name: 'Bravo', record: { overall: {} } }, // same name, no owners
+      ],
+      schedule: [
+        { matchupPeriodId: 1, winner: 'AWAY', home: { teamId: 1, totalPoints: 80 }, away: { teamId: 2, totalPoints: 110 } },
+      ],
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes(`/seasons/${y0}/`)) return jsonResponse(season0);
+      if (url.includes(`/seasons/${y1}/`)) return jsonResponse(season1);
+      throw new Error(`Unexpected ESPN season URL in test: ${url}`);
+    }));
+
+    const { records } = await loadHeadToHeadRecords(LEAGUE_ID, '1', 2);
+
+    // One merged rivalry under the owner key, not an 'm2' + 'name:Bravo' split.
+    expect(records.size).toBe(1);
+    const vsBravo = records.get('m2');
+    expect(vsBravo).toBeDefined();
+    expect(vsBravo!.wins).toBe(1);
+    expect(vsBravo!.losses).toBe(1); // only reachable through the id fallback
+    expect(vsBravo!.matchups).toHaveLength(2);
+  });
+});
+
+describe('espn loadLeague PAR replacement baseline', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // A bench WR with the given full-season points, used to deepen the WR pool.
+  function benchWR(id: number, points: number): ESPNAPI.RosterEntry {
+    return {
+      playerId: id,
+      lineupSlotId: 20, // bench
+      playerPoolEntry: {
+        id,
+        appliedStatTotal: 0,
+        player: {
+          id,
+          fullName: `WR ${id}`,
+          defaultPositionId: 3,
+          proTeamId: 1,
+          stats: [{ seasonId: SEASON, scoringPeriodId: 0, statSourceId: 0, appliedTotal: points, stats: {} }],
+        },
+      },
+    };
+  }
+
+  it('subtracts a real (ceiled-rank) replacement baseline instead of collapsing to 0', async () => {
+    // WR replacement rank for 4 teams is fractional (2.3 * 4 + 1 = 10.2). Give WR
+    // a pool deeper than that rank so the OLD code's players[9.2] -> undefined ->
+    // 0 path would fire. The base fixture already contributes two WRs (Lamb 280,
+    // Nacua 190); these bench values are chosen so the merged pool's 11th-ranked
+    // WR (ceil(10.2)-1 = index 10, first player past the effective starters) is
+    // exactly 85: 300,290,280,260,240,210,190,170,150,140,[85],70,60.
+    const deepWRs = [300, 290, 260, 240, 210, 170, 150, 140, 85, 70, 60].map((pts, i) => benchWR(500 + i, pts));
+    const body = {
+      ...mainLeagueBody,
+      teams: mainLeagueBody.teams.map(t =>
+        t.id === 3 ? { ...t, roster: { entries: [...t.roster.entries, ...deepWRs] } } : t
+      ),
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('view=mTeam')) return jsonResponse(body);
+      return jsonResponse(routeESPN(url));
+    }));
+
+    const league = await loadLeague(LEAGUE_ID, SEASON);
+    const add = league.teams.find(t => t.id === '1')!.transactions![0].adds[0];
+    const par = (add as unknown as { pointsAboveReplacement: number }).pointsAboveReplacement;
+
+    // Puka (WR) put up 130 pts over 13 games since pickup. Replacement WR = 85,
+    // prorated 85/17*13 = 65, so PAR = 130 - 65 = 65. Under the old bug the WR
+    // baseline collapsed to 0 and PAR wrongly equalled the full 130.
+    expect(add.pointsSincePickup).toBe(130);
+    expect(par).toBe(65);
   });
 });

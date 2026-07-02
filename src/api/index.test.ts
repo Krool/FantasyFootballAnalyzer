@@ -14,6 +14,12 @@ vi.mock('./yahoo', () => ({
   enrichPlayersWithStats: vi.fn(),
   getAvailableSeasons: vi.fn(),
 }));
+// loadLeague calls applySeasonTeams, which fetches api.sleeper.com for any
+// past-season fixture. Stub it so this stays a pure dispatcher unit test with
+// no live network call. (identity: applySeasonTeams returns the league it got)
+vi.mock('./seasonTeams', () => ({
+  applySeasonTeams: vi.fn((league: unknown) => league),
+}));
 
 import * as sleeper from './sleeper';
 import * as espn from './espn';

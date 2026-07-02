@@ -1125,16 +1125,22 @@ export async function loadLeague(
     // Log position counts for debugging
     logger.debug(`[ESPN] ${pos}: ${players.length} players in map, need rank ${rank}`);
 
-    // If we don't have enough players, use the LAST player we have as baseline
-    // This is more conservative than using 0
     if (players.length === 0) {
       replacementBaseline[pos] = 0;
-    } else if (rank <= players.length) {
-      replacementBaseline[pos] = players[rank - 1]?.points || 0;
     } else {
-      // Not enough players - use the worst player we have as baseline
-      replacementBaseline[pos] = players[players.length - 1]?.points || 0;
-      logger.debug(`[ESPN] ${pos}: Using last player (rank ${players.length}) as baseline: ${replacementBaseline[pos]}`);
+      // Ranks are fractional (FLEX shares split across RB/WR/TE, e.g. RB 32.2 in
+      // a 12-team league), so take an integer index before indexing. A raw
+      // players[31.2] is undefined and silently collapses the baseline to 0,
+      // erasing positional scarcity and inflating every RB/WR/TE PAR. Ceil
+      // honors the formula's "+1 = first player past the effective starters"
+      // (rank 32.2 -> the 33rd RB, a genuinely free player, matching par.ts's
+      // Math.ceil levels; rounding down would price a starter as free). Clamp
+      // to the last player when the pool is shorter than the rank, matching the
+      // old "not enough players" branch. Note this only aligns the INDEXING
+      // with par.ts/Yahoo; the three platforms' share/buffer formulas still
+      // differ deliberately (see the replacementRank comment above).
+      const idx = Math.min(Math.max(0, Math.ceil(rank) - 1), players.length - 1);
+      replacementBaseline[pos] = players[idx]?.points ?? 0;
     }
   });
 
@@ -1553,8 +1559,21 @@ export async function loadHeadToHeadRecords(
   let teamName = '';
   const currentYear = new Date().getFullYear();
 
-  // Track opponents by name (since IDs might change between seasons if teams reorganize)
-  const recordsByName = new Map<string, HeadToHeadRecord>();
+  // Follow the selected manager by their stable owner (member) id, resolved
+  // once in the current season. ESPN team ids renumber and teams get renamed
+  // between seasons; following the name drops a whole season the moment the
+  // user renamed their team.
+  let ourOwnerId: string | undefined;
+  // Accumulate opponent records under a stable key: the owner id when ESPN
+  // provides one, else a name-prefixed fallback (the same idiom HistoryPage
+  // uses for SeasonSummary teams), so a mid-history rename does not split one
+  // rivalry into two separate records.
+  const recordsByKey = new Map<string, HeadToHeadRecord>();
+  // Old ESPN seasons can omit owners[]. When a recent season established an
+  // opponent's owner key, remember name -> key so an ownerless older season
+  // with the same team name merges into that record instead of forking a
+  // second one under the name key.
+  const ownerKeyByName = new Map<string, string>();
 
   for (let i = 0; i < maxSeasons; i++) {
     const season = currentYear - i;
@@ -1573,25 +1592,34 @@ export async function loadHeadToHeadRecords(
         break;
       }
 
-      // Build team name map for this season
+      // Build team id -> name and id -> stable owner (member) id maps.
       const teamNameMap = new Map<number, string>();
-      leagueData.teams.forEach(t => teamNameMap.set(t.id, t.name || `Team ${t.id}`));
+      const teamOwnerMap = new Map<number, string | undefined>();
+      leagueData.teams.forEach(t => {
+        teamNameMap.set(t.id, t.name || `Team ${t.id}`);
+        teamOwnerMap.set(t.id, t.owners && t.owners.length > 0 ? t.owners[0] : undefined);
+      });
 
-      // Find the selected team (might have different ID in different seasons)
-      // First try by ID, then by matching against the current season's name
+      // Resolve the selected team. Season 0 uses the provided id and remembers
+      // its owner; prior seasons follow that owner (ids renumber and teams get
+      // renamed), then fall back to the name, then to the same team id (ids
+      // are usually stable within a league, and old seasons can omit owners).
       let selectedTeamId = parseInt(teamId);
       let selectedTeamData = leagueData.teams.find(t => t.id === selectedTeamId);
 
-      // If this is the first/current season, get the team name for matching
-      if (i === 0 && selectedTeamData) {
-        teamName = selectedTeamData.name || `Team ${selectedTeamId}`;
-      } else if (i > 0 && teamName) {
-        // For older seasons, try to find team by name
-        const matchByName = leagueData.teams.find(t => t.name === teamName);
-        if (matchByName) {
-          selectedTeamId = matchByName.id;
-          selectedTeamData = matchByName;
+      if (i === 0) {
+        if (selectedTeamData) {
+          teamName = selectedTeamData.name || `Team ${selectedTeamId}`;
+          ourOwnerId = teamOwnerMap.get(selectedTeamId);
         }
+      } else {
+        const byOwner = ourOwnerId
+          ? leagueData.teams.find(t => teamOwnerMap.get(t.id) === ourOwnerId)
+          : undefined;
+        const byName = teamName ? leagueData.teams.find(t => t.name === teamName) : undefined;
+        const match = byOwner ?? byName ?? selectedTeamData;
+        selectedTeamData = match;
+        if (match) selectedTeamId = match.id;
       }
 
       if (!selectedTeamData) {
@@ -1619,7 +1647,14 @@ export async function loadHeadToHeadRecords(
         const teamPoints = isHome ? matchup.home.totalPoints : matchup.away.totalPoints;
         const opponentPoints = isHome ? matchup.away.totalPoints : matchup.home.totalPoints;
         const opponentId = isHome ? matchup.away.teamId : matchup.home.teamId;
+        const opponentOwnerId = teamOwnerMap.get(opponentId);
         const opponentName = teamNameMap.get(opponentId) || `Team ${opponentId}`;
+        // Stable key: owner id if ESPN provides one, else the owner key a more
+        // recent season registered for this name, else the name-prefixed
+        // fallback (HistoryPage's idiom for teams without owner data).
+        const opponentKey =
+          opponentOwnerId ?? ownerKeyByName.get(opponentName) ?? `name:${opponentName}`;
+        if (opponentOwnerId) ownerKeyByName.set(opponentName, opponentOwnerId);
 
         // Exclude unplayed/future games (winner UNDECIDED) and playoff games,
         // exactly as weeklyMatchups does above. The old 0-0 guard let a future
@@ -1631,11 +1666,14 @@ export async function loadHeadToHeadRecords(
         if (!played || !regularSeason) return;
         if (teamPoints === undefined || opponentPoints === undefined) return;
 
-        // Get or create record for this opponent
-        let record = recordsByName.get(opponentName);
+        // Get or create record for this opponent, keyed by the stable id.
+        // opponentId carries the same key: HistoryPage uses it as a list key,
+        // so it must be unique (two renumbered teams can share a numeric id
+        // across seasons; the stable key cannot collide).
+        let record = recordsByKey.get(opponentKey);
         if (!record) {
           record = {
-            opponentId: String(opponentId),
+            opponentId: opponentKey,
             opponentName,
             wins: 0,
             losses: 0,
@@ -1644,7 +1682,7 @@ export async function loadHeadToHeadRecords(
             pointsAgainst: 0,
             matchups: [],
           };
-          recordsByName.set(opponentName, record);
+          recordsByKey.set(opponentKey, record);
         }
 
         // Update record
@@ -1677,7 +1715,7 @@ export async function loadHeadToHeadRecords(
   }
 
   // Sort matchups in each record by season/week (most recent first)
-  recordsByName.forEach(record => {
+  recordsByKey.forEach(record => {
     record.matchups.sort((a, b) => {
       if (a.season !== b.season) return b.season - a.season;
       return b.week - a.week;

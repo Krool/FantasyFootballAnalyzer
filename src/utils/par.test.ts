@@ -93,6 +93,42 @@ describe('calculateReplacementLevels', () => {
     // QB: 10 * 1 * 1.25 = 12.5 -> 13
     expect(result.QB).toBe(13);
   });
+
+  it('lifts QB (and nudges the flex spots) for a 12-team superflex league', () => {
+    // This feeds live waiver/trade PAR via api/sleeper.ts, so the superflex
+    // shares must stay locked: QB 0.75, RB 0.08, WR 0.10, TE 0.07.
+    const rosterSlots = {
+      QB: 1,
+      RB: 2,
+      WR: 2,
+      TE: 1,
+      FLEX: 1,
+      SUPERFLEX: 1,
+      K: 1,
+      DST: 1,
+      BENCH: 6,
+      IR: 1,
+    };
+    const result = calculateReplacementLevels(rosterSlots, 12);
+
+    // A second startable QB pushes QB replacement past the standard-league 15:
+    // 12 * (1 + 0.75) * 1.25 = 26.25 -> 27.
+    expect(result.QB).toBe(27);
+    // RB: 12 * (2 + 0.4 + 0.08) * 1.25 = 37.2 -> 38
+    expect(result.RB).toBe(38);
+    // WR: 12 * (2 + 0.4 + 0.10) * 1.25 = 37.5 -> 38
+    expect(result.WR).toBe(38);
+    // TE: 12 * (1 + 0.2 + 0.07) * 1.25 = 19.05 -> 20
+    expect(result.TE).toBe(20);
+    // K/DEF are untouched by SUPERFLEX.
+    expect(result.K).toBe(15);
+    expect(result.DEF).toBe(15);
+
+    // The whole point: flipping SUPERFLEX on must raise QB replacement level.
+    const standard = calculateReplacementLevels({ ...rosterSlots, SUPERFLEX: 0 }, 12);
+    expect(standard.QB).toBe(15);
+    expect(result.QB).toBeGreaterThan(standard.QB);
+  });
 });
 
 describe('normalizePosition', () => {

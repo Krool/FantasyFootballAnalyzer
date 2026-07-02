@@ -1,6 +1,15 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import type { League } from '@/types';
-import { NFL_GAME_KEYS, loadLeague, enrichPlayersWithStats, parseRosterSettings } from './yahoo';
+import {
+  NFL_GAME_KEYS,
+  loadLeague,
+  enrichPlayersWithStats,
+  parseRosterSettings,
+  getUserLeagues,
+  getAccessToken,
+  getRefreshToken,
+  isAuthenticated,
+} from './yahoo';
 
 describe('NFL_GAME_KEYS', () => {
   it('covers last season so the year dropdown can reach it', () => {
@@ -533,5 +542,216 @@ describe('yahoo enrichPlayersWithStats (weekly data)', () => {
     expect(side1.pointsLost).toBe(15);
     expect(side1.netValue).toBe(25);
     expect(trade.winner).toBe(TEAM_1);
+  });
+});
+
+describe('yahoo loadLeague scoring detection', () => {
+  // setupTests.ts clears localStorage after every test, so seed the token per
+  // test (not once) or the second run hits the refresh path with no refresh token.
+  beforeEach(() => {
+    localStorage.setItem('yahoo_access_token', 'test-token');
+    localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // Reuse the loadLeague route table, overriding only the league's
+  // stat_modifiers so each run exercises the real detection branch.
+  async function loadWithModifiers(statModifiers: unknown): Promise<League> {
+    const body = {
+      fantasy_content: {
+        league: {
+          ...leagueBody.fantasy_content.league,
+          settings: {
+            ...leagueBody.fantasy_content.league.settings,
+            stat_modifiers: statModifiers,
+          },
+        },
+      },
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      const match = url.match(/endpoint=([^&]+)/);
+      const endpoint = match ? decodeURIComponent(match[1]) : '';
+      if (endpoint === `/league/${LEAGUE_KEY};out=settings,standings,teams`) {
+        return jsonResponse(body);
+      }
+      return jsonResponse(routeYahoo(url));
+    }));
+    return loadLeague(LEAGUE_KEY);
+  }
+
+  it.each([
+    ['1.0 receptions -> ppr', { stat: [{ stat_id: '21', value: '1' }] }, 'ppr'],
+    ['0.5 receptions -> half_ppr', { stat: [{ stat_id: '21', value: '0.5' }] }, 'half_ppr'],
+    ['0.25 receptions -> custom', { stat: [{ stat_id: '21', value: '0.25' }] }, 'custom'],
+    ['no reception modifier -> standard', { stat: [{ stat_id: '4', value: '0.04' }] }, 'standard'],
+    // fast-xml-parser returns a bare object, not an array, when a league
+    // defines exactly one stat modifier. Detection must handle that shape.
+    ['lone stat_modifier object (not array) -> ppr', { stat: { stat_id: '21', value: '1' } }, 'ppr'],
+  ] as const)('%s', async (_label, mods, expected) => {
+    const league = await loadWithModifiers(mods);
+    expect(league.scoringType).toBe(expected);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// OAuth refresh flow: yahooFetch's 401 -> refresh -> retry path, the
+// refreshInFlight dedup, and refreshAccessToken's own retry/failure handling.
+// yahooFetch itself isn't exported, so these are driven through getUserLeagues
+// - the simplest exported call that hits yahooFetch exactly once per call.
+// ---------------------------------------------------------------------------
+
+const REFRESH_LEAGUE_KEY = '461.l.888';
+
+function usersLeaguesBody(leagueKey: string, name: string) {
+  return {
+    fantasy_content: {
+      users: {
+        user: {
+          games: {
+            game: {
+              leagues: {
+                league: { league_key: leagueKey, name },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+}
+
+function statusResponse(status: number, body: unknown = {}): Response {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: String(status),
+    json: async () => body,
+  } as Response;
+}
+
+function authHeader(init: RequestInit | undefined): string | undefined {
+  return (init?.headers as Record<string, string> | undefined)?.Authorization;
+}
+
+const REFRESHED_TOKENS = {
+  access_token: 'new-token',
+  refresh_token: 'refresh-token',
+  expires_in: 3600,
+  token_type: 'bearer',
+};
+
+describe('yahoo OAuth refresh flow', () => {
+  const currentYear = new Date().getFullYear();
+
+  // setupTests.ts clears localStorage after every test; seed tokens per test
+  // (not once) or the second run hits the refresh path with no refresh token.
+  beforeEach(() => {
+    localStorage.setItem('yahoo_access_token', 'old-token');
+    localStorage.setItem('yahoo_refresh_token', 'refresh-token');
+    localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('retries a 401 with the refreshed token after exactly one refresh POST', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/yahoo-refresh')) return jsonResponse(REFRESHED_TOKENS);
+      if (url.includes('/api/yahoo-api')) {
+        const auth = authHeader(init);
+        if (auth === 'Bearer old-token') return statusResponse(401);
+        if (auth === 'Bearer new-token') return jsonResponse(usersLeaguesBody(REFRESH_LEAGUE_KEY, 'Refreshed League'));
+      }
+      throw new Error(`Unexpected fetch in test: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const leagues = await getUserLeagues(currentYear);
+
+    expect(leagues).toEqual([{ id: REFRESH_LEAGUE_KEY, name: 'Refreshed League' }]);
+    const refreshCalls = fetchMock.mock.calls.filter(call => String(call[0]).includes('/api/yahoo-refresh'));
+    expect(refreshCalls).toHaveLength(1);
+    const retriedWithNewToken = fetchMock.mock.calls.some(call =>
+      String(call[0]).includes('/api/yahoo-api') && authHeader(call[1] as RequestInit) === 'Bearer new-token');
+    expect(retriedWithNewToken).toBe(true);
+  });
+
+  it('dedupes two concurrent 401s into a single refresh POST (refreshInFlight)', async () => {
+    let refreshCalls = 0;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/yahoo-refresh')) {
+        refreshCalls++;
+        return jsonResponse(REFRESHED_TOKENS);
+      }
+      if (url.includes('/api/yahoo-api')) {
+        const auth = authHeader(init);
+        if (auth === 'Bearer old-token') return statusResponse(401);
+        if (auth === 'Bearer new-token') return jsonResponse(usersLeaguesBody(REFRESH_LEAGUE_KEY, 'Refreshed League'));
+      }
+      throw new Error(`Unexpected fetch in test: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const [a, b] = await Promise.all([getUserLeagues(currentYear), getUserLeagues(currentYear)]);
+
+    expect(a).toEqual([{ id: REFRESH_LEAGUE_KEY, name: 'Refreshed League' }]);
+    expect(b).toEqual(a);
+    expect(refreshCalls).toBe(1);
+  });
+
+  it('clears tokens and rejects when the refresh token is rejected outright (4xx)', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/yahoo-refresh')) return statusResponse(400);
+      if (url.includes('/api/yahoo-api')) {
+        if (authHeader(init) === 'Bearer old-token') return statusResponse(401);
+      }
+      throw new Error(`Unexpected fetch in test: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(getUserLeagues(currentYear)).rejects.toThrow('re-authenticate');
+
+    expect(getAccessToken()).toBeNull();
+    expect(getRefreshToken()).toBeNull();
+    expect(isAuthenticated()).toBe(false);
+  });
+
+  it('retries a 5xx refresh once and succeeds on the second attempt', async () => {
+    vi.useFakeTimers();
+    try {
+      let refreshAttempts = 0;
+      const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/api/yahoo-refresh')) {
+          refreshAttempts++;
+          return refreshAttempts === 1 ? statusResponse(500) : jsonResponse(REFRESHED_TOKENS);
+        }
+        if (url.includes('/api/yahoo-api')) {
+          const auth = authHeader(init);
+          if (auth === 'Bearer old-token') return statusResponse(401);
+          if (auth === 'Bearer new-token') return jsonResponse(usersLeaguesBody(REFRESH_LEAGUE_KEY, 'Refreshed League'));
+        }
+        throw new Error(`Unexpected fetch in test: ${url}`);
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const promise = getUserLeagues(currentYear);
+      // refreshAccessToken sleeps 2s between its own retry attempts on a 5xx.
+      await vi.advanceTimersByTimeAsync(2000);
+      const leagues = await promise;
+
+      expect(refreshAttempts).toBe(2);
+      expect(leagues).toEqual([{ id: REFRESH_LEAGUE_KEY, name: 'Refreshed League' }]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
