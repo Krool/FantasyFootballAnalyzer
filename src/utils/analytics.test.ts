@@ -42,6 +42,29 @@ describe('Analytics named helpers', () => {
     });
   });
 
+  it('connectAttempt emits platform only', () => {
+    const gtag = vi.fn();
+    window.gtag = gtag;
+
+    Analytics.connectAttempt('espn');
+
+    expect(gtag).toHaveBeenCalledWith('event', 'connect_attempt', {
+      platform: 'espn',
+    });
+  });
+
+  it('connectError emits platform and a coarse error_type, no message text', () => {
+    const gtag = vi.fn();
+    window.gtag = gtag;
+
+    Analytics.connectError('yahoo', 'auth_expired');
+
+    expect(gtag).toHaveBeenCalledWith('event', 'connect_error', {
+      platform: 'yahoo',
+      error_type: 'auth_expired',
+    });
+  });
+
   it('draftAnalyzed emits team_count', () => {
     const gtag = vi.fn();
     window.gtag = gtag;
@@ -68,6 +91,8 @@ describe('Analytics named helpers', () => {
     // script failed to load (e.g., behind an ad blocker).
     expect(() => {
       Analytics.leagueConnected('espn', 'L1');
+      Analytics.connectAttempt('sleeper');
+      Analytics.connectError('sleeper', 'network');
       Analytics.draftAnalyzed(10);
       Analytics.tradeAnalyzed(3);
       Analytics.waiversAnalyzed(100);

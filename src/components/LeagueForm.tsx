@@ -6,6 +6,7 @@ import { normalizeLeagueId } from '@/utils/leagueId';
 import { loadLastConnection, rememberSleeperUsername } from '@/utils/lastConnection';
 import { loadESPNCredentials } from '@/utils/espnCredentials';
 import { logger } from '@/utils/logger';
+import { Analytics } from '@/utils/analytics';
 import styles from './LeagueForm.module.css';
 
 // Yahoo seasons we can query: the current year resolves through the 'nfl'
@@ -354,6 +355,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
 
   const handleYahooLogin = async () => {
     try {
+      Analytics.connectAttempt('yahoo');
       const authUrl = await getAuthUrl();
       try {
         sessionStorage.setItem(YAHOO_RETURN_FLAG, '1');
@@ -394,6 +396,8 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
       setLeagueIdError('League IDs are numbers only. Paste the league URL or the numeric ID.');
       return;
     }
+
+    Analytics.connectAttempt(platform);
 
     const credentials: LeagueCredentials = {
       platform,

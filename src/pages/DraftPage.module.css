@@ -97,6 +97,14 @@
   margin-right: 0.6rem;
 }
 
+.offseasonNote {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--bone-dim);
+  font-style: normal;
+}
+
 .ctaBlock {
   margin-top: 2rem;
   padding-top: 1.5rem;

@@ -24,6 +24,24 @@ export const Analytics = {
     });
   },
 
+  // Track a connect funnel entry: the form submit (Sleeper/ESPN) or the
+  // Yahoo login click. Platform only, same privacy rule as leagueConnected.
+  connectAttempt: (platform: string) => {
+    trackEvent("connect_attempt", {
+      platform,
+    });
+  },
+
+  // Track a failed connect. error_type is a coarse class, never the raw
+  // error text or league id: not_found | private_league | auth_expired |
+  // network | rate_limited | other.
+  connectError: (platform: string, errorType: string) => {
+    trackEvent("connect_error", {
+      platform,
+      error_type: errorType,
+    });
+  },
+
   // Track draft analysis viewed
   draftAnalyzed: (teamCount: number) => {
     trackEvent("draft_analyzed", {

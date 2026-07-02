@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, Suspense, lazy, type ReactNod
 import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams, useParams } from 'react-router-dom';
 import { Header, YearSelector, SeasonLoadingOverlay } from '@/components';
 import { GuestBanner } from '@/components/GuestBanner';
+import { SeasonFallbackNotice } from '@/components/SeasonFallbackNotice';
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import { HomePage } from '@/pages';
 import { ToolLanding } from '@/pages/ToolLanding';
@@ -99,7 +100,10 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { league, credentials, isLoading, error, progress, load, refresh, clear, enterGuest, updateGuest } = useLeague();
+  const {
+    league, credentials, isLoading, error, progress, load, refresh, clear, enterGuest, updateGuest,
+    seasonFallbackNotice, dismissSeasonFallbackNotice,
+  } = useLeague();
   const { playLoadComplete, playError } = useSounds();
   const prevLeagueRef = useRef<typeof league>(null);
   // The URL year that's currently being satisfied. Prevents the URL-watch
@@ -270,7 +274,16 @@ function App() {
     // prefilled next visit. The loaded league's values, not the form's, so a
     // mistyped id is never saved and a followed renewal saves the newest id.
     rememberConnection(loaded.platform, loaded.id, loaded.season);
-    navigate(isEmptyPreseason(loaded) ? '/draft-room' : '/draft');
+    if (isEmptyPreseason(loaded)) {
+      // A fresh connect landing on the Draft Room's setup form otherwise
+      // gives no sign the connect worked (off-season: no draft data to show
+      // yet). The flag rides in navigation state, not the URL, so it
+      // doesn't survive a manual refresh or reappear on later visits to
+      // /draft-room.
+      navigate('/draft-room', { state: { justConnected: true } });
+    } else {
+      navigate('/draft');
+    }
   };
 
   // Guest mode: synthesize a league from picked settings (no fetch) and jump
@@ -285,6 +298,7 @@ function App() {
   // the draft board's live Yahoo prices even for Sleeper/ESPN leagues).
   const handleYahooConnect = useCallback(async () => {
     try {
+      Analytics.connectAttempt('yahoo');
       const authUrl = await getAuthUrl();
       saveOAuthReturn({
         path: location.pathname + location.search,
@@ -405,6 +419,10 @@ function App() {
         <GuestBanner onConnect={() => { clear(); navigate('/'); }} />
       )}
 
+      {seasonFallbackNotice && (
+        <SeasonFallbackNotice message={seasonFallbackNotice} onDismiss={dismissSeasonFallbackNotice} />
+      )}
+
       <main id="main-content" style={{ flex: 1, position: 'relative' }}>
         {isLoading && league && (
           <SeasonLoadingOverlay
@@ -454,6 +472,7 @@ function App() {
               <DraftRoomPage
                 key={`${league.platform}:${league.id}:${league.season}:${league.totalTeams}:${league.scoringType}:${league.rosterSlots?.SUPERFLEX ?? 0}`}
                 league={league}
+                justConnected={!!(location.state as { justConnected?: boolean } | null)?.justConnected}
               />
             ) : <GuestAutoEnter onEnter={enterGuest} />}
           />
