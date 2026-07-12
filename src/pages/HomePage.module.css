@@ -13,7 +13,7 @@
 .hero {
   position: relative;
   margin-bottom: 2.5rem;
-  padding: 1.5rem 0 2.25rem;
+  padding: 1.5rem 0 2rem;
   border-bottom: 3px solid var(--bone);
   overflow: hidden;
 }
@@ -28,52 +28,44 @@
   );
   pointer-events: none;
 }
-.hero::after {
-  content: 'FFA';
-  position: absolute;
-  top: 1rem;
-  right: -0.5rem;
-  font-family: var(--font-headline);
-  font-size: clamp(120px, 18vw, 260px);
-  line-height: 0.78;
-  color: rgba(214, 255, 46, 0.06);
-  letter-spacing: -0.04em;
-  pointer-events: none;
-  user-select: none;
-  z-index: 0;
+
+/* Pitch on the left, live board card on the right; stacks on mobile. */
+.heroGrid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+  gap: 2.5rem;
+  align-items: center;
+}
+@media (max-width: 860px) {
+  .heroGrid {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
 }
 
 .title {
   font-family: var(--font-headline);
-  font-size: clamp(56px, 9vw, 140px);
+  font-size: clamp(34px, 4.5vw, 58px);
   font-weight: 400;
-  line-height: 0.82;
+  line-height: 0.95;
   text-transform: uppercase;
   color: var(--bone);
-  letter-spacing: -0.025em;
-  margin-bottom: 1.25rem;
-  position: relative;
-  z-index: 1;
-}
-.title::first-line {
-  /* no-op, but reserved hook */
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
 }
 
 .subtitle {
   font-family: var(--font-display);
   font-weight: 300;
-  font-size: clamp(1.05rem, 1.5vw, 1.4rem);
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
   color: var(--bone);
-  max-width: 56ch;
-  line-height: 1.4;
+  max-width: 52ch;
+  line-height: 1.45;
   border-left: 3px solid var(--lime);
   padding-left: 1.1rem;
-  position: relative;
-  z-index: 1;
 }
-
-/* Kicker badge before the title */
-.hero > *:first-child::before { content: none; }
 
 /* No-login quick links: the homepage's path into the public draft-prep pages. */
 .heroLinks {
@@ -82,8 +74,6 @@
   align-items: center;
   gap: 0.85rem;
   margin-top: 1.6rem;
-  position: relative;
-  z-index: 1;
 }
 .heroLinks a {
   display: inline-block;
@@ -119,6 +109,93 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--bone-dim);
+}
+
+/* ── HERO BOARD CARD ── */
+/* Top-5 snapshot of the bundled consensus board, refreshed daily. */
+.board {
+  background: var(--ink);
+  border: 2px solid var(--bone);
+  box-shadow: 6px 6px 0 var(--lime);
+  padding: 1rem 1.1rem 0.9rem;
+}
+.boardKicker {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin-bottom: 0.55rem;
+}
+.boardList {
+  list-style: none;
+  margin: 0 0 0.8rem;
+  padding: 0;
+}
+.boardRow {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) auto auto;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.42rem 0;
+}
+.boardRow + .boardRow {
+  border-top: 1px dashed var(--bone-dim);
+}
+.boardRank {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--lime);
+}
+.boardName {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--bone);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.boardMeta {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.boardValue {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--lime);
+  text-align: right;
+}
+.boardFoot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  border-top: 2px solid var(--bone-dim);
+  padding-top: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.boardFoot a {
+  color: var(--bone);
+  font-weight: 700;
+  white-space: nowrap;
+  border-bottom: 2px solid var(--lime);
+  padding-bottom: 1px;
+  transition: color 0.15s ease;
+}
+.boardFoot a:hover {
+  color: var(--lime);
 }
 
 /* ── MANIFESTO ── */
@@ -364,7 +441,6 @@
 .secretButton:active { transform: scale(1.05); }
 
 @media (max-width: 640px) {
-  .title { font-size: 56px; }
   .subtitle { font-size: 1rem; }
   .formTitle { font-size: 1.4rem; }
 }

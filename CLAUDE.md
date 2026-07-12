@@ -197,6 +197,9 @@ LAST season during draft prep; the Draft Room targets the upcoming season
 - No em dashes
 - No AI cliches (see docs/DESIGN_SYSTEM.md voice section)
 - Accuracy over marketing. Don't write claims the code can't back up.
+- The pitch is personal and plain: built for my own draft prep and review,
+  completely free, enjoy. No punchy-tagline hype ("settle the group chat"
+  was removed as corny, 2026-07-12).
 
 ## Docs map
 
