@@ -91,6 +91,19 @@ export function DraftBoard({ room }: DraftBoardProps) {
   const drafting = phase === 'drafting';
   const gridStyle = { gridTemplateColumns: `repeat(${teamCount}, minmax(92px, 1fr))` };
 
+  // Which way a round flows across the listed columns (3RR and linear
+  // formats included, since the pick math answers, not round parity).
+  const roundReversed = (round0: number) =>
+    teamCount > 1 && teamIndexForPick(round0 * teamCount, teamCount, config.snakeFormat) !== 0;
+
+  // The flow arrow in each cell's corner: across the row in the round's
+  // direction, down at the turn, nothing after the final pick.
+  const arrowFor = (cell: BoardCell): string | null => {
+    if (cell.pickIndex === derived.totalPicks - 1) return null;
+    if (cell.slotInRound === teamCount) return '↓';
+    return roundReversed(cell.round - 1) ? '←' : '→';
+  };
+
   return (
     <div className={styles.board}>
       <div className={styles.boardHeader}>
@@ -122,6 +135,7 @@ export function DraftBoard({ room }: DraftBoardProps) {
               const mine = cell.teamId === config.myTeamId;
               const pickNo = `${cell.round}.${String(cell.slotInRound).padStart(2, '0')}`;
               const keeperName = !event ? keeperAt.get(`${cell.teamId}|${cell.round}`) : undefined;
+              const arrow = arrowFor(cell);
 
               if (player) {
                 const teamName = config.teams.find(t => t.id === cell.teamId)?.name ?? '';
@@ -133,16 +147,15 @@ export function DraftBoard({ room }: DraftBoardProps) {
                     }`}
                     title={`${pickNo} · ${player.name} · ${player.pos} · ${player.team} · ${teamName}`}
                   >
-                    <span className={styles.pickNo}>
-                      {pickNo}
-                      {event.isKeeper && <span className={styles.keeperTag}>K</span>}
-                    </span>
+                    <span className={styles.pickNo}>{pickNo}</span>
+                    {event.isKeeper && <span className={styles.cornerTag}>K</span>}
                     <span className={styles.playerName}>
                       {shortName(player.name, player.pos, player.team)}
                     </span>
                     <span className={styles.playerMeta}>
                       {player.pos} · {player.team}
                     </span>
+                    {arrow && <span className={styles.dirArrow}>{arrow}</span>}
                   </div>
                 );
               }
@@ -156,15 +169,15 @@ export function DraftBoard({ room }: DraftBoardProps) {
                   }`}
                 >
                   <span className={styles.pickNo}>{pickNo}</span>
+                  {!onClock && mine && <span className={styles.cornerTagMine}>YOU</span>}
                   {onClock ? (
                     <span className={styles.clockTag}>{mine ? 'YOU' : 'ON CLOCK'}</span>
                   ) : keeperName ? (
                     <span className={styles.keeperSlot} title={`Keeper slot: ${keeperName}`}>
                       Keeper
                     </span>
-                  ) : mine ? (
-                    <span className={styles.mineTag}>YOU</span>
                   ) : null}
+                  {arrow && <span className={styles.dirArrow}>{arrow}</span>}
                 </div>
               );
             }),
