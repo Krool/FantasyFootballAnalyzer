@@ -157,6 +157,19 @@ export function resolveKeeperRounds(picks: KeeperCandidate[]): KeeperAssignment[
   const out: KeeperAssignment[] = [];
   // Settle higher cost rounds first so cheaper keepers bump earlier.
   for (const c of [...picks].sort((a, b) => b.costRound - a.costRound)) {
+    // Auction keepers consume budget, not a round, so they skip the round
+    // bookkeeping entirely. Sleeper stamps round 1 on every auction pick, so
+    // running them through the dedup below would silently drop every auction
+    // keeper on a team past the first. costRound stays display-only.
+    if (c.keeperPrice != null) {
+      out.push({
+        teamId: c.teamId,
+        playerId: c.player.id,
+        costRound: c.costRound,
+        keeperPrice: c.keeperPrice,
+      });
+      continue;
+    }
     let round = c.costRound;
     while (round >= 1 && used.has(round)) round--;
     if (round < 1) continue; // no free round: skip this keeper
@@ -165,7 +178,6 @@ export function resolveKeeperRounds(picks: KeeperCandidate[]): KeeperAssignment[
       teamId: c.teamId,
       playerId: c.player.id,
       costRound: round,
-      ...(c.keeperPrice != null ? { keeperPrice: c.keeperPrice } : {}),
     });
   }
   return out;

@@ -315,7 +315,9 @@ input, select, textarea { font-family: inherit; color: var(--bone); }
 }
 .site-footer p { font-size: inherit; }
 .site-footer a { color: var(--lime); transition: color .2s ease; }
-.site-footer a:hover { color: var(--blood); }
+/* Neutral brighten: red is reserved for negative states, and --blood is
+   under the AA floor at this size anyway. */
+.site-footer a:hover { color: var(--bone); }
 .footer-link { display: inline-flex; align-items: center; gap: 0.4rem; }
 .footer-link svg { width: 14px; height: 14px; }
 

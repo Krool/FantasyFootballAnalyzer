@@ -27,6 +27,7 @@ interface WaiverPickup {
   pointsPerGame: number;
   par: number;
   pickupCount: number; // How many times this player was picked up by this team
+  faabSpent: number; // Total FAAB across ALL pickups of this player, not just the displayed one
 }
 
 // FLEX positions (RB/WR/TE)
@@ -115,6 +116,9 @@ export function WaiverTable({ teams, platform, pointsBasis }: WaiverTableProps) 
           existing.par = pickup.par;
         }
         existing.pickupCount += 1;
+        // FAAB is real money spent on every pickup, so it sums across repeats
+        // even though the stats above adopt a single record.
+        existing.faabSpent += pickup.transaction.waiverBudgetSpent ?? 0;
       } else {
         // First time seeing this player for this team
         consolidated.set(key, {
@@ -128,6 +132,7 @@ export function WaiverTable({ teams, platform, pointsBasis }: WaiverTableProps) 
           pointsPerGame: pickup.games > 0 ? pickup.points / pickup.games : 0,
           par: pickup.par,
           pickupCount: 1,
+          faabSpent: pickup.transaction.waiverBudgetSpent ?? 0,
         });
       }
     });
@@ -232,7 +237,7 @@ export function WaiverTable({ teams, platform, pointsBasis }: WaiverTableProps) 
         points: current.points + pickup.totalPoints,
         par: current.par + pickup.par,
         pickups: current.pickups + 1,
-        faab: current.faab + (pickup.transaction.waiverBudgetSpent ?? 0),
+        faab: current.faab + pickup.faabSpent,
       });
     });
 
@@ -429,7 +434,7 @@ export function WaiverTable({ teams, platform, pointsBasis }: WaiverTableProps) 
                     {data.faab > 0 && (
                       <span
                         className={styles.pickupCount}
-                        title={`$${data.faab} FAAB spent — ${data.par > 0 ? `$${(data.faab / data.par).toFixed(2)} per PAR` : 'no PAR return yet'}`}
+                        title={`$${data.faab} FAAB spent, ${data.par > 0 ? `$${(data.faab / data.par).toFixed(2)} per PAR` : 'no PAR return yet'}`}
                       >
                         ${data.faab} FAAB
                         {data.par > 0 ? ` ($${(data.faab / data.par).toFixed(2)}/PAR)` : ''}

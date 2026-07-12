@@ -314,7 +314,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
                   last {history.length} season{history.length === 1 ? '' : 's'}
                 </span>
               </h2>
-              <div className={styles.tableWrapper}>
+              <div className={`${styles.tableWrapper} scroll-x-hint`}>
                 <table className="table">
                   <thead>
                     <tr>

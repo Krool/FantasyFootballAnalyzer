@@ -24,7 +24,7 @@ export interface UseLiveDraftSyncReturn {
 // logEvent path manual entry uses. Yahoo/ESPN stay manual (Yahoo has no
 // public draft feed; ESPN picks carry ids the pool doesn't map yet).
 export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseLiveDraftSyncReturn {
-  const { config, derived, phase, pool, logEvent } = room;
+  const { config, derived, phase, pool, logEvents } = room;
   const [enabled, setEnabled] = useState(false);
   const [status, setStatus] = useState<LiveSyncStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +92,10 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
           .filter(p => p.pick_no > derived.pickCount)
           .sort((a, b) => a.pick_no - b.pick_no);
 
+        // Map the whole backlog first, then ingest it as ONE validated batch:
+        // logEvent per pick would validate every pick against the same
+        // pre-batch board and stamp them with the same stale seq.
+        const batch = [];
         for (const pick of fresh) {
           const playerId = bySleeperId.get(pick.player_id);
           const teamId = pick.roster_id !== null ? String(pick.roster_id) : null;
@@ -104,23 +108,29 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
             return;
           }
           const amount = Number(pick.metadata?.amount);
-          const result =
+          batch.push(
             config.draftType === 'auction' && Number.isFinite(amount) && amount > 0
-              ? logEvent({
-                  kind: 'auction_sale',
+              ? {
+                  kind: 'auction_sale' as const,
                   playerId,
                   nominatedById: teamId,
                   wonById: teamId,
                   price: amount,
-                })
-              : logEvent({
-                  kind: 'snake_pick',
+                }
+              : {
+                  kind: 'snake_pick' as const,
                   playerId,
                   teamId,
                   isKeeper: pick.is_keeper ?? undefined,
-                });
-          if (result) {
-            stop(`Sleeper pick ${pick.pick_no} was rejected (${result}). Switching back to manual logging.`);
+                },
+          );
+        }
+        if (batch.length > 0) {
+          const rejection = logEvents(batch);
+          if (rejection) {
+            stop(
+              `Sleeper pick ${fresh[rejection.index].pick_no} was rejected (${rejection.error}). Switching back to manual logging.`,
+            );
             return;
           }
         }
@@ -137,7 +147,7 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
       cancelled = true;
       clearInterval(timer);
     };
-  }, [enabled, available, league.id, derived.pickCount, bySleeperId, teamIds, config.draftType, logEvent, stop]);
+  }, [enabled, available, league.id, derived.pickCount, bySleeperId, teamIds, config.draftType, logEvents, stop]);
 
   // Leaving the drafting phase (complete or reset) ends the session.
   useEffect(() => {

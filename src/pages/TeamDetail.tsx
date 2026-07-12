@@ -208,7 +208,9 @@ export function TeamDetail({ league, team, onBack }: TeamDetailProps) {
                   </span>
                   <NflTeamLabel team={pick.player.team} />
                   <span className={styles.listMeta}>
-                    {pick.auctionValue ? `$${pick.auctionValue}` : `${pick.round}.${pick.pickNumber}`}
+                    {pick.auctionValue
+                      ? `$${pick.auctionValue}`
+                      : `${pick.round}.${String(((pick.pickNumber - 1) % (league.totalTeams || 12)) + 1).padStart(2, '0')}`}
                   </span>
                   <span className={`grade-badge ${pick.grade}`}>{getGradeDisplayText(pick.grade)}</span>
                 </li>

@@ -52,10 +52,9 @@
   box-shadow: 3px 3px 0 var(--bone);
   transition: transform .12s ease, box-shadow .12s ease, background .15s ease;
 }
+/* Red is reserved for negative states; connecting is the banner's positive
+   action, so hover keeps the lime fill and just lifts. */
 .connect:hover {
-  background: var(--blood);
-  border-color: var(--blood);
-  color: var(--bone);
   transform: translate(-1px, -1px);
   box-shadow: 4px 4px 0 var(--bone);
 }

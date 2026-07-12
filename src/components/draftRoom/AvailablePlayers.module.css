@@ -135,11 +135,26 @@
 .sortable {
   cursor: pointer;
   user-select: none;
+  position: relative;
 }
 
 .sortable:hover {
   color: var(--lime);
 }
+
+.sortable::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--lime);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+
+.sortable:hover::after { transform: scaleX(1); }
 
 .table th.sorted {
   color: var(--lime);
@@ -388,7 +403,9 @@
   font-size: 0.8rem;
   line-height: 1;
   padding: 0.15rem;
-  color: var(--rule);
+  /* Dim but findable; --rule was near-invisible (1.3:1 on ink). Matches the
+     Rankings page star, which fixed this first. */
+  color: color-mix(in srgb, var(--bone-dim) 55%, var(--ink));
 }
 
 .star:hover {

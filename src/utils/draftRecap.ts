@@ -49,7 +49,10 @@ export function gradeDraftSession(
   scaledValues: Map<string, number>,
 ): TeamRecap[] {
   const isAuction = config.draftType === 'auction';
-  const starterSlots = STARTER_POSITIONS.reduce((sum, pos) => sum + config.rosterSlots[pos], 0) + config.rosterSlots.FLEX;
+  const starterSlots =
+    STARTER_POSITIONS.reduce((sum, pos) => sum + config.rosterSlots[pos], 0) +
+    config.rosterSlots.FLEX +
+    config.rosterSlots.SUPERFLEX;
 
   const raw = config.teams.map(team => {
     const state = derived.teams.get(team.id);
@@ -66,7 +69,9 @@ export function gradeDraftSession(
       ? STARTER_POSITIONS.reduce(
           (sum, pos) => sum + Math.min(state.slotsFilled[pos], config.rosterSlots[pos]),
           0,
-        ) + Math.min(state.slotsFilled.FLEX, config.rosterSlots.FLEX)
+        ) +
+        Math.min(state.slotsFilled.FLEX, config.rosterSlots.FLEX) +
+        Math.min(state.slotsFilled.SUPERFLEX, config.rosterSlots.SUPERFLEX)
       : 0;
 
     // Worst bye pile-up among skill starters.

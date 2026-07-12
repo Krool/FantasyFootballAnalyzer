@@ -81,9 +81,22 @@
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
+  position: relative;
   transition: color .15s ease;
 }
-.sortable:hover { color: var(--lime) !important; }
+.sortable:hover { color: var(--lime); }
+.sortable::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--lime);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+.sortable:hover::after { transform: scaleX(1); }
 
 .fantasyTeam {
   max-width: 150px;

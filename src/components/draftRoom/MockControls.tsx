@@ -45,6 +45,7 @@ export function MockControls({ sim, isSnake }: MockControlsProps) {
             key={s.value}
             type="button"
             className={sim.speed === s.value ? styles.toggleOn : styles.toggleOff}
+            aria-pressed={sim.speed === s.value}
             onClick={() => sim.setSpeed(s.value)}
           >
             {s.label}

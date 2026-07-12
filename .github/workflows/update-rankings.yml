@@ -16,8 +16,10 @@ permissions:
   contents: write
   issues: write
 
+# Shares the deploy-pages group with ci.yml's master pushes so the two
+# gh-pages publishes serialize instead of racing (last writer wins).
 concurrency:
-  group: update-rankings
+  group: deploy-pages
   cancel-in-progress: false
 
 jobs:
@@ -105,6 +107,13 @@ jobs:
       - name: Rebuild rebased tree for deploy
         if: steps.diff.outputs.changed == 'true'
         run: npm run build
+        # This build's dist/ is what deploys, and during draft season this is
+        # the dominant deploy path. Without the Sentry env, production errors
+        # from these releases arrive with no source maps and stay minified.
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
       # This job must deploy its own commit. The push above uses the default
       # GITHUB_TOKEN, and GitHub does not trigger workflows (including ci.yml)

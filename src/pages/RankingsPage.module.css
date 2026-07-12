@@ -247,11 +247,26 @@
 .sortable {
   cursor: pointer;
   user-select: none;
+  position: relative;
 }
 
 .sortable:hover {
   color: var(--lime);
 }
+
+.sortable::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--lime);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+
+.sortable:hover::after { transform: scaleX(1); }
 
 .table th.sorted {
   color: var(--lime);
