@@ -1,4 +1,5 @@
 import { POOL } from '@/data/draftPool';
+import { nflLogoUrl } from '@/data/nflTeams';
 import styles from './HomePage.module.css';
 
 // Static hero. Kept free of hooks, browser APIs, and the league form so it can
@@ -58,16 +59,32 @@ export function HomeHero() {
             ▌ Top of the {POOL.season} board
           </span>
           <ol className={styles.boardList}>
-            {TOP_OF_BOARD.map(p => (
-              <li key={p.id} className={styles.boardRow}>
-                <span className={styles.boardRank}>{p.overallRank}</span>
-                <span className={styles.boardName}>{p.name}</span>
-                <span className={styles.boardMeta}>
-                  {p.pos} · {p.team}
-                </span>
-                <span className={styles.boardValue}>${p.baseValue ?? 1}</span>
-              </li>
-            ))}
+            {TOP_OF_BOARD.map(p => {
+              // Team logo with a text fallback (unknown team, or the img
+              // fails to load and the browser shows the alt text).
+              const logo = nflLogoUrl(p.team);
+              return (
+                <li key={p.id} className={styles.boardRow}>
+                  <span className={styles.boardRank}>{p.overallRank}</span>
+                  <span className={styles.boardName}>{p.name}</span>
+                  <span className={styles.boardMeta}>
+                    {p.pos}
+                    {logo ? (
+                      <img
+                        className={styles.boardLogo}
+                        src={logo}
+                        alt={p.team}
+                        width={20}
+                        height={20}
+                      />
+                    ) : (
+                      <> · {p.team}</>
+                    )}
+                  </span>
+                  <span className={styles.boardValue}>${p.baseValue ?? 1}</span>
+                </li>
+              );
+            })}
           </ol>
           <div className={styles.boardFoot}>
             <span>
