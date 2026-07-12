@@ -254,7 +254,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
   const formatSummary = [
     LEAGUE_TYPE_OPTIONS.find(o => o.value === leagueType)?.label,
     isRookieDraft ? 'Rookie' : isAuction ? `$${config.budget} auction` : formatLabel,
-    !league.isGuest ? (config.mode === 'live' ? 'Live' : 'Mock') : null,
+    !league.isGuest ? (config.mode === 'live' ? 'Live log' : 'Mock') : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -419,53 +419,41 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                   </div>
                 </div>
               )}
-              {/* Live mode syncs a real Sleeper draft; a guest has no league
-                  to sync, so the room is mock-only (config defaults to mock). */}
-              {!league.isGuest && (
-                <div className={styles.field}>
-                  <span className={styles.label}>Mode</span>
-                  <div className={styles.toggle}>
-                    <button
-                      type="button"
-                      className={config.mode === 'live' ? styles.toggleOn : styles.toggleOff}
-                      aria-pressed={config.mode === 'live'}
-                      onClick={() => updateConfig({ mode: 'live' })}
-                    >
-                      Live
-                    </button>
-                    <button
-                      type="button"
-                      className={config.mode === 'mock' ? styles.toggleOn : styles.toggleOff}
-                      aria-pressed={config.mode === 'mock'}
-                      onClick={() => updateConfig({ mode: 'mock' })}
-                    >
-                      Mock
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
-            {config.mode === 'mock' && (
-              <>
-                {/* A guest room is mock-only (the Mode toggle above is hidden),
-                    so "Mock mode:" would label a choice that doesn't exist. */}
-                <p className={styles.hint}>
-                  {league.isGuest
-                    ? 'The other teams draft automatically so you can practice. Connect your league to log a real draft.'
-                    : 'Mock mode: the other teams draft automatically so you can practice.'}
-                </p>
-                {config.draftType === 'auction' && (
-                  <label className={styles.keeperToggle}>
-                    <input
-                      type="checkbox"
-                      checked={!!config.liveBidding}
-                      onChange={e => updateConfig({ liveBidding: e.target.checked })}
-                    />
-                    Live bidding: bids are called one at a time so you can price-enforce,
-                    instead of submitting one sealed max bid
-                  </label>
-                )}
-              </>
+            {/* The mode choice, framed by what it does: auto-pick on is the
+                mock practice draft, off is the live follow-along where every
+                team's pick is logged by hand (with optional Sleeper sync). A
+                guest has no real draft to follow, so the room is mock-only
+                (config defaults to mock) and the checkbox is hidden. */}
+            {!league.isGuest && (
+              <label className={styles.keeperToggle}>
+                <input
+                  type="checkbox"
+                  checked={config.mode === 'mock'}
+                  onChange={e => updateConfig({ mode: e.target.checked ? 'mock' : 'live' })}
+                />
+                Auto-pick the other teams (mock draft)
+              </label>
+            )}
+            <p className={styles.hint}>
+              {league.isGuest
+                ? 'The other teams draft automatically so you can practice. Connect your league to log a real draft.'
+                : config.mode === 'mock'
+                  ? 'The other teams draft automatically so you can practice.'
+                  : league.platform === 'sleeper'
+                    ? 'Follow along with your real draft: log every pick and price by hand, or turn on Live Sync in the room to pull Sleeper picks automatically.'
+                    : "Follow along with your real draft: log every team's pick and price as it happens in your league's draft window."}
+            </p>
+            {config.mode === 'mock' && config.draftType === 'auction' && (
+              <label className={styles.keeperToggle}>
+                <input
+                  type="checkbox"
+                  checked={!!config.liveBidding}
+                  onChange={e => updateConfig({ liveBidding: e.target.checked })}
+                />
+                Live bidding: bids are called one at a time so you can price-enforce,
+                instead of submitting one sealed max bid
+              </label>
             )}
           </CollapsibleSection>
 
