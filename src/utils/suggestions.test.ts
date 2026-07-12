@@ -206,6 +206,64 @@ describe('suggestPicks', () => {
     expect(top[2].reasons).toContain('on your avoid list');
   });
 
+  it('does not let urgency signals push a backup QB past startable players in a 1QB league', () => {
+    // The round-5 trap: QB1 rostered, a fallen QB with a big sheet value,
+    // a breaking tier, and high gone-by-next-pick odds. None of that matters
+    // when he could never start; the WR who fills a slot must win.
+    const pool = [
+      player({ id: 'qb2', pos: 'QB', tier: 3, sleeperAdp: 40 }),
+      player({ id: 'wr1', pos: 'WR', tier: 3 }),
+      player({ id: 'wr2', pos: 'WR', tier: 4 }),
+    ];
+    const me = team({
+      slotsFilled: { QB: 1, RB: 3, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0 },
+      starterNeeds: { QB: 0, RB: 0, WR: 2, TE: 1, K: 1, DST: 1 },
+    });
+    const top = suggestPicks(
+      pool,
+      me,
+      SLOTS,
+      values(pool, { qb2: 34, wr1: 20, wr2: 18 }),
+      opts({ pickCount: 56, nextPickNumber: 68, takenOdds: new Map([['qb2', 0.95]]) }),
+    );
+    expect(top[0].player.id).toBe('wr1');
+    const qb = top.find(s => s.player.id === 'qb2');
+    expect(qb?.reasons).toContain('backup QB');
+    expect(qb?.reasons.join(' ')).not.toMatch(/gone|last Tier/);
+  });
+
+  it('withholds tier-break urgency from bench-only players but keeps it for startable ones', () => {
+    // WR starters and FLEX all filled: a last-of-tier WR is someone else's
+    // scarcity problem. The same signal still fires for the needed TE.
+    const pool = [
+      player({ id: 'wr-last', pos: 'WR', tier: 2 }),
+      player({ id: 'te-last', pos: 'TE', tier: 2 }),
+    ];
+    const me = team({
+      slotsFilled: { QB: 0, RB: 0, WR: 2, TE: 0, FLEX: 1, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0 },
+      starterNeeds: { QB: 1, RB: 2, WR: 0, TE: 1, K: 1, DST: 1 },
+    });
+    const top = suggestPicks(pool, me, SLOTS, values(pool, { 'wr-last': 20, 'te-last': 20 }), opts());
+    const wr = top.find(s => s.player.id === 'wr-last')!;
+    const te = top.find(s => s.player.id === 'te-last')!;
+    expect(wr.reasons.join(' ')).not.toMatch(/last Tier/);
+    expect(te.reasons).toContain('last Tier 2 TE');
+  });
+
+  it('still treats a spare QB as a real candidate while SUPERFLEX is open', () => {
+    const superflexSlots: RosterSlots = { ...SLOTS, SUPERFLEX: 1 };
+    const pool = [player({ id: 'qb2', pos: 'QB', tier: 2 }), player({ id: 'wr1', pos: 'WR', tier: 5 })];
+    const me = team({
+      slotsFilled: { QB: 1, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0 },
+      starterNeeds: { QB: 0, RB: 2, WR: 2, TE: 1, K: 1, DST: 1 },
+    });
+    const top = suggestPicks(pool, me, superflexSlots, values(pool, { qb2: 30, wr1: 20 }), opts());
+    const qb = top.find(s => s.player.id === 'qb2')!;
+    expect(qb.reasons).toContain('SUPERFLEX-eligible');
+    expect(qb.reasons).not.toContain('backup QB');
+    expect(top[0].player.id).toBe('qb2');
+  });
+
   it('penalizes a third same-week bye and ranks it behind an identical different-bye candidate', () => {
     // Two roster spots already tied up on a week-7 bye.
     const rosteredA = player({ id: 'rb-rostered-a', pos: 'RB', bye: 7 });

@@ -94,6 +94,11 @@ export function suggestPicks(
     const value = scaledValues.get(p.id) ?? 1;
     const reasons: string[] = [];
     let score = value;
+    // Whether this player could enter the starting lineup today: a needed
+    // starter, or eligible for an open FLEX/SUPERFLEX. Urgency (tier breaks,
+    // gone-by-next-pick odds) only applies to these players; scarcity at a
+    // position you can't start is someone else's problem.
+    let startable = true;
     if (needed) {
       score *= 1.25;
       reasons.push(`fills your ${pos} starter slot`);
@@ -103,12 +108,21 @@ export function suggestPicks(
     } else if (SUPERFLEX_ELIGIBLE.has(p.pos) && superflexOpen) {
       score *= 1.1;
       reasons.push('SUPERFLEX-eligible');
+    } else if (p.pos === 'QB') {
+      // A spare QB with no open QB/SUPERFLEX slot can never start alongside
+      // the QB1 (he is not FLEX-eligible), so he's pure insurance. Cut him
+      // harder than ordinary bench depth or a fallen QB1's big sheet value
+      // outranks players who would actually play.
+      score *= 0.5;
+      startable = false;
+      reasons.push('backup QB');
     } else {
       score *= 0.8;
+      startable = false;
       reasons.push('bench depth');
     }
 
-    if (tierLeft.get(`${p.pos}|${p.tier}`) === 1) {
+    if (startable && tierLeft.get(`${p.pos}|${p.tier}`) === 1) {
       // Worth more when other teams still need the position: the tier will
       // not survive until your next pick.
       score += opts.positionalDemand[pos] > 1 ? 4 : 2;
@@ -125,7 +139,9 @@ export function suggestPicks(
     }
     // The actual between-picks question: will he still be there when it
     // comes back around? Simulated odds when available; raw ADP otherwise.
-    if (opts.nextPickNumber) {
+    // Only for startable players: "he'll be gone" is no reason to draft
+    // someone who couldn't play for you anyway.
+    if (startable && opts.nextPickNumber) {
       const gone = opts.takenOdds?.get(p.id);
       if (gone !== undefined) {
         if (gone >= 0.5) {
