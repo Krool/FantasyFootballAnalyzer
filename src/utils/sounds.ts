@@ -1,5 +1,7 @@
-// Soft chiptune-style sound effects using Web Audio API
-// Sine/triangle waves with gentle envelopes for low-friction UI feedback
+// Soft chiptune-style sound effects using Web Audio API.
+// Every phrase is scheduled on the audio clock (never setTimeout) so melodies
+// stay tight even when the main thread is busy, and all voices run through a
+// shared lowpass so nothing reaches the speaker with a harsh edge.
 
 let audioContext: AudioContext | null = null;
 let masterGain: GainNode | null = null;
@@ -7,33 +9,87 @@ let isMuted = false;
 
 // Master volume (0-1) - kept low so the sounds sit under the UI
 const MASTER_VOLUME = 0.08;
+// Rounds off the top end of every voice (the square wave included) without
+// dulling the tones themselves.
+const MASTER_LOWPASS_HZ = 3200;
 
 function getAudioContext(): AudioContext {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const softener = audioContext.createBiquadFilter();
+    softener.type = 'lowpass';
+    softener.frequency.value = MASTER_LOWPASS_HZ;
+    softener.Q.value = 0.5;
+    softener.connect(audioContext.destination);
     masterGain = audioContext.createGain();
     masterGain.gain.value = MASTER_VOLUME;
-    masterGain.connect(audioContext.destination);
+    masterGain.connect(softener);
   }
   return audioContext;
 }
 
-function getMasterGain(): GainNode {
-  getAudioContext();
-  return masterGain!;
+interface Note {
+  freq: number;
+  /** Seconds after the phrase starts, on the audio clock. Default 0. */
+  at?: number;
+  /** Total length including release. */
+  dur: number;
+  type?: OscillatorType;
+  /** Per-note volume (0-1) under the master. */
+  level?: number;
+  attack?: number;
+  release?: number;
+  /** Decay from the attack peak immediately (marimba-style tap, no sustain). */
+  pluck?: boolean;
+  /** Level of a quiet octave-up sine layered over the note (0 = none). */
+  shimmer?: number;
 }
 
-// Create an oscillator with smooth envelope.
-// `level` (0-1) scales the per-note volume so individual tones can sit further
-// under the master without clipping the envelope.
-function createTone(
-  frequency: number,
-  duration: number,
-  type: OscillatorType = 'sine',
-  fadeIn = 0.02,
-  fadeOut = 0.12,
-  level = 1
-): void {
+function scheduleNote(ctx: AudioContext, out: GainNode, start: number, n: Note): void {
+  const {
+    freq,
+    dur,
+    type = 'sine',
+    level = 1,
+    attack = 0.012,
+    release = 0.1,
+    pluck = false,
+    shimmer = 0,
+  } = n;
+
+  const peak = Math.max(0.0001, level);
+  const envelope = ctx.createGain();
+  envelope.gain.setValueAtTime(0.0001, start);
+  // Linear attack reads as soft; an exponential rise spends most of its time
+  // near zero and lands like a click.
+  envelope.gain.linearRampToValueAtTime(peak, start + attack);
+  if (!pluck) {
+    envelope.gain.setValueAtTime(peak, start + Math.max(attack, dur - release));
+  }
+  envelope.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+  envelope.connect(out);
+
+  const oscillator = ctx.createOscillator();
+  oscillator.type = type;
+  oscillator.frequency.value = freq;
+  oscillator.connect(envelope);
+  oscillator.start(start);
+  oscillator.stop(start + dur + 0.02);
+
+  if (shimmer > 0) {
+    const shimmerGain = ctx.createGain();
+    shimmerGain.gain.value = shimmer;
+    shimmerGain.connect(envelope);
+    const octave = ctx.createOscillator();
+    octave.type = 'sine';
+    octave.frequency.value = freq * 2;
+    octave.connect(shimmerGain);
+    octave.start(start);
+    octave.stop(start + dur + 0.02);
+  }
+}
+
+function playPhrase(notes: Note[]): void {
   if (isMuted) return;
 
   // Web Audio can be unavailable (test environments) or blocked by the
@@ -41,113 +97,126 @@ function createTone(
   // triggered it.
   try {
     const ctx = getAudioContext();
-    const gain = getMasterGain();
+    // iOS suspends the context when the tab backgrounds; without a resume
+    // every later sound dies silently until reload.
+    if (ctx.state === 'suspended') void ctx.resume();
     const now = ctx.currentTime;
-
-    const oscillator = ctx.createOscillator();
-    const envelope = ctx.createGain();
-
-    oscillator.type = type;
-    oscillator.frequency.value = frequency;
-
-    // Exponential ramps feel softer than linear for both attack and release
-    const peak = Math.max(0.0001, level);
-    envelope.gain.setValueAtTime(0.0001, now);
-    envelope.gain.exponentialRampToValueAtTime(peak, now + fadeIn);
-    envelope.gain.setValueAtTime(peak, now + Math.max(fadeIn, duration - fadeOut));
-    envelope.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-
-    oscillator.connect(envelope);
-    envelope.connect(gain);
-
-    oscillator.start(now);
-    oscillator.stop(now + duration + 0.02);
+    for (const note of notes) {
+      scheduleNote(ctx, masterGain!, now + (note.at ?? 0), note);
+    }
   } catch {
     // No audio available: stay silent.
   }
 }
 
-// Navigation click - soft, short blip
+// All pitches are equal-temperament notes so overlapping sounds stay in tune
+// with each other: B3 247, Eb4 311, E4 330, G4 392, A4 440, C5 523, C#5 554,
+// D5 587, E5 659, G5 784, A5 880.
+
+// Navigation click - soft, short tap
 export function playClick(): void {
-  createTone(520, 0.09, 'sine', 0.015, 0.07, 0.6);
+  playPhrase([{ freq: 523, dur: 0.1, pluck: true, level: 0.6, shimmer: 0.12 }]);
 }
 
 // Hover sound - barely there
 export function playHover(): void {
-  createTone(440, 0.05, 'sine', 0.01, 0.04, 0.35);
+  playPhrase([{ freq: 440, dur: 0.05, pluck: true, level: 0.3 }]);
 }
 
-// Success - gentle two-note rise
+// Success - gentle two-note rise (C5 to G5)
 export function playSuccess(): void {
-  createTone(523, 0.14, 'sine', 0.02, 0.1, 0.7); // C5
-  setTimeout(() => createTone(784, 0.18, 'sine', 0.02, 0.14, 0.7), 110); // G5
+  playPhrase([
+    { freq: 523, dur: 0.16, level: 0.65, shimmer: 0.1 },
+    { freq: 784, at: 0.11, dur: 0.24, level: 0.65, shimmer: 0.12, release: 0.16 },
+  ]);
 }
 
-// Error - soft descending pair
+// Error - soft descending pair (G4 to Eb4)
 export function playError(): void {
-  createTone(392, 0.16, 'triangle', 0.02, 0.12, 0.55); // G4
-  setTimeout(() => createTone(311, 0.22, 'triangle', 0.02, 0.16, 0.55), 140); // Eb4
+  playPhrase([
+    { freq: 392, dur: 0.16, type: 'triangle', level: 0.55, release: 0.12 },
+    { freq: 311, at: 0.14, dur: 0.22, type: 'triangle', level: 0.55, release: 0.16 },
+  ]);
 }
 
-// Grade reveal sounds - softened
+// Grade reveal sounds
 export function playGradeGreat(): void {
-  createTone(523, 0.12, 'sine', 0.02, 0.1, 0.65); // C5
-  setTimeout(() => createTone(659, 0.12, 'sine', 0.02, 0.1, 0.65), 90); // E5
-  setTimeout(() => createTone(784, 0.18, 'sine', 0.02, 0.14, 0.65), 180); // G5
+  playPhrase([
+    { freq: 523, dur: 0.12, level: 0.65, shimmer: 0.1 },
+    { freq: 659, at: 0.09, dur: 0.12, level: 0.65, shimmer: 0.1 },
+    { freq: 784, at: 0.18, dur: 0.22, level: 0.65, shimmer: 0.12, release: 0.16 },
+  ]);
 }
 
 export function playGradeGood(): void {
-  createTone(523, 0.12, 'sine', 0.02, 0.1, 0.6); // C5
-  setTimeout(() => createTone(659, 0.16, 'sine', 0.02, 0.12, 0.6), 100); // E5
+  playPhrase([
+    { freq: 523, dur: 0.12, level: 0.6, shimmer: 0.1 },
+    { freq: 659, at: 0.1, dur: 0.18, level: 0.6, shimmer: 0.1, release: 0.12 },
+  ]);
 }
 
 export function playGradeBad(): void {
-  createTone(392, 0.14, 'triangle', 0.02, 0.1, 0.5); // G4
-  setTimeout(() => createTone(330, 0.18, 'triangle', 0.02, 0.14, 0.5), 110); // E4
+  playPhrase([
+    { freq: 392, dur: 0.14, type: 'triangle', level: 0.5 },
+    { freq: 330, at: 0.11, dur: 0.2, type: 'triangle', level: 0.5, release: 0.14 },
+  ]);
 }
 
 export function playGradeTerrible(): void {
-  createTone(330, 0.14, 'triangle', 0.02, 0.1, 0.5); // E4
-  setTimeout(() => createTone(247, 0.2, 'triangle', 0.02, 0.16, 0.5), 120); // B3
+  playPhrase([
+    { freq: 330, dur: 0.14, type: 'triangle', level: 0.5 },
+    { freq: 247, at: 0.12, dur: 0.22, type: 'triangle', level: 0.5, release: 0.16 },
+  ]);
 }
 
-// Filter change - quick soft tick
+// Filter change - quick soft tick (E5)
 export function playFilter(): void {
-  createTone(620, 0.06, 'sine', 0.01, 0.05, 0.45);
+  playPhrase([{ freq: 659, dur: 0.07, pluck: true, level: 0.45 }]);
 }
 
-// Sort change - light two-tap
+// Sort change - light two-tap (A4, D5)
 export function playSort(): void {
-  createTone(440, 0.05, 'sine', 0.01, 0.04, 0.45);
-  setTimeout(() => createTone(587, 0.06, 'sine', 0.01, 0.05, 0.45), 50);
+  playPhrase([
+    { freq: 440, dur: 0.05, pluck: true, level: 0.45 },
+    { freq: 587, at: 0.05, dur: 0.07, pluck: true, level: 0.45 },
+  ]);
 }
 
-// Page transition - soft upward sweep
+// Page transition - soft upward sweep (rising A-major arpeggio)
 export function playPageTransition(): void {
-  for (let i = 0; i < 3; i++) {
-    setTimeout(() => createTone(440 + i * 80, 0.07, 'sine', 0.015, 0.06, 0.4), i * 40);
-  }
+  playPhrase([
+    { freq: 440, dur: 0.08, pluck: true, level: 0.4 },
+    { freq: 554, at: 0.04, dur: 0.08, pluck: true, level: 0.4 },
+    { freq: 659, at: 0.08, dur: 0.1, pluck: true, level: 0.4 },
+  ]);
 }
 
-// Load complete - calm three-note arpeggio (no busy chord at the end)
+// Load complete - calm three-note arpeggio (C5, E5, G5)
 export function playLoadComplete(): void {
-  createTone(523, 0.16, 'sine', 0.02, 0.12, 0.55); // C5
-  setTimeout(() => createTone(659, 0.16, 'sine', 0.02, 0.12, 0.55), 130); // E5
-  setTimeout(() => createTone(784, 0.24, 'sine', 0.02, 0.18, 0.55), 260); // G5
+  playPhrase([
+    { freq: 523, dur: 0.16, level: 0.55, shimmer: 0.08 },
+    { freq: 659, at: 0.13, dur: 0.16, level: 0.55, shimmer: 0.08 },
+    { freq: 784, at: 0.26, dur: 0.28, level: 0.55, shimmer: 0.1, release: 0.2 },
+  ]);
 }
 
 // You're on the clock - a two-note horn that cuts through a noisy room.
 // Slightly louder than the UI blips on purpose: this is the one sound the
-// user must not miss while looking at the TV.
+// user must not miss while looking at the TV. Still square-wave for bite;
+// the master lowpass keeps it from grating.
 export function playOnTheClock(): void {
-  createTone(392, 0.22, 'square', 0.02, 0.14, 0.5); // G4
-  setTimeout(() => createTone(587, 0.34, 'square', 0.02, 0.24, 0.55), 180); // D5
+  playPhrase([
+    { freq: 392, dur: 0.22, type: 'square', level: 0.5, attack: 0.02, release: 0.14 },
+    { freq: 587, at: 0.18, dur: 0.36, type: 'square', level: 0.55, attack: 0.02, release: 0.24 },
+  ]);
 }
 
-// Export button click
+// Export button click (E5, A5)
 export function playExport(): void {
-  createTone(660, 0.1, 'sine', 0.02, 0.08, 0.55);
-  setTimeout(() => createTone(880, 0.14, 'sine', 0.02, 0.1, 0.55), 90);
+  playPhrase([
+    { freq: 659, dur: 0.1, level: 0.55, shimmer: 0.1 },
+    { freq: 880, at: 0.09, dur: 0.16, level: 0.55, shimmer: 0.1, release: 0.12 },
+  ]);
 }
 
 // Toggle mute
