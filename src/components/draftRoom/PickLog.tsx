@@ -87,7 +87,7 @@ export function PickLog({ room }: PickLogProps) {
     <div className={styles.log}>
       <div className={styles.logHeader}>
         <h2 className={styles.title}>
-          All Picks{' '}
+          Pick Log{' '}
           <span className={styles.count}>
             {derived.pickCount}/{derived.totalPicks}
           </span>
@@ -103,7 +103,7 @@ export function PickLog({ room }: PickLogProps) {
             disabled={events.length === 0}
             title="Remove the last logged pick (Ctrl+Z)"
           >
-            Undo Last
+            Undo
           </button>
           <button
             type="button"
@@ -112,64 +112,47 @@ export function PickLog({ room }: PickLogProps) {
             disabled={events.length === 0}
             title="Download the full pick log as a spreadsheet"
           >
-            Export CSV
+            CSV
           </button>
         </div>
       </div>
-      <div className={`${styles.tableWrapper} scroll-x-hint`}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Player</th>
-              <th>Pos</th>
-              {isAuction && <th>Nom By</th>}
-              <th>{isAuction ? 'Winner' : 'Team'}</th>
-              {isAuction && (
-                <>
-                  <th className={styles.num}>$</th>
-                  <th className={styles.num}>Exp</th>
-                  <th className={styles.num}>Δ</th>
-                </>
+      <ol className={styles.list} aria-label="Picks logged so far, newest first">
+        {[...rows].reverse().map(row => {
+          const delta = row.price !== null && row.expected !== null ? row.price - row.expected : null;
+          return (
+            <li
+              key={row.pick}
+              className={row.pick === rows.length ? `${styles.row} ${styles.latestRow}` : styles.row}
+              title={
+                isAuction && row.expected !== null
+                  ? `Expected $${row.expected}${delta !== null ? ` · ${delta > 0 ? `$${delta} over` : delta < 0 ? `$${-delta} under` : 'at value'}` : ''}${row.nominator ? ` · nominated by ${row.nominator}` : ''}`
+                  : undefined
+              }
+            >
+              <span className={styles.pickNo}>{row.pick}</span>
+              <span className={styles.main}>
+                <span className={styles.player}>
+                  {row.playerName} <NflTeamLabel team={row.nflTeam} />
+                </span>
+                <span className={styles.teamLine}>
+                  <PosBadge pos={row.pos} />
+                  <span className={styles.teamName}>{row.team}</span>
+                </span>
+              </span>
+              {row.price !== null && (
+                <span
+                  className={`${styles.price} ${
+                    delta !== null ? (delta > 0 ? styles.bad : styles.good) : ''
+                  }`}
+                >
+                  ${row.price}
+                </span>
               )}
-            </tr>
-          </thead>
-          <tbody>
-            {[...rows].reverse().map(row => {
-              const delta = row.price !== null && row.expected !== null ? row.price - row.expected : null;
-              return (
-                <tr key={row.pick} className={row.pick === rows.length ? styles.latestRow : ''}>
-                  <td className={styles.dim}>{row.pick}</td>
-                  <td className={styles.player}>
-                    {row.playerName} <NflTeamLabel team={row.nflTeam} />
-                  </td>
-                  <td>
-                    <PosBadge pos={row.pos} />
-                  </td>
-                  {isAuction && <td className={styles.dim}>{row.nominator}</td>}
-                  <td>{row.team}</td>
-                  {isAuction && (
-                    <>
-                      <td className={styles.num}>${row.price}</td>
-                      <td className={`${styles.num} ${styles.dim}`}>${row.expected}</td>
-                      <td className={`${styles.num} ${delta !== null && delta > 0 ? styles.bad : styles.good}`}>
-                        {delta !== null ? (delta > 0 ? `+${delta}` : delta) : ''}
-                      </td>
-                    </>
-                  )}
-                </tr>
-              );
-            })}
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={isAuction ? 8 : 4} className={styles.emptyRow}>
-                  No picks logged yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </li>
+          );
+        })}
+        {rows.length === 0 && <li className={styles.emptyRow}>No picks logged yet.</li>}
+      </ol>
     </div>
   );
 }

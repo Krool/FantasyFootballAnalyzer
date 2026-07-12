@@ -31,6 +31,13 @@ interface AvailablePlayersProps {
   // Snake only: picks other teams make before the user's next turn. Draws
   // the "your pick lands here" line that creeps up the board as picks log.
   picksUntilMine?: number | null;
+  // Suggested-pick reasons by player id. Those rows highlight in place with
+  // the why in the tooltip (this replaced the separate Suggested Picks panel).
+  suggested?: Map<string, string[]>;
+  // Handcuff id -> the rostered starter he insures ("Handcuff Watch" inline).
+  handcuffFor?: Map<string, string>;
+  // Draft-queue wiring for the per-row + button.
+  queue?: { queued: Set<string>; toggle: (id: string) => void };
   inputRef?: RefObject<HTMLInputElement>;
 }
 
@@ -49,6 +56,9 @@ export function AvailablePlayers({
   clockFullPositions,
   yahooCosts,
   picksUntilMine,
+  suggested,
+  handcuffFor,
+  queue,
   inputRef,
 }: AvailablePlayersProps) {
   const { config, derived, scaledValues, inflation, scoring } = room;
@@ -186,6 +196,10 @@ export function AvailablePlayers({
 
   const visible = rows.slice(0, MAX_ROWS);
 
+  // Full-width rows (cutoff line, empty state) span every rendered column.
+  const colCount =
+    (isAuction ? 12 : 9) + (showYahoo ? 1 : 0) + (onQuickDraft ? 1 : 0) + (queue ? 1 : 0);
+
   // "Your pick lands here": if every pick before the user's comes off the
   // top of this list, the rows above the line are gone and the user picks
   // from the rows below. Only drawn on the full board in a pick-likelihood
@@ -261,6 +275,7 @@ export function AvailablePlayers({
           <thead>
             <tr>
               <th className={styles.starCell} aria-label="Target list" />
+              {queue && <th className={styles.starCell} aria-label="Draft queue" />}
               <th
                 className={`${styles.num} ${styles.sortable} ${sortBy === 'rank' ? styles.sorted : ''}`}
                 onClick={() => setSort('rank')}
@@ -380,7 +395,7 @@ export function AvailablePlayers({
               {i === cutoffAt && (
                 <tr className={styles.cutoffRow}>
                   <td
-                    colSpan={(isAuction ? 12 : 9) + (showYahoo ? 1 : 0) + (onQuickDraft ? 1 : 0)}
+                    colSpan={colCount}
                     title="If every pick before yours comes off the top of this list, the board above this line is gone and you choose from the players below it."
                   >
                     ▲ Likely gone · your pick lands here ({cutoffAt} {cutoffAt === 1 ? 'pick' : 'picks'} away)
@@ -390,7 +405,9 @@ export function AvailablePlayers({
               <tr
                 className={`${p.id === selectedId ? styles.rowSelected : styles.row} ${
                   i === cursor ? styles.rowCursor : ''
-                } ${avoided.has(p.id) ? styles.rowAvoided : ''}`}
+                } ${avoided.has(p.id) ? styles.rowAvoided : ''} ${
+                  suggested?.has(p.id) ? styles.rowSuggested : ''
+                }`}
                 onClick={() => {
                   playClick();
                   onSelect(p);
@@ -432,6 +449,27 @@ export function AvailablePlayers({
                     {avoided.has(p.id) ? '✕' : '★'}
                   </button>
                 </td>
+                {queue && (
+                  <td className={styles.starCell}>
+                    <button
+                      type="button"
+                      className={queue.queued.has(p.id) ? styles.queueBtnOn : styles.queueBtn}
+                      onClick={e => {
+                        e.stopPropagation();
+                        queue.toggle(p.id);
+                      }}
+                      title={
+                        queue.queued.has(p.id)
+                          ? 'In your queue. Click to remove.'
+                          : 'Add to your draft queue'
+                      }
+                      aria-label={`Toggle queue for ${p.name}`}
+                      aria-pressed={queue.queued.has(p.id)}
+                    >
+                      {queue.queued.has(p.id) ? '✓' : '+'}
+                    </button>
+                  </td>
+                )}
                 <td className={`${styles.num} ${styles.dim}`}>{p.overallRank}</td>
                 <td className={`${styles.num} ${tierClass(p.tier)}`}>{p.tier}</td>
                 <td className={styles.player}>
@@ -443,6 +481,22 @@ export function AvailablePlayers({
                     </span>
                   )}
                   {tierBreaks(p) && <span className={styles.tierBreak}>LAST IN TIER</span>}
+                  {suggested?.has(p.id) && (
+                    <span
+                      className={styles.suggestTag}
+                      title={suggested.get(p.id)?.join(' · ') || 'A top pick for your roster right now'}
+                    >
+                      SUGGESTED
+                    </span>
+                  )}
+                  {handcuffFor?.has(p.id) && (
+                    <span
+                      className={styles.cuffTag}
+                      title={`Backs up your ${handcuffFor.get(p.id)}`}
+                    >
+                      HANDCUFF
+                    </span>
+                  )}
                 </td>
                 <td>
                   <PosBadge pos={p.pos} posRank={p.posRank} />
@@ -544,10 +598,7 @@ export function AvailablePlayers({
             ))}
             {visible.length === 0 && (
               <tr>
-                <td
-                  colSpan={(isAuction ? 12 : 9) + (showYahoo ? 1 : 0) + (onQuickDraft ? 1 : 0)}
-                  className={styles.emptyRow}
-                >
+                <td colSpan={colCount} className={styles.emptyRow}>
                   No available players match.
                 </td>
               </tr>

@@ -64,9 +64,17 @@ export interface UseDraftSimReturn {
   step: () => void;
 }
 
+export interface UseDraftSimOptions {
+  // The user's draft queue, front first. When auto-pick-me drafts for the
+  // user it takes the first legal queued player before falling back to the
+  // AI's best-available logic.
+  myQueue?: string[];
+}
+
 // Drives mock drafts: auto-picks for AI teams in snake, auto-nominates and
 // settles bidding in auctions. No-ops entirely in live mode.
-export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
+export function useDraftSim(room: UseDraftRoomReturn, options?: UseDraftSimOptions): UseDraftSimReturn {
+  const myQueue = options?.myQueue;
   const { config, derived, scaledValues, inflation, logEvent, phase, scoring } = room;
   const [pending, setPending] = useState<PendingNomination | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -128,11 +136,22 @@ export function useDraftSim(room: UseDraftRoomReturn): UseDraftSimReturn {
     (teamId: string) => {
       const team = derived.teams.get(teamId);
       if (!team) return;
+      // Auto-picking for the user: the queue speaks first. Take the frontmost
+      // queued player still available and legal for the roster.
+      if (teamId === config.myTeamId && myQueue?.length) {
+        const availableById = new Map(derived.available.map(p => [p.id, p]));
+        for (const id of myQueue) {
+          const queued = availableById.get(id);
+          if (!queued || team.fullAt[queued.pos as keyof typeof team.fullAt]) continue;
+          logEvent({ kind: 'snake_pick', playerId: queued.id, teamId });
+          return;
+        }
+      }
       const round = roundForPick(derived.pickCount, config.teams.length);
       const player = simSnakePick(derived.available, scaledValues, team, round, config.rounds, rng, adpOf);
       if (player) logEvent({ kind: 'snake_pick', playerId: player.id, teamId });
     },
-    [derived, config.teams.length, config.rounds, scaledValues, rng, adpOf, logEvent],
+    [derived, config.myTeamId, config.teams.length, config.rounds, myQueue, scaledValues, rng, adpOf, logEvent],
   );
 
   // Snake: auto-pick on a timer. AI teams always; your team only when

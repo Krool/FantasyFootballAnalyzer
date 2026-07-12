@@ -1,0 +1,96 @@
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.clearBtn {
+  border: none;
+  background: transparent;
+  color: var(--bone-dim);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0.1rem 0.2rem;
+}
+
+.clearBtn:hover {
+  color: var(--blood-text);
+}
+
+.queueRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.queueRow:last-child {
+  border-bottom: none;
+}
+
+.order {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--bone-dim);
+  min-width: 1.2ch;
+  text-align: right;
+}
+
+.pickBtn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.35rem 0.1rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.pickBtn:hover {
+  background: var(--ink-2);
+  box-shadow: inset 3px 0 0 var(--lime);
+}
+
+.ctrls {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+
+.ctrl {
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--bone-dim);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  line-height: 1;
+  padding: 0.22rem 0.3rem;
+  cursor: pointer;
+}
+
+.ctrl:hover:not(:disabled) {
+  color: var(--bone);
+  border-color: var(--bone-dim);
+}
+
+.ctrl:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (pointer: coarse) {
+  .ctrl {
+    min-height: 36px;
+    min-width: 32px;
+  }
+}

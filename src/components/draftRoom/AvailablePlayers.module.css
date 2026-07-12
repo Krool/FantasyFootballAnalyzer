@@ -383,6 +383,40 @@
   background: var(--ink-3);
 }
 
+/* A suggested pick for the user's roster right now: highlighted in place
+   (the reasons live in the SUGGESTED chip's tooltip). */
+.rowSuggested td {
+  background: color-mix(in srgb, var(--lime) 8%, transparent);
+}
+
+.rowSuggested td:first-child {
+  box-shadow: inset 4px 0 0 var(--lime);
+}
+
+.suggestTag,
+.cuffTag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 0.08rem 0.3rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.suggestTag {
+  color: var(--lime);
+  border: 1px solid var(--lime);
+}
+
+.cuffTag {
+  color: var(--bone-dim);
+  border: 1px solid var(--bone-dim);
+}
+
 .rowAvoided {
   opacity: 0.45;
 }
@@ -425,6 +459,27 @@
   color: var(--gold);
 }
 
+.queueBtn,
+.queueBtnOn {
+  border: 1px solid;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.12rem 0.3rem;
+  color: color-mix(in srgb, var(--bone-dim) 55%, var(--ink));
+}
+
+.queueBtn:hover {
+  color: var(--lime);
+}
+
+.queueBtnOn {
+  color: var(--lime);
+}
+
 @media (pointer: coarse) {
   .chip,
   .chipOn,
@@ -443,5 +498,10 @@
   }
   .starCell {
     width: 2.4rem;
+  }
+  .queueBtn,
+  .queueBtnOn {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.45rem;
   }
 }

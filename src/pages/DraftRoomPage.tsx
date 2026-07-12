@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { League } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
+import { useDraftQueue } from '@/hooks/useDraftQueue';
 import { useDraftRoom } from '@/hooks/useDraftRoom';
 import { useDraftSim } from '@/hooks/useDraftSim';
 import { useLiveDraftSync } from '@/hooks/useLiveDraftSync';
 import { useSounds } from '@/hooks/useSounds';
+import { useSuggestedPicks } from '@/hooks/useSuggestedPicks';
 import { useYahooValues } from '@/hooks/useYahooValues';
+import { AuctionBoard } from '@/components/draftRoom/AuctionBoard';
 import { AuctionLogger } from '@/components/draftRoom/AuctionLogger';
 import { AvailablePlayers } from '@/components/draftRoom/AvailablePlayers';
 import { ConnectedBanner } from '@/components/draftRoom/ConnectedBanner';
+import { DraftBoard } from '@/components/draftRoom/DraftBoard';
 import { DraftRecap } from '@/components/draftRoom/DraftRecap';
 import { DraftSetup } from '@/components/draftRoom/DraftSetup';
 import { LeagueNeeds } from '@/components/draftRoom/LeagueNeeds';
@@ -18,9 +22,8 @@ import { MyTeamPanel } from '@/components/draftRoom/MyTeamPanel';
 import { NflTeams } from '@/components/draftRoom/NflTeams';
 import { NominationPanel } from '@/components/draftRoom/NominationPanel';
 import { PickLog } from '@/components/draftRoom/PickLog';
-import { PickStrip } from '@/components/draftRoom/PickStrip';
+import { QueuePanel } from '@/components/draftRoom/QueuePanel';
 import { SnakeLogger } from '@/components/draftRoom/SnakeLogger';
-import { SuggestionsPanel } from '@/components/draftRoom/SuggestionsPanel';
 import { TeamBoard } from '@/components/draftRoom/TeamBoard';
 import { TeamsTab } from '@/components/draftRoom/TeamsTab';
 import { TierBoard } from '@/components/draftRoom/TierBoard';
@@ -77,9 +80,15 @@ interface DraftRoomPageProps {
 export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
   const room = useDraftRoom(league);
   const [showConnectedBanner, setShowConnectedBanner] = useState(!!justConnected);
-  const sim = useDraftSim(room);
+  const queue = useDraftQueue(room.config.leagueKey);
+  const sim = useDraftSim(room, { myQueue: queue.ids });
   const yahoo = useYahooValues(room.pool);
   const liveSync = useLiveDraftSync(league, room);
+  // Suggested picks + handcuffs highlight inline on the player board.
+  const { suggested, handcuffFor } = useSuggestedPicks(
+    room,
+    room.config.draftType === 'snake' && room.phase === 'drafting',
+  );
   const searchRef = useRef<HTMLInputElement>(null);
   // The board is the selection surface: clicking a row feeds the logger.
   const [selected, setSelected] = useState<PoolPlayer | null>(null);
@@ -135,7 +144,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
     return () => window.removeEventListener('keydown', onKeyDown);
   });
 
-  const { playClick, playSuccess, playError, playOnTheClock } = useSounds();
+  const { playClick, playSuccess, playError, playOnTheClock, isMuted, toggleMute } = useSounds();
 
   const isSnake = config.draftType === 'snake';
   const isAuction = config.draftType === 'auction';
@@ -443,6 +452,16 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                 </button>
               )}
               <span className={styles.statusSpacer} />
+              {isMock && phase === 'drafting' && <MockControls sim={sim} isSnake={isSnake} />}
+              <button
+                type="button"
+                className={styles.soundBtn}
+                onClick={toggleMute}
+                aria-pressed={isMuted}
+                title={isMuted ? 'Sounds are off. Click to unmute.' : 'Mute all app sounds'}
+              >
+                {isMuted ? '🔇' : '🔊'}
+              </button>
               <button
                 type="button"
                 className={styles.statusUndoBtn}
@@ -495,18 +514,16 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
               </p>
             )}
 
-            {isMock && phase === 'drafting' && <MockControls sim={sim} isSnake={isSnake} />}
-
             {spark && (
               <div className={styles.spark} role="status">
                 {spark}
               </div>
             )}
 
-            {isSnake && phase === 'drafting' && <PickStrip room={room} />}
+            {isSnake ? <DraftBoard room={room} /> : <AuctionBoard room={room} />}
 
             <div className={styles.grid}>
-              <div className={styles.colSide}>
+              <div className={styles.colLog}>
                 {phase === 'drafting' &&
                   (isAuction ? (
                     isMock ? (
@@ -517,14 +534,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                   ) : (
                     <SnakeLogger room={room} selected={selected} onLogged={clearSelection} />
                   ))}
-                {isSnake && phase === 'drafting' && (
-                  <SuggestionsPanel room={room} onSelect={setSelected} />
-                )}
-                {isAuction && phase === 'drafting' && (
-                  <NominationPanel room={room} onSelect={setSelected} />
-                )}
-                <MyTeamPanel room={room} />
-                <LeagueNeeds room={room} />
+                <PickLog room={room} />
               </div>
               <div className={styles.colMain}>
                 <div className={styles.tabs}>
@@ -551,6 +561,13 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                     clockFullPositions={clockFullPositions}
                     yahooCosts={yahoo.costs}
                     picksUntilMine={openPicksUntilMine}
+                    suggested={isSnake ? suggested : undefined}
+                    handcuffFor={isSnake ? handcuffFor : undefined}
+                    queue={
+                      phase === 'drafting'
+                        ? { queued: queue.queued, toggle: queue.toggle }
+                        : undefined
+                    }
                     inputRef={searchRef}
                   />
                 )}
@@ -564,10 +581,16 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                   <NflTeams room={room} selectedId={selected?.id ?? null} onSelect={setSelected} />
                 )}
               </div>
-            </div>
-
-            <div className={styles.logSection}>
-              <PickLog room={room} />
+              <div className={styles.colSide}>
+                {isAuction && phase === 'drafting' && (
+                  <NominationPanel room={room} onSelect={setSelected} />
+                )}
+                {phase === 'drafting' && (
+                  <QueuePanel room={room} queue={queue} onSelect={setSelected} />
+                )}
+                <MyTeamPanel room={room} />
+                <LeagueNeeds room={room} />
+              </div>
             </div>
 
             <div className={styles.teamsSection}>

@@ -217,15 +217,20 @@
   box-shadow: 5px 5px 0 var(--blood);
 }
 
-/* The available-players board is the centerpiece during a draft; the side
-   column holds the logger and my-team panels; everything else lives below. */
+/* The Yahoo-style working area: pick logger + running pick log on the left,
+   the player board center, queue + my-team on the right. The log sits beside
+   the players so watching the draft never means scrolling away from them. */
 .grid {
   display: grid;
-  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
-  grid-template-areas: 'side main';
+  grid-template-columns: minmax(270px, 330px) minmax(0, 1fr) minmax(250px, 310px);
+  grid-template-areas: 'log main side';
   gap: 1.5rem;
   align-items: start;
   margin-bottom: 2rem;
+}
+
+.colLog {
+  grid-area: log;
 }
 
 .colSide {
@@ -236,6 +241,7 @@
   grid-area: main;
 }
 
+.colLog,
 .colSide,
 .colMain {
   display: flex;
@@ -244,21 +250,19 @@
   min-width: 0;
 }
 
-.logSection {
-  border-top: 2px dashed var(--bone-dim);
-  padding-top: 1.5rem;
-  margin-bottom: 2rem;
-}
-
 .teamsSection {
   border-top: 2px dashed var(--bone-dim);
   padding-top: 1.5rem;
 }
 
-/* Narrow the side column before stacking so the auction board keeps room. */
-@media (max-width: 1100px) {
+/* Not enough room for three tracks: the right-column panels stack under the
+   pick log on the left, the player board keeps the rest. */
+@media (max-width: 1250px) {
   .grid {
     grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+    grid-template-areas:
+      'log main'
+      'side main';
   }
 }
 
@@ -269,6 +273,7 @@
     grid-template-columns: 1fr;
     grid-template-areas:
       'main'
+      'log'
       'side';
   }
 }
@@ -350,6 +355,21 @@
   border: 1px solid var(--rule);
   padding: 0.05rem 0.3rem;
   background: var(--ink-2);
+}
+
+/* The sound toggle rides in the status bar, Sleeper-style. */
+.soundBtn {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.85rem;
+  line-height: 1;
+  border: 2px solid var(--bone-dim);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.soundBtn:hover {
+  border-color: var(--bone);
 }
 
 .syncBtn,

@@ -1,0 +1,209 @@
+/* The Sleeper-style auction board: teams across with budget/max bid, roster
+   slots down, wins colored by position with their price. */
+
+.board {
+  border: 2px solid var(--bone-dim);
+  background: var(--ink);
+  margin-bottom: 1.5rem;
+}
+
+.boardHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 1.2rem;
+  padding: 0.6rem 1rem 0.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin: 0;
+}
+
+.title::before {
+  content: '▌ ';
+}
+
+.legend {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.legendChip {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 0.05rem 0.3rem;
+  border-left: 3px solid currentColor;
+}
+
+.scroller {
+  position: relative;
+  overflow: auto;
+  max-height: 23rem;
+}
+
+.grid {
+  display: grid;
+  gap: 2px;
+  padding: 2px;
+}
+
+/* Each JSX row wrapper contributes its children straight to the grid. */
+.rowContents {
+  display: contents;
+}
+
+.head,
+.headMine {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  background: var(--ink);
+  border-bottom: 2px solid var(--bone-dim);
+  padding: 0.35rem 0.45rem;
+  min-width: 0;
+}
+
+.headMine {
+  background: var(--lime);
+  border-bottom-color: var(--lime);
+}
+
+.headMine .headName,
+.headMine .headMoney {
+  color: var(--ink);
+}
+
+.corner {
+  z-index: 3;
+  left: 0;
+}
+
+.headName {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headMoney {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  color: var(--lime);
+  white-space: nowrap;
+}
+
+.nomTag {
+  margin-left: 0.35rem;
+  color: var(--ink);
+  background: var(--gold);
+  padding: 0 0.25rem;
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+}
+
+.slotLabel {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  background: var(--ink);
+  border-right: 1px solid var(--rule);
+  padding: 0.28rem 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--bone-dim);
+}
+
+.cell {
+  position: relative;
+  min-height: 2.6rem;
+  padding: 0.26rem 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  justify-content: center;
+  background: var(--ink-2);
+  border-left: 3px solid transparent;
+  min-width: 0;
+}
+
+.cellEmpty {
+  opacity: 0.55;
+  /* Empty slots need their own outline: ink-2 on ink alone reads as a
+     blank page instead of an open grid. */
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.cellFilled {
+  border-left-color: currentColor;
+  background: color-mix(in srgb, currentColor 16%, var(--ink-2));
+}
+
+.cellMine {
+  box-shadow: inset 0 0 0 1px var(--lime);
+}
+
+.playerName {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--bone);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 1.8rem;
+}
+
+.playerMeta {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  color: var(--bone-dim);
+}
+
+.price {
+  position: absolute;
+  top: 0.24rem;
+  right: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--lime);
+}
+
+.keeperTag {
+  margin-left: 0.3rem;
+  color: var(--ink);
+  background: var(--bone-dim);
+  padding: 0 0.2rem;
+  font-size: 0.54rem;
+  font-weight: 700;
+}
+
+.posQB { color: var(--pos-qb); }
+.posRB { color: var(--pos-rb); }
+.posWR { color: var(--pos-wr); }
+.posTE { color: var(--pos-te); }
+.posK { color: var(--pos-k); }
+.posDST { color: var(--pos-dst); }

@@ -1,0 +1,184 @@
+/* The Sleeper-style snake board: teams across, rounds down, picks colored by
+   position. Scrolls both ways inside a capped viewport so a 14-team,
+   16-round board doesn't own the whole page. */
+
+.board {
+  border: 2px solid var(--bone-dim);
+  background: var(--ink);
+  margin-bottom: 1.5rem;
+}
+
+.boardHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 1.2rem;
+  padding: 0.6rem 1rem 0.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin: 0;
+}
+
+.title::before {
+  content: '▌ ';
+}
+
+.legend {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.legendChip {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 0.05rem 0.3rem;
+  border-left: 3px solid currentColor;
+}
+
+.scroller {
+  position: relative;
+  overflow: auto;
+  max-height: 21rem;
+}
+
+.grid {
+  display: grid;
+  gap: 2px;
+  padding: 2px;
+}
+
+.head,
+.headMine {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--ink);
+  border-bottom: 2px solid var(--bone-dim);
+  padding: 0.35rem 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headMine {
+  color: var(--ink);
+  background: var(--lime);
+  border-bottom-color: var(--lime);
+}
+
+.cell {
+  min-height: 3.1rem;
+  padding: 0.28rem 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  background: var(--ink-2);
+  border-left: 3px solid transparent;
+}
+
+.cellEmpty {
+  opacity: 0.75;
+}
+
+/* Filled picks: position color as background tint + left accent, per the
+   design system's accents-only rule (body text stays bone). */
+.cellFilled {
+  border-left-color: currentColor;
+  background: color-mix(in srgb, currentColor 16%, var(--ink-2));
+}
+
+/* A thin lime frame marks the user's column without fighting the pos tint. */
+.cellMine {
+  box-shadow: inset 0 0 0 1px var(--lime);
+}
+
+.cellClock {
+  border-left-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 22%, var(--ink-2));
+}
+
+.pickNo {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--bone-dim);
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.playerName {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--bone);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playerMeta {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  color: var(--bone-dim);
+}
+
+.clockTag {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  background: var(--gold);
+  padding: 0.08rem 0.3rem;
+}
+
+.mineTag {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--lime);
+}
+
+.keeperTag {
+  color: var(--ink);
+  background: var(--bone-dim);
+  padding: 0 0.2rem;
+  font-size: 0.54rem;
+}
+
+.keeperSlot {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.posQB { color: var(--pos-qb); }
+.posRB { color: var(--pos-rb); }
+.posWR { color: var(--pos-wr); }
+.posTE { color: var(--pos-te); }
+.posK { color: var(--pos-k); }
+.posDST { color: var(--pos-dst); }

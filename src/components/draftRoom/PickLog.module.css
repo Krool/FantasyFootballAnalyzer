@@ -1,57 +1,62 @@
+/* The pick log as a side-column panel: lives next to the player board so
+   the running draft is readable without scrolling to the page bottom. */
+
 .log {
+  border: 2px solid var(--bone-dim);
+  background: var(--ink);
+  padding: 1rem 1.1rem 1.1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .logHeader {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: 0.6rem;
 }
 
 .title {
-  font-family: var(--font-headline);
-  font-size: 1.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  letter-spacing: -0.02em;
-  line-height: 0.95;
+  color: var(--lime);
   margin: 0;
-  color: var(--bone);
+}
+
+.title::before {
+  content: '▌ ';
 }
 
 .count {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  color: var(--lime);
-  letter-spacing: 0.12em;
+  color: var(--bone-dim);
+  letter-spacing: 0.1em;
 }
 
 .actions {
-  display: flex;
-  gap: 0.5rem;
+  display: inline-flex;
+  gap: 0.35rem;
 }
 
 .btn {
-  padding: 0.45rem 0.8rem;
+  padding: 0.2rem 0.5rem;
   font-family: var(--font-mono);
+  font-size: 0.6rem;
   font-weight: 700;
-  font-size: 0.68rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
-  border: 2px solid var(--bone);
+  border: 1px solid var(--bone-dim);
   background: transparent;
-  color: var(--bone);
-  box-shadow: 3px 3px 0 var(--bone);
+  color: var(--bone-dim);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn:hover:not(:disabled) {
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 var(--bone);
+  color: var(--bone);
+  border-color: var(--bone);
 }
 
 .btn:disabled {
@@ -59,94 +64,82 @@
   cursor: not-allowed;
 }
 
-.tableWrapper {
-  overflow-x: auto;
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
-  max-height: 540px;
-  border: 2px solid var(--bone);
-  box-shadow: 5px 5px 0 var(--bone);
-  /* background-color, not the shorthand: the wrapper carries the global
-     scroll-x-hint gradient layers on touch screens. */
-  background-color: var(--ink);
+  max-height: 24rem;
 }
 
-/* Print clips scroll panes to their on-screen window at the current scroll
-   offset; let the full pick log print. */
-@media print {
-  .tableWrapper {
-    max-height: none;
-    overflow: visible;
-  }
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.35rem 0.1rem;
+  border-bottom: 1px dashed var(--rule);
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
+.row:last-child {
+  border-bottom: none;
+}
+
+.latestRow {
+  box-shadow: inset 3px 0 0 var(--lime);
+  padding-left: 0.4rem;
+}
+
+.pickNo {
   font-family: var(--font-mono);
-  font-size: 0.8rem;
-}
-
-.table th {
-  position: sticky;
-  top: 0;
-  background: var(--ink);
+  font-size: 0.62rem;
   font-weight: 700;
   color: var(--bone-dim);
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  border-bottom: 2px solid var(--bone);
-  padding: 0.55rem 0.6rem;
-  text-align: left;
+  min-width: 2.4ch;
+  text-align: right;
 }
 
-.table td {
-  border-bottom: 1px dashed var(--rule);
-  padding: 0.45rem 0.6rem;
-  color: var(--bone);
-}
-
-.table tbody tr:hover {
-  background: var(--ink-2);
-}
-
-.table tbody tr:hover td:first-child {
-  box-shadow: inset 4px 0 0 var(--lime);
-}
-
-/* The just-logged pick announces itself, then settles into the table. */
-.latestRow td {
-  animation: pickFlash 1.4s ease-out;
-}
-
-.latestRow td:first-child {
-  box-shadow: inset 4px 0 0 var(--lime);
-}
-
-@keyframes pickFlash {
-  0% {
-    background: var(--ink-3);
-    color: var(--lime);
-  }
-  100% {
-    background: transparent;
-  }
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
 }
 
 .player {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 500;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
+  color: var(--bone);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.dim {
+.teamLine {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.teamName {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
   color: var(--bone-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.num {
-  text-align: right;
+.price {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .good {
@@ -158,9 +151,18 @@
 }
 
 .emptyRow {
-  text-align: center;
   font-family: var(--font-display);
   font-style: italic;
   color: var(--bone-dim);
-  padding: 2rem 1rem !important;
+  padding: 0.5rem 0;
+}
+
+@media print {
+  .log {
+    break-inside: avoid;
+  }
+  .list {
+    max-height: none;
+    overflow: visible;
+  }
 }

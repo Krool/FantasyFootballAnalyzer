@@ -1,13 +1,10 @@
+/* Embedded in the status bar (Sleeper puts the mock controls in the top
+   row), so no frame of its own: just a compact control cluster. */
 .bar {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  margin: 0.6rem 0 0.4rem;
-  padding: 0.5rem 0.7rem;
-  background: var(--ink-2);
-  border: 1px solid var(--bone-dim);
-  border-left: 3px solid var(--lime);
   font-family: var(--font-mono);
   font-size: 0.74rem;
 }
