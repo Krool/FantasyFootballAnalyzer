@@ -99,10 +99,14 @@ export function suggestPicks(
     // gone-by-next-pick odds) only applies to these players; scarcity at a
     // position you can't start is someone else's problem.
     let startable = true;
+    // Spare-player ladder (extra K/DST never get this far: excluded above):
+    // needed starter 1.25 > open-flex RB/WR 1.1 > bench RB/WR 0.8 >
+    // spare TE 0.7 > backup QB 0.5. A flex TE is almost always a downgrade
+    // on a flex RB/WR, so a second TE doesn't earn the FLEX bonus.
     if (needed) {
       score *= 1.25;
       reasons.push(`fills your ${pos} starter slot`);
-    } else if (FLEX_ELIGIBLE.has(p.pos) && flexOpen) {
+    } else if (p.pos !== 'TE' && FLEX_ELIGIBLE.has(p.pos) && flexOpen) {
       score *= 1.1;
       reasons.push('FLEX-eligible');
     } else if (SUPERFLEX_ELIGIBLE.has(p.pos) && superflexOpen) {
@@ -116,6 +120,10 @@ export function suggestPicks(
       score *= 0.5;
       startable = false;
       reasons.push('backup QB');
+    } else if (p.pos === 'TE') {
+      score *= 0.7;
+      startable = false;
+      reasons.push('spare TE');
     } else {
       score *= 0.8;
       startable = false;

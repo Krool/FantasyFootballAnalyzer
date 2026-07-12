@@ -250,6 +250,26 @@ describe('suggestPicks', () => {
     expect(te.reasons).toContain('last Tier 2 TE');
   });
 
+  it('ranks a spare TE below equal-value bench RB/WR and denies it the FLEX bonus', () => {
+    // TE starter filled but FLEX open: a second TE is almost never the right
+    // flex, so he takes 0.7 with no FLEX bonus while the spare RB takes 1.1.
+    const pool = [
+      player({ id: 'te2', pos: 'TE' }),
+      player({ id: 'rb-spare', pos: 'RB' }),
+    ];
+    const me = team({
+      slotsFilled: { QB: 0, RB: 2, WR: 2, TE: 1, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0 },
+      starterNeeds: { QB: 1, RB: 0, WR: 0, TE: 0, K: 1, DST: 1 },
+    });
+    const top = suggestPicks(pool, me, SLOTS, values(pool, { te2: 20, 'rb-spare': 20 }), opts());
+    const te = top.find(s => s.player.id === 'te2')!;
+    const rb = top.find(s => s.player.id === 'rb-spare')!;
+    expect(te.reasons).toContain('spare TE');
+    expect(te.reasons).not.toContain('FLEX-eligible');
+    expect(rb.reasons).toContain('FLEX-eligible');
+    expect(te.score).toBeLessThan(rb.score);
+  });
+
   it('still treats a spare QB as a real candidate while SUPERFLEX is open', () => {
     const superflexSlots: RosterSlots = { ...SLOTS, SUPERFLEX: 1 };
     const pool = [player({ id: 'qb2', pos: 'QB', tier: 2 }), player({ id: 'wr1', pos: 'WR', tier: 5 })];
