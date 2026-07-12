@@ -148,17 +148,30 @@ export function suggestPicks(
     // The actual between-picks question: will he still be there when it
     // comes back around? Simulated odds when available; raw ADP otherwise.
     // Only for startable players: "he'll be gone" is no reason to draft
-    // someone who couldn't play for you anyway.
+    // someone who couldn't play for you anyway. The discount side matters as
+    // much as the boost: a player the sheet loves but the room takes rounds
+    // later (expert rank 68, market ADP 136) should read "can wait", not
+    // jump the queue over players who won't survive the gap.
     if (startable && opts.nextPickNumber) {
       const gone = opts.takenOdds?.get(p.id);
       if (gone !== undefined) {
         if (gone >= 0.5) {
           score += 1 + 3 * gone;
           reasons.push(`${Math.round(gone * 100)}% gone by your next pick (#${opts.nextPickNumber})`);
+        } else if (gone <= 0.35) {
+          score *= 0.75;
+          reasons.push(
+            `${Math.round((1 - gone) * 100)}% chance he lasts to your next pick (#${opts.nextPickNumber}), can wait`,
+          );
         }
-      } else if (adp !== undefined && adp < opts.nextPickNumber) {
-        score += 2;
-        reasons.push(`likely gone before your next pick (#${opts.nextPickNumber})`);
+      } else if (adp !== undefined) {
+        if (adp < opts.nextPickNumber) {
+          score += 2;
+          reasons.push(`likely gone before your next pick (#${opts.nextPickNumber})`);
+        } else if (adp >= opts.nextPickNumber + opts.teamCount) {
+          score *= 0.75;
+          reasons.push(`market takes him after your next pick (ADP ${Math.round(adp)}), can wait`);
+        }
       }
     }
 

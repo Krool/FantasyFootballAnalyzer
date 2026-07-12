@@ -5,7 +5,7 @@
 // the last event and re-derive).
 
 import type { RosterSlots } from '@/types';
-import type { DraftEvent, DraftRoomConfig, PoolPlayer } from '@/types/draft';
+import type { DraftEvent, DraftRoomConfig, KeeperAssignment, PoolPlayer } from '@/types/draft';
 import { teamForPick } from './snakeOrder';
 
 export type StarterPos = 'QB' | 'RB' | 'WR' | 'TE' | 'K' | 'DST';
@@ -116,14 +116,19 @@ export function applyPickToTeam(team: TeamDraftState, pos: string, slots: Roster
 
 export type LineupSlot = StarterPos | 'FLEX' | 'SUPERFLEX' | 'BENCH';
 
-export interface LineupAssignment {
+export interface LineupAssignment<T extends { player: PoolPlayer } = DraftedPlayer> {
   slot: LineupSlot;
-  pick: DraftedPlayer;
+  pick: T;
 }
 
 // The same greedy assignment, but returning which slot each pick landed in,
 // so panels can render a roster shaped like a lineup instead of pick order.
-export function assignLineup(picks: DraftedPlayer[], slots: RosterSlots): LineupAssignment[] {
+// Generic over the pick shape: reserved keepers (no event yet) ride through
+// the same math as logged picks.
+export function assignLineup<T extends { player: PoolPlayer }>(
+  picks: T[],
+  slots: RosterSlots,
+): LineupAssignment<T>[] {
   const filled = emptySlotsFilled();
   return picks.map(pick => {
     const pos = pick.player.pos;
@@ -146,13 +151,13 @@ export function assignLineup(picks: DraftedPlayer[], slots: RosterSlots): Lineup
   });
 }
 
-export interface LineupRow {
+export interface LineupRow<T extends { player: PoolPlayer } = DraftedPlayer> {
   key: string;
   slot: LineupSlot;
   // Display abbreviation for the slot, computed once so render sites agree.
   label: string;
   // null = the slot is still open.
-  pick: DraftedPlayer | null;
+  pick: T | null;
 }
 
 const SLOT_LABELS: Partial<Record<LineupSlot, string>> = { FLEX: 'FLX', SUPERFLEX: 'SFLX', BENCH: 'BN' };
@@ -160,15 +165,18 @@ const SLOT_LABELS: Partial<Record<LineupSlot, string>> = { FLEX: 'FLX', SUPERFLE
 // A roster rendered lineup-shaped: every starting slot present (filled or
 // open), bench rows below. Holes jump out in a way pick order never shows.
 // Shared by MyTeamPanel and the Teams tab.
-export function lineupRows(picks: DraftedPlayer[], slots: RosterSlots): LineupRow[] {
+export function lineupRows<T extends { player: PoolPlayer }>(
+  picks: T[],
+  slots: RosterSlots,
+): LineupRow<T>[] {
   const assignments = assignLineup(picks, slots);
-  const bySlot = new Map<LineupSlot, DraftedPlayer[]>();
+  const bySlot = new Map<LineupSlot, T[]>();
   for (const a of assignments) {
     const group = bySlot.get(a.slot) ?? [];
     group.push(a.pick);
     bySlot.set(a.slot, group);
   }
-  const rows: LineupRow[] = [];
+  const rows: LineupRow<T>[] = [];
   const slotOrder: LineupSlot[] = [
     ...STARTER_POSITIONS.filter(p => p !== 'K' && p !== 'DST'),
     'FLEX',
@@ -186,6 +194,30 @@ export function lineupRows(picks: DraftedPlayer[], slots: RosterSlots): LineupRo
     rows.push({ key: `BN-${i}`, slot: 'BENCH', label: 'BN', pick }),
   );
   return rows;
+}
+
+// A keeper a team holds that the draft hasn't auto-logged yet. Roster panels
+// show these as filled slots from pick one: the player is spoken for even
+// though no event exists yet.
+export interface ReservedKeeper {
+  player: PoolPlayer;
+  costRound?: number;
+  keeperPrice?: number;
+}
+
+export function reservedKeepersFor(
+  teamId: string,
+  keepers: KeeperAssignment[] | undefined,
+  reservedPlayerIds: Set<string>,
+  playerById: Map<string, PoolPlayer>,
+): ReservedKeeper[] {
+  const out: ReservedKeeper[] = [];
+  for (const k of keepers ?? []) {
+    if (k.teamId !== teamId || !reservedPlayerIds.has(k.playerId)) continue;
+    const player = playerById.get(k.playerId);
+    if (player) out.push({ player, costRound: k.costRound, keeperPrice: k.keeperPrice });
+  }
+  return out;
 }
 
 export function deriveDraftState(

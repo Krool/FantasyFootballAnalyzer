@@ -142,6 +142,51 @@ describe('suggestPicks', () => {
     expect(wr1.score).toBeGreaterThan(wr2.score);
   });
 
+  it('discounts a player the sims say will survive to the next pick', () => {
+    const pool = [
+      player({ id: 'wr-leaving', pos: 'WR' }),
+      player({ id: 'wr-safe', pos: 'WR' }),
+    ];
+    const top = suggestPicks(
+      pool,
+      team(),
+      SLOTS,
+      values(pool, { 'wr-leaving': 20, 'wr-safe': 22 }),
+      opts({
+        nextPickNumber: 20,
+        takenOdds: new Map([
+          ['wr-leaving', 0.7],
+          ['wr-safe', 0.1],
+        ]),
+      }),
+    );
+    const safe = top.find(s => s.player.id === 'wr-safe')!;
+    const leaving = top.find(s => s.player.id === 'wr-leaving')!;
+    // The richer sheet value loses to the player who won't come back around.
+    expect(safe.reasons).toContain('90% chance he lasts to your next pick (#20), can wait');
+    expect(leaving.score).toBeGreaterThan(safe.score);
+  });
+
+  it('discounts a sheet darling whose market ADP sits rounds past the next pick', () => {
+    // The Jadarian Price case: experts rank him top-40 available, the room
+    // takes him at 136. Without odds, the ADP gap should read "can wait".
+    const pool = [
+      player({ id: 'rb-darling', pos: 'RB', sleeperAdp: 136 }),
+      player({ id: 'rb-market', pos: 'RB', sleeperAdp: 78 }),
+    ];
+    const top = suggestPicks(
+      pool,
+      team(),
+      SLOTS,
+      values(pool, { 'rb-darling': 22, 'rb-market': 20 }),
+      opts({ pickCount: 74, nextPickNumber: 89 }),
+    );
+    const darling = top.find(s => s.player.id === 'rb-darling')!;
+    const market = top.find(s => s.player.id === 'rb-market')!;
+    expect(darling.reasons).toContain('market takes him after your next pick (ADP 136), can wait');
+    expect(market.score).toBeGreaterThan(darling.score);
+  });
+
   it('falls back to ADP for the next-pick warning without odds', () => {
     const pool = [player({ id: 'wr1', pos: 'WR', sleeperAdp: 10 })];
     const top = suggestPicks(

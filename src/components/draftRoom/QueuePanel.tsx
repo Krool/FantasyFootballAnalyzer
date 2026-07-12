@@ -20,12 +20,19 @@ export function QueuePanel({ room, queue, onSelect }: QueuePanelProps) {
   const { pool, derived } = room;
   const { playClick } = useSounds();
 
+  // Drafted players fall out; keeper-reserved players too (nobody but their
+  // team can take them, so queuing them is a dead row).
   const players = useMemo(() => {
     const byId = new Map(pool.players.map(p => [p.id, p]));
     return queue.ids
       .map(id => byId.get(id))
-      .filter((p): p is PoolPlayer => p !== undefined && !derived.draftedPlayerIds.has(p.id));
-  }, [queue.ids, pool.players, derived.draftedPlayerIds]);
+      .filter(
+        (p): p is PoolPlayer =>
+          p !== undefined &&
+          !derived.draftedPlayerIds.has(p.id) &&
+          !derived.reservedPlayerIds.has(p.id),
+      );
+  }, [queue.ids, pool.players, derived.draftedPlayerIds, derived.reservedPlayerIds]);
 
   return (
     <div className={panels.panel}>

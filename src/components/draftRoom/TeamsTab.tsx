@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
+import { reservedKeepersFor } from '@/utils/draftEngine';
 import { RosterSummary } from './RosterSummary';
 import panel from './Panels.module.css';
 import styles from './TeamsTab.module.css';
@@ -61,6 +62,20 @@ export function TeamsTab({ room, viewTeamId, onViewTeam }: TeamsTabProps) {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [step]);
+
+  // The viewed team's not-yet-logged keepers, shown as filled K slots.
+  const reserved = useMemo(
+    () =>
+      team
+        ? reservedKeepersFor(
+            team.id,
+            config.keepers,
+            derived.reservedPlayerIds,
+            new Map(room.pool.players.map(p => [p.id, p])),
+          )
+        : [],
+    [team, config.keepers, derived.reservedPlayerIds, room.pool.players],
+  );
 
   if (!team || !state) return null;
 
@@ -136,6 +151,7 @@ export function TeamsTab({ room, viewTeamId, onViewTeam }: TeamsTabProps) {
       <RosterSummary
         state={state}
         rosterSlots={config.rosterSlots}
+        reserved={reserved}
         listClassName={styles.lineup}
         showPickNumbers
       />

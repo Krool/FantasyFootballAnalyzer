@@ -86,6 +86,18 @@
   color: var(--bone-dim);
 }
 
+/* Reserved keeper marker in a lineup row: spoken for, not yet logged. */
+.keeperChip {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  background: var(--bone-dim);
+  padding: 0.08rem 0.3rem;
+  white-space: nowrap;
+}
+
 .rowNote {
   color: var(--blood-text);
   font-size: 0.62rem;

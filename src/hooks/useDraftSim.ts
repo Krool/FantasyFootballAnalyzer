@@ -143,8 +143,10 @@ export function useDraftSim(room: UseDraftRoomReturn, options?: UseDraftSimOptio
         for (const id of myQueue) {
           const queued = availableById.get(id);
           if (!queued || team.fullAt[queued.pos as keyof typeof team.fullAt]) continue;
-          logEvent({ kind: 'snake_pick', playerId: queued.id, teamId });
-          return;
+          // A rejection (e.g. a validation edge the fullAt check missed) must
+          // fall through to the next queued player or the AI pick; returning
+          // on failure would stall the whole mock.
+          if (logEvent({ kind: 'snake_pick', playerId: queued.id, teamId }) === null) return;
         }
       }
       const round = roundForPick(derived.pickCount, config.teams.length);

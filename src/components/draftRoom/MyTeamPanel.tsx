@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { starterPlanCost } from '@/utils/auctionMath';
+import { reservedKeepersFor } from '@/utils/draftEngine';
 import { RosterSummary } from './RosterSummary';
 import styles from './Panels.module.css';
 
@@ -19,6 +20,18 @@ export function MyTeamPanel({ room }: MyTeamPanelProps) {
   const planCost = useMemo(
     () => (me && isAuction ? starterPlanCost(me, derived.available, scaledValues) : 0),
     [me, isAuction, derived.available, scaledValues],
+  );
+
+  // My not-yet-logged keepers, shown as filled slots from pick one.
+  const reserved = useMemo(
+    () =>
+      reservedKeepersFor(
+        config.myTeamId,
+        config.keepers,
+        derived.reservedPlayerIds,
+        new Map(room.pool.players.map(p => [p.id, p])),
+      ),
+    [config.myTeamId, config.keepers, derived.reservedPlayerIds, room.pool.players],
   );
 
   if (!me) return null;
@@ -45,7 +58,7 @@ export function MyTeamPanel({ room }: MyTeamPanelProps) {
           </div>
         </div>
       )}
-      <RosterSummary state={me} rosterSlots={config.rosterSlots} />
+      <RosterSummary state={me} rosterSlots={config.rosterSlots} reserved={reserved} />
     </div>
   );
 }

@@ -75,6 +75,44 @@ describe('DraftBoard', () => {
   });
 });
 
+describe('DraftBoard keepers', () => {
+  it('marks the keeper slot before its round and fills it when the draft arrives', () => {
+    const { result } = renderHook(() => useDraftRoom(makeLeague()));
+    act(() => result.current.updateConfig({ rosterSlots: TINY_SLOTS }));
+    const keeper = result.current.pool.players[0];
+    act(() =>
+      result.current.updateConfig({
+        keepers: [{ teamId: 't2', playerId: keeper.id, costRound: 2 }],
+      }),
+    );
+    act(() => result.current.start());
+
+    // Before the draft reaches round 2, t2's slot shows a Keeper placeholder.
+    const first = render(<DraftBoard room={result.current} />);
+    expect(screen.getByTitle(`Keeper slot: ${keeper.name}`)).toBeInTheDocument();
+    first.unmount();
+
+    // Round 1 plays out; reaching t2's round-2 pick auto-logs the keeper.
+    const open = result.current.derived.available.filter(p => p.id !== keeper.id);
+    act(() => {
+      result.current.logEvent({ kind: 'snake_pick', playerId: open[0].id, teamId: 't1' });
+    });
+    act(() => {
+      result.current.logEvent({ kind: 'snake_pick', playerId: open[1].id, teamId: 't2' });
+    });
+    expect(result.current.events).toHaveLength(3);
+    const keeperEvent = result.current.events[2];
+    expect(keeperEvent.playerId).toBe(keeper.id);
+    expect(keeperEvent.isKeeper).toBe(true);
+
+    render(<DraftBoard room={result.current} />);
+    // The 2.01 cell is filled with the kept player and the K corner marker.
+    expect(screen.getByTitle(new RegExp(`2\\.01 · ${keeper.name}`))).toBeInTheDocument();
+    expect(screen.getByText('K')).toBeInTheDocument();
+    expect(screen.queryByTitle(`Keeper slot: ${keeper.name}`)).not.toBeInTheDocument();
+  });
+});
+
 describe('AuctionBoard', () => {
   it('shows roster slot rows, budgets, and the winning price', () => {
     const { result } = renderHook(() => useDraftRoom(makeLeague('auction')));
