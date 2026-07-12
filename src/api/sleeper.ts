@@ -342,17 +342,22 @@ export async function loadLeague(leagueId: string): Promise<League> {
   // Calculate replacement levels based on league settings
   const replacementLevels = calculateReplacementLevels(rosterSlots, leagueData.total_rosters);
 
+  // Pick the stat column matching the league's scoring rules. Used for both
+  // replacement points and draft-pick season points: grading a standard or
+  // half-PPR league on full-PPR points over-ranks reception-heavy players.
+  const pointsForScoring = (stats: { pts_ppr?: number; pts_half_ppr?: number; pts_std?: number } | undefined) =>
+    scoringType === 'ppr'
+      ? stats?.pts_ppr
+      : scoringType === 'half_ppr'
+        ? stats?.pts_half_ppr
+        : stats?.pts_std;
+
   // Build position stats for all players to calculate replacement points
   const allPlayerStats: PositionStats[] = [];
   Object.entries(seasonStats).forEach(([playerId, stats]) => {
     const player = players[playerId];
     if (player && player.position) {
-      // Use the appropriate scoring type
-      const points = scoringType === 'ppr'
-        ? stats.pts_ppr
-        : scoringType === 'half_ppr'
-          ? stats.pts_half_ppr
-          : stats.pts_std;
+      const points = pointsForScoring(stats);
 
       if (points !== undefined) {
         allPlayerStats.push({
@@ -397,9 +402,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
       isKeeper: pick.is_keeper === true,
       // Auction sale price rides in pick metadata as a string.
       auctionValue: pick.metadata?.amount ? parseInt(pick.metadata.amount, 10) || undefined : undefined,
-      seasonPoints: seasonStats[pick.player_id]?.pts_ppr ??
-                    seasonStats[pick.player_id]?.pts_half_ppr ??
-                    seasonStats[pick.player_id]?.pts_std ?? 0,
+      seasonPoints: pointsForScoring(seasonStats[pick.player_id]) ?? 0,
     };
 
     const picks = teamDraftPicks.get(pick.roster_id) || [];

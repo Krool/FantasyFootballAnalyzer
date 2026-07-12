@@ -98,6 +98,7 @@ interface RoomOverrides {
   phase?: DraftRoomPhase;
   pool?: DraftPoolFile;
   logEvent?: (event: DraftEventInput) => string | null;
+  logEvents?: (events: DraftEventInput[]) => { index: number; error: string } | null;
 }
 
 function makeRoom(overrides: RoomOverrides = {}): UseDraftRoomReturn {
@@ -115,6 +116,7 @@ function makeRoom(overrides: RoomOverrides = {}): UseDraftRoomReturn {
     updateConfig: vi.fn(),
     start: vi.fn(),
     logEvent: overrides.logEvent ?? vi.fn(() => null),
+    logEvents: overrides.logEvents ?? vi.fn(() => null),
     undo: vi.fn(),
     reset: vi.fn(),
     resume: vi.fn(),
@@ -158,9 +160,9 @@ afterEach(() => {
 
 describe('useLiveDraftSync', () => {
   it('ingests a fresh snake pick, mapping the Sleeper player and roster onto pool/team ids', async () => {
-    const logEvent = vi.fn(() => null);
+    const logEvents = vi.fn(() => null);
     const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);
-    const room = makeRoom({ logEvent, pool });
+    const room = makeRoom({ logEvents, pool });
     mockedGetLeagueDrafts.mockResolvedValue([makeDraftStub()]);
     mockedGetLiveDraftPicks.mockResolvedValue([makePick({ pick_no: 1, roster_id: 1 })]);
 
@@ -171,20 +173,22 @@ describe('useLiveDraftSync', () => {
       await vi.advanceTimersByTimeAsync(0);
     });
 
-    expect(logEvent).toHaveBeenCalledWith({
-      kind: 'snake_pick',
-      playerId: 'pool-1',
-      teamId: '1',
-      isKeeper: undefined,
-    });
+    expect(logEvents).toHaveBeenCalledWith([
+      {
+        kind: 'snake_pick',
+        playerId: 'pool-1',
+        teamId: '1',
+        isKeeper: undefined,
+      },
+    ]);
     expect(result.current.status).toBe('syncing');
     expect(result.current.enabled).toBe(true);
   });
 
   it('dispatches an auction_sale event for an auction draft with a bid amount', async () => {
-    const logEvent = vi.fn(() => null);
+    const logEvents = vi.fn(() => null);
     const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);
-    const room = makeRoom({ logEvent, pool, config: { draftType: 'auction' } });
+    const room = makeRoom({ logEvents, pool, config: { draftType: 'auction' } });
     mockedGetLeagueDrafts.mockResolvedValue([makeDraftStub({ type: 'auction' })]);
     mockedGetLiveDraftPicks.mockResolvedValue([
       makePick({ pick_no: 1, roster_id: 2, metadata: { amount: '25' } }),
@@ -197,21 +201,54 @@ describe('useLiveDraftSync', () => {
       await vi.advanceTimersByTimeAsync(0);
     });
 
-    expect(logEvent).toHaveBeenCalledWith({
-      kind: 'auction_sale',
-      playerId: 'pool-1',
-      nominatedById: '2',
-      wonById: '2',
-      price: 25,
+    expect(logEvents).toHaveBeenCalledWith([
+      {
+        kind: 'auction_sale',
+        playerId: 'pool-1',
+        nominatedById: '2',
+        wonById: '2',
+        price: 25,
+      },
+    ]);
+    expect(result.current.status).toBe('syncing');
+  })
+
+  it('ingests a multi-pick backlog as one ordered batch (not per-pick calls)', async () => {
+    // Toggling sync on mid-draft delivers every already-made pick in a single
+    // poll. They must go through the batch path so each is validated against
+    // the board state the earlier ones produced, with distinct seqs.
+    const logEvents = vi.fn(() => null);
+    const pool = makePool([
+      makePoolPlayer('pool-1', 'sleeper-1'),
+      makePoolPlayer('pool-2', 'sleeper-2'),
+    ]);
+    const room = makeRoom({ logEvents, pool });
+    mockedGetLeagueDrafts.mockResolvedValue([makeDraftStub()]);
+    mockedGetLiveDraftPicks.mockResolvedValue([
+      makePick({ pick_no: 2, roster_id: 2, player_id: 'sleeper-2' }),
+      makePick({ pick_no: 1, roster_id: 1, player_id: 'sleeper-1' }),
+    ]);
+
+    const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+
+    await act(async () => {
+      result.current.toggle();
+      await vi.advanceTimersByTimeAsync(0);
     });
+
+    expect(logEvents).toHaveBeenCalledTimes(1);
+    expect(logEvents).toHaveBeenCalledWith([
+      { kind: 'snake_pick', playerId: 'pool-1', teamId: '1', isKeeper: undefined },
+      { kind: 'snake_pick', playerId: 'pool-2', teamId: '2', isKeeper: undefined },
+    ]);
     expect(result.current.status).toBe('syncing');
   });
 
   it('stops and does not log a pick whose player is missing from the bundled pool', async () => {
-    const logEvent = vi.fn(() => null);
+    const logEvents = vi.fn(() => null);
     // Pool knows nothing about 'sleeper-missing'.
     const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);
-    const room = makeRoom({ logEvent, pool });
+    const room = makeRoom({ logEvents, pool });
     mockedGetLeagueDrafts.mockResolvedValue([makeDraftStub()]);
     mockedGetLiveDraftPicks.mockResolvedValue([
       makePick({ pick_no: 1, player_id: 'sleeper-missing' }),
@@ -224,16 +261,16 @@ describe('useLiveDraftSync', () => {
       await vi.advanceTimersByTimeAsync(0);
     });
 
-    expect(logEvent).not.toHaveBeenCalled();
+    expect(logEvents).not.toHaveBeenCalled();
     expect(result.current.enabled).toBe(false);
     expect(result.current.status).toBe('error');
     expect(result.current.error).toMatch(/missing from the bundled pool/);
   });
 
-  it('stops and reports the rejection when logEvent refuses a pick', async () => {
-    const logEvent = vi.fn(() => 'Player already drafted');
+  it('stops and reports the rejection when the batch ingest refuses a pick', async () => {
+    const logEvents = vi.fn(() => ({ index: 0, error: 'Player already drafted' }));
     const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);
-    const room = makeRoom({ logEvent, pool });
+    const room = makeRoom({ logEvents, pool });
     mockedGetLeagueDrafts.mockResolvedValue([makeDraftStub()]);
     mockedGetLiveDraftPicks.mockResolvedValue([makePick({ pick_no: 1 })]);
 

@@ -137,7 +137,10 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
     }
     case 'LOG_EVENT': {
       if (state.phase !== 'drafting') return state;
-      const events = [...state.events, action.event];
+      // seq is stamped here, from the authoritative log length: a caller that
+      // dispatches several events in one pass (live sync backlog) holds a
+      // stale closure and would persist duplicate seqs otherwise.
+      const events = [...state.events, { ...action.event, seq: state.events.length }];
       const total = state.config.teams.length * state.config.rounds;
       return { ...state, events, phase: events.length >= total ? 'complete' : 'drafting' };
     }
@@ -188,6 +191,10 @@ export interface UseDraftRoomReturn {
   start: () => void;
   // Returns a rejection message, or null when the event was logged.
   logEvent: (event: DraftEventInput) => string | null;
+  // Batch variant for live sync: validates each event against the board as it
+  // stands AFTER the events before it in the batch. Logs the valid prefix;
+  // returns the first rejection with its batch index, or null.
+  logEvents: (events: DraftEventInput[]) => { index: number; error: string } | null;
   undo: () => void;
   reset: () => void;
   resume: () => void;
@@ -295,6 +302,28 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
     [state.config, state.events.length, derived],
   );
 
+  // Batch ingest (live sync backlog). logEvent in a loop would validate every
+  // event against the same pre-batch board - an auction sale could overdraw a
+  // budget without "exceeds max bid" ever firing - so this re-derives the
+  // board after each event. Logs the valid prefix and reports the first
+  // rejection with its batch index, or null when everything landed.
+  const logEvents = useCallback(
+    (batch: DraftEventInput[]): { index: number; error: string } | null => {
+      let events = state.events;
+      let boardState = derived;
+      for (let i = 0; i < batch.length; i++) {
+        const event = { ...batch[i], seq: events.length, ts: Date.now() } as DraftEvent;
+        const error = validateEvent(state.config, boardState, event);
+        if (error) return { index: i, error };
+        dispatch({ type: 'LOG_EVENT', event });
+        events = [...events, event];
+        boardState = deriveDraftState(state.config, POOL.players, events);
+      }
+      return null;
+    },
+    [state.config, state.events, derived],
+  );
+
   // Keeper picks log themselves: when the draft reaches a team's keeper cost
   // round on their turn, the reserved player consumes the pick. Re-runs after
   // every event, so back-to-back keeper slots chain (and undo replays them).
@@ -366,6 +395,7 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
     updateConfig: useCallback(patch => dispatch({ type: 'UPDATE_CONFIG', patch }), []),
     start: useCallback(() => dispatch({ type: 'START' }), []),
     logEvent,
+    logEvents,
     undo: useCallback(() => dispatch({ type: 'UNDO' }), []),
     reset,
     resume: useCallback(() => {

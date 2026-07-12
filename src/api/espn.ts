@@ -728,6 +728,25 @@ export async function loadLeague(
   }
   const rosterDetectedTrades: RosterTrade[] = [];
 
+  // An executed waiver/FA pickup explains a roster movement WITHOUT a trade:
+  // when team A drops X (B claims him) and B drops Y (A claims him) in the
+  // same week, the diff below would otherwise read that mutual churn as an
+  // A<->B trade - and double-count it, since the adds are already recorded as
+  // waiver transactions. Key: `${toTeamId}-${playerId}` -> weeks added.
+  const waiverAddWeeks = new Map<string, number[]>();
+  allTransactions
+    .filter(tx => tx.status === 'EXECUTED' && (tx.type === 'WAIVER' || tx.type === 'FREEAGENT') && tx.items)
+    .forEach(tx => {
+      (tx.items || []).forEach(item => {
+        if (item.type === 'ADD' && item.toTeamId !== undefined) {
+          const key = `${item.toTeamId}-${item.playerId}`;
+          const addWeeks = waiverAddWeeks.get(key) || [];
+          addWeeks.push(tx.scoringPeriodId);
+          waiverAddWeeks.set(key, addWeeks);
+        }
+      });
+    });
+
   // Compare consecutive weeks
   const weeks = Array.from(rostersByWeek.keys()).sort((a, b) => a - b);
   for (let i = 0; i < weeks.length - 1; i++) {
@@ -745,6 +764,9 @@ export async function loadLeague(
       const team1 = roster1.get(playerId);
       // Player was on a different team in week 1 (and not new to league)
       if (team1 !== undefined && team1 !== team2) {
+        // Arrival explained by a waiver/FA pickup in this window: not a trade leg.
+        const addWeeks = waiverAddWeeks.get(`${team2}-${playerId}`);
+        if (addWeeks?.some(w => w >= week1 && w <= week2)) return;
         const key = `${team1}-${team2}`;
         const existing = movements.get(key) || [];
         existing.push(playerId);

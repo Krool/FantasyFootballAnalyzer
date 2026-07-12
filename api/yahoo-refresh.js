@@ -42,8 +42,14 @@ export default async function handler(req, res) {
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
-      console.error('Token refresh failed:', errorData);
-      return res.status(401).json({ error: 'Token refresh failed' });
+      console.error('Token refresh failed:', tokenResponse.status, errorData);
+      // Preserve the failure class for the client: it retries 5xx/429 as
+      // transient but treats other 4xx as "refresh token rejected" and signs
+      // the user out. Collapsing a Yahoo outage into 401 here would destroy
+      // a still-valid session over a blip that had nothing to do with it.
+      const upstream = tokenResponse.status;
+      const status = upstream >= 500 ? 502 : upstream === 429 ? 429 : 401;
+      return res.status(status).json({ error: 'Token refresh failed' });
     }
 
     const tokens = await tokenResponse.json();

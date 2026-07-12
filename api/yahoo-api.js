@@ -4,9 +4,11 @@ import { applyCors } from './_cors.js';
 const YAHOO_API_BASE = 'https://fantasysports.yahooapis.com/fantasy/v2';
 
 export default async function handler(req, res) {
-  if (applyCors(req, res, { methods: 'GET, POST, OPTIONS' })) return;
+  // GET only: the upstream fetch below is hardcoded to GET, so admitting
+  // POST here would silently execute a future write call as a read.
+  if (applyCors(req, res, { methods: 'GET, OPTIONS' })) return;
 
-  if (req.method !== 'GET' && req.method !== 'POST') {
+  if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 

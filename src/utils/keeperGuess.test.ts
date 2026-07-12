@@ -189,4 +189,37 @@ describe('auction keeper prices', () => {
     expect(keepers).toHaveLength(1);
     expect(keepers[0].keeperPrice).toBe(27);
   });
+
+  it('keeps every auction keeper on a team (no round-collision drop)', () => {
+    // Sleeper stamps round 1 on ALL auction picks, so two auction keepers on
+    // one team share costRound 1. They cost budget, not a round: the snake
+    // round dedup must not swallow the second one.
+    const team: Team = {
+      id: 'A',
+      name: 'Team A',
+      draftPicks: [
+        {
+          pickNumber: 1,
+          round: 1,
+          player: leaguePlayer('Star Back', 'RB'),
+          teamId: 'A',
+          teamName: 'Team A',
+          auctionValue: 40,
+        },
+        {
+          pickNumber: 2,
+          round: 1,
+          player: leaguePlayer('Great Receiver', 'WR'),
+          teamId: 'A',
+          teamName: 'Team A',
+          auctionValue: 30,
+        },
+      ],
+    };
+    const keepers = guessKeepers([team], POOL, 2, 6, 2);
+    expect(keepers).toHaveLength(2);
+    const ids = keepers.map(k => k.playerId).sort();
+    expect(ids).toEqual(['p1', 'p2']);
+    expect(keepers.every(k => k.keeperPrice != null)).toBe(true);
+  });
 });

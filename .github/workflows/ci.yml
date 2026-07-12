@@ -18,8 +18,10 @@ on:
     branches: [master]
 
 # Cancel superseded PR runs, but never interrupt a master run mid-deploy.
+# Master pushes share the deploy-pages group with the daily rankings workflow
+# so the two gh-pages publishes serialize instead of interleaving.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ github.event_name == 'push' && 'deploy-pages' || format('ci-{0}', github.ref) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -31,23 +33,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2 # need the parent commit to detect a draft-pool timestamp regression
+          fetch-depth: 0 # the stale-pool guard diffs against the pre-push tip, which can be many commits back
 
       # Guard against the clobber that bit us once (af2bb49): a human commit that
       # carries a stale, locally-built draft pool and silently reverts the bot's
       # daily data. The bot and any fresh rebuild only move generatedAt forward;
       # an untouched commit leaves it equal. So if this push moves any
-      # draftPool.<season>.json generatedAt BACKWARD versus its parent commit,
-      # stop before deploying. ISO-8601 timestamps compare correctly as strings.
+      # draftPool.<season>.json generatedAt BACKWARD versus the pre-push master
+      # tip, stop before deploying. Compared against github.event.before, not
+      # HEAD~1: a multi-commit push can bury the stale pool one commit deep,
+      # where a parent-only check never sees it. ISO-8601 timestamps compare
+      # correctly as strings.
       # Deliberately rolling data back? Rebuild fresh (npm run update:rankings)
       # so it moves forward, or use the npm run deploy break-glass.
       - name: Guard against stale draft-pool clobber
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
+          base="${{ github.event.before }}"
+          # Force push or missing before-SHA (also the all-zeros SHA): fall
+          # back to the parent commit rather than skipping the guard entirely.
+          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            base=$(git rev-parse HEAD~1 2>/dev/null || true)
+          fi
+          [ -n "$base" ] || { echo "No base commit to compare against; skipping guard."; exit 0; }
           for f in src/data/draftPool.*.json; do
             [ -f "$f" ] || continue
             cur=$(grep -m1 '"generatedAt"' "$f" | sed -E 's/.*"generatedAt": *"([^"]+)".*/\1/' || true)
-            prev=$(git show "HEAD~1:$f" 2>/dev/null | grep -m1 '"generatedAt"' | sed -E 's/.*"generatedAt": *"([^"]+)".*/\1/' || true)
+            prev=$(git show "$base:$f" 2>/dev/null | grep -m1 '"generatedAt"' | sed -E 's/.*"generatedAt": *"([^"]+)".*/\1/' || true)
             if [ -n "$prev" ] && [ -n "$cur" ] && [[ "$cur" < "$prev" ]]; then
               echo "::error::$f generatedAt moved backward ($prev -> $cur). This looks like a stale local pool clobbering the bot's update. Run 'git checkout origin/master -- src/data' or 'npm run update:rankings', then recommit."
               exit 1
@@ -88,8 +100,25 @@ jobs:
             echo "::notice::Homepage prerender injected static markup into dist/index.html."
           fi
 
-      - name: Deploy to GitHub Pages
+      # If master moved while this run was building (e.g. the daily rankings
+      # job rebased our commit in, deployed, and pushed its data commit),
+      # deploying our older tree now would overwrite that newer deploy and
+      # drop the fresh data from production until the next run. The newer
+      # commit's own deploy already includes this commit, so skip ours.
+      - name: Check this commit is still the master tip
+        id: tip
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          git fetch origin master
+          if [ "$(git rev-parse origin/master)" = "${{ github.sha }}" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::master moved past ${{ github.sha }} while this run built; skipping deploy (the newer commit's deploy includes this one)."
+          fi
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master' && steps.tip.outputs.deploy == 'true'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -113,6 +113,36 @@ describe('useDraftRoom', () => {
     expect(result.current.derived.pickCount).toBe(4);
   });
 
+  it('logEvents ingests a batch with distinct seqs and validates against the mid-batch board', () => {
+    const { result } = renderHook(() => useDraftRoom(makeLeague()));
+    act(() => result.current.updateConfig({ rosterSlots: TINY_SLOTS }));
+    act(() => result.current.start());
+
+    const [p1, p2] = POOL.players;
+
+    // A batch that repeats a player must be rejected at the SECOND entry:
+    // per-event validation against the pre-batch board would let it through.
+    let rejection: { index: number; error: string } | null = null;
+    act(() => {
+      rejection = result.current.logEvents([
+        { kind: 'snake_pick', playerId: p1.id, teamId: 't1' },
+        { kind: 'snake_pick', playerId: p1.id, teamId: 't2' },
+      ]);
+    });
+    expect(rejection).toEqual({ index: 1, error: expect.stringMatching(/already been drafted/i) });
+    // The valid prefix (the first pick) landed.
+    expect(result.current.events).toHaveLength(1);
+
+    act(() => {
+      rejection = result.current.logEvents([{ kind: 'snake_pick', playerId: p2.id, teamId: 't2' }]);
+    });
+    expect(rejection).toBeNull();
+
+    // Batched events carry consecutive, unique seqs (they persist and drive
+    // spark dedup), even though both dispatches shared one render's closure.
+    expect(result.current.events.map(e => e.seq)).toEqual([0, 1]);
+  });
+
   it('undo pops the last event and reopens a completed draft', () => {
     const { result } = renderHook(() => useDraftRoom(makeLeague()));
     act(() => result.current.updateConfig({ rosterSlots: TINY_SLOTS }));

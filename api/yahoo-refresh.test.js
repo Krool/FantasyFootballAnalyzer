@@ -103,13 +103,39 @@ describe('yahoo-refresh token exchange', () => {
     expect(opts.body.toString()).toContain('grant_type=refresh_token')
   })
 
-  it('maps an upstream failure to 401', async () => {
+  // The client (src/api/yahoo.ts refreshAccessToken) retries 5xx/429 as
+  // transient but signs the user out on any other 4xx. The proxy must keep
+  // those classes distinct or a Yahoo outage destroys a valid session.
+  it('maps a rejected refresh token (upstream 400) to 401', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({
       ok: false,
+      status: 400,
       text: async () => 'invalid_grant',
     })))
     const res = mockRes()
     await handler(mockReq({ body: { refresh_token: 'stale' } }), res)
     expect(res.statusCode).toBe(401)
+  })
+
+  it('maps a transient upstream outage (5xx) to 502, not 401', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: false,
+      status: 503,
+      text: async () => 'service unavailable',
+    })))
+    const res = mockRes()
+    await handler(mockReq({ body: { refresh_token: 'still-valid' } }), res)
+    expect(res.statusCode).toBe(502)
+  })
+
+  it('passes an upstream 429 rate limit through as 429', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: false,
+      status: 429,
+      text: async () => 'rate limited',
+    })))
+    const res = mockRes()
+    await handler(mockReq({ body: { refresh_token: 'still-valid' } }), res)
+    expect(res.statusCode).toBe(429)
   })
 })

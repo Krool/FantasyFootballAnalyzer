@@ -411,6 +411,59 @@ describe('espn loadLeague my-team detection (cookies)', () => {
   });
 });
 
+describe('espn loadLeague waiver churn vs trade detection', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('does not report a mutual same-week waiver swap as a trade', async () => {
+    // The same 203/204 roster swap the trade test detects, but here the
+    // transaction log explains it: team 1 claimed 204 and team 2 claimed 203
+    // off waivers in the same week (each dropped by the other side). That is
+    // routine churn, already recorded as two waiver pickups; the roster-diff
+    // heuristic must not double-count it as a trade.
+    const churnTransactions = {
+      transactions: [
+        {
+          id: 9101,
+          scoringPeriodId: 4,
+          type: 'WAIVER',
+          status: 'EXECUTED',
+          bidAmount: 7,
+          proposedDate: 1730000000000,
+          items: [
+            { playerId: 204, fromTeamId: 0, toTeamId: 1, type: 'ADD' },
+            { playerId: 203, fromTeamId: 1, toTeamId: 0, type: 'DROP' },
+          ],
+        },
+        {
+          id: 9102,
+          scoringPeriodId: 4,
+          type: 'WAIVER',
+          status: 'EXECUTED',
+          bidAmount: 3,
+          proposedDate: 1730000001000,
+          items: [
+            { playerId: 203, fromTeamId: 0, toTeamId: 2, type: 'ADD' },
+            { playerId: 204, fromTeamId: 2, toTeamId: 0, type: 'DROP' },
+          ],
+        },
+      ],
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('view=mTransactions2')) return jsonResponse(churnTransactions);
+      return jsonResponse(routeESPN(url));
+    }));
+
+    const league = await loadLeague(LEAGUE_ID, SEASON);
+    expect(league.trades ?? []).toHaveLength(0);
+    // The pickups still land as waiver transactions for both teams.
+    expect(league.teams.find(t => t.id === '1')!.transactions).toHaveLength(1);
+    expect(league.teams.find(t => t.id === '2')!.transactions).toHaveLength(1);
+  });
+});
+
 describe('espn loadLeague scoring detection', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
