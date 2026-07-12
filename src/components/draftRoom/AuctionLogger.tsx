@@ -112,6 +112,7 @@ export function AuctionLogger({ room, selected, onLogged }: AuctionLoggerProps) 
         <span className={styles.label}>Nominated By</span>
         <select
           className={styles.select}
+          aria-label="Nominated by"
           value={effectiveNominator}
           onChange={e => setNominatorId(e.target.value)}
         >
@@ -129,6 +130,7 @@ export function AuctionLogger({ room, selected, onLogged }: AuctionLoggerProps) 
         <select
           ref={winnerRef}
           className={styles.select}
+          aria-label="Won by"
           value={winnerId}
           onChange={e => setWinnerId(e.target.value)}
           onKeyDown={onWinnerKeyDown}
@@ -154,6 +156,7 @@ export function AuctionLogger({ room, selected, onLogged }: AuctionLoggerProps) 
           <input
             ref={priceRef}
             type="number"
+            aria-label="Sale price"
             className={styles.priceInput}
             min={1}
             value={price}

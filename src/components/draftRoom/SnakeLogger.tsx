@@ -59,6 +59,7 @@ export function SnakeLogger({ room, selected, onLogged }: SnakeLoggerProps) {
         <span className={styles.label}>Drafted By</span>
         <select
           className={styles.select}
+          aria-label="Drafted by"
           value={effectiveTeam}
           onChange={e => setTeamOverride(e.target.value)}
         >

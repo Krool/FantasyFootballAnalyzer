@@ -342,6 +342,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                     <button
                       type="button"
                       className={config.dynastyMode !== 'rookie' ? styles.toggleOn : styles.toggleOff}
+                      aria-pressed={config.dynastyMode !== 'rookie'}
                       onClick={() => setDynastyMode('startup')}
                       title="Initial draft of the whole pool, ordered by dynasty value"
                     >
@@ -350,6 +351,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                     <button
                       type="button"
                       className={config.dynastyMode === 'rookie' ? styles.toggleOn : styles.toggleOff}
+                      aria-pressed={config.dynastyMode === 'rookie'}
                       onClick={() => setDynastyMode('rookie')}
                       title="Annual rookies-only draft, linear order"
                     >
@@ -365,6 +367,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                   <button
                     type="button"
                     className={config.draftType === 'auction' ? styles.toggleOn : styles.toggleOff}
+                    aria-pressed={config.draftType === 'auction'}
                     onClick={() => updateConfig({ draftType: 'auction' })}
                   >
                     Auction
@@ -372,6 +375,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                   <button
                     type="button"
                     className={config.draftType === 'snake' ? styles.toggleOn : styles.toggleOff}
+                    aria-pressed={config.draftType === 'snake'}
                     onClick={() => updateConfig({ draftType: 'snake' })}
                   >
                     Snake
@@ -405,6 +409,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                             ? styles.toggleOn
                             : styles.toggleOff
                         }
+                        aria-pressed={(config.snakeFormat ?? 'standard') === opt.value}
                         onClick={() => updateConfig({ snakeFormat: opt.value })}
                         title={opt.title}
                       >
@@ -423,6 +428,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                     <button
                       type="button"
                       className={config.mode === 'live' ? styles.toggleOn : styles.toggleOff}
+                      aria-pressed={config.mode === 'live'}
                       onClick={() => updateConfig({ mode: 'live' })}
                     >
                       Live
@@ -430,6 +436,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                     <button
                       type="button"
                       className={config.mode === 'mock' ? styles.toggleOn : styles.toggleOff}
+                      aria-pressed={config.mode === 'mock'}
                       onClick={() => updateConfig({ mode: 'mock' })}
                     >
                       Mock

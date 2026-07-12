@@ -34,7 +34,7 @@ or font in a component. Always reference a CSS variable.
 | `--blood` | `#e63a1f` | Error/loss backgrounds, borders, large display text |
 | `--blood-text` | `#ff6242` | Error/loss text at body sizes. `--blood` is 4.0:1 on ink, under the 4.5:1 AA floor, so small red text uses this instead |
 | `--turf` | `#0f3d2e` | Reserved (rare use only) |
-| `--gold` | `#ffcf3a` | Reserved hardware tier |
+| `--gold` | `#ffcf3a` | Warnings and attention states (warning boxes, status chips, starred players, bye clashes, keeper tags); also the hardware tier |
 
 **Rules:**
 
@@ -609,7 +609,7 @@ These exist; reuse them instead of re-implementing:
 - `.skeleton` (global) — hard-edged loading block with a stepped shimmer;
   use for content-heavy loads instead of a bare spinner
 - `.visually-hidden` (global) — screen-reader-only content (aria-live
-  regions, table captions)
+  regions)
 
 ## Future extraction targets
 

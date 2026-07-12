@@ -533,6 +533,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                       key={tab.key}
                       type="button"
                       className={boardTab === tab.key ? styles.tabOn : styles.tab}
+                      aria-pressed={boardTab === tab.key}
                       onClick={() => setBoardTab(tab.key)}
                       title={tab.title}
                     >

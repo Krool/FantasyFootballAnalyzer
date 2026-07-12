@@ -77,7 +77,8 @@
   align-items: center;
   gap: 0.45rem;
   font-family: var(--font-headline);
-  font-size: 1rem;
+  /* Headline face needs ~1.1rem to stay legible (documented type floor). */
+  font-size: 1.1rem;
   text-transform: uppercase;
   color: var(--bone);
   line-height: 0.95;

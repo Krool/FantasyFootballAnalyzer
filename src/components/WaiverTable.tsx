@@ -434,7 +434,7 @@ export function WaiverTable({ teams, platform, pointsBasis }: WaiverTableProps) 
                     {data.faab > 0 && (
                       <span
                         className={styles.pickupCount}
-                        title={`$${data.faab} FAAB spent — ${data.par > 0 ? `$${(data.faab / data.par).toFixed(2)} per PAR` : 'no PAR return yet'}`}
+                        title={`$${data.faab} FAAB spent, ${data.par > 0 ? `$${(data.faab / data.par).toFixed(2)} per PAR` : 'no PAR return yet'}`}
                       >
                         ${data.faab} FAAB
                         {data.par > 0 ? ` ($${(data.faab / data.par).toFixed(2)}/PAR)` : ''}

@@ -201,8 +201,9 @@
   height: 28px;
   background: var(--lime);
   color: var(--ink);
-  font-family: var(--font-headline);
-  font-weight: 400;
+  /* Bold mono, not Bowlby: headline face is illegible below ~1.1rem. */
+  font-family: var(--font-mono);
+  font-weight: 700;
   font-size: 0.85rem;
   border: 2px solid var(--ink);
 }
@@ -285,8 +286,9 @@
   height: 24px;
   background: var(--yahoo-color);
   color: #fff;
-  font-family: var(--font-headline);
-  font-weight: 400;
+  /* Bold mono, not Bowlby: headline face is illegible below ~1.1rem. */
+  font-family: var(--font-mono);
+  font-weight: 700;
   font-size: 0.85rem;
   margin-right: 0.5rem;
   border: 1px solid var(--ink);

@@ -116,7 +116,7 @@ export function PickLog({ room }: PickLogProps) {
           </button>
         </div>
       </div>
-      <div className={styles.tableWrapper}>
+      <div className={`${styles.tableWrapper} scroll-x-hint`}>
         <table className={styles.table}>
           <thead>
             <tr>

@@ -172,7 +172,9 @@
 }
 
 .points {
-  font-family: var(--font-headline);
+  /* Bold mono, not Bowlby: headline face is illegible below ~1.1rem. */
+  font-family: var(--font-mono);
+  font-weight: 700;
   font-size: 0.95rem;
   color: var(--lime);
 }
