@@ -447,8 +447,12 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
             </div>
             {config.mode === 'mock' && (
               <>
+                {/* A guest room is mock-only (the Mode toggle above is hidden),
+                    so "Mock mode:" would label a choice that doesn't exist. */}
                 <p className={styles.hint}>
-                  Mock mode: the other teams draft automatically so you can practice.
+                  {league.isGuest
+                    ? 'The other teams draft automatically so you can practice. Connect your league to log a real draft.'
+                    : 'Mock mode: the other teams draft automatically so you can practice.'}
                 </p>
                 {config.draftType === 'auction' && (
                   <label className={styles.keeperToggle}>
