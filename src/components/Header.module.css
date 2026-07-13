@@ -6,8 +6,10 @@
   background: var(--ink);
   border-bottom: 3px solid var(--bone);
   padding: 1.1rem 0 0.9rem;
-  position: sticky;
-  top: 0;
+  /* Scrolls away with the page: pinned, the masthead froze ~190px of chrome
+     on phones with a league loaded. relative keeps the z-index working for
+     the year-selector dropdown. */
+  position: relative;
   z-index: 100;
 }
 
