@@ -7,6 +7,7 @@ import { useDraftSim } from '@/hooks/useDraftSim';
 import { useLiveDraftSync } from '@/hooks/useLiveDraftSync';
 import { useSounds } from '@/hooks/useSounds';
 import { useSuggestedPicks } from '@/hooks/useSuggestedPicks';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useYahooValues } from '@/hooks/useYahooValues';
 import { AuctionBoard } from '@/components/draftRoom/AuctionBoard';
 import { AuctionLogger } from '@/components/draftRoom/AuctionLogger';
@@ -15,6 +16,7 @@ import { ConnectedBanner } from '@/components/draftRoom/ConnectedBanner';
 import { DraftBoard } from '@/components/draftRoom/DraftBoard';
 import { DraftRecap } from '@/components/draftRoom/DraftRecap';
 import { DraftSetup } from '@/components/draftRoom/DraftSetup';
+import { DraftSheet } from '@/components/draftRoom/DraftSheet';
 import { LeagueNeeds } from '@/components/draftRoom/LeagueNeeds';
 import { MockBidPanel } from '@/components/draftRoom/MockBidPanel';
 import { MockControls } from '@/components/draftRoom/MockControls';
@@ -68,6 +70,15 @@ const BOARD_TABS: Array<{ key: BoardTab; label: string; title: string }> = [
   { key: 'nfl', label: 'NFL Teams', title: 'The pool by NFL roster: stacks, handcuffs, teammates' },
 ];
 
+type SheetTabKey = 'players' | 'queue' | 'team' | 'log';
+
+const SHEET_TABS: Array<{ key: SheetTabKey; label: string }> = [
+  { key: 'players', label: 'Players' },
+  { key: 'queue', label: 'Queue' },
+  { key: 'team', label: 'Team' },
+  { key: 'log', label: 'Log' },
+];
+
 interface DraftRoomPageProps {
   league: League;
   // True only for the first render after a fresh successful connect landed
@@ -93,6 +104,10 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
   // The board is the selection surface: clicking a row feeds the logger.
   const [selected, setSelected] = useState<PoolPlayer | null>(null);
   const [boardTab, setBoardTab] = useState<BoardTab>('board');
+  // Phone drafting swaps the three-panel grid for a Sleeper-style bottom
+  // sheet: the board owns the screen and these tabs ride in the sheet.
+  const isPhone = useMediaQuery('(max-width: 640px)');
+  const [sheetTab, setSheetTab] = useState<SheetTabKey>('players');
   // Which roster the Teams tab is showing; lives here so flipping to another
   // tab and back doesn't lose the place. null = the user's own team.
   const [viewTeamId, setViewTeamId] = useState<string | null>(null);
@@ -336,8 +351,41 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
 
   const clearSelection = () => setSelected(null);
 
+  // Shared between the desktop three-panel grid and the phone bottom sheet.
+  const logger =
+    phase === 'drafting' ? (
+      isAuction ? (
+        isMock ? (
+          <MockBidPanel room={room} sim={sim} selected={selected} onLogged={clearSelection} />
+        ) : (
+          <AuctionLogger room={room} selected={selected} onLogged={clearSelection} />
+        )
+      ) : (
+        <SnakeLogger room={room} selected={selected} onLogged={clearSelection} />
+      )
+    ) : null;
+
+  const playersPane = (
+    <AvailablePlayers
+      room={room}
+      selectedId={selected?.id ?? null}
+      onSelect={setSelected}
+      onQuickDraft={canQuickDraft ? quickDraft : undefined}
+      excludedPositions={isSnake && isMock ? myFullPositions : undefined}
+      clockFullPositions={clockFullPositions}
+      yahooCosts={yahoo.costs}
+      picksUntilMine={openPicksUntilMine}
+      suggested={isSnake ? suggested : undefined}
+      handcuffFor={isSnake ? handcuffFor : undefined}
+      queue={phase === 'drafting' ? { queued: queue.queued, toggle: queue.toggle } : undefined}
+      inputRef={searchRef}
+    />
+  );
+
+  const phoneSheet = phase === 'drafting' && isPhone;
+
   return (
-    <div className={styles.page}>
+    <div className={phoneSheet ? `${styles.page} ${styles.pageWithSheet}` : styles.page}>
       <div className={phase === 'setup' ? 'container' : `container ${styles.wide}`}>
         <div className={styles.header}>
           <h1 className={styles.title}>Draft Room</h1>
@@ -522,80 +570,85 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
 
             {isSnake ? <DraftBoard room={room} /> : <AuctionBoard room={room} />}
 
-            <div className={styles.grid}>
-              <div className={styles.colLog}>
-                {phase === 'drafting' &&
-                  (isAuction ? (
-                    isMock ? (
-                      <MockBidPanel room={room} sim={sim} selected={selected} onLogged={clearSelection} />
-                    ) : (
-                      <AuctionLogger room={room} selected={selected} onLogged={clearSelection} />
-                    )
-                  ) : (
-                    <SnakeLogger room={room} selected={selected} onLogged={clearSelection} />
-                  ))}
-                <PickLog room={room} />
-              </div>
-              <div className={styles.colMain}>
-                <div className={styles.tabs}>
-                  {BOARD_TABS.map(tab => (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      className={boardTab === tab.key ? styles.tabOn : styles.tab}
-                      aria-pressed={boardTab === tab.key}
-                      onClick={() => setBoardTab(tab.key)}
-                      title={tab.title}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
+            {phoneSheet ? (
+              <DraftSheet
+                tabs={SHEET_TABS}
+                active={sheetTab}
+                onTabChange={key => setSheetTab(key as SheetTabKey)}
+              >
+                {/* Players stays pure pool: the row Draft buttons cover the
+                    common logging flows, and the full logger (odd cases:
+                    another team's pick, auction sales) lives in Log. */}
+                {sheetTab === 'players' && playersPane}
+                {sheetTab === 'queue' && (
+                  <>
+                    {isAuction && <NominationPanel room={room} onSelect={setSelected} />}
+                    <QueuePanel room={room} queue={queue} onSelect={setSelected} />
+                  </>
+                )}
+                {sheetTab === 'team' && (
+                  <>
+                    <MyTeamPanel room={room} />
+                    <LeagueNeeds room={room} />
+                  </>
+                )}
+                {sheetTab === 'log' && (
+                  <>
+                    {logger}
+                    <PickLog room={room} />
+                  </>
+                )}
+              </DraftSheet>
+            ) : (
+              <>
+                <div className={styles.grid}>
+                  <div className={styles.colLog}>
+                    {logger}
+                    <PickLog room={room} />
+                  </div>
+                  <div className={styles.colMain}>
+                    <div className={styles.tabs}>
+                      {BOARD_TABS.map(tab => (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          className={boardTab === tab.key ? styles.tabOn : styles.tab}
+                          aria-pressed={boardTab === tab.key}
+                          onClick={() => setBoardTab(tab.key)}
+                          title={tab.title}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                    {boardTab === 'board' && playersPane}
+                    {boardTab === 'tiers' && (
+                      <TierBoard room={room} selectedId={selected?.id ?? null} onSelect={setSelected} />
+                    )}
+                    {boardTab === 'teams' && (
+                      <TeamsTab room={room} viewTeamId={viewTeamId} onViewTeam={setViewTeamId} />
+                    )}
+                    {boardTab === 'nfl' && (
+                      <NflTeams room={room} selectedId={selected?.id ?? null} onSelect={setSelected} />
+                    )}
+                  </div>
+                  <div className={styles.colSide}>
+                    {isAuction && phase === 'drafting' && (
+                      <NominationPanel room={room} onSelect={setSelected} />
+                    )}
+                    {phase === 'drafting' && (
+                      <QueuePanel room={room} queue={queue} onSelect={setSelected} />
+                    )}
+                    <MyTeamPanel room={room} />
+                    <LeagueNeeds room={room} />
+                  </div>
                 </div>
-                {boardTab === 'board' && (
-                  <AvailablePlayers
-                    room={room}
-                    selectedId={selected?.id ?? null}
-                    onSelect={setSelected}
-                    onQuickDraft={canQuickDraft ? quickDraft : undefined}
-                    excludedPositions={isSnake && isMock ? myFullPositions : undefined}
-                    clockFullPositions={clockFullPositions}
-                    yahooCosts={yahoo.costs}
-                    picksUntilMine={openPicksUntilMine}
-                    suggested={isSnake ? suggested : undefined}
-                    handcuffFor={isSnake ? handcuffFor : undefined}
-                    queue={
-                      phase === 'drafting'
-                        ? { queued: queue.queued, toggle: queue.toggle }
-                        : undefined
-                    }
-                    inputRef={searchRef}
-                  />
-                )}
-                {boardTab === 'tiers' && (
-                  <TierBoard room={room} selectedId={selected?.id ?? null} onSelect={setSelected} />
-                )}
-                {boardTab === 'teams' && (
-                  <TeamsTab room={room} viewTeamId={viewTeamId} onViewTeam={setViewTeamId} />
-                )}
-                {boardTab === 'nfl' && (
-                  <NflTeams room={room} selectedId={selected?.id ?? null} onSelect={setSelected} />
-                )}
-              </div>
-              <div className={styles.colSide}>
-                {isAuction && phase === 'drafting' && (
-                  <NominationPanel room={room} onSelect={setSelected} />
-                )}
-                {phase === 'drafting' && (
-                  <QueuePanel room={room} queue={queue} onSelect={setSelected} />
-                )}
-                <MyTeamPanel room={room} />
-                <LeagueNeeds room={room} />
-              </div>
-            </div>
 
-            <div className={styles.teamsSection}>
-              <TeamBoard room={room} />
-            </div>
+                <div className={styles.teamsSection}>
+                  <TeamBoard room={room} />
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
