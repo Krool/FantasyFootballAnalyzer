@@ -405,6 +405,15 @@ input, select, textarea { font-family: inherit; color: var(--bone); }
   }
 }
 
+/* Inside the mobile draft sheet the sheet body is the scroller. Inner panes
+   cap themselves against the page viewport (max-height: calc(100dvh - ...))
+   for the stacked layout; inside the sheet that would nest a second
+   viewport-height scroller, so relax it here. */
+.draft-sheet-body .scroll-x-hint {
+  max-height: none;
+  min-height: 0;
+}
+
 /* Screen-reader-only content (aria-live announcements, table captions). */
 .visually-hidden {
   position: absolute;

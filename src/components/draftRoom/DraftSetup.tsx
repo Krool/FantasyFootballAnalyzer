@@ -1,9 +1,10 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { League, RosterSlots, ScoringType } from '@/types';
 import type { DraftRoomTeam } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { leagueKeyFor } from '@/hooks/useDraftRoom';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { SnakeFormat } from '@/utils/snakeOrder';
 import { guessKeepers, keeperCandidates, resolveKeeperRounds } from '@/utils/keeperGuess';
 import { loadDraftArchive, removeFromDraftArchive } from '@/utils/draftRoomCache';
@@ -45,21 +46,6 @@ const SNAKE_FORMAT_OPTIONS: Array<{ value: SnakeFormat; label: string; title: st
 // section shows only its title and a one-line summary until tapped open, and
 // the Start button sticks to the bottom of the viewport.
 const MOBILE_QUERY = '(max-width: 700px)';
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-      && window.matchMedia(MOBILE_QUERY).matches,
-  );
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
-    const mq = window.matchMedia(MOBILE_QUERY);
-    const onChange = () => setIsMobile(mq.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-  return isMobile;
-}
 
 // A settings card whose body collapses behind its title. The header keeps a
 // one-line summary of the current values so the page stays scannable while
@@ -109,7 +95,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
   const [archive, setArchive] = useState(() => loadDraftArchive(leagueKeyFor(league)));
   const [presets, setPresets] = useState<DraftPreset[]>(() => loadPresets());
   const [presetName, setPresetName] = useState('');
-  const isMobile = useIsMobile();
+  const isMobile = useMediaQuery(MOBILE_QUERY);
   const sectionOpen = !isMobile;
 
   const keepersPerTeam = config.keepersPerTeam ?? 1;

@@ -1,0 +1,105 @@
+/* Sleeper-style bottom sheet for the phone draft room. Fixed to the viewport
+   bottom above everything (header is z-index 100); height is driven by the
+   data-snap attribute, with the inline px height taking over mid-drag. */
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  height: 7.5dvh;
+  min-height: 4.5rem;
+  background: var(--ink);
+  border-top: 3px solid var(--bone);
+  transition: height 0.2s ease;
+}
+
+.sheet[data-snap='half'] {
+  height: 52dvh;
+}
+
+.sheet[data-snap='full'] {
+  height: 94dvh;
+}
+
+.sheet[data-dragging] {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    transition: none;
+  }
+}
+
+/* The whole header is the drag surface. touch-action: none stops the page
+   from scrolling underneath while the finger drives the sheet. */
+.header {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  flex: none;
+}
+
+.handle {
+  width: 44px;
+  height: 4px;
+  background: var(--bone-dim);
+  margin: 0.4rem auto 0.15rem;
+}
+
+.tabsRow {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 2px solid var(--rule);
+}
+
+.tab,
+.tabOn {
+  flex: 1;
+  padding: 0.65rem 0.25rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.tab {
+  color: var(--bone-dim);
+}
+
+.tabOn {
+  color: var(--lime);
+  box-shadow: inset 0 -3px 0 var(--lime);
+}
+
+.snapBtn {
+  flex: none;
+  width: 2.6rem;
+  background: transparent;
+  border: none;
+  border-left: 1px dashed var(--rule);
+  color: var(--bone-dim);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}

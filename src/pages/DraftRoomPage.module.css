@@ -436,3 +436,9 @@
     animation: none;
   }
 }
+
+/* Phone drafting: the bottom sheet overlays the viewport bottom, so keep the
+   page's last content (the board) clear of the collapsed tab bar. */
+.pageWithSheet {
+  padding-bottom: 7rem;
+}
