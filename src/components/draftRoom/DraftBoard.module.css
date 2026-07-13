@@ -83,10 +83,12 @@
 }
 
 /* Every corner works: pick number top-left, keeper/YOU chip top-right,
-   player centered, flow arrow bottom-right. */
+   player centered, flow arrow bottom-right. Fixed height: empty and filled
+   cells must measure the same so rows never shift as picks land. */
 .cell {
   position: relative;
-  min-height: 3.5rem;
+  height: 3.75rem;
+  overflow: hidden;
   padding: 1rem 0.4rem 0.8rem;
   display: flex;
   flex-direction: column;
@@ -168,6 +170,7 @@
   font-family: var(--font-mono);
   font-size: 0.68rem;
   font-weight: 700;
+  line-height: 1.25;
   color: var(--bone);
   white-space: nowrap;
   overflow: hidden;
@@ -178,6 +181,7 @@
   font-family: var(--font-mono);
   font-size: 0.56rem;
   letter-spacing: 0.08em;
+  line-height: 1.25;
   color: var(--bone-dim);
 }
 
