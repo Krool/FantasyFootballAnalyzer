@@ -360,6 +360,11 @@ button.moreResults:hover {
   min-width: 24px;
   text-align: center;
 }
+.eventIcon img {
+  width: 24px;
+  height: 24px;
+  vertical-align: -0.3em;
+}
 
 .eventContent {
   display: flex;

@@ -102,6 +102,15 @@
 
 .championship { font-size: 1rem; }
 
+/* Trophy sticker sizing tracks the old emoji via font-size on the wrapper. */
+.championship img,
+.championTrophy img,
+.trophy img {
+  width: 1.3em;
+  height: 1.3em;
+  vertical-align: -0.3em;
+}
+
 /* ── Season cards / Back issues ── */
 .seasons {
   display: grid;

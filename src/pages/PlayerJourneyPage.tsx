@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import type { League, Player, DraftPick } from '@/types';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { nflTeamInfo } from '@/data/nflTeams';
+import { AWARD_ICONS } from '@/utils/awardIcons';
 import styles from './PlayerJourneyPage.module.css';
 
 interface PlayerJourneyPageProps {
@@ -273,13 +274,16 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
     setVisibleCount(PAGE_SIZE);
   }, [searchQuery, positionFilter]);
 
+  // Sticker art where we have it (the direction lives in the label and the
+  // event color, so both trade directions share the handshake); typographic
+  // marks for the rest.
   const getEventIcon = (type: PlayerJourneyEvent['type']) => {
     switch (type) {
-      case 'drafted': return '📋';
-      case 'traded_to': return '↗️';
-      case 'traded_from': return '↘️';
-      case 'waiver_add': return '⬆️';
-      case 'waiver_drop': return '⬇️';
+      case 'drafted': return <img src={AWARD_ICONS.best_draft} alt="" />;
+      case 'traded_to': return <img src={AWARD_ICONS.best_trade} alt="" />;
+      case 'traded_from': return <img src={AWARD_ICONS.best_trade} alt="" />;
+      case 'waiver_add': return <img src={AWARD_ICONS.best_waiver} alt="" />;
+      case 'waiver_drop': return <img src={AWARD_ICONS.worst_waiver} alt="" />;
       case 'fa_add': return '+';
       case 'fa_drop': return '-';
     }

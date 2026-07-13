@@ -8,7 +8,6 @@ import {
   getHeartbreakLoss,
   getClutchTeam,
   formatLuckScore,
-  getLuckEmoji,
 } from './luck';
 import type { MatchupData } from './luck';
 
@@ -256,15 +255,5 @@ describe('formatLuckScore', () => {
 
   it('formats zero with + prefix', () => {
     expect(formatLuckScore(0)).toBe('+0.0');
-  });
-});
-
-describe('getLuckEmoji', () => {
-  it('returns correct emoji for each rating', () => {
-    expect(getLuckEmoji('very_lucky')).toBe('🍀');
-    expect(getLuckEmoji('lucky')).toBe('😊');
-    expect(getLuckEmoji('neutral')).toBe('😐');
-    expect(getLuckEmoji('unlucky')).toBe('😔');
-    expect(getLuckEmoji('very_unlucky')).toBe('💔');
   });
 });

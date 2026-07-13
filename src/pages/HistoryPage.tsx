@@ -3,6 +3,7 @@ import type { League, SeasonSummary, HeadToHeadRecord } from '@/types';
 import { loadLeagueHistory as loadSleeperHistory, loadHeadToHeadRecords as loadSleeperH2H } from '@/api/sleeper';
 import { loadLeagueHistory as loadESPNHistory, loadHeadToHeadRecords as loadESPNH2H } from '@/api/espn';
 import { RivalryCard } from '@/components';
+import { AWARD_ICONS } from '@/utils/awardIcons';
 import { logger } from '@/utils/logger';
 import { loadESPNCredentials } from '@/utils/espnCredentials';
 import styles from './HistoryPage.module.css';
@@ -243,8 +244,8 @@ export function HistoryPage({ league }: HistoryPageProps) {
                       return (
                         <div key={`${s.leagueId}-${s.season}`} className={styles.championCard}>
                           <span className={styles.championYear}>{s.season}</span>
-                          <span className={styles.championTrophy} role="img" aria-label="Champion">
-                            🏆
+                          <span className={styles.championTrophy}>
+                            <img src={AWARD_ICONS.best_record} alt="Champion" />
                           </span>
                           <span className={styles.championName}>{champ?.name ?? '?'}</span>
                           {champ && (
@@ -347,7 +348,9 @@ export function HistoryPage({ league }: HistoryPageProps) {
                                 role="img"
                                 aria-label={`${team.championships} championship${team.championships === 1 ? '' : 's'}`}
                               >
-                                {'🏆'.repeat(team.championships)}
+                                {Array.from({ length: team.championships }, (_, i) => (
+                                  <img key={i} src={AWARD_ICONS.best_record} alt="" />
+                                ))}
                               </span>
                             ) : '-'}
                           </td>
@@ -391,7 +394,11 @@ export function HistoryPage({ league }: HistoryPageProps) {
                             >
                               <span className={styles.standing}>{team.standing}</span>
                               <span className={styles.standingTeam}>
-                                {isChamp && <span className={styles.trophy}>🏆</span>}
+                                {isChamp && (
+                                  <span className={styles.trophy}>
+                                    <img src={AWARD_ICONS.best_record} alt="Champion" />
+                                  </span>
+                                )}
                                 {team.name}
                               </span>
                               <span className={styles.standingRecord}>

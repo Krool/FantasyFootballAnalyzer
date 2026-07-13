@@ -5,7 +5,7 @@ import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/util
 import { seasonRecords, seasonTimeline } from '@/utils/seasonStory';
 import { exportAwardCard } from '@/utils/exportAwardCard';
 import { awardIconSrc } from '@/utils/awardIcons';
-import { TeamLink } from '@/components';
+import { TeamLink, LuckIcon } from '@/components';
 import styles from './AwardsPage.module.css';
 
 interface AwardsPageProps {
@@ -155,7 +155,7 @@ export function AwardsPage({ league }: AwardsPageProps) {
                         <td>{metrics.expectedWins.toFixed(1)}</td>
                         <td className={getLuckClass(metrics.luckScore)}>
                           {metrics.luckScore >= 0 ? '+' : ''}{metrics.luckScore.toFixed(1)}
-                          {' '}{getLuckEmoji(metrics.luckRating)}
+                          {' '}<LuckIcon rating={metrics.luckRating} />
                         </td>
                         <td
                           title={`Ranked #${metrics.pointsForRank} in scoring, #${metrics.winsRank} in wins`}
@@ -241,14 +241,4 @@ function getLuckClass(luckScore: number): string {
   if (luckScore <= -2) return styles.veryUnlucky;
   if (luckScore <= -1) return styles.unlucky;
   return styles.neutral;
-}
-
-function getLuckEmoji(rating: LuckMetrics['luckRating']): string {
-  switch (rating) {
-    case 'very_lucky': return '🍀';
-    case 'lucky': return '😊';
-    case 'neutral': return '😐';
-    case 'unlucky': return '😔';
-    case 'very_unlucky': return '💔';
-  }
 }

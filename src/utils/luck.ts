@@ -335,16 +335,3 @@ export function formatLuckScore(score: number): string {
   const prefix = score >= 0 ? '+' : '';
   return `${prefix}${score.toFixed(1)}`;
 }
-
-/**
- * Get luck emoji based on rating
- */
-export function getLuckEmoji(rating: LuckMetrics['luckRating']): string {
-  switch (rating) {
-    case 'very_lucky': return '🍀';
-    case 'lucky': return '😊';
-    case 'neutral': return '😐';
-    case 'unlucky': return '😔';
-    case 'very_unlucky': return '💔';
-  }
-}

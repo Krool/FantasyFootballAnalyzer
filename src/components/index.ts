@@ -10,3 +10,4 @@ export { RivalryCard } from './RivalryCard';
 export { NflTeamLabel } from './NflTeamLabel';
 export { PosBadge } from './PosBadge';
 export { TeamLink } from './TeamLink';
+export { LuckIcon } from './LuckIcon';

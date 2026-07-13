@@ -3,6 +3,7 @@ import type { LuckMetrics } from '@/utils/luck';
 import { useMemo } from 'react';
 import { gradeAllPicks, calculateDraftSummary } from '@/utils/grading';
 import { isPlaceholderPlayer } from '@/utils/placeholders';
+import { LuckIcon } from './LuckIcon';
 import styles from './TeamCard.module.css';
 
 interface TeamCardProps {
@@ -98,7 +99,7 @@ export function TeamCard({ team, allTeams, totalTeams, onClick, luckMetrics }: T
         <span className={styles.recordLabel}>Record</span>
         {luckMetrics && (
           <span className={`${styles.luckBadge} ${getLuckClass(luckMetrics.luckScore, styles)}`}>
-            {getLuckEmoji(luckMetrics.luckRating)} {luckMetrics.luckScore >= 0 ? '+' : ''}{luckMetrics.luckScore.toFixed(1)}
+            <LuckIcon rating={luckMetrics.luckRating} /> {luckMetrics.luckScore >= 0 ? '+' : ''}{luckMetrics.luckScore.toFixed(1)}
           </span>
         )}
       </div>
@@ -238,14 +239,4 @@ function getLuckClass(luckScore: number, styles: Record<string, string>): string
   if (luckScore <= -2) return styles.veryUnlucky;
   if (luckScore <= -1) return styles.unlucky;
   return styles.neutral;
-}
-
-function getLuckEmoji(rating: LuckMetrics['luckRating']): string {
-  switch (rating) {
-    case 'very_lucky': return '🍀';
-    case 'lucky': return '😊';
-    case 'neutral': return '😐';
-    case 'unlucky': return '😔';
-    case 'very_unlucky': return '💔';
-  }
 }

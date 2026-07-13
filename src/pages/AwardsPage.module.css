@@ -78,15 +78,24 @@
   gap: 1.25rem;
 }
 
+/* Cards are subgrids spanning six shared row tracks (icon, name, winner,
+   value, detail, description), so those bands align across every card in a
+   grid row even when one card lacks a detail line or wraps to more lines.
+   Browsers without subgrid fall back to per-card auto rows: same content,
+   just without the cross-card alignment. */
 .awardCard {
   position: relative;
   background: var(--ink);
   border: 2px solid var(--bone);
   padding: 1.5rem 1.4rem 1.6rem;
-  text-align: left;
+  text-align: center;
   transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
   box-shadow: 5px 5px 0 var(--bone);
   overflow: hidden;
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 6;
+  align-content: start;
 }
 .awardCard::before {
   content: '★ TROPHY';
@@ -138,6 +147,8 @@
 .awardCard:nth-child(3n+2) .awardDescription { color: var(--ink); opacity: .75; }
 
 .awardIcon {
+  grid-row: 1;
+  align-self: end;
   font-size: 2.4rem;
   line-height: 1;
   margin-top: 1.4rem;
@@ -152,10 +163,12 @@
   height: 4rem;
   object-fit: contain;
   display: block;
+  margin-inline: auto;
   filter: none;
 }
 
 .awardName {
+  grid-row: 2;
   font-family: var(--font-mono);
   font-size: 0.7rem;
   font-weight: 700;
@@ -166,6 +179,7 @@
 }
 
 .awardWinner {
+  grid-row: 3;
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 500;
@@ -176,6 +190,7 @@
 }
 
 .awardValue {
+  grid-row: 4;
   font-family: var(--font-headline);
   font-size: 2.6rem;
   font-weight: 400;
@@ -186,6 +201,7 @@
 }
 
 .awardDetail {
+  grid-row: 5;
   font-family: var(--font-mono);
   font-size: 0.7rem;
   letter-spacing: 0.12em;
@@ -195,6 +211,7 @@
 }
 
 .awardDescription {
+  grid-row: 6;
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 300;
