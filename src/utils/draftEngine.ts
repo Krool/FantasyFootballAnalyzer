@@ -417,6 +417,14 @@ export function validateEvent(
     if (config.draftType !== 'snake') return 'Snake picks are not valid in an auction draft.';
     const team = state.teams.get(event.teamId);
     if (!team) return 'Unknown team.';
+    // A mock room owns its turn order: the sim, keeper auto-log, and quick
+    // draft all pick for the team on the clock, so an off-turn event can only
+    // be a stale timer closure racing the log. One extra event desyncs the
+    // snake math for every later pick and eventually deadlocks the draft.
+    // Live rooms keep out-of-order logging (catching up on a real draft).
+    if (config.mode === 'mock' && state.onTheClockId !== null && event.teamId !== state.onTheClockId) {
+      return 'That team is not on the clock.';
+    }
     if (team.openSlots <= 0) return 'That team has no roster spots left.';
     const pos = poolPosition(state, event.playerId);
     if (pos && team.fullAt[pos]) return `That team cannot roster another ${pos}.`;

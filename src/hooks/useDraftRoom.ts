@@ -137,6 +137,15 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
     }
     case 'LOG_EVENT': {
       if (state.phase !== 'drafting') return state;
+      // Authoritative guard: logEvent pre-validates against its render's
+      // derived state, but timer and effect callers can hold a stale closure
+      // (a mock AI pick racing the keeper auto-log, or firing just before its
+      // cleanup). Both calls then pass the same pre-pick validation, and one
+      // duplicated or off-turn event silently corrupts every later pick. Only
+      // the reducer sees the real log, so it gets the final say.
+      if (validateEvent(state.config, deriveDraftState(state.config, POOL.players, state.events), action.event)) {
+        return state;
+      }
       // seq is stamped here, from the authoritative log length: a caller that
       // dispatches several events in one pass (live sync backlog) holds a
       // stale closure and would persist duplicate seqs otherwise.

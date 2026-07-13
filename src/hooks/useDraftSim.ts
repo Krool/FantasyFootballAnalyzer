@@ -172,9 +172,17 @@ export function useDraftSim(room: UseDraftRoomReturn, options?: UseDraftSimOptio
     if (!active || config.draftType !== 'snake' || paused || !derived.onTheClockId) return;
     const teamId = derived.onTheClockId;
     if (teamId === config.myTeamId && !autoPickMe) return;
+    // The keeper auto-log owns this pick; an AI timer racing it would put two
+    // events on one slot (the reducer now rejects the loser, but never arming
+    // the timer keeps the rng stream and pick pacing clean).
+    const round = roundForPick(derived.pickCount, config.teams.length);
+    const keeperOwned = config.keepers?.some(
+      k => k.teamId === teamId && k.costRound === round && !derived.draftedPlayerIds.has(k.playerId),
+    );
+    if (keeperOwned) return;
     const timer = setTimeout(() => doSnakePick(teamId), tickMs);
     return () => clearTimeout(timer);
-  }, [active, config.draftType, config.myTeamId, paused, autoPickMe, tickMs, derived.onTheClockId, doSnakePick]);
+  }, [active, config.draftType, config.myTeamId, config.teams.length, config.keepers, paused, autoPickMe, tickMs, derived.onTheClockId, derived.pickCount, derived.draftedPlayerIds, doSnakePick]);
 
   // Auction: AI nominator puts a player up after a beat. The user's own
   // nominations come through nominate().

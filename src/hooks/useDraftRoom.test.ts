@@ -113,6 +113,28 @@ describe('useDraftRoom', () => {
     expect(result.current.derived.pickCount).toBe(4);
   });
 
+  it('the reducer drops events validated against a stale board (racing timers)', () => {
+    const { result } = renderHook(() => useDraftRoom(makeLeague()));
+    act(() => result.current.updateConfig({ rosterSlots: TINY_SLOTS }));
+    act(() => result.current.start());
+
+    const [p1, p2] = POOL.players;
+    // Three calls through one render's closure, like a mock AI timer firing
+    // just before its cleanup: each pre-validates against the same pre-pick
+    // board and passes, so only the reducer can stop the log from corrupting.
+    // One duplicated or off-turn event shifts the snake turn math for every
+    // later pick and eventually deadlocks the mock (a full team on the clock).
+    act(() => {
+      const log = result.current.logEvent;
+      log({ kind: 'snake_pick', playerId: p1.id, teamId: 't1' });
+      log({ kind: 'snake_pick', playerId: p1.id, teamId: 't1' }); // duplicate player
+      log({ kind: 'snake_pick', playerId: p2.id, teamId: 't1' }); // off-turn: t2 is up
+    });
+    expect(result.current.events).toHaveLength(1);
+    expect(result.current.events[0]).toMatchObject({ playerId: p1.id, teamId: 't1' });
+    expect(result.current.derived.onTheClockId).toBe('t2');
+  });
+
   it('logEvents ingests a batch with distinct seqs and validates against the mid-batch board', () => {
     const { result } = renderHook(() => useDraftRoom(makeLeague()));
     act(() => result.current.updateConfig({ rosterSlots: TINY_SLOTS }));

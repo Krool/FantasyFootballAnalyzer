@@ -317,6 +317,19 @@ describe('validateEvent', () => {
     expect(validateEvent(config, state, sale('RB1', 'Z', 5))).toMatch(/Unknown winning team/);
   });
 
+  it('rejects off-turn snake picks in a mock room but allows them in a live room', () => {
+    // A mock room owns its turn order (sim, keeper auto-log, quick draft all
+    // pick for the clock team); an off-turn pick is a stale race artifact
+    // that would desync the snake math for every later pick.
+    const mock = makeConfig({ draftType: 'snake', mode: 'mock' });
+    const mockState = deriveDraftState(mock, pool, []);
+    expect(validateEvent(mock, mockState, pick('RB1', 'B'))).toMatch(/not on the clock/);
+    expect(validateEvent(mock, mockState, pick('RB1', 'A'))).toBeNull();
+    // Live rooms log a real draft, so out-of-order catch-up logging stays legal.
+    const live = makeConfig({ draftType: 'snake', mode: 'live' });
+    expect(validateEvent(live, deriveDraftState(live, pool, []), pick('RB2', 'B'))).toBeNull();
+  });
+
   it('rejects everything once the draft is complete', () => {
     const config2 = makeConfig({ draftType: 'snake', rounds: 1, rosterSlots: { ...SLOTS, BENCH: 0 } });
     const events = [pick('RB1', 'A'), pick('RB2', 'B'), pick('RB3', 'C')];
