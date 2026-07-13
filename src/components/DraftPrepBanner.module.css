@@ -1,5 +1,6 @@
-/* Mirrors GuestBanner: full-width strip under the header, lime accent, one
-   positive action. */
+/* Mirrors GuestBanner: full-width strip under the header, lime accent. The
+   action button breaks palette on purpose (blood red): it's the one
+   time-sensitive CTA in the app and has to pop against a lime-accented page. */
 
 .banner {
   background: var(--ink-2);
@@ -49,9 +50,9 @@
   text-transform: uppercase;
   padding: 0.55rem 0.9rem;
   cursor: pointer;
-  background: var(--lime);
-  color: var(--ink);
-  border: 2px solid var(--lime);
+  background: var(--blood);
+  color: var(--bone);
+  border: 2px solid var(--blood);
   box-shadow: 3px 3px 0 var(--bone);
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
 }
