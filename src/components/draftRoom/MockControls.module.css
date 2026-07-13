@@ -25,6 +25,10 @@
   font-family: var(--font-mono);
   font-size: 0.74rem;
   cursor: pointer;
+  /* Pause and Resume differ in width; a stable box keeps the toggle from
+     nudging the rest of the status bar. */
+  min-width: 6.2rem;
+  text-align: center;
 }
 
 .btn:hover {

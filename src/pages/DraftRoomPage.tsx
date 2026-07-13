@@ -469,14 +469,16 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                   {Math.round((derived.pickCount / derived.totalPicks) * 100)}%
                 </span>
               )}
-              {run && (
-                <span className={styles.statusAlert} title={`${run.count} of the last ${run.window} picks were ${run.pos}s`}>
-                  {run.pos} RUN
-                </span>
-              )}
               {phase === 'drafting' && (
                 <span className={`${styles.statusItem} ${styles.statusSecondary}`}>
                   <PickTimer lastEventTs={lastEventTs} />
+                </span>
+              )}
+              {/* Last in the info group: the chip comes and goes with the
+                  run, and popping in mid-bar shoved every item after it. */}
+              {run && (
+                <span className={styles.statusAlert} title={`${run.count} of the last ${run.window} picks were ${run.pos}s`}>
+                  {run.pos} RUN
                 </span>
               )}
               {liveSync.available && (

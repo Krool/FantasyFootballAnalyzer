@@ -76,11 +76,19 @@ export function DraftBoard({ room }: DraftBoardProps) {
   }, [config.keepers, derived.draftedPlayerIds, playerById]);
 
   // Keep the pick on the clock in view as the draft advances, without
-  // yanking the page itself around.
+  // yanking the page itself around. Only scroll when the cell has actually
+  // left the viewport: recentering on every pick made the board twitch.
   useEffect(() => {
     const scroller = scrollerRef.current;
     const cell = clockCellRef.current;
     if (!scroller || !cell || typeof scroller.scrollTo !== 'function') return;
+    const visibleV =
+      cell.offsetTop >= scroller.scrollTop &&
+      cell.offsetTop + cell.clientHeight <= scroller.scrollTop + scroller.clientHeight;
+    const visibleH =
+      cell.offsetLeft >= scroller.scrollLeft &&
+      cell.offsetLeft + cell.clientWidth <= scroller.scrollLeft + scroller.clientWidth;
+    if (visibleV && visibleH) return;
     const targetTop = cell.offsetTop - scroller.clientHeight / 2 + cell.clientHeight / 2;
     const targetLeft = cell.offsetLeft - scroller.clientWidth / 2 + cell.clientWidth / 2;
     scroller.scrollTo({ top: Math.max(0, targetTop), left: Math.max(0, targetLeft) });

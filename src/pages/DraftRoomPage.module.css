@@ -210,6 +210,10 @@
   box-shadow: 3px 3px 0 var(--blood);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  /* Wide enough for the armed "Confirm Reset?" label so the two-step
+     confirm doesn't resize the bar. */
+  min-width: 9.5rem;
+  text-align: center;
 }
 
 .statusBtn:hover {
@@ -340,6 +344,8 @@
   color: var(--ink);
   box-shadow: 3px 3px 0 var(--bone);
   cursor: pointer;
+  min-width: 9.5rem;
+  text-align: center;
 }
 
 .shortcutLegend {
@@ -406,28 +412,40 @@
   border-color: var(--lime);
 }
 
-/* Transient flourish when you land a clear value pick. */
+/* Transient flourish when you land a clear value pick. A fixed toast, not an
+   in-flow banner: appearing mid-page shoved the whole board down for 1.8s
+   and yanked it back, the main "the room jumps around" offender. */
 .spark {
-  margin: 0.5rem 0;
-  padding: 0.5rem 0.9rem;
+  position: fixed;
+  left: 50%;
+  bottom: 2rem;
+  transform: translateX(-50%);
+  z-index: 300;
+  padding: 0.55rem 1.1rem;
   background: color-mix(in srgb, var(--lime) 18%, var(--ink));
-  border-left: 3px solid var(--lime);
+  border: 1px solid var(--lime);
+  border-left: 4px solid var(--lime);
+  box-shadow: 4px 4px 0 rgb(0 0 0 / 0.55);
   color: var(--lime);
   font-family: var(--font-mono);
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.04em;
+  white-space: nowrap;
+  max-width: calc(100vw - 2rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
   animation: sparkPop 0.28s ease-out;
 }
 
 @keyframes sparkPop {
   from {
     opacity: 0;
-    transform: translateY(-4px) scale(0.98);
+    transform: translateX(-50%) translateY(6px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: translateX(-50%);
   }
 }
 
