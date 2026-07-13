@@ -40,9 +40,11 @@
   padding: 1rem;
 }
 
+/* Match the player board's 240px chrome budget on phones so the sibling
+   tabs (Board / Tiers / NFL) present the same pane height. */
 @media (max-width: 640px) {
   .grid {
-    max-height: calc(100dvh - 320px);
+    max-height: calc(100dvh - 240px);
   }
 }
 

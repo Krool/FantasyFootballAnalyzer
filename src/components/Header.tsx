@@ -131,7 +131,11 @@ export function Header({
                   type="button"
                   onClick={() => { playClick(); onRefresh(); }}
                   className={styles.refreshButton}
-                  title="Refresh league data"
+                  title={
+                    league?.loadedAt
+                      ? `Refresh league data (updated ${new Date(league.loadedAt).toLocaleString()})`
+                      : 'Refresh league data'
+                  }
                   aria-label="Refresh league data"
                   disabled={isRefreshing}
                 >

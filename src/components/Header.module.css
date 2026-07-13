@@ -65,7 +65,7 @@
 .logo:hover .logoAccent { color: var(--lime); }
 
 /* The full wordmark on roomy viewports; the "FFA" monogram swaps in on
-   phones (see the narrow media query) so the frozen header stays short. */
+   phones (see the narrow media query) so the masthead stays short. */
 .logoFull { display: inline; }
 .logoShort { display: none; }
 
@@ -304,10 +304,10 @@
     order: 2;
     width: 100%;
   }
-  /* A wrapped 8-link nav permanently stuck atop a phone viewport eats
-     200px of screen; one scroll-snap row keeps it to ~50px. The eight season
-     tabs plus the export button stop fitting one row around 1000px, so the
-     scroll row takes over there rather than wrapping. */
+  /* A wrapped 8-link nav costs ~200px of masthead before any content;
+     one scroll-snap row keeps it to ~50px. The eight season tabs plus the
+     export button stop fitting one row around 1000px, so the scroll row
+     takes over there rather than wrapping. */
   .nav {
     order: 3;
     width: 100%;
@@ -327,10 +327,14 @@
   .yahooButtonOn { margin-left: auto; }
 }
 
-@media (max-width: 600px) {
-  /* On phones the full "FANTASY FOOTBALL ANALYZER" wordmark wraps and the
-     sticky header swallows the viewport. Swap to the "FFA" monogram (middle
-     F keeps the accent) and trim the masthead padding to claw back space. */
+/* 640px, not 600: the rankings/draft boards size their viewport reservation
+   (100dvh - 240px) at 640px assuming THIS compacted one-row masthead. Keeping
+   the breakpoints equal closes the 601-640px band where the boards reserved
+   for a compact header that never rendered. */
+@media (max-width: 640px) {
+  /* On phones the full "FANTASY FOOTBALL ANALYZER" wordmark wraps and eats
+     masthead height. Swap to the "FFA" monogram (middle F keeps the accent)
+     and trim the masthead padding to claw back space. */
   .header { padding: 0.65rem 0 0.55rem; }
   .headerContent { gap: 0.55rem 0.9rem; }
   .logoFull { display: none; }
@@ -338,10 +342,11 @@
   .logo { font-size: 1.5rem; letter-spacing: 0; }
 
   /* Connected league: the year selector + league card wrapped to two stacked
-     rows and pushed the frozen header past 200px. Force one row: the card
+     rows and pushed the masthead past 200px. Force one row: the card
      flexes into whatever is left of the row and the league name ellipsizes
      instead of wrapping. The "18d ago" stamp is the first thing to go; the
-     refresh button (and its title tooltip with the exact time) stays. */
+     refresh button's title carries the exact updated time in its place
+     (set in Header.tsx). */
   .leagueGroup { flex-wrap: nowrap; }
   .leagueInfo {
     flex: 1;

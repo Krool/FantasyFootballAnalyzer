@@ -445,7 +445,7 @@ export function AvailablePlayers({
                 <td className={`${styles.num} ${styles.dim}`}>{p.overallRank}</td>
                 <td className={`${styles.num} ${tierClass(p.tier)}`}>{p.tier}</td>
                 <td className={styles.player}>
-                  {p.name}
+                  <span className={styles.playerName}>{p.name}</span>
                   {p.rookie && <span className={styles.rookieTag} title="Rookie">R</span>}
                   {p.injuryStatus && (
                     <span className={styles.injuryTag} title={injuryTitle(p)}>

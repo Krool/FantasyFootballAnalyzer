@@ -490,7 +490,7 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
                       </button>
                     </td>
                     <td className={styles.player}>
-                      {p.name}
+                      <span className={styles.playerName}>{p.name}</span>
                       {p.rookie && <span className={styles.rookieTag} title="Rookie">R</span>}
                       {p.injuryStatus && (
                         <span className={styles.injuryTag} title={injuryTitle(p)}>
