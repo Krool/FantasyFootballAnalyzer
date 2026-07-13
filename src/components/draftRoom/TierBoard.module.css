@@ -16,11 +16,11 @@
   overflow-y: auto;
 }
 
-/* Match the player board: shorter columns on phones so the page and the
-   column aren't fighting over a ~650px viewport. */
+/* Match the player board's 240px chrome budget on phones so the sibling
+   tabs (Board / Tiers / NFL) present the same pane height. */
 @media (max-width: 640px) {
   .column {
-    max-height: calc(100dvh - 320px);
+    max-height: calc(100dvh - 240px);
     min-height: 300px;
   }
 }

@@ -282,6 +282,7 @@
   /* A draft in progress doesn't need a 56px "DRAFT ROOM" billboard plus
      4rem of margin/border above the board. Shrink the masthead and drop the
      secondary status chips so the player list starts higher up. */
+  .page { padding: 1.25rem 0 3rem; }
   .title { font-size: 40px; }
   .header {
     margin-bottom: 1.25rem;
@@ -370,6 +371,13 @@
 
 .soundBtn:hover {
   border-color: var(--bone);
+}
+
+/* The keyboard cheat sheet is dead weight where there is no keyboard, and on
+   a phone it costs two lines right above the board. The alert variants of
+   .shortcutLegend (live-sync/Yahoo errors) keep this class off so they stay. */
+@media (pointer: coarse) {
+  .kbdHints { display: none; }
 }
 
 .syncBtn,

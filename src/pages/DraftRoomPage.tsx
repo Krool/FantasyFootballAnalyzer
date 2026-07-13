@@ -507,7 +507,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
             )}
 
             {phase === 'drafting' && (
-              <p className={styles.shortcutLegend}>
+              <p className={`${styles.shortcutLegend} ${styles.kbdHints}`}>
                 <kbd>/</kbd> search · <kbd>↑↓</kbd> move · <kbd>Enter</kbd> select
                 {isSnake ? <> · <kbd>D</kbd> draft</> : <> · <kbd>1-9</kbd> winner</>}
                 {' '}· <kbd>Ctrl+Z</kbd> undo

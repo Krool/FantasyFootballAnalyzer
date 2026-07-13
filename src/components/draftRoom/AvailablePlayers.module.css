@@ -205,21 +205,75 @@
    the pinned cell has to match or it reads as a gap in the highlight. z-index:
    body cells (auto) < pinned name (1) < header row (2) < name header (3). */
 @media (max-width: 640px) {
-  .table .player {
+  /* The star (and the optional queue "+" beside it) pin too: they are the
+     board's primary actions, and pinning only the name buried them on any
+     horizontal scroll (rank/tier still slide under the name like every
+     other stat column). Fixed width so the name column can pin flush after
+     them. Both action columns share the starCell class; the adjacent-
+     sibling selectors below offset the second one and the name. */
+  .table td.starCell,
+  .table thead th.starCell {
     position: sticky;
     left: 0;
     z-index: 1;
     background: var(--ink);
-    border-right: 2px solid var(--bone-dim);
+    width: 2.4rem;
+    min-width: 2.4rem;
+    box-sizing: border-box;
+    padding-left: 0.2rem;
+    padding-right: 0.2rem;
   }
-  .rowCursor .player { background: var(--ink-3); }
-  .rowSelected .player { background: var(--ink-2); }
+  .table td.starCell + td.starCell,
+  .table thead th.starCell + th.starCell {
+    left: 2.4rem;
+  }
+  .table .player {
+    position: sticky;
+    left: 2.4rem;
+    z-index: 1;
+    background: var(--ink);
+    border-right: 2px solid var(--bone-dim);
+    /* The pinned cell must leave stats visible next to it: cap it, and
+       ellipsize the NAME (flex child below) so the rookie/injury/tier tags
+       stay visible - they are the draft signals, the name tail is not. */
+    max-width: 55vw;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .table .player .playerName {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* With the queue column present the name pins one action column later. */
+  .table td.starCell + td.starCell ~ .player {
+    left: 4.8rem;
+  }
+  .rowCursor .player,
+  .rowCursor .starCell { background: var(--ink-3); }
+  .rowSelected .player,
+  .rowSelected .starCell { background: var(--ink-2); }
   .table thead th { z-index: 2; }
+  .table thead th.starCell { z-index: 3; }
   .table thead th.playerHead {
     position: sticky;
-    left: 0;
+    left: 2.4rem;
     z-index: 3;
     border-right: 2px solid var(--bone-dim);
+  }
+  .table thead th.starCell + th.starCell ~ th.playerHead {
+    left: 4.8rem;
+  }
+  /* A 390px screen fits five-plus columns instead of three once the roomy
+     desktop cell padding and tracking come down. */
+  .table th {
+    padding: 0.5rem 0.4rem;
+    letter-spacing: 0.1em;
+  }
+  .table td {
+    padding: 0.45rem 0.4rem;
   }
 }
 
