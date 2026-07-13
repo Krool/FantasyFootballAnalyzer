@@ -44,6 +44,12 @@ export interface TeamDraftState {
   slotsFilled: SlotsFilled;
   // Open starting slots by position (FLEX not included; see demand below)
   starterNeeds: Record<StarterPos, number>;
+  // Rostered players per position regardless of slot (an RB on the bench
+  // still counts as an RB). The mock AI's roster-shape sense.
+  posCounts: Record<StarterPos, number>;
+  // Skill-position players per bye week (K/DST excluded, matching the
+  // RosterSummary bye chips). Drives the AI's bye-clustering aversion.
+  byeCounts: Record<number, number>;
   // True when this team cannot roster another player at the position:
   // dedicated slots full, flex full (or ineligible), and bench full.
   fullAt: Record<StarterPos, boolean>;
@@ -98,11 +104,28 @@ function assignSlot(filled: SlotsFilled, slots: RosterSlots, pos: string): void 
   }
 }
 
+// The position/bye tallies for one pick, shared by deriveDraftState and the
+// survival simulator so the AI's roster-shape inputs never drift between the
+// live board and the replayed one.
+function tallyPick(team: TeamDraftState, player: { pos: string; bye?: number | null }): void {
+  const starter = player.pos as StarterPos;
+  if (STARTER_POSITIONS.includes(starter)) team.posCounts[starter]++;
+  if (player.bye != null && starter !== 'K' && starter !== 'DST') {
+    team.byeCounts[player.bye] = (team.byeCounts[player.bye] ?? 0) + 1;
+  }
+}
+
 // Advance one team's running tallies by a single pick, outside the full
 // deriveDraftState pass: the survival simulator steps cloned team states
 // forward pick by pick. Mutates the team; callers own the clone.
-export function applyPickToTeam(team: TeamDraftState, pos: string, slots: RosterSlots): void {
+export function applyPickToTeam(
+  team: TeamDraftState,
+  player: { pos: string; bye?: number | null },
+  slots: RosterSlots,
+): void {
+  const pos = player.pos;
   assignSlot(team.slotsFilled, slots, pos);
+  tallyPick(team, player);
   team.openSlots = Math.max(0, team.openSlots - 1);
   for (const starter of STARTER_POSITIONS) {
     team.starterNeeds[starter] = Math.max(0, slots[starter] - team.slotsFilled[starter]);
@@ -239,6 +262,8 @@ export function deriveDraftState(
         avgPrice: 0,
         slotsFilled: emptySlotsFilled(),
         starterNeeds: { QB: 0, RB: 0, WR: 0, TE: 0, K: 0, DST: 0 },
+        posCounts: { QB: 0, RB: 0, WR: 0, TE: 0, K: 0, DST: 0 },
+        byeCounts: {},
         fullAt: { QB: false, RB: false, WR: false, TE: false, K: false, DST: false },
       },
     ]),
@@ -254,6 +279,7 @@ export function deriveDraftState(
     team.picks.push({ event, player, pickNumber: i + 1 });
     if (event.kind === 'auction_sale') team.spent += event.price;
     assignSlot(team.slotsFilled, config.rosterSlots, player.pos);
+    tallyPick(team, player);
   });
 
   const slots = config.rosterSlots;

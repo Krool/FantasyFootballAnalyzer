@@ -65,6 +65,8 @@ function makeTeam(partial: Partial<TeamDraftState> = {}): TeamDraftState {
     avgPrice: 0,
     slotsFilled: { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0 },
     starterNeeds: { QB: 0, RB: 0, WR: 0, TE: 0, K: 0, DST: 0 },
+    posCounts: { QB: 0, RB: 0, WR: 0, TE: 0, K: 0, DST: 0 },
+    byeCounts: {},
     fullAt: { QB: false, RB: false, WR: false, TE: false, K: false, DST: false },
     ...partial,
   };
@@ -96,7 +98,7 @@ describe('full mock snake draft', () => {
       const teamId = state.onTheClockId!;
       const team = state.teams.get(teamId)!;
       const round = roundForPick(state.pickCount, config.teams.length);
-      const player = simSnakePick(state.available, scaled, team, round, config.rounds, rng);
+      const player = simSnakePick(state.available, scaled, team, SLOTS, round, config.rounds, rng);
       expect(player).not.toBeNull();
       const event: DraftEvent = {
         kind: 'snake_pick', seq: i, ts: 0, playerId: player!.id, teamId,
@@ -171,6 +173,115 @@ describe('full mock auction draft', () => {
   });
 });
 
+// Bare PoolPlayer for focused simSnakePick tests.
+function poolPlayer(partial: Partial<PoolPlayer> & { id: string; pos: string }): PoolPlayer {
+  return {
+    name: partial.id,
+    team: 'FA',
+    posRank: 1,
+    overallRank: 1,
+    tier: 1,
+    bye: null,
+    baseValue: 10,
+    ...partial,
+  } as PoolPlayer;
+}
+
+describe('simSnakePick roster shape', () => {
+  it('never drafts a second K or DST even when the market tempts it', () => {
+    const pool = makePool();
+    const config = makeConfig('snake');
+    const scaled = scaleValues(pool, BASELINE, {
+      budget: config.budget,
+      teams: config.teams.length,
+      rounds: config.rounds,
+    });
+    // Price K/DST like mid-round steals: an uncapped AI would stash a second
+    // one with its last bench spot instead of a skill player.
+    const adpOf = (p: PoolPlayer) =>
+      p.pos === 'K' || p.pos === 'DST' ? 60 + p.posRank * 3 : p.overallRank;
+    const personas = makePersonas(config.teams.map(t => t.id), mulberry32(9));
+    const rng = mulberry32(13);
+    const events: DraftEvent[] = [];
+
+    for (let i = 0; i < config.teams.length * config.rounds; i++) {
+      const state = deriveDraftState(config, pool, events);
+      const teamId = state.onTheClockId!;
+      const team = state.teams.get(teamId)!;
+      const round = roundForPick(state.pickCount, config.teams.length);
+      const player = simSnakePick(
+        state.available, scaled, team, SLOTS, round, config.rounds, rng, adpOf, personas.get(teamId),
+      );
+      expect(player).not.toBeNull();
+      events.push({ kind: 'snake_pick', seq: i, ts: 0, playerId: player!.id, teamId });
+    }
+
+    const final = deriveDraftState(config, pool, events);
+    for (const team of final.teams.values()) {
+      expect(team.posCounts.K).toBe(SLOTS.K);
+      expect(team.posCounts.DST).toBe(SLOTS.DST);
+      expect(team.posCounts.QB).toBeLessThanOrEqual(SLOTS.QB + 2);
+      expect(team.posCounts.TE).toBeLessThanOrEqual(SLOTS.TE + 2);
+    }
+  });
+
+  it('a lone-QB team leans toward backup cover; a two-QB team almost never triples up', () => {
+    const qb = poolPlayer({ id: 'qb', pos: 'QB', overallRank: 100 });
+    const wr = poolPlayer({ id: 'wr', pos: 'WR', overallRank: 101 });
+    const adpOf = () => 100;
+    const pickQbRate = (qbCount: number) => {
+      let taken = 0;
+      for (let seed = 1; seed <= 50; seed++) {
+        const team = makeTeam({
+          openSlots: 5,
+          posCounts: { QB: qbCount, RB: 3, WR: 3, TE: 1, K: 0, DST: 0 },
+        });
+        const pick = simSnakePick([qb, wr], new Map(), team, SLOTS, 11, 15, mulberry32(seed), adpOf);
+        if (pick?.id === 'qb') taken++;
+      }
+      return taken;
+    };
+    // Same market for both players: the only signal is roster shape.
+    expect(pickQbRate(1)).toBeGreaterThan(30);
+    expect(pickQbRate(2)).toBeLessThan(5);
+  });
+
+  it('avoids stacking a third skill player on an already-doubled bye', () => {
+    const sameBye = poolPlayer({ id: 'same', pos: 'WR', overallRank: 50, bye: 7 });
+    const freshBye = poolPlayer({ id: 'fresh', pos: 'WR', overallRank: 50, bye: 8 });
+    const adpOf = () => 50;
+    let fresh = 0;
+    for (let seed = 1; seed <= 50; seed++) {
+      const team = makeTeam({ byeCounts: { 7: 2 } });
+      const pick = simSnakePick(
+        [sameBye, freshBye], new Map(), team, SLOTS, 1, 15, mulberry32(seed), adpOf,
+      );
+      if (pick?.id === 'fresh') fresh++;
+    }
+    expect(fresh).toBeGreaterThan(30);
+  });
+
+  it('teams with different board seeds develop different favorites', () => {
+    const candidates = Array.from({ length: 8 }, (_, i) =>
+      poolPlayer({ id: `wr${i}`, pos: 'WR', overallRank: 60 + i }),
+    );
+    const adpOf = () => 60;
+    const picksFor = (boardSeed: number) => {
+      const persona: AiPersona = { aggression: 1, starsBias: 1, baitiness: 0, boardSeed };
+      return Array.from({ length: 10 }, (_, i) => {
+        const pick = simSnakePick(
+          candidates, new Map(), makeTeam(), SLOTS, 1, 15, mulberry32(i + 1), adpOf, persona,
+        );
+        return pick!.id;
+      });
+    };
+    // Deterministic per persona...
+    expect(picksFor(111)).toEqual(picksFor(111));
+    // ...but two personas do not share a board.
+    expect(picksFor(111)).not.toEqual(picksFor(222));
+  });
+});
+
 describe('simAuctionResult', () => {
   it('caps the user bid at their max bid and settles at second price + 1', () => {
     const pool = makePool();
@@ -227,8 +338,8 @@ describe('aiWillingness persona effects', () => {
     const star = pool[0];
     const expectedPrice = 40;
     const team = makeTeam();
-    const low: AiPersona = { aggression: 0.85, starsBias: 0.9, baitiness: 0 };
-    const high: AiPersona = { aggression: 1.15, starsBias: 1.25, baitiness: 0 };
+    const low: AiPersona = { aggression: 0.85, starsBias: 0.9, baitiness: 0, boardSeed: 1 };
+    const high: AiPersona = { aggression: 1.15, starsBias: 1.25, baitiness: 0, boardSeed: 1 };
 
     // Fresh rng of the same seed for each call: the base draw is identical,
     // so any gap between the two bids comes only from the persona.
@@ -255,7 +366,7 @@ describe('simNomination baiting', () => {
       [notNeeded.id, 10],
     ]);
     const nominator = makeTeam({ starterNeeds: { QB: 1, RB: 0, WR: 0, TE: 0, K: 0, DST: 0 } });
-    const persona: AiPersona = { aggression: 1, starsBias: 1, baitiness: 1 };
+    const persona: AiPersona = { aggression: 1, starsBias: 1, baitiness: 1, boardSeed: 1 };
 
     const pick = simNomination(available, scaled, nominator, [nominator], mulberry32(2), persona);
     expect(pick?.id).toBe(notNeeded.id);

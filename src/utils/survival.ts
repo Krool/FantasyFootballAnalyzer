@@ -54,6 +54,8 @@ function cloneTeam(team: TeamDraftState): TeamDraftState {
     ...team,
     slotsFilled: { ...team.slotsFilled },
     starterNeeds: { ...team.starterNeeds },
+    posCounts: { ...team.posCounts },
+    byeCounts: { ...team.byeCounts },
     fullAt: { ...team.fullAt },
   };
 }
@@ -101,10 +103,13 @@ export function simulateTakenOdds(ctx: SurvivalContext): Map<string, number> | n
         clones.set(pick.teamId, team);
       }
       const pool = horizon.filter(p => !taken.has(p.id));
+      // No persona: opponents' private boards are unknowable here, so the
+      // odds ride the unbiased market model.
       const choice = simSnakePick(
         pool,
         ctx.scaledValues,
         team,
+        ctx.rosterSlots,
         roundForPick(pick.pickIndex, ctx.orderedTeamIds.length),
         ctx.totalRounds,
         rng,
@@ -112,7 +117,7 @@ export function simulateTakenOdds(ctx: SurvivalContext): Map<string, number> | n
       );
       if (!choice) continue;
       taken.add(choice.id);
-      applyPickToTeam(team, choice.pos, ctx.rosterSlots);
+      applyPickToTeam(team, choice, ctx.rosterSlots);
     }
     for (const c of candidates) {
       if (taken.has(c.id)) counts.set(c.id, (counts.get(c.id) ?? 0) + 1);

@@ -150,10 +150,20 @@ export function useDraftSim(room: UseDraftRoomReturn, options?: UseDraftSimOptio
         }
       }
       const round = roundForPick(derived.pickCount, config.teams.length);
-      const player = simSnakePick(derived.available, scaledValues, team, round, config.rounds, rng, adpOf);
+      const player = simSnakePick(
+        derived.available,
+        scaledValues,
+        team,
+        config.rosterSlots,
+        round,
+        config.rounds,
+        rng,
+        adpOf,
+        personas.get(teamId),
+      );
       if (player) logEvent({ kind: 'snake_pick', playerId: player.id, teamId });
     },
-    [derived, config.myTeamId, config.teams.length, config.rounds, myQueue, scaledValues, rng, adpOf, logEvent],
+    [derived, config.myTeamId, config.teams.length, config.rounds, config.rosterSlots, myQueue, scaledValues, rng, adpOf, personas, logEvent],
   );
 
   // Snake: auto-pick on a timer. AI teams always; your team only when

@@ -7,6 +7,7 @@
 // All functions take an injected rng (use mulberry32 for deterministic
 // tests); nothing here touches global state.
 
+import type { RosterSlots } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
 import type { TeamDraftState, StarterPos } from './draftEngine';
 import { STARTER_POSITIONS } from './draftEngine';
@@ -40,6 +41,9 @@ export interface AiPersona {
   // Chance a nomination is bait (a good player they DON'T want) rather than
   // a player they're hoping to buy.
   baitiness: number;
+  // Seed for this team's private board (see playerBias): which players it is
+  // higher or lower on than the market, fixed for the whole draft.
+  boardSeed: number;
 }
 
 export function makePersonas(teamIds: string[], rng: () => number): Map<string, AiPersona> {
@@ -50,9 +54,25 @@ export function makePersonas(teamIds: string[], rng: () => number): Map<string, 
         aggression: 0.85 + rng() * 0.3,
         starsBias: 0.9 + rng() * 0.35,
         baitiness: 0.15 + rng() * 0.35,
+        boardSeed: Math.floor(rng() * 0xffffffff),
       },
     ]),
   );
+}
+
+// A stable "how far this team's board disagrees with the market" offset for
+// one player, in draft-pick units: hash (boardSeed, playerId) to a uniform
+// and spread it wider for later players (rooms agree on round 1 and argue
+// about round 10). Fixed for the whole draft, this is what makes a mock team
+// reach for "its guys" and lets sleepers genuinely fall — per-pick rng noise
+// alone re-rolls every pick, so everyone converges back to the sheet.
+function playerBias(boardSeed: number, playerId: string, market: number): number {
+  let h = boardSeed >>> 0;
+  for (let i = 0; i < playerId.length; i++) {
+    h = Math.imul(h ^ playerId.charCodeAt(i), 0x01000193);
+  }
+  const u = mulberry32(h)();
+  return (u - 0.5) * 2 * (3 + market * 0.15);
 }
 
 function weightedPick(pool: PoolPlayer[], weights: number[], rng: () => number): PoolPlayer {
@@ -106,6 +126,7 @@ export function simSnakePick(
   available: PoolPlayer[],
   scaledValues: Map<string, number>,
   team: TeamDraftState,
+  slots: RosterSlots,
   round: number,
   totalRounds: number,
   rng: () => number,
@@ -114,6 +135,10 @@ export function simSnakePick(
   // instead of off auction dollars, which are too top-heavy (deterministic
   // chalk early) and too flat late ($1 = $1 = coin flip).
   adpOf?: (p: PoolPlayer) => number | undefined,
+  // This team's fixed temperament; its boardSeed gives the team a private
+  // board so it reaches and fades players like a human room. Optional: the
+  // survival simulator omits it (real opponents' biases are unknowable).
+  persona?: AiPersona,
 ): PoolPlayer | null {
   let candidates = rosterable(team, available);
   if (candidates.length === 0) return null;
@@ -124,6 +149,20 @@ export function simSnakePick(
     const needed = candidates.filter(p => team.starterNeeds[p.pos as StarterPos] > 0);
     if (needed.length > 0) candidates = needed;
   }
+
+  // Roster-shape hard caps, applied before either scoring path: no room ever
+  // benches a second K or DST, and a fourth QB/TE is hoarding nobody does.
+  // QBs also count superflex slots as starters. If the caps somehow empty the
+  // list (degenerate endgame pool), legality wins and the caps yield.
+  const counts = team.posCounts;
+  const starterSlotsAt = (pos: StarterPos) => (pos === 'QB' ? slots.QB + slots.SUPERFLEX : slots[pos]);
+  const capped = candidates.filter(p => {
+    const pos = p.pos as StarterPos;
+    if (pos === 'K' || pos === 'DST') return counts[pos] < slots[pos];
+    if (pos === 'QB' || pos === 'TE') return counts[pos] < starterSlotsAt(pos) + 2;
+    return true;
+  });
+  if (capped.length > 0) candidates = capped;
 
   const progress = totalRounds > 1 ? (round - 1) / (totalRounds - 1) : 1;
 
@@ -137,11 +176,30 @@ export function simSnakePick(
     for (const p of candidates.slice(0, 40)) {
       const market = adpOf(p) ?? p.overallRank;
       let score = market + gaussian(rng) * sigma;
+      if (persona) score += playerBias(persona.boardSeed, p.id, market);
       const pos = p.pos as StarterPos;
       // Nobody drafts a kicker in round 5 no matter what a sheet says.
       if ((pos === 'K' || pos === 'DST') && !lateFill) score += 500;
       // Mild pull toward open starter slots, growing with the draft.
       if (team.starterNeeds[pos] > 0) score -= progress * 12;
+      // Roster-shape sense, the difference between a draft board and a
+      // rankings dump: a second backup QB/TE is near-dead weight...
+      if ((pos === 'QB' || pos === 'TE') && counts[pos] > starterSlotsAt(pos)) score += 60;
+      // ...a first backup TE is a luxury, taken only when one truly falls...
+      if (pos === 'TE' && counts.TE === starterSlotsAt('TE')) score += 14;
+      // ...while a lone starting QB wants cover as the draft ages...
+      if (pos === 'QB' && counts.QB === starterSlotsAt('QB')) score -= progress * 15;
+      // ...RB/WR bench depth stays loosely balanced (no nine-RB stables,
+      // but an RB-heavy team here and there is normal)...
+      if (pos === 'RB' || pos === 'WR') {
+        const surplus = counts[pos] - counts[pos === 'RB' ? 'WR' : 'RB'];
+        if (surplus >= 3) score += (surplus - 2) * 12;
+      }
+      // ...and a third skill player on one bye is a self-inflicted zero.
+      if (p.bye != null && pos !== 'K' && pos !== 'DST') {
+        const clustered = team.byeCounts[p.bye] ?? 0;
+        if (clustered >= 2) score += (clustered - 1) * 4;
+      }
       if (score < bestScore) {
         bestScore = score;
         best = p;
