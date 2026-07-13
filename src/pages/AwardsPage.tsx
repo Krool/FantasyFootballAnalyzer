@@ -4,6 +4,7 @@ import { calculateAllAwards, groupAwardsByCategory, getCategoryDisplayName, type
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
 import { seasonRecords, seasonTimeline } from '@/utils/seasonStory';
 import { exportAwardCard } from '@/utils/exportAwardCard';
+import { awardIconSrc } from '@/utils/awardIcons';
 import { TeamLink } from '@/components';
 import styles from './AwardsPage.module.css';
 
@@ -199,13 +200,14 @@ export function AwardsPage({ league }: AwardsPageProps) {
 }
 
 function AwardCard({ award, league }: { award: Award; league: League }) {
+  const iconSrc = awardIconSrc(award.id);
   return (
     <div className={styles.awardCard}>
       <button
         type="button"
         className={styles.awardShareBtn}
-        onClick={() => {
-          const ok = exportAwardCard(award, league.name, league.season);
+        onClick={async () => {
+          const ok = await exportAwardCard(award, league.name, league.season);
           if (!ok) {
             window.alert("Couldn't generate the award image. Your browser may have blocked it; try a different browser.");
           }
@@ -215,7 +217,11 @@ function AwardCard({ award, league }: { award: Award; league: League }) {
       >
         ↓
       </button>
-      <div className={styles.awardIcon}>{award.icon || '🏆'}</div>
+      <div className={styles.awardIcon}>
+        {iconSrc
+          ? <img src={iconSrc} alt="" className={styles.awardIconImg} loading="lazy" />
+          : (award.icon || '🏆')}
+      </div>
       <h3 className={styles.awardName}>{award.name}</h3>
       <div className={styles.awardWinner}>
         <TeamLink teamId={award.winner.teamId} name={award.winner.teamName} />

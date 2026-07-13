@@ -3,6 +3,7 @@
 // card beats a four-page PDF when you just want to rub in Toilet Bowl.
 
 import type { Award } from './awards';
+import { loadAwardIcon } from './awardIcons';
 import { logger } from './logger';
 
 const INK = '#0a0a0a';
@@ -14,7 +15,8 @@ const LIME = '#d6ff2e';
 // Returns false when the browser couldn't produce the image (no 2D context,
 // blocked toDataURL) so the caller can tell the user instead of leaving a
 // dead button. Returns true once the download has been triggered.
-export function exportAwardCard(award: Award, leagueName: string, season: number): boolean {
+export async function exportAwardCard(award: Award, leagueName: string, season: number): Promise<boolean> {
+  const iconImg = await loadAwardIcon(award.id);
   const w = 800;
   const h = 420;
   const canvas = document.createElement('canvas');
@@ -50,9 +52,15 @@ export function exportAwardCard(award: Award, leagueName: string, season: number
   ctx.font = "700 16px 'JetBrains Mono', Consolas, monospace";
   ctx.fillText(`${leagueName.toUpperCase()} · ${season}`.slice(0, 60), 50, 70);
 
-  // Icon
-  ctx.font = '64px serif';
-  ctx.fillText(award.icon || '🏆', 50, 160);
+  // Icon: sticker art when we have it, emoji fallback otherwise. The image
+  // box bottom-aligns with the old emoji baseline so the text block below
+  // stays put.
+  if (iconImg) {
+    ctx.drawImage(iconImg, 50, 84, 76, 76);
+  } else {
+    ctx.font = '64px serif';
+    ctx.fillText(award.icon || '🏆', 50, 160);
+  }
 
   // Award name
   ctx.fillStyle = LIME;

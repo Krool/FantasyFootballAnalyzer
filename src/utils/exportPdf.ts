@@ -7,29 +7,7 @@ import { calculateLuckMetrics } from './luck';
 import { isPlaceholderPlayer } from './placeholders';
 import { logger } from './logger';
 
-// Import trophy images
-import BestWaiverPickup from '@/images/BestWaiverPickup.png';
-import WorstWaiverPickup from '@/images/WorstWaiverPickup.png';
-import BestTrade from '@/images/BestTrade.png';
-import BestDraft from '@/images/BestDraft.png';
-import WorstDraft from '@/images/WorstDraft.png';
-import WaiverWireKing from '@/images/WaiverWireKing.png';
-import WaiverWireSlacker from '@/images/WaiverWireSlacker.png';
-import MostActive from '@/images/MostActive.png';
-import LeastActive from '@/images/LeastActive.png';
-
-// Map award titles to their trophy images
-const awardImages: Record<string, string> = {
-  'Best Waiver Pickup': BestWaiverPickup,
-  'Worst Waiver Pickup': WorstWaiverPickup,
-  'Best Trade': BestTrade,
-  'Best Draft': BestDraft,
-  'Worst Draft': WorstDraft,
-  'Waiver Wire King': WaiverWireKing,
-  'Waiver Wire Slacker': WaiverWireSlacker,
-  'Most Active': MostActive,
-  'Least Active': LeastActive,
-};
+import { loadAwardIcon } from './awardIcons';
 
 // jspdf-autotable attaches the last table's finalY to the doc as a side
 // channel. If autoTable bailed (empty body, plugin not registered, etc.)
@@ -43,6 +21,7 @@ function lastTableFinalY(doc: JsPDFType, fallback: number): number {
 
 // Award shape for the first-page grid
 interface PdfAward {
+  id: string;
   title: string;
   winner: string;
   detail: string;
@@ -136,6 +115,7 @@ function generateAwards(league: League): PdfAward[] {
   return calculateAllAwards({ league, luckMetrics })
     .slice(0, PDF_AWARD_CAP)
     .map(award => ({
+      id: award.id,
       title: award.name,
       winner: award.winner.teamName,
       detail: [award.value, award.detail].filter(Boolean).join(' | '),
@@ -160,8 +140,17 @@ export async function exportLeagueReport(league: League) {
   doc.setFont('helvetica', 'normal');
   doc.text(`${league.season} Season Report`, pageWidth / 2, 25, { align: 'center' });
 
-  // Awards Section
+  // Awards Section. Icons load as image elements up front: jsPDF rasterizes
+  // elements through canvas, which handles the palette PNGs its own decoder
+  // can't be trusted with. A failed load just means no icon for that box.
   const awards = generateAwards(league);
+  const awardIconEls = new Map<string, HTMLImageElement>();
+  await Promise.all(
+    awards.map(async award => {
+      const img = await loadAwardIcon(award.id);
+      if (img) awardIconEls.set(award.id, img);
+    }),
+  );
   let yPos = 33;
 
   doc.setFontSize(14);
@@ -184,11 +173,11 @@ export async function exportLeagueReport(league: League) {
     doc.setFillColor(250, 250, 250);
     doc.roundedRect(x, y, awardColWidth - 4, awardHeight - 2, 2, 2, 'FD');
 
-    // Trophy image on the right side
-    const imageUrl = awardImages[award.title];
-    if (imageUrl) {
+    // Sticker icon on the right side
+    const iconEl = awardIconEls.get(award.id);
+    if (iconEl) {
       try {
-        doc.addImage(imageUrl, 'PNG', x + awardColWidth - 18, y + 1, 12, 12);
+        doc.addImage(iconEl, 'PNG', x + awardColWidth - 18, y + 1, 12, 12);
       } catch (err) {
         // Image failed to load; the PDF is still usable without the trophy, but
         // report it so a broken asset doesn't silently ship incomplete reports.

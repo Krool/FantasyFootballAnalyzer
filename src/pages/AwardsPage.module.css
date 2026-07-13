@@ -145,6 +145,16 @@
   filter: grayscale(0.1);
 }
 
+/* Sticker icons sliced from the award sheets; slightly larger than the old
+   emoji since the art fills its box edge to edge. */
+.awardIconImg {
+  width: 4rem;
+  height: 4rem;
+  object-fit: contain;
+  display: block;
+  filter: none;
+}
+
 .awardName {
   font-family: var(--font-mono);
   font-size: 0.7rem;

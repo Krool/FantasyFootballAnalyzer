@@ -155,7 +155,11 @@ salary rows and logs a suggested fix (recorded in `data/raw/misses.<season>.json
 instead of aborting the whole refresh.
 
 Brand raster assets (apple-touch-icon, og.png) regenerate via
-`scripts/makeBrandAssets.ps1`.
+`scripts/makeBrandAssets.ps1`. Award sticker icons (`src/images/awards/`,
+keyed by award id, used by the Awards page, share cards, and the PDF)
+regenerate from the sprite sheets in `data/award-sheets/` via
+`npm run build:award-icons`; see that folder's README for the image-gen
+prompt and how to add icons.
 
 ## Fonts
 
