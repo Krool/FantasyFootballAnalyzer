@@ -240,7 +240,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
   const formatSummary = [
     LEAGUE_TYPE_OPTIONS.find(o => o.value === leagueType)?.label,
     isRookieDraft ? 'Rookie' : isAuction ? `$${config.budget} auction` : formatLabel,
-    !league.isGuest ? (config.mode === 'live' ? 'Live log' : 'Mock') : null,
+    config.mode === 'live' ? 'Live log' : 'Mock',
   ]
     .filter(Boolean)
     .join(' · ');
@@ -408,27 +408,23 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
             </div>
             {/* The mode choice, framed by what it does: auto-pick on is the
                 mock practice draft, off is the live follow-along where every
-                team's pick is logged by hand (with optional Sleeper sync). A
-                guest has no real draft to follow, so the room is mock-only
-                (config defaults to mock) and the checkbox is hidden. */}
-            {!league.isGuest && (
-              <label className={styles.keeperToggle}>
-                <input
-                  type="checkbox"
-                  checked={config.mode === 'mock'}
-                  onChange={e => updateConfig({ mode: e.target.checked ? 'mock' : 'live' })}
-                />
-                Auto-pick the other teams (mock draft)
-              </label>
-            )}
+                team's pick is logged by hand (with optional Sleeper sync on a
+                connected Sleeper league). Live logging needs no league data,
+                just team names, so guests get the choice too. */}
+            <label className={styles.keeperToggle}>
+              <input
+                type="checkbox"
+                checked={config.mode === 'mock'}
+                onChange={e => updateConfig({ mode: e.target.checked ? 'mock' : 'live' })}
+              />
+              Auto-pick the other teams (mock draft)
+            </label>
             <p className={styles.hint}>
-              {league.isGuest
-                ? 'The other teams draft automatically so you can practice. Connect your league to log a real draft.'
-                : config.mode === 'mock'
-                  ? 'The other teams draft automatically so you can practice.'
-                  : league.platform === 'sleeper'
-                    ? 'Follow along with your real draft: log every pick and price by hand, or turn on Live Sync in the room to pull Sleeper picks automatically.'
-                    : "Follow along with your real draft: log every team's pick and price as it happens in your league's draft window."}
+              {config.mode === 'mock'
+                ? 'The other teams draft automatically so you can practice.'
+                : league.platform === 'sleeper' && !league.isGuest
+                  ? 'Follow along with your real draft: log every pick and price by hand, or turn on Live Sync in the room to pull Sleeper picks automatically.'
+                  : `Follow along with your real draft: log every team's pick and price as it happens in your league's draft window.${league.isGuest ? ' Set the real team names under Teams.' : ''}`}
             </p>
             {config.mode === 'mock' && config.draftType === 'auction' && (
               <label className={styles.keeperToggle}>
