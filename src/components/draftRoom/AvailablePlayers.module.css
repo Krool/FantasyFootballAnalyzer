@@ -79,16 +79,8 @@
   background-color: var(--ink);
 }
 
-/* The stacked header and status bar eat far more than 280px of a phone
-   viewport; the 420px floor forced double scrollbars on short screens. The
-   trimmed masthead and two-row status bar (DraftRoomPage phone styles) claw
-   ~80px back, so the board reservation tightens from 320px to 240px. */
-@media (max-width: 640px) {
-  .tableWrapper {
-    max-height: calc(100dvh - 240px);
-    min-height: 300px;
-  }
-}
+/* No phone tableWrapper rules: under 640px the component renders the .mList
+   layout instead of the table (see the phone list section below). */
 
 /* Print clips scroll panes to their on-screen window at the current scroll
    offset; let the full player board print. */
@@ -198,83 +190,129 @@
   white-space: nowrap;
 }
 
-/* Frozen name column on phones. The name is the 4th column, so it's visible
-   on load but scrolls away the moment you reach for ADP / the money columns.
-   Pin it left so a row keeps its identity while the stats scroll under it. The
-   selected (tap) and cursor (row 0 by default) rows tint their background, so
-   the pinned cell has to match or it reads as a gap in the highlight. z-index:
-   body cells (auto) < pinned name (1) < header row (2) < name header (3). */
-@media (max-width: 640px) {
-  /* The star (and the optional queue "+" beside it) pin too: they are the
-     board's primary actions, and pinning only the name buried them on any
-     horizontal scroll (rank/tier still slide under the name like every
-     other stat column). Fixed width so the name column can pin flush after
-     them. Both action columns share the starCell class; the adjacent-
-     sibling selectors below offset the second one and the name. */
-  .table td.starCell,
-  .table thead th.starCell {
-    position: sticky;
-    left: 0;
-    z-index: 1;
-    background: var(--ink);
-    width: 2.4rem;
-    min-width: 2.4rem;
-    box-sizing: border-box;
-    padding-left: 0.2rem;
-    padding-right: 0.2rem;
-  }
-  .table td.starCell + td.starCell,
-  .table thead th.starCell + th.starCell {
-    left: 2.4rem;
-  }
-  .table .player {
-    position: sticky;
-    left: 2.4rem;
-    z-index: 1;
-    background: var(--ink);
-    border-right: 2px solid var(--bone-dim);
-    /* The pinned cell must leave stats visible next to it: cap it, and
-       ellipsize the NAME (flex child below) so the rookie/injury/tier tags
-       stay visible - they are the draft signals, the name tail is not. */
-    max-width: 55vw;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-  }
-  .table .player .playerName {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  /* With the queue column present the name pins one action column later. */
-  .table td.starCell + td.starCell ~ .player {
-    left: 4.8rem;
-  }
-  .rowCursor .player,
-  .rowCursor .starCell { background: var(--ink-3); }
-  .rowSelected .player,
-  .rowSelected .starCell { background: var(--ink-2); }
-  .table thead th { z-index: 2; }
-  .table thead th.starCell { z-index: 3; }
-  .table thead th.playerHead {
-    position: sticky;
-    left: 2.4rem;
-    z-index: 3;
-    border-right: 2px solid var(--bone-dim);
-  }
-  .table thead th.starCell + th.starCell ~ th.playerHead {
-    left: 4.8rem;
-  }
-  /* A 390px screen fits five-plus columns instead of three once the roomy
-     desktop cell padding and tracking come down. */
-  .table th {
-    padding: 0.5rem 0.4rem;
-    letter-spacing: 0.1em;
-  }
-  .table td {
-    padding: 0.45rem 0.4rem;
-  }
+/* ── Phone list layout ──────────────────────────────────────────────────
+   Under 640px the component renders a vertical-only list instead of the
+   stats table (one scroll axis; the sheet does the scrolling). Draft rides
+   beside the name, pos/team/bye fold into a sub-line, and only one stat
+   survives (ADP for snake, $ value for auction). */
+.mList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 2px solid var(--bone);
+  background: var(--ink);
+}
+
+.mRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.55rem;
+  border-bottom: 1px dashed var(--rule);
+  cursor: pointer;
+  min-width: 0;
+}
+
+.mRowSelected {
+  background: var(--ink-2);
+  box-shadow: inset 4px 0 0 var(--lime);
+}
+
+.mRowAvoided {
+  opacity: 0.45;
+}
+
+.mDraftSlot {
+  flex: none;
+  width: 3.9rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.mRank {
+  flex: none;
+  width: 1.9rem;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+.mNameBlock {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.14rem;
+}
+
+.mName {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--bone);
+}
+
+.mNameText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mSub {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.mStat {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.06rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--bone);
+}
+
+.mStatLabel {
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.mCutoff {
+  padding: 0.45rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border-top: 2px dashed var(--gold);
+  border-bottom: 1px dashed var(--rule);
+}
+
+.mEmpty {
+  padding: 1.2rem 0.8rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
 }
 
 .tierBreak {

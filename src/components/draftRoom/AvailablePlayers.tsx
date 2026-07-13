@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState, type RefObject } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSounds } from '@/hooks/useSounds';
 import { useTargets } from '@/hooks/useTargets';
 import { NflTeamLabel, PosBadge } from '@/components';
@@ -79,6 +80,9 @@ export function AvailablePlayers({
   const [cursor, setCursor] = useState(0);
   const { playClick, playFilter, playSort } = useSounds();
   const { starred, avoided, cycle } = useTargets(config.season);
+  // Phones get a vertical-only list instead of the stats table: one scroll
+  // axis, Draft beside the name, pos/team/bye folded into a sub-line.
+  const isPhone = useMediaQuery('(max-width: 640px)');
 
   // Bye weeks where the user already has two or more skill starters: one
   // more is a self-inflicted zero week.
@@ -280,6 +284,131 @@ export function AvailablePlayers({
           ))}
         </div>
       </div>
+      {isPhone ? (
+        <>
+          <ul className={styles.mList}>
+            {visible.map((p, i) => (
+              <Fragment key={p.id}>
+                {i === cutoffAt && (
+                  <li
+                    className={styles.mCutoff}
+                    title="If every pick before yours comes off the top of this list, the board above this line is gone and you choose from the players below it."
+                  >
+                    ▲ Likely gone · your pick lands here ({cutoffAt} {cutoffAt === 1 ? 'pick' : 'picks'} away)
+                  </li>
+                )}
+                <li
+                  className={`${styles.mRow} ${p.id === selectedId ? styles.mRowSelected : ''} ${
+                    avoided.has(p.id) ? styles.mRowAvoided : ''
+                  }`}
+                  onClick={() => {
+                    playClick();
+                    onSelect(p);
+                  }}
+                >
+                  {onQuickDraft && (
+                    <span className={styles.mDraftSlot}>
+                      {!clockFullPositions?.has(p.pos) && (
+                        <button
+                          type="button"
+                          className={styles.quickBtn}
+                          onClick={e => {
+                            e.stopPropagation();
+                            onQuickDraft(p);
+                          }}
+                          title="Draft to the team on the clock"
+                        >
+                          Draft
+                        </button>
+                      )}
+                    </span>
+                  )}
+                  <span className={`${styles.mRank} ${tierClass(p.tier)}`}>{p.overallRank}</span>
+                  <span className={styles.mNameBlock}>
+                    <span className={styles.mName}>
+                      <span className={styles.mNameText}>{p.name}</span>
+                      {p.rookie && <span className={styles.rookieTag} title="Rookie">R</span>}
+                      {p.injuryStatus && (
+                        <span className={styles.injuryTag} title={injuryTitle(p)}>
+                          {injuryAbbrev(p.injuryStatus)}
+                        </span>
+                      )}
+                    </span>
+                    <span className={styles.mSub}>
+                      {p.pos}
+                      {p.posRank} · {p.team} · Bye {p.bye ?? '-'}
+                      {p.bye !== null && crowdedByes.has(p.bye) && (
+                        <span className={styles.byeWarn} title="You already have two or more skill starters on this bye">
+                          ⚠
+                        </span>
+                      )}
+                      {tierBreaks(p) && <span className={styles.tierBreak}>LAST IN TIER</span>}
+                      {suggested?.has(p.id) && (
+                        <span
+                          className={styles.suggestTag}
+                          title={suggested.get(p.id)?.join(' · ') || 'A top pick for your roster right now'}
+                        >
+                          SUGGESTED
+                        </span>
+                      )}
+                      {handcuffFor?.has(p.id) && (
+                        <span className={styles.cuffTag} title={`Backs up your ${handcuffFor.get(p.id)}`}>
+                          HANDCUFF
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                  <span className={styles.mStat}>
+                    {isAuction ? `$${adjValue(p)}` : (adp(p) != null ? Math.round(adp(p)!) : '-')}
+                    <span className={styles.mStatLabel}>{isAuction ? 'Value' : 'ADP'}</span>
+                  </span>
+                  <button
+                    type="button"
+                    className={
+                      starred.has(p.id) ? styles.starOn : avoided.has(p.id) ? styles.starAvoid : styles.star
+                    }
+                    onClick={e => {
+                      e.stopPropagation();
+                      cycle(p.id);
+                    }}
+                    title={
+                      starred.has(p.id)
+                        ? 'Targeted. Tap again to avoid, again to clear.'
+                        : avoided.has(p.id)
+                          ? 'Avoided. Tap to clear.'
+                          : 'Tap to target this player'
+                    }
+                    aria-label={`Toggle target status for ${p.name}`}
+                  >
+                    {avoided.has(p.id) ? '✕' : '★'}
+                  </button>
+                  {queue && (
+                    <button
+                      type="button"
+                      className={queue.queued.has(p.id) ? styles.queueBtnOn : styles.queueBtn}
+                      onClick={e => {
+                        e.stopPropagation();
+                        queue.toggle(p.id);
+                      }}
+                      title={queue.queued.has(p.id) ? 'In your queue. Tap to remove.' : 'Add to your draft queue'}
+                      aria-label={`Toggle queue for ${p.name}`}
+                      aria-pressed={queue.queued.has(p.id)}
+                    >
+                      {queue.queued.has(p.id) ? '✓' : '+'}
+                    </button>
+                  )}
+                </li>
+              </Fragment>
+            ))}
+            {visible.length === 0 && <li className={styles.mEmpty}>No available players match.</li>}
+          </ul>
+          {rows.length > MAX_ROWS && (
+            <div className={styles.truncated}>
+              Showing {MAX_ROWS} of {rows.length}. Search or filter to narrow.
+            </div>
+          )}
+        </>
+      ) : (
       <div className={`${styles.tableWrapper} scroll-x-hint`}>
         <table className={styles.table}>
           <thead>
@@ -621,6 +750,7 @@ export function AvailablePlayers({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
