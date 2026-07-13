@@ -361,7 +361,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
           <AuctionLogger room={room} selected={selected} onLogged={clearSelection} />
         )
       ) : (
-        <SnakeLogger room={room} selected={selected} onLogged={clearSelection} />
+        <SnakeLogger room={room} selected={selected} onLogged={clearSelection} simPaused={sim.paused} />
       )
     ) : null;
 

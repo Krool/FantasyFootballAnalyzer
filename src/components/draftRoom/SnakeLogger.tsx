@@ -10,9 +10,12 @@ interface SnakeLoggerProps {
   room: UseDraftRoomReturn;
   selected: PoolPlayer | null;
   onLogged: () => void;
+  // Mock only: whether the sim is paused. While it runs, AI turns belong to
+  // the sim and the Drafted button sits out; paused hands the user the wheel.
+  simPaused?: boolean;
 }
 
-export function SnakeLogger({ room, selected, onLogged }: SnakeLoggerProps) {
+export function SnakeLogger({ room, selected, onLogged, simPaused }: SnakeLoggerProps) {
   const { config, derived, logEvent } = room;
   // Empty string means "the team on the clock"; override covers traded picks.
   const [teamOverride, setTeamOverride] = useState('');
@@ -23,8 +26,14 @@ export function SnakeLogger({ room, selected, onLogged }: SnakeLoggerProps) {
     ? config.teams.find(t => t.id === derived.onTheClockId)
     : null;
   const round = roundForPick(derived.pickCount, config.teams.length);
-  const effectiveTeam = teamOverride || derived.onTheClockId || '';
+  // Mock rooms follow the turn order (the engine rejects off-turn picks), so
+  // the override is pinned to the clock; live rooms keep it for traded picks.
+  const isMock = config.mode === 'mock';
+  const effectiveTeam = isMock
+    ? derived.onTheClockId ?? ''
+    : teamOverride || derived.onTheClockId || '';
   const isMyPick = derived.onTheClockId === config.myTeamId;
+  const aiTurnRunning = isMock && !isMyPick && !simPaused;
 
   const submit = () => {
     if (!selected || !effectiveTeam) return;
@@ -62,6 +71,8 @@ export function SnakeLogger({ room, selected, onLogged }: SnakeLoggerProps) {
           aria-label="Drafted by"
           value={effectiveTeam}
           onChange={e => setTeamOverride(e.target.value)}
+          disabled={isMock}
+          title={isMock ? 'Mock drafts follow the turn order; the sim picks for the other teams.' : undefined}
         >
           {config.teams.map(t => (
             <option key={t.id} value={t.id}>
@@ -74,7 +85,13 @@ export function SnakeLogger({ room, selected, onLogged }: SnakeLoggerProps) {
 
       {error && <div className={styles.error}>{error}</div>}
 
-      <button type="button" className={styles.submit} onClick={submit} disabled={!selected}>
+      <button
+        type="button"
+        className={styles.submit}
+        onClick={submit}
+        disabled={!selected || aiTurnRunning}
+        title={aiTurnRunning ? 'The sim is making this pick. Pause it to log picks yourself.' : undefined}
+      >
         Drafted
       </button>
     </div>
