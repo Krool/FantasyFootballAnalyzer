@@ -57,6 +57,12 @@
   opacity: 0.7;
 }
 
+/* On phones the legend wraps onto its own line and costs a full row of the
+   already-scarce space above the board; the chips still read without it. */
+@media (max-width: 640px) {
+  .legend { display: none; }
+}
+
 .lane {
   list-style: none;
   margin: 0;

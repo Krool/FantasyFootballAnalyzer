@@ -211,6 +211,12 @@
     z-index: 1;
     background: var(--ink);
     border-right: 2px solid var(--bone-dim);
+    /* The pinned cell must leave stats visible next to it: cap it and clip
+       a long name (plus rookie/injury/tier tags) instead of letting the
+       frozen column swallow the whole row. */
+    max-width: 55vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .rowCursor .player { background: var(--ink-3); }
   .rowSelected .player { background: var(--ink-2); }
@@ -220,6 +226,15 @@
     left: 0;
     z-index: 3;
     border-right: 2px solid var(--bone-dim);
+  }
+  /* A 390px screen fits five-plus columns instead of three once the roomy
+     desktop cell padding and tracking come down. */
+  .table th {
+    padding: 0.5rem 0.4rem;
+    letter-spacing: 0.1em;
+  }
+  .table td {
+    padding: 0.45rem 0.4rem;
   }
 }
 

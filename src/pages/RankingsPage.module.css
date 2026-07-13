@@ -206,10 +206,12 @@
 }
 
 /* The stacked header eats far more than 280px of a phone viewport, and the
-   420px floor forced double scrollbars (page + wrapper) on short screens. */
+   420px floor forced double scrollbars (page + wrapper) on short screens.
+   With the phone masthead compacted to one league row, the reservation
+   matches the draft board's 240px so more rows fit per screen. */
 @media (max-width: 640px) {
   .tableWrapper {
-    max-height: calc(100dvh - 320px);
+    max-height: calc(100dvh - 240px);
     min-height: 300px;
   }
 }
@@ -299,11 +301,10 @@
   white-space: nowrap;
 }
 
-/* Frozen name column on phones. The player name sits mid-table (6th column),
-   so it's the first thing you lose when you scroll right to reach ADP/value.
-   Pin it to the left edge so each row keeps its identity while the stats
-   scroll under it. z-index order: scrolling body cells (auto) < pinned name
-   (1) < sticky header row (2) < the name header, which pins on both axes (3). */
+/* Frozen name column on phones. The name is the second column, so it's
+   visible at rest; pinning keeps each row's identity while the stats scroll
+   under it. z-index order: scrolling body cells (auto) < pinned name (1) <
+   sticky header row (2) < the name header, which pins on both axes (3). */
 @media (max-width: 640px) {
   .table .player {
     position: sticky;
@@ -311,6 +312,11 @@
     z-index: 1;
     background: var(--ink);
     border-right: 2px solid var(--bone-dim);
+    /* Cap the frozen column so the stats keep real estate beside it; a long
+       name plus rookie/injury tags clips instead of swallowing the row. */
+    max-width: 55vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .table thead th { z-index: 2; }
   .table thead th.playerHead {
@@ -318,6 +324,15 @@
     left: 0;
     z-index: 3;
     border-right: 2px solid var(--bone-dim);
+  }
+  /* Tighter cells: the desktop padding and header tracking pushed all but
+     three columns off a 390px screen. */
+  .table th {
+    padding: 0.5rem 0.4rem;
+    letter-spacing: 0.1em;
+  }
+  .table td {
+    padding: 0.45rem 0.4rem;
   }
 }
 
@@ -447,5 +462,12 @@
 }
 
 @media (max-width: 640px) {
-  .title { font-size: 56px; }
+  /* Match the Draft Room's phone masthead: the billboard heading and the
+     3rem page top-padding pushed the actual board a full screen down. */
+  .page { padding: 1.25rem 0 3rem; }
+  .title { font-size: 40px; }
+  .header {
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+  }
 }

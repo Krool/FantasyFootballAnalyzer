@@ -37,6 +37,12 @@ interface AvailablePlayersProps {
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST'];
 const MAX_ROWS = 250;
 
+// Touch screens get a placeholder without the keyboard cheat sheet. Evaluated
+// once: pointer type doesn't change mid-session, and jsdom/prerender lack
+// matchMedia entirely.
+const COARSE_POINTER =
+  typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
+
 // The main draft board: every available player with rank, tier, and value.
 // Value columns are per ranking source; FantasyPros is the only source today
 // (add columns here when Yahoo/ESPN/Sleeper values land in the pool data).
@@ -219,7 +225,11 @@ export function AvailablePlayers({
           ref={inputRef}
           className={styles.search}
           aria-label="Search available players"
-          placeholder="Search available players... ( / then ↑↓ Enter )"
+          placeholder={
+            COARSE_POINTER
+              ? 'Search available players...'
+              : 'Search available players... ( / then ↑↓ Enter )'
+          }
           value={query}
           onChange={e => {
             setQuery(e.target.value);

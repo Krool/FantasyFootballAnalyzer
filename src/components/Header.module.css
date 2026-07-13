@@ -335,6 +335,28 @@
   .logoShort { display: inline; }
   .logo { font-size: 1.5rem; letter-spacing: 0; }
 
+  /* Connected league: the year selector + league card wrapped to two stacked
+     rows and pushed the frozen header past 200px. Force one row: the card
+     flexes into whatever is left of the row and the league name ellipsizes
+     instead of wrapping. The "18d ago" stamp is the first thing to go; the
+     refresh button (and its title tooltip with the exact time) stays. */
+  .leagueGroup { flex-wrap: nowrap; }
+  .leagueInfo {
+    flex: 1;
+    min-width: 0;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+  }
+  .leagueName {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .leagueInfo > :not(.leagueName) { flex-shrink: 0; }
+  .loadedAt { display: none; }
+
   /* The "FFA" monogram is short enough to share row 1 with the guest chip, so
      pull "Guest [Connect]" up beside it (order:0 + auto width override the
      own-row full-width rule from the ≤1000 query). The sound button's

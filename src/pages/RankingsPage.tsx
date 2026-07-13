@@ -374,6 +374,15 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
                   aria-label="Target list"
                   title="Star players here; they get highlighted and boosted in the Draft Room"
                 />
+                {/* Player sits directly after the star: on a phone the stat
+                    columns alone fill the viewport, so a name-last order left
+                    every row anonymous until you scrolled sideways. */}
+                <th
+                  className={styles.playerHead}
+                  title="Player name. R marks rookies; an injury tag shows current status"
+                >
+                  Player
+                </th>
                 {sortableTh(
                   'avg',
                   'AVG',
@@ -394,12 +403,6 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
                   title="FantasyPros tier: players in the same tier are seen as close in value, so the breaks between tiers matter more than rank order within one"
                 >
                   Tier
-                </th>
-                <th
-                  className={styles.playerHead}
-                  title="Player name. R marks rookies; an injury tag shows current status"
-                >
-                  Player
                 </th>
                 <th title="Position, with the player's rank at that position">Pos</th>
                 <th title="NFL team">Team</th>
@@ -486,6 +489,15 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
                         {avoided.has(p.id) ? '✕' : '★'}
                       </button>
                     </td>
+                    <td className={styles.player}>
+                      {p.name}
+                      {p.rookie && <span className={styles.rookieTag} title="Rookie">R</span>}
+                      {p.injuryStatus && (
+                        <span className={styles.injuryTag} title={injuryTitle(p)}>
+                          {injuryAbbrev(p.injuryStatus)}
+                        </span>
+                      )}
+                    </td>
                     <td className={`${styles.num} ${styles.avg}`}>{avg.toFixed(1)}</td>
                     <td
                       className={`${styles.num} ${
@@ -500,15 +512,6 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
                     </td>
                     <td className={`${styles.num} ${styles.dim}`}>{fpRank}</td>
                     <td className={`${styles.num} ${styles.dim}`}>{p.tier}</td>
-                    <td className={styles.player}>
-                      {p.name}
-                      {p.rookie && <span className={styles.rookieTag} title="Rookie">R</span>}
-                      {p.injuryStatus && (
-                        <span className={styles.injuryTag} title={injuryTitle(p)}>
-                          {injuryAbbrev(p.injuryStatus)}
-                        </span>
-                      )}
-                    </td>
                     <td>
                       <PosBadge pos={p.pos} posRank={p.posRank} />
                     </td>
