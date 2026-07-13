@@ -1,0 +1,73 @@
+/* Mirrors GuestBanner: full-width strip under the header, lime accent, one
+   positive action. */
+
+.banner {
+  background: var(--ink-2);
+  border-bottom: 2px solid var(--lime);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+}
+
+.text {
+  flex: 1;
+  min-width: 260px;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--bone);
+}
+
+.tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--lime);
+  padding: 0.18rem 0.45rem;
+  margin-right: 0.6rem;
+  vertical-align: middle;
+}
+
+.open {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+  background: var(--lime);
+  color: var(--ink);
+  border: 2px solid var(--lime);
+  box-shadow: 3px 3px 0 var(--bone);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+}
+
+.open:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--bone);
+}
+
+.open:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (pointer: coarse) {
+  .open {
+    min-height: 44px;
+  }
+}

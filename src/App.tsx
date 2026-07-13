@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, Suspense, lazy, type ReactNode } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams, useParams } from 'react-router-dom';
 import { Header, YearSelector, SeasonLoadingOverlay } from '@/components';
+import { DraftPrepBanner } from '@/components/DraftPrepBanner';
 import { GuestBanner } from '@/components/GuestBanner';
 import { SeasonFallbackNotice } from '@/components/SeasonFallbackNotice';
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
@@ -41,6 +42,7 @@ import { logger } from '@/utils/logger';
 import { rememberConnection } from '@/utils/lastConnection';
 import { loadSeasons } from '@/utils/seasonsCache';
 import { isEmptyPreseason } from '@/utils/leaguePhase';
+import { POOL } from '@/data/draftPool';
 
 // Public draft-prep entry: a no-league visit to /rankings or /draft-room
 // (direct link, refresh, or crawler) drops into guest mode with default
@@ -345,6 +347,32 @@ function App() {
     }
   }, [credentials, load, navigate, location.pathname, location.search]);
 
+  // The draft-prep banner's jump: the one-click version of picking the draft
+  // season in the year dropdown and heading to the Draft Room. If the
+  // platform has a season at or past the pool's draft year, load it (so the
+  // room preps against the renewed league); either way land on /draft-room,
+  // which targets the bundled pool's season regardless of league.season.
+  const handleOpenDraftPrep = useCallback(async () => {
+    if (credentials && league) {
+      try {
+        const seasons = await loadSeasons(credentials, league);
+        const target = seasons
+          .filter(s => s.year >= POOL.season && s.year !== league.season)
+          .sort((a, b) => a.year - b.year)[0];
+        if (target) {
+          handledYearRef.current = target.year;
+          await load(credentialsForSeason(credentials, target));
+          navigate(`/draft-room?year=${target.year}`);
+          return;
+        }
+      } catch (err) {
+        // The room still works against the loaded league; don't block the jump.
+        logger.warn('[App] Draft-prep season lookup failed:', err);
+      }
+    }
+    navigate('/draft-room');
+  }, [credentials, league, load, navigate]);
+
   // Back/forward (or direct link) changes ?year= → resolve year → load. We
   // use the seasons cache so this doesn't refetch the chain on every nav.
   useEffect(() => {
@@ -418,6 +446,18 @@ function App() {
       {league?.isGuest && location.pathname !== '/' && (
         <GuestBanner onConnect={() => { clear(); navigate('/'); }} />
       )}
+
+      {/* Old season on screen, new draft pool bundled: the one-click bridge
+          to mock drafts. Hidden in the Draft Room itself (already there) and
+          while a season switch is in flight. */}
+      {league && !league.isGuest && !isLoading && league.season < POOL.season &&
+        location.pathname !== '/draft-room' && (
+          <DraftPrepBanner
+            draftSeason={POOL.season}
+            leagueSeason={league.season}
+            onOpen={handleOpenDraftPrep}
+          />
+        )}
 
       {seasonFallbackNotice && (
         <SeasonFallbackNotice message={seasonFallbackNotice} onDismiss={dismissSeasonFallbackNotice} />
