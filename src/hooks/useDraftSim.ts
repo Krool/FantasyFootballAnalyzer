@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import { inflateValue } from '@/utils/inflation';
 import { roundForPick } from '@/utils/snakeOrder';
-import { sleeperAdpFor } from '@/utils/consensus';
+import { marketAdp } from '@/utils/consensus';
 import {
   computeWillingnessMap,
   makePersonas,
@@ -116,7 +116,7 @@ export function useDraftSim(room: UseDraftRoomReturn, options?: UseDraftSimOptio
   // real superflex room does.
   const superflex = config.rosterSlots.SUPERFLEX > 0;
   const adpOf = useCallback(
-    (p: PoolPlayer) => sleeperAdpFor(p, scoring, superflex) ?? p.espnAdp,
+    (p: PoolPlayer) => marketAdp(p, scoring, superflex),
     [scoring, superflex],
   );
 

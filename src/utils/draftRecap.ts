@@ -32,6 +32,13 @@ export interface TeamRecap {
   picks: RecapPickLine[];
 }
 
+// The "skill player" line shared by the bye-stack math here and the share
+// lists in draftShareLists.ts: K/DST are excluded because their market
+// position is noise (nobody steals a kicker, every bye is streamable).
+export function isSkillPos(pos: string): boolean {
+  return pos !== 'K' && pos !== 'DST';
+}
+
 const GRADE_LADDER: Array<[number, string]> = [
   [0.92, 'A+'],
   [0.8, 'A'],
@@ -78,7 +85,7 @@ export function gradeDraftSession(
     const byeCounts = new Map<number, number>();
     for (const { pick } of picks) {
       const p: PoolPlayer = pick.player;
-      if (p.bye === null || p.pos === 'K' || p.pos === 'DST') continue;
+      if (p.bye === null || !isSkillPos(p.pos)) continue;
       byeCounts.set(p.bye, (byeCounts.get(p.bye) ?? 0) + 1);
     }
     const byeWorst = [...byeCounts.entries()].sort((a, b) => b[1] - a[1])[0];

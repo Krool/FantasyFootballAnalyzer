@@ -9,7 +9,7 @@ import type { RosterSlots } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
 import type { StarterPos, TeamDraftState } from './draftEngine';
 import { STARTER_POSITIONS } from './draftEngine';
-import { sleeperAdpFor } from './consensus';
+import { marketAdp } from './consensus';
 import { handcuffPartner, stackPartner } from './stacks';
 import type { ScoringType } from './valueScaling';
 
@@ -137,7 +137,7 @@ export function suggestPicks(
       reasons.push(`last Tier ${p.tier} ${pos}`);
     }
 
-    const adp = sleeperAdpFor(p, opts.scoring, rosterSlots.SUPERFLEX > 0) ?? p.espnAdp;
+    const adp = marketAdp(p, opts.scoring, rosterSlots.SUPERFLEX > 0);
     if (adp !== undefined) {
       const fall = currentPick - adp;
       if (fall >= opts.teamCount / 2) {

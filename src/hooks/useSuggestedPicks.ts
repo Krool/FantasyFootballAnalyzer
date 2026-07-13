@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useTargets } from '@/hooks/useTargets';
-import { sleeperAdpFor } from '@/utils/consensus';
+import { marketAdp } from '@/utils/consensus';
 import { availableHandcuffs } from '@/utils/stacks';
 import { suggestPicks } from '@/utils/suggestions';
 import { simulateTakenOdds } from '@/utils/survival';
@@ -40,7 +40,7 @@ export function useSuggestedPicks(room: UseDraftRoomReturn, enabled: boolean): U
 
   const superflex = config.rosterSlots.SUPERFLEX > 0;
   const adpOf = useCallback(
-    (p: PoolPlayer) => sleeperAdpFor(p, scoring, superflex) ?? p.espnAdp,
+    (p: PoolPlayer) => marketAdp(p, scoring, superflex),
     [scoring, superflex],
   );
 

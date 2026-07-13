@@ -26,6 +26,17 @@ export function sleeperAdpFor(
   return player.sleeperAdp;
 }
 
+// The market ADP a pick or suggestion is judged against: the scoring-matched
+// Sleeper ADP with ESPN's as the fallback when Sleeper doesn't cover the
+// player. The single home for that fallback order.
+export function marketAdp(
+  player: PoolPlayer,
+  scoring: ScoringType,
+  superflex = false,
+): number | undefined {
+  return sleeperAdpFor(player, scoring, superflex) ?? player.espnAdp;
+}
+
 export function consensusAvg(
   player: PoolPlayer,
   scoring: ScoringType = 'half_ppr',

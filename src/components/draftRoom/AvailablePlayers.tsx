@@ -5,7 +5,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSounds } from '@/hooks/useSounds';
 import { useTargets } from '@/hooks/useTargets';
 import { NflTeamLabel, PosBadge } from '@/components';
-import { sleeperAdpFor } from '@/utils/consensus';
+import { marketAdp } from '@/utils/consensus';
 import { inflateValue } from '@/utils/inflation';
 import { normalizeName } from '@/utils/playerNames';
 import { injuryAbbrev, injuryTitle } from '@/utils/injury';
@@ -98,7 +98,7 @@ export function AvailablePlayers({
   }, [derived.teams, config.myTeamId]);
   const superflex = config.rosterSlots.SUPERFLEX > 0;
   const adp = useCallback(
-    (p: PoolPlayer) => sleeperAdpFor(p, scoring, superflex) ?? p.espnAdp,
+    (p: PoolPlayer) => marketAdp(p, scoring, superflex),
     [scoring, superflex],
   );
   const adjValue = useCallback(

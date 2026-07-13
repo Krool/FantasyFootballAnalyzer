@@ -5,6 +5,7 @@ import { NflTeamLabel, PosBadge } from '@/components';
 import { gradeDraftSession, rosterAsText } from '@/utils/draftRecap';
 import { findStacks } from '@/utils/stacks';
 import { logger } from '@/utils/logger';
+import { RecapShare } from './RecapShare';
 import styles from './DraftRecap.module.css';
 
 interface DraftRecapProps {
@@ -61,7 +62,11 @@ export function DraftRecap({ room }: DraftRecapProps) {
       </div>
 
       {mine && (
-        <div className={styles.mineRow}>
+        <section className={styles.section}>
+          <div className={styles.sectionHead}>
+            <h3 className={styles.sectionTitle}>Your Draft</h3>
+            <span className={styles.sectionNote}>The haul, the stacks, the bye risk.</span>
+          </div>
           <div className={styles.mineCard}>
             <div className={styles.mineHeader}>
               <span className={styles.mineGrade}>{mine.grade}</span>
@@ -107,60 +112,80 @@ export function DraftRecap({ room }: DraftRecapProps) {
               ))}
             </ul>
           </div>
-        </div>
+        </section>
       )}
 
-      <div className={styles.grid}>
-        {recaps.map(recap => (
-          <button
-            key={recap.teamId}
-            type="button"
-            className={`${styles.card} ${recap.teamId === config.myTeamId ? styles.cardMine : ''}`}
-            onClick={() => gradeSound(recap.grade)}
-            title="Tap for the grade fanfare"
-          >
-            <div className={styles.cardHead}>
-              <span className={styles.cardGrade}>{recap.grade}</span>
-              <span className={styles.cardName}>{recap.name}</span>
-            </div>
-            <div className={styles.cardStats}>
-              <span>
-                value {recap.totalValue}
-                {isAuction ? ` / $${recap.spent}` : ''}
-              </span>
-              <span className={recap.surplus >= 0 ? styles.statGood : styles.statBad}>
-                {recap.surplus >= 0 ? '+' : ''}
-                {recap.surplus} vs avg
-              </span>
-            </div>
-            {isAuction && recap.bestBuy && (
-              <div className={styles.cardLine}>
-                Best buy: {recap.bestBuy.pick.player.name} ${recap.bestBuy.price}{' '}
-                <span className={styles.statGood}>({recap.bestBuy.delta! >= 0 ? '+' : ''}{recap.bestBuy.delta})</span>
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <h3 className={styles.sectionTitle}>The Room</h3>
+          <span className={styles.sectionNote}>
+            Every team, ranked by value acquired. Tap a card for the fanfare.
+          </span>
+        </div>
+        <div className={styles.grid}>
+          {recaps.map(recap => (
+            <button
+              key={recap.teamId}
+              type="button"
+              className={`${styles.card} ${recap.teamId === config.myTeamId ? styles.cardMine : ''}`}
+              onClick={() => gradeSound(recap.grade)}
+              title="Tap for the grade fanfare"
+            >
+              <div className={styles.cardHead}>
+                <span className={styles.cardGrade}>{recap.grade}</span>
+                <span className={styles.cardName}>{recap.name}</span>
               </div>
-            )}
-            {isAuction && recap.biggestOverpay && (
-              <div className={styles.cardLine}>
-                Overpay: {recap.biggestOverpay.pick.player.name} ${recap.biggestOverpay.price}{' '}
-                <span className={styles.statBad}>({recap.biggestOverpay.delta})</span>
+              <div className={styles.cardStats}>
+                <span>
+                  value {recap.totalValue}
+                  {isAuction ? ` / $${recap.spent}` : ''}
+                </span>
+                <span className={recap.surplus >= 0 ? styles.statGood : styles.statBad}>
+                  {recap.surplus >= 0 ? '+' : ''}
+                  {recap.surplus} vs avg
+                </span>
               </div>
-            )}
-            <div className={styles.spendBar} title={isAuction ? 'Where the money went' : 'Where the value went'}>
-              {recap.positionSpend.map(seg => (
-                <span
-                  key={seg.pos}
-                  className={styles.spendSeg}
-                  style={{
-                    width: `${Math.max(2, Math.round(seg.share * 100))}%`,
-                    background: `var(--pos-${seg.pos.toLowerCase()}, var(--rule))`,
-                  }}
-                  title={`${seg.pos}: ${isAuction ? `$${seg.amount}` : seg.amount} (${Math.round(seg.share * 100)}%)`}
-                />
-              ))}
-            </div>
-          </button>
-        ))}
-      </div>
+              {isAuction && recap.bestBuy && (
+                <div className={styles.cardLine}>
+                  Best buy: {recap.bestBuy.pick.player.name} ${recap.bestBuy.price}{' '}
+                  <span className={styles.statGood}>({recap.bestBuy.delta! >= 0 ? '+' : ''}{recap.bestBuy.delta})</span>
+                </div>
+              )}
+              {isAuction && recap.biggestOverpay && (
+                <div className={styles.cardLine}>
+                  Overpay: {recap.biggestOverpay.pick.player.name} ${recap.biggestOverpay.price}{' '}
+                  <span className={styles.statBad}>({recap.biggestOverpay.delta})</span>
+                </div>
+              )}
+              <div className={styles.spendBar} title={isAuction ? 'Where the money went' : 'Where the value went'}>
+                {recap.positionSpend.map(seg => (
+                  <span
+                    key={seg.pos}
+                    className={styles.spendSeg}
+                    style={{
+                      width: `${Math.max(2, Math.round(seg.share * 100))}%`,
+                      background: `var(--pos-${seg.pos.toLowerCase()}, var(--rule))`,
+                    }}
+                    title={`${seg.pos}: ${isAuction ? `$${seg.amount}` : seg.amount} (${Math.round(seg.share * 100)}%)`}
+                  />
+                ))}
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <h3 className={styles.sectionTitle}>Share It</h3>
+          <span className={styles.sectionNote}>
+            {isAuction
+              ? 'Bargains and overpays vs the value sheet. Copy a list, paste it in the league chat.'
+              : 'Steals and reaches vs market ADP. Copy a list, paste it in the league chat.'}
+          </span>
+        </div>
+        <RecapShare config={config} recaps={recaps} />
+      </section>
     </div>
   );
 }

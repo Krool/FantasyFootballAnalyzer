@@ -124,6 +124,13 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
     window.scrollTo(0, 0);
   }, [phase]);
 
+  // Post-draft, the Board tab is an empty pool search; land on the rosters
+  // instead. Leaving complete (undo reopens the draft, reset starts a new
+  // one) must land back on Board, or the room reopens on the wrong tab.
+  useEffect(() => {
+    setBoardTab(phase === 'complete' ? 'teams' : 'board');
+  }, [phase]);
+
   // Clear a selection that got drafted out from under us (mock AI picks).
   useEffect(() => {
     if (selected && derived.draftedPlayerIds.has(selected.id)) setSelected(null);
@@ -134,7 +141,9 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       const typing = target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA';
-      if (e.key === '/' && !typing) {
+      // Drafting only: post-draft the Board tab is an empty pool search,
+      // and yanking the recap over to it would be a dead end.
+      if (e.key === '/' && !typing && phase === 'drafting') {
         e.preventDefault();
         // The search box lives on the Board tab; jump there first.
         setBoardTab('board');
@@ -642,7 +651,8 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                       <QueuePanel room={room} queue={queue} onSelect={setSelected} />
                     )}
                     <MyTeamPanel room={room} />
-                    <LeagueNeeds room={room} />
+                    {/* Post-draft every row reads FULL; the panel is noise. */}
+                    {phase !== 'complete' && <LeagueNeeds room={room} />}
                   </div>
                 </div>
 

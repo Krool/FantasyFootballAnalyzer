@@ -1,0 +1,214 @@
+.share {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border: 2px solid var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  background: var(--ink);
+  padding: 0.8rem 0.9rem 0.9rem;
+}
+
+.cardEmpty {
+  border-style: dashed;
+  border-color: var(--bone-dim);
+  box-shadow: none;
+}
+
+.cardHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border-bottom: 1px dashed var(--rule);
+  padding-bottom: 0.4rem;
+}
+
+.cardTitle {
+  margin: 0;
+  font-family: var(--font-headline);
+  /* 1.1rem is the documented floor for the headline face. */
+  font-size: 1.1rem;
+  line-height: 0.95;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: var(--bone);
+}
+
+.copyBtn,
+.copyAll {
+  padding: 0.5rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 2px solid var(--bone-dim);
+  color: var(--bone-dim);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.copyBtn:hover,
+.copyAll:hover {
+  color: var(--lime);
+  border-color: var(--lime);
+}
+
+.copyAll {
+  align-self: flex-end;
+  border-color: var(--bone);
+  color: var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.copyAll:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--lime);
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rowRank {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--bone-dim);
+}
+
+.rowGrade {
+  font-family: var(--font-headline);
+  /* Headline face stays at its 1.1rem legibility floor. */
+  font-size: 1.1rem;
+  line-height: 0.95;
+  color: var(--lime);
+  min-width: 1.8rem;
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rowName {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.92rem;
+  color: var(--bone);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowTeam {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+}
+
+.deltaGood,
+.deltaBad {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.deltaGood {
+  color: var(--lime);
+}
+
+.deltaBad {
+  color: var(--blood-text);
+}
+
+.rowDetail {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  white-space: nowrap;
+}
+
+.byeCount {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.emptyNote {
+  margin: 0;
+  padding: 0.5rem 0 0.3rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 0.9rem;
+  color: var(--bone-dim);
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .copyBtn,
+  .copyAll {
+    min-height: 44px;
+  }
+
+  .copyAll {
+    align-self: stretch;
+  }
+}

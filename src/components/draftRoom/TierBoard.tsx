@@ -3,7 +3,7 @@ import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
 import { NflTeamLabel } from '@/components';
-import { sleeperAdpFor } from '@/utils/consensus';
+import { marketAdp } from '@/utils/consensus';
 import { inflateValue } from '@/utils/inflation';
 import type { StarterPos } from '@/utils/draftEngine';
 import { STARTER_POSITIONS } from '@/utils/draftEngine';
@@ -42,7 +42,7 @@ export function TierBoard({ room, selectedId, onSelect }: TierBoardProps) {
   const superflex = config.rosterSlots.SUPERFLEX > 0;
   const detail = (p: PoolPlayer) => {
     if (isAuction) return `$${inflateValue(scaledValues.get(p.id) ?? 1, inflation.rate)}`;
-    const adp = sleeperAdpFor(p, scoring, superflex) ?? p.espnAdp;
+    const adp = marketAdp(p, scoring, superflex);
     return adp !== undefined ? `ADP ${Math.round(adp)}` : `#${p.overallRank}`;
   };
 
