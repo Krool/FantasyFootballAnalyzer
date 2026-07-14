@@ -4,6 +4,7 @@ import type { League, RosterSlots, ScoringType } from '@/types';
 import type { DraftRoomTeam } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { leagueKeyFor } from '@/hooks/useDraftRoom';
+import { useKeeperSourceTeams } from '@/hooks/useKeeperSource';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { SnakeFormat } from '@/utils/snakeOrder';
 import { guessKeepers, keeperCandidates, resolveKeeperRounds } from '@/utils/keeperGuess';
@@ -120,10 +121,13 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
   };
 
   // Keeper guesses come from last season's draft results, valued against
-  // this year's rankings (and escalated by the league's keeper rule).
+  // this year's rankings (and escalated by the league's keeper rule). On a
+  // freshly renewed league the hook fetches those results from the previous
+  // season's league, since the loaded one has no draft yet.
+  const keeperTeams = useKeeperSourceTeams(league);
   const candidatesByTeam = useMemo(
-    () => keeperCandidates(league.teams, room.pool.players, config.teams.length, config.rounds, escalation),
-    [league.teams, room.pool.players, config.teams.length, config.rounds, escalation],
+    () => keeperCandidates(keeperTeams, room.pool.players, config.teams.length, config.rounds, escalation),
+    [keeperTeams, room.pool.players, config.teams.length, config.rounds, escalation],
   );
   const anyKeeperCandidates = [...candidatesByTeam.values()].some(c => c.length > 0);
   const keepersOn = config.keepers !== undefined;
@@ -134,7 +138,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
   const toggleKeepers = (on: boolean) => {
     updateConfig({
       keepers: on
-        ? guessKeepers(league.teams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, escalation)
+        ? guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, escalation)
         : undefined,
     });
   };
@@ -170,7 +174,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
     updateConfig({ keepersPerTeam: next });
     if (keepersOn) {
       updateConfig({
-        keepers: guessKeepers(league.teams, room.pool.players, config.teams.length, config.rounds, next, escalation),
+        keepers: guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, next, escalation),
       });
     }
   };
@@ -179,7 +183,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
     updateConfig({ keeperEscalation: n });
     if (keepersOn) {
       updateConfig({
-        keepers: guessKeepers(league.teams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, n),
+        keepers: guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, n),
       });
     }
   };

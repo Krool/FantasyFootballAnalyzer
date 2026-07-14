@@ -733,6 +733,61 @@ export async function loadLeague(leagueId: string): Promise<League> {
   };
 }
 
+// Keeper guessing on a freshly renewed league: the new season's league has no
+// draft yet, so "cost = last year's round minus escalation" and "must finish
+// the season on the drafting team" have nothing to read. This is the minimal
+// prior-season fetch for that (draft picks + final rosters; no transactions,
+// matchups, or stats). Results are keyed by owner user_ids because roster ids
+// are not stable across seasons; the caller grafts them onto the renewed
+// league's teams by owner.
+export interface KeeperSourceTeam {
+  ownerUserIds: string[];
+  draftPicks: DraftPick[];
+  roster: Player[];
+}
+
+export async function loadKeeperSourceTeams(leagueId: string): Promise<KeeperSourceTeam[]> {
+  const [leagueData, rosters, players] = await Promise.all([
+    getLeague(leagueId),
+    getLeagueRosters(leagueId),
+    getAllPlayers(),
+  ]);
+
+  let picks: SleeperAPI.DraftPick[] = [];
+  if (leagueData.draft_id) {
+    try {
+      picks = await getDraftPicks(leagueData.draft_id);
+    } catch (error) {
+      logger.warn(
+        'Could not fetch prior-season draft picks:',
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  const picksByRoster = new Map<number, DraftPick[]>();
+  picks.forEach(pick => {
+    const converted: DraftPick = {
+      pickNumber: pick.pick_no,
+      round: pick.round,
+      player: convertPlayer(pick.player_id, players),
+      teamId: String(pick.roster_id),
+      teamName: '',
+      isKeeper: pick.is_keeper === true,
+      auctionValue: pick.metadata?.amount ? parseInt(pick.metadata.amount, 10) || undefined : undefined,
+    };
+    const list = picksByRoster.get(pick.roster_id) || [];
+    list.push(converted);
+    picksByRoster.set(pick.roster_id, list);
+  });
+
+  return rosters.map(roster => ({
+    ownerUserIds: [roster.owner_id, ...(roster.co_owners ?? [])].filter(Boolean),
+    draftPicks: picksByRoster.get(roster.roster_id) ?? [],
+    roster: roster.players?.map(id => convertPlayer(id, players)) ?? [],
+  }));
+}
+
 // Walk previous_league_id from `leagueId` to enumerate every reachable season.
 // Each hop maps year → leagueId for the dropdown. Sequential because each
 // response carries the pointer to the next one; capped at 15 to bound runtime

@@ -4,6 +4,7 @@ import {
   findSuccessorLeague,
   getAvailableSeasons,
   loadHeadToHeadRecords,
+  loadKeeperSourceTeams,
   loadLeague,
   loadLeagueHistory,
 } from './sleeper';
@@ -640,5 +641,77 @@ describe('sleeper loadLeagueHistory / loadHeadToHeadRecords', () => {
     expect(vsBob!.losses).toBe(1);
     expect(vsBob!.matchups).toHaveLength(2);
     expect(vsBob!.opponentName).toBe('Bob');
+  });
+});
+
+describe('sleeper loadKeeperSourceTeams', () => {
+  // Prior-season league: distinct id and draft so the shared fixtures above
+  // can't mask a wrong URL.
+  const PREV_ID = 'P0';
+  const PREV_DRAFT = 'PD0';
+
+  const prevLeague = {
+    ...leagueFixture,
+    league_id: PREV_ID,
+    season: '2025',
+    draft_id: PREV_DRAFT,
+  };
+
+  // Final rosters, not draft-day rosters: keeper rules require the player to
+  // end the season on the drafting team.
+  const prevRosters: SleeperAPI.Roster[] = [
+    { ...makeRoster(1, 'u1', ['101', '105'], 10, 4), league_id: PREV_ID },
+    { ...makeRoster(2, 'u2', ['106'], 8, 6), league_id: PREV_ID, co_owners: ['u9'] },
+  ];
+
+  const prevPicks: Partial<SleeperAPI.DraftPick>[] = [
+    { pick_no: 1, round: 1, player_id: '101', roster_id: 1, picked_by: 'u1', draft_slot: 1 },
+    {
+      pick_no: 2, round: 2, player_id: '106', roster_id: 2, picked_by: 'u2', draft_slot: 2,
+      is_keeper: true, metadata: { first_name: 'Saquon', last_name: 'Barkley', position: 'RB', team: 'PHI', amount: '42' },
+    },
+  ];
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns prior draft picks and final rosters keyed by owner user ids', async () => {
+    stubRoutes({
+      [`/league/${PREV_ID}`]: prevLeague,
+      [`/league/${PREV_ID}/rosters`]: prevRosters,
+      '/players/nfl': playersFixture,
+      [`/draft/${PREV_DRAFT}/picks`]: prevPicks,
+    });
+
+    const teams = await loadKeeperSourceTeams(PREV_ID);
+    expect(teams).toHaveLength(2);
+
+    const [t1, t2] = teams;
+    expect(t1.ownerUserIds).toEqual(['u1']);
+    expect(t1.draftPicks).toHaveLength(1);
+    expect(t1.draftPicks[0].player.name).toBe('Josh Allen');
+    expect(t1.draftPicks[0].round).toBe(1);
+    expect(t1.draftPicks[0].isKeeper).toBe(false);
+    expect(t1.roster.map(p => p.name)).toEqual(['Josh Allen', 'Puka Nacua']);
+
+    // Co-owners ride along so the graft can match whoever renewed the roster.
+    expect(t2.ownerUserIds).toEqual(['u2', 'u9']);
+    expect(t2.draftPicks[0].isKeeper).toBe(true);
+    expect(t2.draftPicks[0].auctionValue).toBe(42);
+  });
+
+  it('tolerates a failed draft-picks fetch: rosters still return, picks empty', async () => {
+    // No picks route: the stub rejects that URL, which must not sink the load.
+    stubRoutes({
+      [`/league/${PREV_ID}`]: prevLeague,
+      [`/league/${PREV_ID}/rosters`]: prevRosters,
+      '/players/nfl': playersFixture,
+    });
+
+    const teams = await loadKeeperSourceTeams(PREV_ID);
+    expect(teams).toHaveLength(2);
+    expect(teams.every(t => t.draftPicks.length === 0)).toBe(true);
+    expect(teams[0].roster).toHaveLength(2);
   });
 });
