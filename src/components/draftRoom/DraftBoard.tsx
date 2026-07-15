@@ -76,14 +76,20 @@ export function DraftBoard({ room }: DraftBoardProps) {
   }, [config.keepers, derived.draftedPlayerIds, playerById]);
 
   // Keep the pick on the clock in view as the draft advances, without
-  // yanking the page itself around.
+  // yanking the page itself around. Glides rather than teleports: an
+  // instant jump every few seconds reads as the board flickering.
   useEffect(() => {
     const scroller = scrollerRef.current;
     const cell = clockCellRef.current;
     if (!scroller || !cell || typeof scroller.scrollTo !== 'function') return;
     const targetTop = cell.offsetTop - scroller.clientHeight / 2 + cell.clientHeight / 2;
     const targetLeft = cell.offsetLeft - scroller.clientWidth / 2 + cell.clientWidth / 2;
-    scroller.scrollTo({ top: Math.max(0, targetTop), left: Math.max(0, targetLeft) });
+    const reduceMotion = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    scroller.scrollTo({
+      top: Math.max(0, targetTop),
+      left: Math.max(0, targetLeft),
+      behavior: reduceMotion ? 'auto' : 'smooth',
+    });
   }, [derived.pickCount]);
 
   if (teamCount === 0 || config.rounds === 0) return null;
