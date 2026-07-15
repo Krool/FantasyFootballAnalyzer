@@ -426,25 +426,36 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                 myTurn ? styles.statusBarMine : ''
               }`}
             >
-              <span className={styles.statusItem}>
-                Pick {Math.min(derived.pickCount + 1, derived.totalPicks)}/{derived.totalPicks}
-              </span>
-              {derived.onTheClockId && (
+              {/* The only contents that change pick to pick live together in
+                  one group: on phones it renders as a single fixed-height row
+                  (name ellipsizes, alert keeps a slot) so the board below
+                  stops jumping as names and badges come and go. */}
+              <div className={styles.statusPrimary}>
                 <span className={styles.statusItem}>
-                  {myTurn ? (
-                    <strong className={styles.statusYou}>
-                      {isAuction ? 'YOUR NOMINATION' : "YOU'RE UP"}
-                    </strong>
-                  ) : (
-                    <>
-                      {isAuction ? 'Nominating: ' : 'On the clock: '}
-                      <strong className={styles.statusStrong}>
-                        {config.teams.find(t => t.id === derived.onTheClockId)?.name}
-                      </strong>
-                    </>
-                  )}
+                  Pick {Math.min(derived.pickCount + 1, derived.totalPicks)}/{derived.totalPicks}
                 </span>
-              )}
+                {derived.onTheClockId && (
+                  <span className={`${styles.statusItem} ${styles.statusClock}`}>
+                    {myTurn ? (
+                      <strong className={styles.statusYou}>
+                        {isAuction ? 'YOUR NOMINATION' : "YOU'RE UP"}
+                      </strong>
+                    ) : (
+                      <>
+                        {isAuction ? 'Nominating: ' : 'On the clock: '}
+                        <strong className={styles.statusStrong}>
+                          {config.teams.find(t => t.id === derived.onTheClockId)?.name}
+                        </strong>
+                      </>
+                    )}
+                  </span>
+                )}
+                {run && (
+                  <span className={styles.statusAlert} title={`${run.count} of the last ${run.window} picks were ${run.pos}s`}>
+                    {run.pos} RUN
+                  </span>
+                )}
+              </div>
               {isSnake && !myTurn && myNextPick !== null && (
                 <span
                   className={`${styles.statusItem} ${styles.statusSecondary}`}

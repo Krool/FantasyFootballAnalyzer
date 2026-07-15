@@ -80,6 +80,15 @@
   color: var(--bone-dim);
 }
 
+/* Pick counter + who's up + run alert: the per-pick contents. On desktop the
+   group dissolves (display: contents) and the items flow in the wrapping bar
+   as always. Phones give the group one fixed-height, non-wrapping row so the
+   bar's height stops depending on the length of whoever's on the clock or on
+   a run badge blinking in and out; see the 640px block below. */
+.statusPrimary {
+  display: contents;
+}
+
 /* Lower-priority chips (your-next, money %, pick timer). Useful on a wide
    screen, dead weight on a phone where the bar wraps to four rows; hidden
    under the narrow breakpoint so the essentials stay one or two rows. */
@@ -295,6 +304,22 @@
   .statusBar {
     padding: 0.6rem 0.75rem;
     margin-bottom: 1rem;
+  }
+  .statusPrimary {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 2rem;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .statusPrimary > * { flex: none; }
+  .statusClock {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .statusSecondary { display: none; }
   /* With the secondary chips gone the bar wraps to at most two rows, so the

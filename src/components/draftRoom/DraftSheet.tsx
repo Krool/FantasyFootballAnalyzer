@@ -18,7 +18,9 @@ interface DraftSheetProps {
 // Sleeper-style bottom sheet for the phone draft room. PEEK shows just the
 // tab bar above the board, HALF splits the screen, FULL takes over. Dragging
 // the header follows the finger and snaps to the nearest state on release;
-// tapping a tab opens at least HALF; the chevron collapses back to PEEK.
+// tapping anywhere on a peeked header opens HALF; tapping the already-active
+// tab collapses back to PEEK; the chevron steps up (peek -> half -> full)
+// and back down from full.
 const SNAP_SHARE: Record<SheetSnap, number> = { peek: 0.075, half: 0.52, full: 0.94 };
 
 export function DraftSheet({ tabs, active, onTabChange, children }: DraftSheetProps) {
@@ -65,7 +67,13 @@ export function DraftSheet({ tabs, active, onTabChange, children }: DraftSheetPr
     );
   };
 
+  // Tapping the tab you're already on is the "minimize" gesture; any other
+  // tap on a peeked sheet opens it, so a collapsed sheet is never a dead bar.
   const selectTab = (key: string) => {
+    if (key === active && snap !== 'peek') {
+      setSnap('peek');
+      return;
+    }
     onTabChange(key);
     if (snap === 'peek') setSnap('half');
   };
@@ -83,6 +91,9 @@ export function DraftSheet({ tabs, active, onTabChange, children }: DraftSheetPr
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         onTouchCancel={onTouchEnd}
+        onClick={() => {
+          if (snap === 'peek') setSnap('half');
+        }}
       >
         <div className={styles.handle} aria-hidden="true" />
         <div className={styles.tabsRow}>
@@ -101,7 +112,8 @@ export function DraftSheet({ tabs, active, onTabChange, children }: DraftSheetPr
             type="button"
             className={styles.snapBtn}
             aria-label={snap === 'full' ? 'Shrink panel' : 'Expand panel'}
-            onClick={() => setSnap(snap === 'full' ? 'half' : 'full')}
+            aria-expanded={snap !== 'peek'}
+            onClick={() => setSnap(snap === 'peek' ? 'half' : snap === 'half' ? 'full' : 'half')}
           >
             {snap === 'full' ? '⌄' : '⌃'}
           </button>

@@ -51,6 +51,16 @@
   max-height: 21rem;
 }
 
+/* Phone drafting: the bottom sheet overlays the lower half of the screen, so
+   most of a 21rem scroller sits underneath it — including the auto-centered
+   on-the-clock cell. A shorter window (header + ~3 rounds) keeps the whole
+   strip, and the centered clock cell with it, visible above the sheet. */
+@media (max-width: 640px) {
+  .scroller {
+    max-height: 12rem;
+  }
+}
+
 .grid {
   display: grid;
   gap: 2px;

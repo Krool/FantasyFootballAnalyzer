@@ -77,7 +77,8 @@ export function DraftBoard({ room }: DraftBoardProps) {
 
   // Keep the pick on the clock in view as the draft advances, without
   // yanking the page itself around. Only scroll when the cell has actually
-  // left the viewport: recentering on every pick made the board twitch.
+  // left the viewport (recentering on every pick made the board twitch),
+  // and glide rather than teleport: an instant jump reads as a flicker.
   useEffect(() => {
     const scroller = scrollerRef.current;
     const cell = clockCellRef.current;
@@ -91,7 +92,12 @@ export function DraftBoard({ room }: DraftBoardProps) {
     if (visibleV && visibleH) return;
     const targetTop = cell.offsetTop - scroller.clientHeight / 2 + cell.clientHeight / 2;
     const targetLeft = cell.offsetLeft - scroller.clientWidth / 2 + cell.clientWidth / 2;
-    scroller.scrollTo({ top: Math.max(0, targetTop), left: Math.max(0, targetLeft) });
+    const reduceMotion = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    scroller.scrollTo({
+      top: Math.max(0, targetTop),
+      left: Math.max(0, targetLeft),
+      behavior: reduceMotion ? 'auto' : 'smooth',
+    });
   }, [derived.pickCount]);
 
   if (teamCount === 0 || config.rounds === 0) return null;

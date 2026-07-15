@@ -51,6 +51,17 @@
   margin: 0.4rem auto 0.15rem;
 }
 
+/* Collapsed, the sheet read as a static tab bar and people missed that
+   there was a panel under it. Peek turns the drag handle and the expand
+   chevron lime so the bar visibly advertises "there's more here". */
+.sheet[data-snap='peek'] .handle {
+  background: var(--lime);
+}
+
+.sheet[data-snap='peek'] .snapBtn {
+  color: var(--lime);
+}
+
 .tabsRow {
   display: flex;
   align-items: stretch;
