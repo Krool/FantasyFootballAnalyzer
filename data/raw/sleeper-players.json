@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-07-15T12:12:40.558Z",
+ "fetchedAt": "2026-07-16T12:18:49.952Z",
  "data": {
   "players": [
    {
@@ -1855,12 +1855,12 @@
     "pos": "QB",
     "team": "CAR",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "NA",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 3
+    "depthChartOrder": null
    },
    {
     "sleeperId": "5906",
@@ -4656,19 +4656,6 @@
     "injuryStartDate": null,
     "yearsExp": 4,
     "depthChartOrder": 8
-   },
-   {
-    "sleeperId": "8253",
-    "name": "Deven Thompkins",
-    "pos": "WR",
-    "team": "BUF",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 4,
-    "depthChartOrder": null
    },
    {
     "sleeperId": "8254",
