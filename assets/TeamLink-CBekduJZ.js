@@ -1,1 +1,0 @@
-import{j as o,N as i}from"./index-C-AYSKaV.js";const a="_link_qdsne_1",l={link:a};function p({teamId:t,name:n,className:e}){return o.jsx(i,{to:`/teams?team=${encodeURIComponent(t)}`,className:`${l.link} ${e??""}`,title:`Open ${n}'s team page`,onClick:s=>s.stopPropagation(),children:n})}export{p as T};
