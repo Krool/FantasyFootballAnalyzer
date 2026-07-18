@@ -1,0 +1,1 @@
+import{j as n,U as l}from"./index-CxWw_oXX.js";const s="_luckIcon_ingz3_1",e={luckIcon:s};function o({rating:c}){if(c!=="very_lucky"&&c!=="very_unlucky")return null;const u=c==="very_lucky";return n.jsx("img",{src:u?l.luckiest:l.unluckiest,alt:u?"very lucky":"very unlucky",className:e.luckIcon})}export{o as L};
