@@ -23,7 +23,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@sentry/react": "^10.57.0",
+    "@sentry/react": "^10.66.0",
     "fast-xml-parser": "^5.3.2",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.2",
