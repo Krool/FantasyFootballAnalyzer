@@ -31,7 +31,7 @@ jobs:
     permissions:
       contents: write # the deploy step pushes the build to the gh-pages branch
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # the stale-pool guard diffs against the pre-push tip, which can be many commits back
 
