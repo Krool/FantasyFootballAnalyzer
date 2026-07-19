@@ -28,7 +28,7 @@
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.2",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.2.7",
     "react-router-dom": "^7.13.0"
   },
   "devDependencies": {
@@ -41,7 +41,7 @@
     "@testing-library/react": "^14.0.0",
     "@types/node": "^24.10.1",
     "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@types/react-dom": "^19.2.3",
     "@vercel/node": "^4.0.0",
     "@vitejs/plugin-react": "^4.3.3",
     "@vitest/coverage-v8": "^4.1.7",
