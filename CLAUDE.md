@@ -140,13 +140,11 @@ Do not change the id scheme without a session migration.
 `src/data/draftPool.<season>.json`, `src/data/draftPool.ts`, and everything in
 `data/raw/` are bot-owned generated data: the daily Update rankings Action
 rebuilds and commits them. Do not hand-commit a locally-built pool, and never
-let one ride along in an unrelated commit. That clobbers the bot's fresh data
-with whatever stale build sat in your tree (it happened in af2bb49: a domain
-commit reverted the pool 6 days and rolled the live "Updated" date backward).
-Before committing, `git pull` first, and if you rebuilt the pool locally for a
+let one ride along in an unrelated commit — a stale local pool once clobbered
+6 days of bot data (af2bb49); ci.yml now fails a push that moves generatedAt
+backward. Before committing, `git pull` first, and if you rebuilt the pool locally for a
 quick check, `git checkout -- src/data data/raw` rather than committing it.
-ci.yml enforces this: a master push that moves any pool's `generatedAt`
-backward fails before deploy. To roll data back on purpose, rebuild fresh with
+To roll data back on purpose, rebuild fresh with
 `npm run update:rankings` (moves the stamp forward) or use the `npm run deploy`
 break-glass. The hand-maintained exception in this tree is
 `data/salary_cap_values.csv`; when a FantasyPros name drifts (e.g. Kenneth ->
@@ -163,10 +161,7 @@ prompt and how to add icons.
 
 ## Fonts
 
-Fonts are **self-hosted**, not loaded from Google Fonts. `@fontsource` packages
-supply the woff2 files in `public/fonts/`; `src/fonts.css` (imported in
-`src/main.tsx`) declares the `@font-face` rules. The most-used subsets (Fraunces
-normal + italic, Bowlby One) are preloaded in `index.html`, with
+Fonts are self-hosted via `@fontsource` (not Google Fonts), declared in `src/fonts.css`.
 `font-display: optional` so a refresh does not flash a synthetic font.
 
 ## Observability
@@ -198,9 +193,7 @@ LAST season during draft prep; the Draft Room targets the upcoming season
 
 ## Copy rules
 
-- No em dashes
 - No AI cliches (see docs/DESIGN_SYSTEM.md voice section)
-- Accuracy over marketing. Don't write claims the code can't back up.
 - The pitch is personal and plain: built for my own draft prep and review,
   completely free, enjoy. No punchy-tagline hype ("settle the group chat"
   was removed as corny, 2026-07-12).
