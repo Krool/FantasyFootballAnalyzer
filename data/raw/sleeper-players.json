@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-07-22T12:23:34.687Z",
+ "fetchedAt": "2026-07-23T12:22:08.626Z",
  "data": {
   "players": [
    {
@@ -2591,19 +2591,6 @@
     "depthChartOrder": 8
    },
    {
-    "sleeperId": "6850",
-    "name": "Harrison Bryant",
-    "pos": "TE",
-    "team": "SEA",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 6,
-    "depthChartOrder": null
-   },
-   {
     "sleeperId": "6853",
     "name": "Van Jefferson",
     "pos": "WR",
@@ -4424,6 +4411,19 @@
     "depthChartOrder": 7
    },
    {
+    "sleeperId": "8202",
+    "name": "Michael Woods",
+    "pos": "WR",
+    "team": "DEN",
+    "status": "Inactive",
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Leg",
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 4,
+    "depthChartOrder": null
+   },
+   {
     "sleeperId": "8204",
     "name": "Bo Melton",
     "pos": "WR",
@@ -5404,7 +5404,7 @@
     "pos": "RB",
     "team": "SEA",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "PUP",
     "injuryBodyPart": "Knee - ACL",
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
@@ -6327,8 +6327,8 @@
     "pos": "TE",
     "team": "ARI",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Neck",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
@@ -10122,6 +10122,19 @@
     "name": "Hunter Dekkers",
     "pos": "QB",
     "team": "NO",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 1,
+    "depthChartOrder": null
+   },
+   {
+    "sleeperId": "13227",
+    "name": "Mitch Van Vooren",
+    "pos": "WR",
+    "team": "NE",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
