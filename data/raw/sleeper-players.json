@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-07-24T12:16:50.791Z",
+ "fetchedAt": "2026-07-25T12:02:08.386Z",
  "data": {
   "players": [
    {
@@ -576,6 +576,32 @@
     "depthChartOrder": 1
    },
    {
+    "sleeperId": "3258",
+    "name": "Nick Vannett",
+    "pos": "TE",
+    "team": "SEA",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 10,
+    "depthChartOrder": 4
+   },
+   {
+    "sleeperId": "3269",
+    "name": "Chris Moore",
+    "pos": "WR",
+    "team": "BAL",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 10,
+    "depthChartOrder": 6
+   },
+   {
     "sleeperId": "3271",
     "name": "Tyler Higbee",
     "pos": "TE",
@@ -880,8 +906,8 @@
     "pos": "RB",
     "team": "ARI",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Foot",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
@@ -5716,8 +5742,8 @@
     "pos": "WR",
     "team": "KC",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Knee",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
@@ -6782,9 +6808,9 @@
     "pos": "RB",
     "team": "ARI",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Knee - Meniscus",
-    "injuryNotes": "Surgery",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
     "depthChartOrder": 4
@@ -8997,7 +9023,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 6
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "12700",
@@ -9850,7 +9876,7 @@
     "pos": "WR",
     "team": "SEA",
     "status": "Active",
-    "injuryStatus": "PUP",
+    "injuryStatus": "Questionable",
     "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -11535,19 +11561,6 @@
     "depthChartOrder": 3
    },
    {
-    "sleeperId": "13427",
-    "name": "Diego Pavia",
-    "pos": "QB",
-    "team": "BAL",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 0,
-    "depthChartOrder": null
-   },
-   {
     "sleeperId": "13428",
     "name": "Joey Aguilar",
     "pos": "QB",
@@ -12904,9 +12917,9 @@
     "name": "Jimmy Kibble",
     "pos": "WR",
     "team": "NE",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "status": "Inactive",
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -13138,6 +13151,19 @@
     "name": "Malick Meiga",
     "pos": "WR",
     "team": "CAR",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 0,
+    "depthChartOrder": null
+   },
+   {
+    "sleeperId": "14061",
+    "name": "Jeremiah Franklin",
+    "pos": "TE",
+    "team": "NE",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
