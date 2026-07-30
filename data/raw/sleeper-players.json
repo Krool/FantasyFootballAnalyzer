@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-07-29T12:58:06.635Z",
+ "fetchedAt": "2026-07-30T12:26:45.553Z",
  "data": {
   "players": [
    {
@@ -407,19 +407,6 @@
     "depthChartOrder": 5
    },
    {
-    "sleeperId": "2549",
-    "name": "Trevor Siemian",
-    "pos": "QB",
-    "team": "ATL",
-    "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 11,
-    "depthChartOrder": 3
-   },
-   {
     "sleeperId": "2747",
     "name": "Jason Myers",
     "pos": "K",
@@ -633,9 +620,9 @@
     "pos": "QB",
     "team": "DAL",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Knee",
-    "injuryNotes": "Soreness",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 10,
     "depthChartOrder": 1
@@ -763,8 +750,8 @@
     "pos": "QB",
     "team": "TEN",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
@@ -906,8 +893,8 @@
     "pos": "RB",
     "team": "ARI",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Foot",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
@@ -1096,19 +1083,6 @@
     "depthChartOrder": 4
    },
    {
-    "sleeperId": "4435",
-    "name": "Anthony Firkser",
-    "pos": "TE",
-    "team": "WAS",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 9,
-    "depthChartOrder": 4
-   },
-   {
     "sleeperId": "4451",
     "name": "Isaac Whitney",
     "pos": "WR",
@@ -1161,6 +1135,19 @@
     "depthChartOrder": 40
    },
    {
+    "sleeperId": "4574",
+    "name": "Cooper Rush",
+    "pos": "QB",
+    "team": "ATL",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 9,
+    "depthChartOrder": 3
+   },
+   {
     "sleeperId": "4602",
     "name": "Robert Tonyan",
     "pos": "TE",
@@ -1198,6 +1185,19 @@
     "injuryStartDate": null,
     "yearsExp": 1,
     "depthChartOrder": null
+   },
+   {
+    "sleeperId": "4854",
+    "name": "River Cracraft",
+    "pos": "WR",
+    "team": "WAS",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 9,
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "4866",
@@ -2401,8 +2401,8 @@
     "pos": "WR",
     "team": "CLE",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Hamstring",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
@@ -2952,7 +2952,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "7149",
@@ -2998,8 +2998,8 @@
     "name": "Dan Chisena",
     "pos": "WR",
     "team": "CAR",
-    "status": "Active",
-    "injuryStatus": "Questionable",
+    "status": "Inactive",
+    "injuryStatus": "IR",
     "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -3720,6 +3720,19 @@
     "injuryStartDate": null,
     "yearsExp": 5,
     "depthChartOrder": 4
+   },
+   {
+    "sleeperId": "7989",
+    "name": "DJ Turner",
+    "pos": "WR",
+    "team": "HOU",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 5,
+    "depthChartOrder": null
    },
    {
     "sleeperId": "8002",
@@ -4538,7 +4551,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "8219",
@@ -5007,19 +5020,6 @@
     "injuryStartDate": null,
     "yearsExp": 4,
     "depthChartOrder": 5
-   },
-   {
-    "sleeperId": "8932",
-    "name": "Lucas Havrisik",
-    "pos": "K",
-    "team": "GB",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 4,
-    "depthChartOrder": null
    },
    {
     "sleeperId": "9220",
@@ -5612,8 +5612,8 @@
     "pos": "RB",
     "team": "JAX",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Foot",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
@@ -5690,9 +5690,9 @@
     "pos": "WR",
     "team": "DAL",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Groin",
-    "injuryNotes": "Strain",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
     "depthChartOrder": 6
@@ -5729,8 +5729,8 @@
     "pos": "WR",
     "team": "CIN",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Ankle",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
@@ -6574,9 +6574,9 @@
     "pos": "QB",
     "team": "DEN",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Ankle",
-    "injuryNotes": "Surgery",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
     "depthChartOrder": 1
@@ -6782,9 +6782,9 @@
     "pos": "RB",
     "team": "TB",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Shoulder",
-    "injuryNotes": "Surgery",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
     "depthChartOrder": 1
@@ -7081,8 +7081,8 @@
     "pos": "WR",
     "team": "GB",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "PUP",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
@@ -7107,8 +7107,8 @@
     "pos": "WR",
     "team": "KC",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Shoulder - Labrum",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
@@ -7276,8 +7276,8 @@
     "pos": "WR",
     "team": "SF",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Knee",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
@@ -7531,6 +7531,19 @@
     "depthChartOrder": 8
    },
    {
+    "sleeperId": "11806",
+    "name": "Casey Washington",
+    "pos": "WR",
+    "team": "CAR",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 2,
+    "depthChartOrder": 10
+   },
+   {
     "sleeperId": "11808",
     "name": "Jha'Quan Jackson",
     "pos": "WR",
@@ -7671,7 +7684,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 6
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "11959",
@@ -8043,9 +8056,9 @@
     "pos": "RB",
     "team": "SF",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Ribs",
+    "injuryNotes": "Fracture",
     "injuryStartDate": null,
     "yearsExp": 1,
     "depthChartOrder": 2
@@ -8147,8 +8160,8 @@
     "pos": "RB",
     "team": "NO",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -8178,7 +8191,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 8
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "12480",
@@ -8199,8 +8212,8 @@
     "pos": "RB",
     "team": "NYG",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Ankle",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -8511,8 +8524,8 @@
     "pos": "TE",
     "team": "CLE",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -10968,8 +10981,8 @@
     "pos": "TE",
     "team": "NYJ",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -11176,9 +11189,9 @@
     "pos": "WR",
     "team": "CAR",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Knee",
-    "injuryNotes": "Soreness",
+    "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
     "depthChartOrder": 5
@@ -11610,7 +11623,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "13430",
@@ -13121,10 +13134,10 @@
     "depthChartOrder": null
    },
    {
-    "sleeperId": "14055",
-    "name": "Louis Hansen",
-    "pos": "TE",
-    "team": "HOU",
+    "sleeperId": "14056",
+    "name": "Kyre Duplessis",
+    "pos": "WR",
+    "team": "SEA",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
