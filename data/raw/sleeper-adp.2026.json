@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-07-31T12:53:17.872Z",
+ "fetchedAt": "2026-08-01T12:00:39.516Z",
  "data": {
   "players": [
    {
@@ -1456,6 +1456,18 @@
     "ptsStd": 106.5
    },
    {
+    "name": "Los Angeles Rams",
+    "pos": "DST",
+    "team": "LAR",
+    "adpHalfPpr": 120.5,
+    "adpPpr": 115.5,
+    "adpStd": 110.1,
+    "adp2qb": 140.1,
+    "ptsHalfPpr": 106,
+    "ptsPpr": 106,
+    "ptsStd": 106
+   },
+   {
     "name": "Isaiah Likely",
     "pos": "TE",
     "team": "NYG",
@@ -1504,6 +1516,18 @@
     "ptsStd": 56.2
    },
    {
+    "name": "Houston Texans",
+    "pos": "DST",
+    "team": "HOU",
+    "adpHalfPpr": 123.6,
+    "adpPpr": 119,
+    "adpStd": 114.4,
+    "adp2qb": 142.4,
+    "ptsHalfPpr": 104,
+    "ptsPpr": 104,
+    "ptsStd": 104
+   },
+   {
     "name": "Jordan Mason",
     "pos": "RB",
     "team": "MIN",
@@ -1514,6 +1538,18 @@
     "ptsHalfPpr": 143.7,
     "ptsPpr": 153.7,
     "ptsStd": 133.7
+   },
+   {
+    "name": "Seattle Seahawks",
+    "pos": "DST",
+    "team": "SEA",
+    "adpHalfPpr": 125.5,
+    "adpPpr": 124.2,
+    "adpStd": 118,
+    "adp2qb": 144.4,
+    "ptsHalfPpr": 103,
+    "ptsPpr": 103,
+    "ptsStd": 103
    },
    {
     "name": "Jared Goff",
@@ -1574,6 +1610,18 @@
     "ptsHalfPpr": 132,
     "ptsPpr": 166.5,
     "ptsStd": 97.5
+   },
+   {
+    "name": "Philadelphia Eagles",
+    "pos": "DST",
+    "team": "PHI",
+    "adpHalfPpr": 130.5,
+    "adpPpr": 129,
+    "adpStd": 125,
+    "adp2qb": 155,
+    "ptsHalfPpr": 98,
+    "ptsPpr": 98,
+    "ptsStd": 98
    },
    {
     "name": "Tyrone Tracy",
@@ -1648,6 +1696,18 @@
     "ptsStd": 101.5
    },
    {
+    "name": "Denver Broncos",
+    "pos": "DST",
+    "team": "DEN",
+    "adpHalfPpr": 135.5,
+    "adpPpr": 132.8,
+    "adpStd": 128.2,
+    "adp2qb": 158,
+    "ptsHalfPpr": 96,
+    "ptsPpr": 96,
+    "ptsStd": 96
+   },
+   {
     "name": "Brian Robinson",
     "pos": "RB",
     "team": "ATL",
@@ -1682,6 +1742,18 @@
     "ptsHalfPpr": 74.3,
     "ptsPpr": 83.8,
     "ptsStd": 64.8
+   },
+   {
+    "name": "Baltimore Ravens",
+    "pos": "DST",
+    "team": "BAL",
+    "adpHalfPpr": 138.8,
+    "adpPpr": 142.2,
+    "adpStd": 138.8,
+    "adp2qb": 168,
+    "ptsHalfPpr": 95,
+    "ptsPpr": 95,
+    "ptsStd": 95
    },
    {
     "name": "Tyler Shough",
@@ -1768,6 +1840,18 @@
     "ptsStd": 65.6
    },
    {
+    "name": "New England Patriots",
+    "pos": "DST",
+    "team": "NE",
+    "adpHalfPpr": 145.5,
+    "adpPpr": 149.4,
+    "adpStd": 145.5,
+    "adp2qb": 175.7,
+    "ptsHalfPpr": 92,
+    "ptsPpr": 92,
+    "ptsStd": 92
+   },
+   {
     "name": "Tyjae Spears",
     "pos": "RB",
     "team": "TEN",
@@ -1804,6 +1888,42 @@
     "ptsStd": 66.7
    },
    {
+    "name": "Brandon Aubrey",
+    "pos": "K",
+    "team": "DAL",
+    "adpHalfPpr": 148.1,
+    "adpPpr": 171.1,
+    "adpStd": 109.5,
+    "adp2qb": 158.2,
+    "ptsHalfPpr": 116,
+    "ptsPpr": 116,
+    "ptsStd": 116
+   },
+   {
+    "name": "Cameron Dicker",
+    "pos": "K",
+    "team": "LAC",
+    "adpHalfPpr": 148.8,
+    "adpPpr": 172.2,
+    "adpStd": 129.2,
+    "adp2qb": 163.5,
+    "ptsHalfPpr": 106,
+    "ptsPpr": 106,
+    "ptsStd": 106
+   },
+   {
+    "name": "Jason Myers",
+    "pos": "K",
+    "team": "SEA",
+    "adpHalfPpr": 149,
+    "adpPpr": 175.5,
+    "adpStd": 131.9,
+    "adp2qb": 267.6,
+    "ptsHalfPpr": 111,
+    "ptsPpr": 111,
+    "ptsStd": 111
+   },
+   {
     "name": "Dalton Schultz",
     "pos": "TE",
     "team": "HOU",
@@ -1816,6 +1936,18 @@
     "ptsStd": 78.5
    },
    {
+    "name": "Harrison Mevis",
+    "pos": "K",
+    "team": "LAR",
+    "adpHalfPpr": 149.7,
+    "adpPpr": 181,
+    "adpStd": 154.2,
+    "adp2qb": 171.2,
+    "ptsHalfPpr": 106,
+    "ptsPpr": 106,
+    "ptsStd": 106
+   },
+   {
     "name": "Rashid Shaheed",
     "pos": "WR",
     "team": "SEA",
@@ -1826,6 +1958,18 @@
     "ptsHalfPpr": 111.2,
     "ptsPpr": 132.7,
     "ptsStd": 89.7
+   },
+   {
+    "name": "De'Zhaun Stribling",
+    "pos": "WR",
+    "team": "SF",
+    "adpHalfPpr": 150,
+    "adpPpr": 202.4,
+    "adpStd": 213.9,
+    "adp2qb": 263.6,
+    "ptsHalfPpr": 82,
+    "ptsPpr": 100,
+    "ptsStd": 64
    },
    {
     "name": "Dylan Sampson",
@@ -1900,6 +2044,30 @@
     "ptsStd": 53.2
    },
    {
+    "name": "Andy Borregales",
+    "pos": "K",
+    "team": "NE",
+    "adpHalfPpr": 153.7,
+    "adpPpr": 184,
+    "adpStd": 157.2,
+    "adp2qb": 177.2,
+    "ptsHalfPpr": 96,
+    "ptsPpr": 96,
+    "ptsStd": 96
+   },
+   {
+    "name": "Minnesota Vikings",
+    "pos": "DST",
+    "team": "MIN",
+    "adpHalfPpr": 154,
+    "adpPpr": 160,
+    "adpStd": 154.4,
+    "adp2qb": 178.5,
+    "ptsHalfPpr": 92,
+    "ptsPpr": 92,
+    "ptsStd": 92
+   },
+   {
     "name": "Theo Johnson",
     "pos": "TE",
     "team": "NYG",
@@ -1912,6 +2080,18 @@
     "ptsStd": 46
    },
    {
+    "name": "Ka'imi Fairbairn",
+    "pos": "K",
+    "team": "HOU",
+    "adpHalfPpr": 155.1,
+    "adpPpr": 192,
+    "adpStd": 156.5,
+    "adp2qb": 201.5,
+    "ptsHalfPpr": 113,
+    "ptsPpr": 113,
+    "ptsStd": 113
+   },
+   {
     "name": "Tyreek Hill",
     "pos": "WR",
     "team": "FA",
@@ -1922,6 +2102,18 @@
     "ptsHalfPpr": 77.2,
     "ptsPpr": 93.7,
     "ptsStd": 60.7
+   },
+   {
+    "name": "Cam Little",
+    "pos": "K",
+    "team": "JAX",
+    "adpHalfPpr": 156.6,
+    "adpPpr": 201,
+    "adpStd": 153.4,
+    "adp2qb": 204,
+    "ptsHalfPpr": 112,
+    "ptsPpr": 112,
+    "ptsStd": 112
    },
    {
     "name": "Alvin Kamara",
@@ -1958,6 +2150,18 @@
     "ptsHalfPpr": 262.74,
     "ptsPpr": 262.74,
     "ptsStd": 262.74
+   },
+   {
+    "name": "Detroit Lions",
+    "pos": "DST",
+    "team": "DET",
+    "adpHalfPpr": 157.9,
+    "adpPpr": 162.2,
+    "adpStd": 157.9,
+    "adp2qb": 187.7,
+    "ptsHalfPpr": 92,
+    "ptsPpr": 92,
+    "ptsStd": 92
    },
    {
     "name": "Braelon Allen",
@@ -2044,6 +2248,18 @@
     "ptsStd": 62
    },
    {
+    "name": "Eddy Pineiro",
+    "pos": "K",
+    "team": "SF",
+    "adpHalfPpr": 164.1,
+    "adpPpr": 204,
+    "adpStd": 178.7,
+    "adp2qb": 210,
+    "ptsHalfPpr": 101,
+    "ptsPpr": 101,
+    "ptsStd": 101
+   },
+   {
     "name": "Keaton Mitchell",
     "pos": "RB",
     "team": "LAC",
@@ -2090,6 +2306,30 @@
     "ptsHalfPpr": 98.1,
     "ptsPpr": 119.6,
     "ptsStd": 76.6
+   },
+   {
+    "name": "Harrison Butker",
+    "pos": "K",
+    "team": "KC",
+    "adpHalfPpr": 169.8,
+    "adpPpr": 224,
+    "adpStd": 155.2,
+    "adp2qb": 215.5,
+    "ptsHalfPpr": 100,
+    "ptsPpr": 100,
+    "ptsStd": 100
+   },
+   {
+    "name": "Jacksonville Jaguars",
+    "pos": "DST",
+    "team": "JAX",
+    "adpHalfPpr": 170.1,
+    "adpPpr": 177.2,
+    "adpStd": 170.1,
+    "adp2qb": 201.2,
+    "ptsHalfPpr": 91,
+    "ptsPpr": 91,
+    "ptsStd": 91
    },
    {
     "name": "Daniel Jones",
@@ -2176,6 +2416,18 @@
     "ptsStd": 63.3
    },
    {
+    "name": "Jake Bates",
+    "pos": "K",
+    "team": "DET",
+    "adpHalfPpr": 173.1,
+    "adpPpr": 233,
+    "adpStd": 175.9,
+    "adp2qb": 219.2,
+    "ptsHalfPpr": 105,
+    "ptsPpr": 105,
+    "ptsStd": 105
+   },
+   {
     "name": "Kayshon Boutte",
     "pos": "WR",
     "team": "NE",
@@ -2186,6 +2438,18 @@
     "ptsHalfPpr": 79.1,
     "ptsPpr": 94.6,
     "ptsStd": 63.6
+   },
+   {
+    "name": "Tyler Loop",
+    "pos": "K",
+    "team": "BAL",
+    "adpHalfPpr": 174.6,
+    "adpPpr": 238.4,
+    "adpStd": 150.4,
+    "adp2qb": 224.4,
+    "ptsHalfPpr": 106,
+    "ptsPpr": 106,
+    "ptsStd": 106
    },
    {
     "name": "Isiah Pacheco",
@@ -2212,6 +2476,18 @@
     "ptsStd": 50.4
    },
    {
+    "name": "Pittsburgh Steelers",
+    "pos": "DST",
+    "team": "PIT",
+    "adpHalfPpr": 178.4,
+    "adpPpr": 181.2,
+    "adpStd": 178.4,
+    "adp2qb": 215.5,
+    "ptsHalfPpr": 88,
+    "ptsPpr": 88,
+    "ptsStd": 88
+   },
+   {
     "name": "Trey Benson",
     "pos": "RB",
     "team": "ARI",
@@ -2236,6 +2512,30 @@
     "ptsStd": 37.9
    },
    {
+    "name": "Kansas City Chiefs",
+    "pos": "DST",
+    "team": "KC",
+    "adpHalfPpr": 183.2,
+    "adpPpr": 189.2,
+    "adpStd": 183.2,
+    "adp2qb": 218.5,
+    "ptsHalfPpr": 87,
+    "ptsPpr": 87,
+    "ptsStd": 87
+   },
+   {
+    "name": "Chris Boswell",
+    "pos": "K",
+    "team": "PIT",
+    "adpHalfPpr": 183.9,
+    "adpPpr": 239.4,
+    "adpStd": 151.4,
+    "adp2qb": 229.4,
+    "ptsHalfPpr": 107,
+    "ptsPpr": 107,
+    "ptsStd": 107
+   },
+   {
     "name": "Kimani Vidal",
     "pos": "RB",
     "team": "LAC",
@@ -2248,6 +2548,18 @@
     "ptsStd": 46
    },
    {
+    "name": "Will Reichard",
+    "pos": "K",
+    "team": "MIN",
+    "adpHalfPpr": 188.2,
+    "adpPpr": 204.4,
+    "adpStd": 174,
+    "adp2qb": 240,
+    "ptsHalfPpr": 109,
+    "ptsPpr": 109,
+    "ptsStd": 109
+   },
+   {
     "name": "Tre' Harris",
     "pos": "WR",
     "team": "LAC",
@@ -2258,6 +2570,30 @@
     "ptsHalfPpr": 93.4,
     "ptsPpr": 112.9,
     "ptsStd": 73.9
+   },
+   {
+    "name": "New York Giants",
+    "pos": "DST",
+    "team": "NYG",
+    "adpHalfPpr": 188.9,
+    "adpPpr": 192.5,
+    "adpStd": 188.9,
+    "adp2qb": 220.2,
+    "ptsHalfPpr": 86,
+    "ptsPpr": 86,
+    "ptsStd": 86
+   },
+   {
+    "name": "Cairo Santos",
+    "pos": "K",
+    "team": "CHI",
+    "adpHalfPpr": 190,
+    "adpPpr": 222.2,
+    "adpStd": 190.3,
+    "adp2qb": 249.4,
+    "ptsHalfPpr": 100,
+    "ptsPpr": 100,
+    "ptsStd": 100
    },
    {
     "name": "Sean Tucker",
@@ -2282,6 +2618,18 @@
     "ptsHalfPpr": 74.1,
     "ptsPpr": 90.1,
     "ptsStd": 58.1
+   },
+   {
+    "name": "Los Angeles Chargers",
+    "pos": "DST",
+    "team": "LAC",
+    "adpHalfPpr": 192.5,
+    "adpPpr": 197.6,
+    "adpStd": 192.5,
+    "adp2qb": 225.5,
+    "ptsHalfPpr": 86,
+    "ptsPpr": 86,
+    "ptsStd": 86
    },
    {
     "name": "Ray Davis",
@@ -2332,6 +2680,18 @@
     "ptsStd": 48.8
    },
    {
+    "name": "Chase McLaughlin",
+    "pos": "K",
+    "team": "TB",
+    "adpHalfPpr": 198,
+    "adpPpr": 240.2,
+    "adpStd": 199.2,
+    "adp2qb": 252.5,
+    "ptsHalfPpr": 105,
+    "ptsPpr": 105,
+    "ptsStd": 105
+   },
+   {
     "name": "Zachariah Branch",
     "pos": "WR",
     "team": "ATL",
@@ -2354,6 +2714,18 @@
     "ptsHalfPpr": 91.8,
     "ptsPpr": 111.8,
     "ptsStd": 71.8
+   },
+   {
+    "name": "Green Bay Packers",
+    "pos": "DST",
+    "team": "GB",
+    "adpHalfPpr": 199.5,
+    "adpPpr": 203.4,
+    "adpStd": 199.5,
+    "adp2qb": 230.5,
+    "ptsHalfPpr": 86,
+    "ptsPpr": 86,
+    "ptsStd": 86
    },
    {
     "name": "Jaylen Wright",
@@ -2392,6 +2764,18 @@
     "ptsStd": 27
    },
    {
+    "name": "Dallas Cowboys",
+    "pos": "DST",
+    "team": "DAL",
+    "adpHalfPpr": 200.5,
+    "adpPpr": 205.5,
+    "adpStd": 200.5,
+    "adp2qb": 233.1,
+    "ptsHalfPpr": 86,
+    "ptsPpr": 86,
+    "ptsStd": 86
+   },
+   {
     "name": "Emanuel Wilson",
     "pos": "RB",
     "team": "SEA",
@@ -2402,6 +2786,18 @@
     "ptsHalfPpr": 51,
     "ptsPpr": 56.5,
     "ptsStd": 45.5
+   },
+   {
+    "name": "Wil Lutz",
+    "pos": "K",
+    "team": "DEN",
+    "adpHalfPpr": 201.2,
+    "adpPpr": 253.3,
+    "adpStd": 177.2,
+    "adp2qb": 242.4,
+    "ptsHalfPpr": 100,
+    "ptsPpr": 100,
+    "ptsStd": 100
    },
    {
     "name": "Demond Claiborne",
@@ -2440,6 +2836,18 @@
     "ptsStd": 160
    },
    {
+    "name": "Chicago Bears",
+    "pos": "DST",
+    "team": "CHI",
+    "adpHalfPpr": 204.4,
+    "adpPpr": 209.2,
+    "adpStd": 204.4,
+    "adp2qb": 237.4,
+    "ptsHalfPpr": 85,
+    "ptsPpr": 85,
+    "ptsStd": 85
+   },
+   {
     "name": "Jaylin Noel",
     "pos": "WR",
     "team": "HOU",
@@ -2464,6 +2872,18 @@
     "ptsStd": 61.4
    },
    {
+    "name": "Evan McPherson",
+    "pos": "K",
+    "team": "CIN",
+    "adpHalfPpr": 206.4,
+    "adpPpr": 224.2,
+    "adpStd": 207.4,
+    "adp2qb": 258,
+    "ptsHalfPpr": 106,
+    "ptsPpr": 106,
+    "ptsStd": 106
+   },
+   {
     "name": "Kendre Miller",
     "pos": "RB",
     "team": "NO",
@@ -2474,6 +2894,18 @@
     "ptsHalfPpr": 4.6,
     "ptsPpr": 5.6,
     "ptsStd": 3.6
+   },
+   {
+    "name": "San Francisco 49ers",
+    "pos": "DST",
+    "team": "SF",
+    "adpHalfPpr": 208.4,
+    "adpPpr": 214,
+    "adpStd": 208.4,
+    "adp2qb": 238.3,
+    "ptsHalfPpr": 84,
+    "ptsPpr": 84,
+    "ptsStd": 84
    },
    {
     "name": "Marvin Mims",
@@ -2584,6 +3016,18 @@
     "ptsStd": 91.1
    },
    {
+    "name": "Indianapolis Colts",
+    "pos": "DST",
+    "team": "IND",
+    "adpHalfPpr": 215,
+    "adpPpr": 219,
+    "adpStd": 215,
+    "adp2qb": 245.5,
+    "ptsHalfPpr": 84,
+    "ptsPpr": 84,
+    "ptsStd": 84
+   },
+   {
     "name": "Chimere Dike",
     "pos": "WR",
     "team": "TEN",
@@ -2680,6 +3124,18 @@
     "ptsStd": null
    },
    {
+    "name": "Buffalo Bills",
+    "pos": "DST",
+    "team": "BUF",
+    "adpHalfPpr": 220,
+    "adpPpr": 225.2,
+    "adpStd": 220,
+    "adp2qb": 250,
+    "ptsHalfPpr": 84,
+    "ptsPpr": 84,
+    "ptsStd": 84
+   },
+   {
     "name": "Chris Bell",
     "pos": "WR",
     "team": "MIA",
@@ -2690,6 +3146,18 @@
     "ptsHalfPpr": 74.7,
     "ptsPpr": 91.2,
     "ptsStd": 58.2
+   },
+   {
+    "name": "Jake Elliott",
+    "pos": "K",
+    "team": "PHI",
+    "adpHalfPpr": 221,
+    "adpPpr": 240.9,
+    "adpStd": 231.9,
+    "adp2qb": 263.3,
+    "ptsHalfPpr": 90,
+    "ptsPpr": 90,
+    "ptsStd": 90
    },
    {
     "name": "Rashod Bateman",
@@ -2738,6 +3206,18 @@
     "ptsHalfPpr": 31.8,
     "ptsPpr": 38.8,
     "ptsStd": 24.8
+   },
+   {
+    "name": "Atlanta Falcons",
+    "pos": "DST",
+    "team": "ATL",
+    "adpHalfPpr": 224.2,
+    "adpPpr": 228.4,
+    "adpStd": 224.2,
+    "adp2qb": 252.2,
+    "ptsHalfPpr": 83,
+    "ptsPpr": 83,
+    "ptsStd": 83
    },
    {
     "name": "Cooper Kupp",
@@ -2800,6 +3280,18 @@
     "ptsStd": 58
    },
    {
+    "name": "Tampa Bay Buccaneers",
+    "pos": "DST",
+    "team": "TB",
+    "adpHalfPpr": 228.5,
+    "adpPpr": 232.4,
+    "adpStd": 228.5,
+    "adp2qb": 258.5,
+    "ptsHalfPpr": 81,
+    "ptsPpr": 81,
+    "ptsStd": 81
+   },
+   {
     "name": "Christian Kirk",
     "pos": "WR",
     "team": "SF",
@@ -2836,6 +3328,18 @@
     "ptsStd": 53.6
    },
    {
+    "name": "Carolina Panthers",
+    "pos": "DST",
+    "team": "CAR",
+    "adpHalfPpr": 233.2,
+    "adpPpr": 238.4,
+    "adpStd": 233.2,
+    "adp2qb": 260,
+    "ptsHalfPpr": 81,
+    "ptsPpr": 81,
+    "ptsStd": 81
+   },
+   {
     "name": "Max Klare",
     "pos": "TE",
     "team": "LAR",
@@ -2860,6 +3364,18 @@
     "ptsStd": 19.8
    },
    {
+    "name": "Cincinnati Bengals",
+    "pos": "DST",
+    "team": "CIN",
+    "adpHalfPpr": 236.6,
+    "adpPpr": 241.2,
+    "adpStd": 236.6,
+    "adp2qb": 262.1,
+    "ptsHalfPpr": 79,
+    "ptsPpr": 79,
+    "ptsStd": 79
+   },
+   {
     "name": "Tua Tagovailoa",
     "pos": "QB",
     "team": "ATL",
@@ -2870,6 +3386,18 @@
     "ptsHalfPpr": 137.94,
     "ptsPpr": 137.94,
     "ptsStd": 137.94
+   },
+   {
+    "name": "New Orleans Saints",
+    "pos": "DST",
+    "team": "NO",
+    "adpHalfPpr": 240.2,
+    "adpPpr": 244.6,
+    "adpStd": 240.2,
+    "adp2qb": 270,
+    "ptsHalfPpr": 77,
+    "ptsPpr": 77,
+    "ptsStd": 77
    },
    {
     "name": "Joe Mixon",
@@ -2920,16 +3448,64 @@
     "ptsStd": 21.3
    },
    {
-    "name": "De'Zhaun Stribling",
-    "pos": "WR",
-    "team": "SF",
-    "adpHalfPpr": 245.2,
-    "adpPpr": 202.4,
-    "adpStd": 213.9,
-    "adp2qb": 263.6,
-    "ptsHalfPpr": 82,
-    "ptsPpr": 100,
-    "ptsStd": 64
+    "name": "Matt Gay",
+    "pos": "K",
+    "team": "LV",
+    "adpHalfPpr": 258.5,
+    "adpPpr": 263.3,
+    "adpStd": 239,
+    "adp2qb": 285.2,
+    "ptsHalfPpr": 75,
+    "ptsPpr": 75,
+    "ptsStd": 75
+   },
+   {
+    "name": "Cleveland Browns",
+    "pos": "DST",
+    "team": "CLE",
+    "adpHalfPpr": 260.4,
+    "adpPpr": 266.6,
+    "adpStd": 260,
+    "adp2qb": 280.2,
+    "ptsHalfPpr": 74,
+    "ptsPpr": 74,
+    "ptsStd": 74
+   },
+   {
+    "name": "Riley Patterson",
+    "pos": "K",
+    "team": "MIA",
+    "adpHalfPpr": 263,
+    "adpPpr": 267,
+    "adpStd": 241,
+    "adp2qb": 289,
+    "ptsHalfPpr": 37,
+    "ptsPpr": 37,
+    "ptsStd": 37
+   },
+   {
+    "name": "Tennessee Titans",
+    "pos": "DST",
+    "team": "TEN",
+    "adpHalfPpr": 266.7,
+    "adpPpr": 270.2,
+    "adpStd": 266,
+    "adp2qb": 285.5,
+    "ptsHalfPpr": 67,
+    "ptsPpr": 67,
+    "ptsStd": 67
+   },
+   {
+    "name": "Charlie Smyth",
+    "pos": "K",
+    "team": "NO",
+    "adpHalfPpr": 267,
+    "adpPpr": 269,
+    "adpStd": 242,
+    "adp2qb": 291,
+    "ptsHalfPpr": 93,
+    "ptsPpr": 93,
+    "ptsStd": 93
    },
    {
     "name": "Devin Neal",
@@ -2944,6 +3520,222 @@
     "ptsStd": 24.9
    },
    {
+    "name": "Nick Folk",
+    "pos": "K",
+    "team": "ATL",
+    "adpHalfPpr": 268.3,
+    "adpPpr": 285.5,
+    "adpStd": 249,
+    "adp2qb": 300,
+    "ptsHalfPpr": 95,
+    "ptsPpr": 95,
+    "ptsStd": 95
+   },
+   {
+    "name": "Arizona Cardinals",
+    "pos": "DST",
+    "team": "ARI",
+    "adpHalfPpr": 270,
+    "adpPpr": 273,
+    "adpStd": 269,
+    "adp2qb": 289.5,
+    "ptsHalfPpr": 66,
+    "ptsPpr": 66,
+    "ptsStd": 66
+   },
+   {
+    "name": "Las Vegas Raiders",
+    "pos": "DST",
+    "team": "LV",
+    "adpHalfPpr": 278,
+    "adpPpr": 279.3,
+    "adpStd": 275,
+    "adp2qb": 300,
+    "ptsHalfPpr": 65,
+    "ptsPpr": 65,
+    "ptsStd": 65
+   },
+   {
+    "name": "New York Jets",
+    "pos": "DST",
+    "team": "NYJ",
+    "adpHalfPpr": 281,
+    "adpPpr": 282.2,
+    "adpStd": 278,
+    "adp2qb": 300.2,
+    "ptsHalfPpr": 64,
+    "ptsPpr": 64,
+    "ptsStd": 64
+   },
+   {
+    "name": "Tyler Bass",
+    "pos": "K",
+    "team": "BUF",
+    "adpHalfPpr": 288.4,
+    "adpPpr": 299,
+    "adpStd": 288,
+    "adp2qb": 303.3,
+    "ptsHalfPpr": 103,
+    "ptsPpr": 103,
+    "ptsStd": 103
+   },
+   {
+    "name": "Miami Dolphins",
+    "pos": "DST",
+    "team": "MIA",
+    "adpHalfPpr": 299,
+    "adpPpr": 299,
+    "adpStd": 299,
+    "adp2qb": 300.5,
+    "ptsHalfPpr": 62,
+    "ptsPpr": 62,
+    "ptsStd": 62
+   },
+   {
+    "name": "Jake Moody",
+    "pos": "K",
+    "team": "WAS",
+    "adpHalfPpr": 325.2,
+    "adpPpr": 333,
+    "adpStd": 309,
+    "adp2qb": 363,
+    "ptsHalfPpr": 91,
+    "ptsPpr": 91,
+    "ptsStd": 91
+   },
+   {
+    "name": "Younghoe Koo",
+    "pos": "K",
+    "team": "FA",
+    "adpHalfPpr": 338,
+    "adpPpr": 339,
+    "adpStd": 314,
+    "adp2qb": 366,
+    "ptsHalfPpr": 22,
+    "ptsPpr": 22,
+    "ptsStd": 22
+   },
+   {
+    "name": "Alex Kessman",
+    "pos": "K",
+    "team": "CAR",
+    "adpHalfPpr": 344,
+    "adpPpr": 346,
+    "adpStd": 322,
+    "adp2qb": 343,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Ryan Fitzgerald",
+    "pos": "K",
+    "team": "CAR",
+    "adpHalfPpr": 348,
+    "adpPpr": 347,
+    "adpStd": 327,
+    "adp2qb": 350,
+    "ptsHalfPpr": 92,
+    "ptsPpr": 92,
+    "ptsStd": 92
+   },
+   {
+    "name": "Andre Szmyt",
+    "pos": "K",
+    "team": "CLE",
+    "adpHalfPpr": 348,
+    "adpPpr": 342,
+    "adpStd": 319,
+    "adp2qb": 371,
+    "ptsHalfPpr": 84,
+    "ptsPpr": 84,
+    "ptsStd": 84
+   },
+   {
+    "name": "Trey Smack",
+    "pos": "K",
+    "team": "GB",
+    "adpHalfPpr": 351.1,
+    "adpPpr": 353.2,
+    "adpStd": 330,
+    "adp2qb": 363.2,
+    "ptsHalfPpr": 70,
+    "ptsPpr": 70,
+    "ptsStd": 70
+   },
+   {
+    "name": "Chad Ryland",
+    "pos": "K",
+    "team": "ARI",
+    "adpHalfPpr": 358,
+    "adpPpr": 350,
+    "adpStd": 324,
+    "adp2qb": 378,
+    "ptsHalfPpr": 89,
+    "ptsPpr": 89,
+    "ptsStd": 89
+   },
+   {
+    "name": "Joey Slye",
+    "pos": "K",
+    "team": "TEN",
+    "adpHalfPpr": 359,
+    "adpPpr": 351,
+    "adpStd": 325,
+    "adp2qb": 380,
+    "ptsHalfPpr": 84,
+    "ptsPpr": 84,
+    "ptsStd": 84
+   },
+   {
+    "name": "Dominic Zvada",
+    "pos": "K",
+    "team": "NYG",
+    "adpHalfPpr": 363.3,
+    "adpPpr": 355.3,
+    "adpStd": 330.4,
+    "adp2qb": 381.3,
+    "ptsHalfPpr": 56,
+    "ptsPpr": 56,
+    "ptsStd": 56
+   },
+   {
+    "name": "Ben Sauls",
+    "pos": "K",
+    "team": "NYG",
+    "adpHalfPpr": 365.5,
+    "adpPpr": 369,
+    "adpStd": 326.2,
+    "adp2qb": 383,
+    "ptsHalfPpr": 41,
+    "ptsPpr": 41,
+    "ptsStd": 41
+   },
+   {
+    "name": "Cade York",
+    "pos": "K",
+    "team": "NYJ",
+    "adpHalfPpr": 368,
+    "adpPpr": 350,
+    "adpStd": 350,
+    "adp2qb": 386,
+    "ptsHalfPpr": 13,
+    "ptsPpr": 13,
+    "ptsStd": 13
+   },
+   {
+    "name": "Spencer Shrader",
+    "pos": "K",
+    "team": "IND",
+    "adpHalfPpr": 369.4,
+    "adpPpr": 378,
+    "adpStd": 355,
+    "adp2qb": 388,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Washington Commanders",
     "pos": "DST",
     "team": "WAS",
@@ -2954,378 +3746,6 @@
     "ptsHalfPpr": 75,
     "ptsPpr": 75,
     "ptsStd": 75
-   },
-   {
-    "name": "Tennessee Titans",
-    "pos": "DST",
-    "team": "TEN",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 67,
-    "ptsPpr": 67,
-    "ptsStd": 67
-   },
-   {
-    "name": "Tampa Bay Buccaneers",
-    "pos": "DST",
-    "team": "TB",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 81,
-    "ptsPpr": 81,
-    "ptsStd": 81
-   },
-   {
-    "name": "San Francisco 49ers",
-    "pos": "DST",
-    "team": "SF",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 84,
-    "ptsPpr": 84,
-    "ptsStd": 84
-   },
-   {
-    "name": "Seattle Seahawks",
-    "pos": "DST",
-    "team": "SEA",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 103,
-    "ptsPpr": 103,
-    "ptsStd": 103
-   },
-   {
-    "name": "Pittsburgh Steelers",
-    "pos": "DST",
-    "team": "PIT",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 88,
-    "ptsPpr": 88,
-    "ptsStd": 88
-   },
-   {
-    "name": "Philadelphia Eagles",
-    "pos": "DST",
-    "team": "PHI",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 98,
-    "ptsPpr": 98,
-    "ptsStd": 98
-   },
-   {
-    "name": "New York Jets",
-    "pos": "DST",
-    "team": "NYJ",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 64,
-    "ptsPpr": 64,
-    "ptsStd": 64
-   },
-   {
-    "name": "New York Giants",
-    "pos": "DST",
-    "team": "NYG",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 86,
-    "ptsPpr": 86,
-    "ptsStd": 86
-   },
-   {
-    "name": "New Orleans Saints",
-    "pos": "DST",
-    "team": "NO",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 77,
-    "ptsPpr": 77,
-    "ptsStd": 77
-   },
-   {
-    "name": "New England Patriots",
-    "pos": "DST",
-    "team": "NE",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 92,
-    "ptsPpr": 92,
-    "ptsStd": 92
-   },
-   {
-    "name": "Minnesota Vikings",
-    "pos": "DST",
-    "team": "MIN",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 92,
-    "ptsPpr": 92,
-    "ptsStd": 92
-   },
-   {
-    "name": "Miami Dolphins",
-    "pos": "DST",
-    "team": "MIA",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 62,
-    "ptsPpr": 62,
-    "ptsStd": 62
-   },
-   {
-    "name": "Las Vegas Raiders",
-    "pos": "DST",
-    "team": "LV",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 65,
-    "ptsPpr": 65,
-    "ptsStd": 65
-   },
-   {
-    "name": "Los Angeles Rams",
-    "pos": "DST",
-    "team": "LAR",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 106,
-    "ptsPpr": 106,
-    "ptsStd": 106
-   },
-   {
-    "name": "Los Angeles Chargers",
-    "pos": "DST",
-    "team": "LAC",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 86,
-    "ptsPpr": 86,
-    "ptsStd": 86
-   },
-   {
-    "name": "Kansas City Chiefs",
-    "pos": "DST",
-    "team": "KC",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 87,
-    "ptsPpr": 87,
-    "ptsStd": 87
-   },
-   {
-    "name": "Jacksonville Jaguars",
-    "pos": "DST",
-    "team": "JAX",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 91,
-    "ptsPpr": 91,
-    "ptsStd": 91
-   },
-   {
-    "name": "Indianapolis Colts",
-    "pos": "DST",
-    "team": "IND",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 84,
-    "ptsPpr": 84,
-    "ptsStd": 84
-   },
-   {
-    "name": "Houston Texans",
-    "pos": "DST",
-    "team": "HOU",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 104,
-    "ptsPpr": 104,
-    "ptsStd": 104
-   },
-   {
-    "name": "Green Bay Packers",
-    "pos": "DST",
-    "team": "GB",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 86,
-    "ptsPpr": 86,
-    "ptsStd": 86
-   },
-   {
-    "name": "Detroit Lions",
-    "pos": "DST",
-    "team": "DET",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 92,
-    "ptsPpr": 92,
-    "ptsStd": 92
-   },
-   {
-    "name": "Denver Broncos",
-    "pos": "DST",
-    "team": "DEN",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 96,
-    "ptsPpr": 96,
-    "ptsStd": 96
-   },
-   {
-    "name": "Dallas Cowboys",
-    "pos": "DST",
-    "team": "DAL",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 86,
-    "ptsPpr": 86,
-    "ptsStd": 86
-   },
-   {
-    "name": "Cleveland Browns",
-    "pos": "DST",
-    "team": "CLE",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 74,
-    "ptsPpr": 74,
-    "ptsStd": 74
-   },
-   {
-    "name": "Cincinnati Bengals",
-    "pos": "DST",
-    "team": "CIN",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 79,
-    "ptsPpr": 79,
-    "ptsStd": 79
-   },
-   {
-    "name": "Chicago Bears",
-    "pos": "DST",
-    "team": "CHI",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 85,
-    "ptsPpr": 85,
-    "ptsStd": 85
-   },
-   {
-    "name": "Carolina Panthers",
-    "pos": "DST",
-    "team": "CAR",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 81,
-    "ptsPpr": 81,
-    "ptsStd": 81
-   },
-   {
-    "name": "Buffalo Bills",
-    "pos": "DST",
-    "team": "BUF",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 84,
-    "ptsPpr": 84,
-    "ptsStd": 84
-   },
-   {
-    "name": "Baltimore Ravens",
-    "pos": "DST",
-    "team": "BAL",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 95,
-    "ptsPpr": 95,
-    "ptsStd": 95
-   },
-   {
-    "name": "Atlanta Falcons",
-    "pos": "DST",
-    "team": "ATL",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 83,
-    "ptsPpr": 83,
-    "ptsStd": 83
-   },
-   {
-    "name": "Arizona Cardinals",
-    "pos": "DST",
-    "team": "ARI",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 66,
-    "ptsPpr": 66,
-    "ptsStd": 66
    },
    {
     "name": "Will Levis",
@@ -3542,30 +3962,6 @@
     "ptsHalfPpr": 12.9,
     "ptsPpr": 12.9,
     "ptsStd": 12.9
-   },
-   {
-    "name": "Cameron Dicker",
-    "pos": "K",
-    "team": "LAC",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 106,
-    "ptsPpr": 106,
-    "ptsStd": 106
-   },
-   {
-    "name": "Cade York",
-    "pos": "K",
-    "team": "NYJ",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 13,
-    "ptsPpr": 13,
-    "ptsStd": 13
    },
    {
     "name": "Julius Chestnut",
@@ -3892,18 +4288,6 @@
     "ptsStd": 3.5
    },
    {
-    "name": "Riley Patterson",
-    "pos": "K",
-    "team": "MIA",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 37,
-    "ptsPpr": 37,
-    "ptsStd": 37
-   },
-   {
     "name": "Brock Wright",
     "pos": "TE",
     "team": "DET",
@@ -3926,18 +4310,6 @@
     "ptsHalfPpr": 7.6,
     "ptsPpr": 10.1,
     "ptsStd": 5.1
-   },
-   {
-    "name": "Evan McPherson",
-    "pos": "K",
-    "team": "CIN",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 106,
-    "ptsPpr": 106,
-    "ptsStd": 106
    },
    {
     "name": "Noah Gray",
@@ -4216,18 +4588,6 @@
     "ptsStd": 4
    },
    {
-    "name": "Tyler Bass",
-    "pos": "K",
-    "team": "BUF",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 103,
-    "ptsPpr": 103,
-    "ptsStd": 103
-   },
-   {
     "name": "Cody White",
     "pos": "WR",
     "team": "SEA",
@@ -4372,42 +4732,6 @@
     "ptsStd": 2.4
    },
    {
-    "name": "Chase McLaughlin",
-    "pos": "K",
-    "team": "TB",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 105,
-    "ptsPpr": 105,
-    "ptsStd": 105
-   },
-   {
-    "name": "Joey Slye",
-    "pos": "K",
-    "team": "TEN",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 84,
-    "ptsPpr": 84,
-    "ptsStd": 84
-   },
-   {
-    "name": "Nick Folk",
-    "pos": "K",
-    "team": "ATL",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 95,
-    "ptsPpr": 95,
-    "ptsStd": 95
-   },
-   {
     "name": "Ashton Dulin",
     "pos": "WR",
     "team": "IND",
@@ -4478,18 +4802,6 @@
     "ptsHalfPpr": 9.8,
     "ptsPpr": 12.3,
     "ptsStd": 7.3
-   },
-   {
-    "name": "Matt Gay",
-    "pos": "K",
-    "team": "LV",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 75,
-    "ptsPpr": 75,
-    "ptsStd": 75
    },
    {
     "name": "Ty Johnson",
@@ -4646,18 +4958,6 @@
     "ptsHalfPpr": 22,
     "ptsPpr": 22,
     "ptsStd": 22
-   },
-   {
-    "name": "Eddy Pineiro",
-    "pos": "K",
-    "team": "SF",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 101,
-    "ptsPpr": 101,
-    "ptsStd": 101
    },
    {
     "name": "Allen Lazard",
@@ -4852,18 +5152,6 @@
     "ptsStd": 3.5
    },
    {
-    "name": "Younghoe Koo",
-    "pos": "K",
-    "team": "FA",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 22,
-    "ptsPpr": 22,
-    "ptsStd": 22
-   },
-   {
     "name": "Austin Ekeler",
     "pos": "RB",
     "team": "FA",
@@ -4972,18 +5260,6 @@
     "ptsStd": 60
    },
    {
-    "name": "Harrison Butker",
-    "pos": "K",
-    "team": "KC",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 100,
-    "ptsPpr": 100,
-    "ptsStd": 100
-   },
-   {
     "name": "Jeremy McNichols",
     "pos": "RB",
     "team": "WAS",
@@ -4994,18 +5270,6 @@
     "ptsHalfPpr": 7.9,
     "ptsPpr": 9.4,
     "ptsStd": 6.4
-   },
-   {
-    "name": "Jake Elliott",
-    "pos": "K",
-    "team": "PHI",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 90,
-    "ptsPpr": 90,
-    "ptsStd": 90
    },
    {
     "name": "Eric Saubert",
@@ -5164,18 +5428,6 @@
     "ptsStd": 11.94
    },
    {
-    "name": "Wil Lutz",
-    "pos": "K",
-    "team": "DEN",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 100,
-    "ptsPpr": 100,
-    "ptsStd": 100
-   },
-   {
     "name": "Kalif Raymond",
     "pos": "WR",
     "team": "CHI",
@@ -5186,18 +5438,6 @@
     "ptsHalfPpr": 23.2,
     "ptsPpr": 27.7,
     "ptsStd": 18.7
-   },
-   {
-    "name": "Ka'imi Fairbairn",
-    "pos": "K",
-    "team": "HOU",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 113,
-    "ptsPpr": 113,
-    "ptsStd": 113
    },
    {
     "name": "Demarcus Robinson",
@@ -5306,18 +5546,6 @@
     "ptsHalfPpr": 10,
     "ptsPpr": 12.5,
     "ptsStd": 7.5
-   },
-   {
-    "name": "Jason Myers",
-    "pos": "K",
-    "team": "SEA",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 111,
-    "ptsPpr": 111,
-    "ptsStd": 111
    },
    {
     "name": "Josh Johnson",
@@ -5440,30 +5668,6 @@
     "ptsStd": 27.18
    },
    {
-    "name": "Cairo Santos",
-    "pos": "K",
-    "team": "CHI",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 100,
-    "ptsPpr": 100,
-    "ptsStd": 100
-   },
-   {
-    "name": "Chris Boswell",
-    "pos": "K",
-    "team": "PIT",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 107,
-    "ptsPpr": 107,
-    "ptsStd": 107
-   },
-   {
     "name": "Joe Flacco",
     "pos": "QB",
     "team": "CIN",
@@ -5572,18 +5776,6 @@
     "ptsStd": 6
    },
    {
-    "name": "Dominic Zvada",
-    "pos": "K",
-    "team": "NYG",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 56,
-    "ptsPpr": 56,
-    "ptsStd": 56
-   },
-   {
     "name": "Kyle Juszczyk",
     "pos": "FB",
     "team": "SF",
@@ -5606,18 +5798,6 @@
     "ptsHalfPpr": 222.48,
     "ptsPpr": 222.48,
     "ptsStd": 222.48
-   },
-   {
-    "name": "Trey Smack",
-    "pos": "K",
-    "team": "GB",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 70,
-    "ptsPpr": 70,
-    "ptsStd": 70
    },
    {
     "name": "Barion Brown",
@@ -6316,18 +6496,6 @@
     "ptsStd": 16.9
    },
    {
-    "name": "Ben Sauls",
-    "pos": "K",
-    "team": "NYG",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 41,
-    "ptsPpr": 41,
-    "ptsStd": 41
-   },
-   {
     "name": "Jacardia Wright",
     "pos": "RB",
     "team": "SEA",
@@ -6338,18 +6506,6 @@
     "ptsHalfPpr": 3.3,
     "ptsPpr": 4.3,
     "ptsStd": 2.3
-   },
-   {
-    "name": "Ryan Fitzgerald",
-    "pos": "K",
-    "team": "CAR",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 92,
-    "ptsPpr": 92,
-    "ptsStd": 92
    },
    {
     "name": "Theo Wease",
@@ -6386,30 +6542,6 @@
     "ptsHalfPpr": 33.7,
     "ptsPpr": 41.7,
     "ptsStd": 25.7
-   },
-   {
-    "name": "Andy Borregales",
-    "pos": "K",
-    "team": "NE",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 96,
-    "ptsPpr": 96,
-    "ptsStd": 96
-   },
-   {
-    "name": "Tyler Loop",
-    "pos": "K",
-    "team": "BAL",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 106,
-    "ptsPpr": 106,
-    "ptsStd": 106
    },
    {
     "name": "LaJohntay Wester",
@@ -6832,18 +6964,6 @@
     "ptsStd": 21.2
    },
    {
-    "name": "Harrison Mevis",
-    "pos": "K",
-    "team": "LAR",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 106,
-    "ptsPpr": 106,
-    "ptsStd": 106
-   },
-   {
     "name": "Kameron Johnson",
     "pos": "WR",
     "team": "TB",
@@ -6878,30 +6998,6 @@
     "ptsHalfPpr": 5.3,
     "ptsPpr": 7.3,
     "ptsStd": 3.3
-   },
-   {
-    "name": "Will Reichard",
-    "pos": "K",
-    "team": "MIN",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 109,
-    "ptsPpr": 109,
-    "ptsStd": 109
-   },
-   {
-    "name": "Cam Little",
-    "pos": "K",
-    "team": "JAX",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 112,
-    "ptsPpr": 112,
-    "ptsStd": 112
    },
    {
     "name": "Anthony Gould",
@@ -6950,18 +7046,6 @@
     "ptsHalfPpr": 39.16,
     "ptsPpr": 39.16,
     "ptsStd": 39.16
-   },
-   {
-    "name": "Charlie Smyth",
-    "pos": "K",
-    "team": "NO",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 93,
-    "ptsPpr": 93,
-    "ptsStd": 93
    },
    {
     "name": "Isaac Guerendo",
@@ -7252,30 +7336,6 @@
     "ptsStd": 12.4
    },
    {
-    "name": "Jake Bates",
-    "pos": "K",
-    "team": "DET",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 105,
-    "ptsPpr": 105,
-    "ptsStd": 105
-   },
-   {
-    "name": "Brandon Aubrey",
-    "pos": "K",
-    "team": "DAL",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 116,
-    "ptsPpr": 116,
-    "ptsStd": 116
-   },
-   {
     "name": "Hunter Luepke",
     "pos": "FB",
     "team": "DAL",
@@ -7384,18 +7444,6 @@
     "ptsStd": 12.38
    },
    {
-    "name": "Andre Szmyt",
-    "pos": "K",
-    "team": "CLE",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 84,
-    "ptsPpr": 84,
-    "ptsStd": 84
-   },
-   {
     "name": "Tyson Bagent",
     "pos": "QB",
     "team": "CHI",
@@ -7466,30 +7514,6 @@
     "ptsHalfPpr": 5,
     "ptsPpr": 6.5,
     "ptsStd": 3.5
-   },
-   {
-    "name": "Chad Ryland",
-    "pos": "K",
-    "team": "ARI",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 89,
-    "ptsPpr": 89,
-    "ptsStd": 89
-   },
-   {
-    "name": "Jake Moody",
-    "pos": "K",
-    "team": "WAS",
-    "adpHalfPpr": null,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": 91,
-    "ptsPpr": 91,
-    "ptsStd": 91
    },
    {
     "name": "Luke Schoonmaker",
