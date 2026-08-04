@@ -7,7 +7,12 @@ import { leagueKeyFor } from '@/hooks/useDraftRoom';
 import { useKeeperSourceTeams } from '@/hooks/useKeeperSource';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { SnakeFormat } from '@/utils/snakeOrder';
-import { guessKeepers, keeperCandidates, resolveKeeperRounds } from '@/utils/keeperGuess';
+import {
+  guessKeepers,
+  keeperCandidates,
+  resolveKeeperRounds,
+  type CommishKeeper,
+} from '@/utils/keeperGuess';
 import { loadDraftArchive, removeFromDraftArchive } from '@/utils/draftRoomCache';
 import {
   deletePreset,
@@ -125,9 +130,33 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
   // freshly renewed league the hook fetches those results from the previous
   // season's league, since the loaded one has no draft yet.
   const keeperTeams = useKeeperSourceTeams(league);
+  // Keepers the commissioner has already locked onto the platform's draft
+  // board (Sleeper pre-draft picks), mapped from platform player ids onto the
+  // bundled pool. These pin the guess for their teams; the user can still
+  // override.
+  const commishKeepers = useMemo<CommishKeeper[]>(() => {
+    const set = league.upcomingDraft?.keepers ?? [];
+    if (set.length === 0) return [];
+    const bySleeperId = new Map<string, string>();
+    for (const p of room.pool.players) {
+      if (p.sleeperId) bySleeperId.set(p.sleeperId, p.id);
+    }
+    return set.flatMap(k => {
+      const playerId = bySleeperId.get(k.sleeperPlayerId);
+      return playerId ? [{ teamId: k.teamId, playerId, costRound: k.round }] : [];
+    });
+  }, [league.upcomingDraft, room.pool.players]);
   const candidatesByTeam = useMemo(
-    () => keeperCandidates(keeperTeams, room.pool.players, config.teams.length, config.rounds, escalation),
-    [keeperTeams, room.pool.players, config.teams.length, config.rounds, escalation],
+    () =>
+      keeperCandidates(
+        keeperTeams,
+        room.pool.players,
+        config.teams.length,
+        config.rounds,
+        escalation,
+        commishKeepers,
+      ),
+    [keeperTeams, room.pool.players, config.teams.length, config.rounds, escalation, commishKeepers],
   );
   const anyKeeperCandidates = [...candidatesByTeam.values()].some(c => c.length > 0);
   const keepersOn = config.keepers !== undefined;
@@ -138,7 +167,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
   const toggleKeepers = (on: boolean) => {
     updateConfig({
       keepers: on
-        ? guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, escalation)
+        ? guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, escalation, commishKeepers)
         : undefined,
     });
   };
@@ -174,7 +203,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
     updateConfig({ keepersPerTeam: next });
     if (keepersOn) {
       updateConfig({
-        keepers: guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, next, escalation),
+        keepers: guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, next, escalation, commishKeepers),
       });
     }
   };
@@ -183,7 +212,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
     updateConfig({ keeperEscalation: n });
     if (keepersOn) {
       updateConfig({
-        keepers: guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, n),
+        keepers: guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, n, commishKeepers),
       });
     }
   };
@@ -594,6 +623,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                                               ? `last $${c.lastPrice}`
                                               : 'no prior price'
                                             : `keeps R${c.costRound}, exp R${c.expertRound}, mkt R${c.marketRound}`}
+                                          {c.commishSet ? ', set in Sleeper' : ''}
                                           {c.keptLastYear ? ', kept last year' : ''}
                                         </option>
                                       ))}

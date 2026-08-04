@@ -26,6 +26,16 @@ import { matchPlayer, normalizeName } from './playerNames';
 // Default auction keeper escalation: last year's price plus this many dollars.
 export const AUCTION_KEEPER_BUMP = 5;
 
+// A keeper the commissioner has already locked onto the platform's draft
+// board (player + the round it costs). These are ground truth: guessing
+// defers to them, and they surface first in the candidate list. playerId is
+// the POOL player id (the caller maps platform ids before calling in).
+export interface CommishKeeper {
+  teamId: string;
+  playerId: string;
+  costRound: number;
+}
+
 export interface KeeperCandidate {
   teamId: string;
   player: PoolPlayer;
@@ -43,6 +53,9 @@ export interface KeeperCandidate {
   keeperPrice?: number;
   // The platform flagged him as a kept player last season already.
   keptLastYear: boolean;
+  // The commissioner has already set this keeper on the platform's draft
+  // board at costRound; it sorts first and wins the default guess.
+  commishSet?: boolean;
   score: number;
 }
 
@@ -79,6 +92,7 @@ export function keeperCandidates(
   teamCount: number,
   rounds: number,
   escalation = 1,
+  commish: CommishKeeper[] = [],
 ): Map<string, KeeperCandidate[]> {
   const rankSorted = [...pool].sort((a, b) => a.overallRank - b.overallRank);
   const result = new Map<string, KeeperCandidate[]>();
@@ -141,7 +155,40 @@ export function keeperCandidates(
         score,
       });
     }
-    candidates.sort((a, b) => b.score - a.score);
+    // Graft on any commissioner-set keepers. A player already in the list
+    // gets pinned at the commish's round; one who isn't (dropped mid-season,
+    // eligibility we can't see, a rule exception) is added anyway - the
+    // platform board outranks our eligibility model.
+    for (const set of commish) {
+      if (set.teamId !== team.id) continue;
+      const existing = candidates.find(c => c.player.id === set.playerId);
+      if (existing) {
+        existing.costRound = set.costRound;
+        existing.commishSet = true;
+        continue;
+      }
+      const player = pool.find(p => p.id === set.playerId);
+      if (!player) continue; // not in this year's pool: nothing to show
+      const market = marketRank(player);
+      const expert = player.overallRank;
+      const slotRank = midRankOfRound(set.costRound, teamCount);
+      const playerWorth = ((player.baseValue ?? 1) + valueAtRank(rankSorted, market)) / 2;
+      candidates.push({
+        teamId: team.id,
+        player,
+        lastRound: Math.min(rounds, set.costRound + escalation),
+        costRound: set.costRound,
+        marketRound: Math.max(1, Math.ceil(market / teamCount)),
+        expertRound: Math.max(1, Math.ceil(expert / teamCount)),
+        surplus: playerWorth - valueAtRank(rankSorted, slotRank),
+        keptLastYear: false,
+        commishSet: true,
+        score: playerWorth - valueAtRank(rankSorted, slotRank),
+      });
+    }
+    candidates.sort(
+      (a, b) => (b.commishSet ? 1 : 0) - (a.commishSet ? 1 : 0) || b.score - a.score,
+    );
     result.set(team.id, candidates);
   }
   return result;
@@ -183,8 +230,11 @@ export function resolveKeeperRounds(picks: KeeperCandidate[]): KeeperAssignment[
   return out;
 }
 
-// Best guess per team: the top `perTeam` positive-score candidates (keeping a
-// player worse than his cost slot helps nobody).
+// Best guess per team. Commissioner-set keepers win their slots outright;
+// the first remaining slot always gets the team's best candidate (in a
+// league where everyone keeps someone, an empty guess is always wrong);
+// extra slots beyond that only fill with positive-score candidates (keeping
+// a player worse than his cost slot helps nobody).
 export function guessKeepers(
   leagueTeams: Team[],
   pool: PoolPlayer[],
@@ -192,11 +242,16 @@ export function guessKeepers(
   rounds: number,
   perTeam = 1,
   escalation = 1,
+  commish: CommishKeeper[] = [],
 ): KeeperAssignment[] {
-  const byTeam = keeperCandidates(leagueTeams, pool, teamCount, rounds, escalation);
+  const byTeam = keeperCandidates(leagueTeams, pool, teamCount, rounds, escalation, commish);
   const keepers: KeeperAssignment[] = [];
   for (const candidates of byTeam.values()) {
-    const best = candidates.filter(c => c.score > 0).slice(0, Math.max(0, perTeam));
+    const best: KeeperCandidate[] = [];
+    for (const c of candidates) {
+      if (best.length >= Math.max(0, perTeam)) break;
+      if (c.commishSet || best.length === 0 || c.score > 0) best.push(c);
+    }
     keepers.push(...resolveKeeperRounds(best));
   }
   return keepers;

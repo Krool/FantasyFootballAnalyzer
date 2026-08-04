@@ -427,6 +427,63 @@ describe('sleeper loadLeague', () => {
   it('flags no team as mine when no Sleeper user was remembered', () => {
     expect(league.teams.every(t => t.isMyTeam === undefined)).toBe(true);
   });
+
+  it('exposes no upcoming draft for a completed season', () => {
+    expect(league.upcomingDraft).toBeUndefined();
+  });
+});
+
+describe('sleeper loadLeague with an unrun draft (commish keepers + order)', () => {
+  let league: League;
+
+  beforeAll(async () => {
+    // The current season pre-draft: the board holds two commish-set keepers,
+    // and the commissioner has set the pick order (draft_order only;
+    // slot_to_roster_id is still null, as on real unstarted drafts).
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input).replace('https://api.sleeper.app/v1', '');
+      if (path === `/league/${LEAGUE_ID}`) {
+        return jsonResponse({ ...leagueFixture, status: 'pre_draft' });
+      }
+      if (path === `/draft/${DRAFT_ID}`) {
+        return jsonResponse({
+          draft_id: DRAFT_ID,
+          type: 'snake',
+          status: 'pre_draft',
+          draft_order: { u1: 3, u2: 1, u3: 4, u4: 2 },
+          slot_to_roster_id: null,
+        });
+      }
+      if (path === `/draft/${DRAFT_ID}/picks`) {
+        return jsonResponse([
+          { pick_no: 25, round: 7, player_id: '102', roster_id: 2, picked_by: 'u2', draft_slot: 1, is_keeper: true },
+          { pick_no: 38, round: 10, player_id: '103', roster_id: 3, picked_by: 'u3', draft_slot: 4, is_keeper: true },
+        ]);
+      }
+      return jsonResponse(routeSleeper(String(input)));
+    }));
+    league = await loadLeague(LEAGUE_ID);
+  });
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps keeper stubs out of the teams\' draft history', () => {
+    expect(league.teams.every(t => (t.draftPicks ?? []).length === 0)).toBe(true);
+  });
+
+  it('surfaces the commish-set keepers with their board rounds', () => {
+    expect(league.upcomingDraft?.keepers).toEqual([
+      { teamId: '2', sleeperPlayerId: '102', round: 7 },
+      { teamId: '3', sleeperPlayerId: '103', round: 10 },
+    ]);
+  });
+
+  it('derives the pick order from draft_order through roster ownership', () => {
+    // Slots: u2->1, u4->2, u1->3, u3->4; owners map to rosters 2, 4, 1, 3.
+    expect(league.upcomingDraft?.order).toEqual(['2', '4', '1', '3']);
+  });
 });
 
 describe('sleeper loadLeague my-team detection', () => {

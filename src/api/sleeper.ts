@@ -241,6 +241,32 @@ function calculatePlayerPARFromMatchups(
   };
 }
 
+// Round-1 pick order as team ids (roster ids). slot_to_roster_id is the
+// direct answer but is often null before the draft starts; fall back to
+// draft_order (user_id -> slot) resolved through roster ownership. Returns
+// undefined when the commissioner hasn't set an order yet.
+function draftOrderTeamIds(
+  draft: SleeperAPI.Draft,
+  rosters: SleeperAPI.Roster[],
+): string[] | undefined {
+  const bySlot: Array<[slot: number, rosterId: number]> = [];
+  if (draft.slot_to_roster_id && Object.keys(draft.slot_to_roster_id).length > 0) {
+    for (const [slot, rosterId] of Object.entries(draft.slot_to_roster_id)) {
+      if (rosterId != null) bySlot.push([Number(slot), rosterId]);
+    }
+  } else if (draft.draft_order) {
+    for (const [userId, slot] of Object.entries(draft.draft_order)) {
+      const roster = rosters.find(
+        r => r.owner_id === userId || (r.co_owners ?? []).includes(userId),
+      );
+      if (roster) bySlot.push([slot, roster.roster_id]);
+    }
+  }
+  if (bySlot.length === 0) return undefined;
+  bySlot.sort((a, b) => a[0] - b[0]);
+  return bySlot.map(([, rosterId]) => String(rosterId));
+}
+
 // Load complete league data
 export async function loadLeague(leagueId: string): Promise<League> {
   // Fetch all required data in parallel
@@ -261,13 +287,30 @@ export async function loadLeague(leagueId: string): Promise<League> {
   // carryover model (settings.type: 0 redraft, 1 keeper, 2 dynasty). Preserve
   // both so the Draft Room can open already configured.
   let draftFormat: League['draftFormat'] = 'standard';
+  let upcomingDraft: League['upcomingDraft'];
   if (leagueData.draft_id) {
     try {
       const [draft, picks] = await Promise.all([
         getDraft(leagueData.draft_id).catch(() => null),
         getDraftPicks(leagueData.draft_id),
       ]);
-      draftPicks = picks;
+      if (draft && draft.status !== 'complete') {
+        // The draft hasn't run yet: any picks on the board are keepers the
+        // commissioner placed there, not last-season results. Feeding them
+        // into teams[].draftPicks would poison keeper guessing (a team's
+        // "draft history" collapses to its one keeper stub) and draft grades.
+        upcomingDraft = {
+          draftId: leagueData.draft_id,
+          order: draftOrderTeamIds(draft, rosters),
+          keepers: picks.map(pick => ({
+            teamId: String(pick.roster_id),
+            sleeperPlayerId: pick.player_id,
+            round: pick.round,
+          })),
+        };
+      } else {
+        draftPicks = picks;
+      }
       if (draft?.type === 'auction') {
         draftType = 'auction';
       } else if (draft?.type === 'linear') {
@@ -730,6 +773,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
     playerWeeklyPoints,
     status,
     loadedAt: Date.now(),
+    upcomingDraft,
   };
 }
 

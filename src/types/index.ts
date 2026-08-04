@@ -207,6 +207,19 @@ export interface League {
   // Epoch ms when this snapshot was fetched. Set by the loader; the cache
   // layer reads it to render "Loaded <time>" and decide refresh affordances.
   loadedAt?: number;
+  // The league's NEXT draft, when the platform exposes it before it runs
+  // (Sleeper: the current season's pre-draft board). Carries what the
+  // commissioner has already locked in: the pick order and any keepers
+  // placed on the board. The Draft Room seeds setup from this; the picks on
+  // an unrun draft are keeper stubs, never last-season results, so they must
+  // not land in teams[].draftPicks.
+  upcomingDraft?: {
+    draftId: string;
+    // Team ids (roster ids) in round-1 pick order, when the order is set.
+    order?: string[];
+    // Commissioner-set keepers already on the board, at the round they cost.
+    keepers: Array<{ teamId: string; sleeperPlayerId: string; round: number }>;
+  };
   // Guest mode: a synthetic league built from user-picked draft settings
   // instead of a real connection (no teams, trades, matchups, or history).
   // Lets Rankings and the Draft Room work without logging in. Routing, the
@@ -357,11 +370,15 @@ export namespace SleeperAPI {
   export interface Draft {
     draft_id: string;
     type: string; // 'snake' | 'auction' | 'linear'
-    status: string;
+    status: string; // 'pre_draft' | 'drafting' | 'paused' | 'complete'
     settings?: {
       budget?: number;
       [key: string]: number | undefined;
     };
+    // user_id -> draft slot (1-based). Null until the commish sets an order.
+    draft_order?: Record<string, number> | null;
+    // draft slot -> roster_id. May be null on drafts that haven't started.
+    slot_to_roster_id?: Record<string, number> | null;
   }
 
   export interface Transaction {

@@ -54,6 +54,24 @@ describe('useDraftRoom', () => {
     expect(result.current.config.myTeamId).toBe('t1');
   });
 
+  it('seats teams in the upcoming draft\'s pick order when the platform set one', () => {
+    const league = makeLeague();
+    league.upcomingDraft = { draftId: 'd1', order: ['t2', 't1'], keepers: [] };
+    const { result } = renderHook(() => useDraftRoom(league));
+    expect(result.current.config.teams.map(t => t.id)).toEqual(['t2', 't1']);
+  });
+
+  it('appends teams the platform order does not mention, in league order', () => {
+    const league = makeLeague();
+    league.teams = [
+      ...league.teams,
+      { id: 't3', name: 'Charlie', wins: 0, losses: 0, ties: 0 } as League['teams'][number],
+    ];
+    league.upcomingDraft = { draftId: 'd1', order: ['t3'], keepers: [] };
+    const { result } = renderHook(() => useDraftRoom(league));
+    expect(result.current.config.teams.map(t => t.id)).toEqual(['t3', 't1', 't2']);
+  });
+
   it('refuses to start with zero rounds or a sub-$1/slot auction budget', () => {
     const { result } = renderHook(() => useDraftRoom(makeLeague()));
     act(() => {

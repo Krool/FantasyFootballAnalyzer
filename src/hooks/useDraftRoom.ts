@@ -58,13 +58,23 @@ export function leagueKeyFor(league: League): string {
 }
 
 function configFromLeague(league: League): DraftRoomConfig {
-  const teams: DraftRoomTeam[] =
+  let teams: DraftRoomTeam[] =
     league.teams.length > 0
       ? league.teams.map(t => ({ id: t.id, name: t.name, ownerName: t.ownerName }))
       : Array.from({ length: league.totalTeams || 12 }, (_, i) => ({
           id: `team-${i + 1}`,
           name: `Team ${i + 1}`,
         }));
+  // When the platform already knows the upcoming draft's pick order, seat the
+  // teams in it (team order IS the round-1 order in the room). Teams the
+  // order doesn't mention keep their relative place at the end.
+  const order = league.upcomingDraft?.order;
+  if (order && order.length > 0) {
+    const slotById = new Map(order.map((id, i) => [id, i]));
+    teams = [...teams].sort(
+      (a, b) => (slotById.get(a.id) ?? Infinity) - (slotById.get(b.id) ?? Infinity),
+    );
+  }
   // Spread over the defaults rather than fall back wholesale: a league
   // snapshot cached before a slot field existed (e.g. SUPERFLEX) is present
   // but missing that key, which would make draftableSlotCount NaN.

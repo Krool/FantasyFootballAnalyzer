@@ -110,15 +110,29 @@ describe('keeperCandidates', () => {
 });
 
 describe('guessKeepers', () => {
-  it('returns at most one keeper per team and skips teams with no good option', () => {
+  it('gives every team its best keeper, even one with no clear surplus', () => {
     const teams = [
       leagueTeam('A', [['Star Back', 'RB', 5], ['Good Back', 'RB', 4]]),
-      // Deep Receiver at his exact market slot: no surplus, no keeper.
+      // Deep Receiver at his exact market slot: no surplus, but in a league
+      // where everyone keeps someone he is still the guess.
       leagueTeam('B', [['Deep Receiver', 'WR', 5]]),
     ];
     const keepers = guessKeepers(teams, POOL, 2, 6);
+    expect(keepers).toHaveLength(2);
+    expect(keepers.find(k => k.teamId === 'A')).toEqual({ teamId: 'A', playerId: 'p1', costRound: 4 });
+    expect(keepers.find(k => k.teamId === 'B')).toEqual({ teamId: 'B', playerId: 'p10', costRound: 4 });
+  });
+
+  it('extra slots beyond the first still require positive surplus', () => {
+    // Team keeps up to 2, but only Star Back is worth his slot; the guess
+    // must not pad slot 2 with a value-neutral keeper.
+    const team = leagueTeam('A', [
+      ['Star Back', 'RB', 5],
+      ['Deep Receiver', 'WR', 5],
+    ]);
+    const keepers = guessKeepers([team], POOL, 2, 6, 2);
     expect(keepers).toHaveLength(1);
-    expect(keepers[0]).toEqual({ teamId: 'A', playerId: 'p1', costRound: 4 });
+    expect(keepers[0].playerId).toBe('p1');
   });
 
   it('keeps multiple players per team with distinct cost rounds', () => {
@@ -138,6 +152,46 @@ describe('guessKeepers', () => {
     const twoEarlier = guessKeepers([team], POOL, 2, 6, 1, 2);
     expect(oneEarlier[0].costRound).toBe(5);
     expect(twoEarlier[0].costRound).toBe(4);
+  });
+});
+
+describe('commissioner-set keepers', () => {
+  it('pins the guess to the commish player and round over the score-based pick', () => {
+    // Star Back scores far higher, but the commish already locked Good Back
+    // in at round 2 on the platform board: that IS the answer.
+    const team = leagueTeam('A', [
+      ['Star Back', 'RB', 5],
+      ['Good Back', 'RB', 5],
+    ]);
+    const commish = [{ teamId: 'A', playerId: 'p3', costRound: 2 }];
+    const keepers = guessKeepers([team], POOL, 2, 6, 1, 1, commish);
+    expect(keepers).toEqual([{ teamId: 'A', playerId: 'p3', costRound: 2 }]);
+  });
+
+  it('sorts commish-set candidates first and flags them', () => {
+    const team = leagueTeam('A', [
+      ['Star Back', 'RB', 5],
+      ['Good Back', 'RB', 5],
+    ]);
+    const commish = [{ teamId: 'A', playerId: 'p3', costRound: 2 }];
+    const candidates = keeperCandidates([team], POOL, 2, 6, 1, commish).get('A')!;
+    expect(candidates[0].player.id).toBe('p3');
+    expect(candidates[0].commishSet).toBe(true);
+    expect(candidates[0].costRound).toBe(2);
+  });
+
+  it('injects a commish keeper the eligibility model would have excluded', () => {
+    // Commish set a player who never appears in the team's draft history
+    // (trade exception, rule we cannot see): he must still show up and win.
+    const team = leagueTeam('A', [['Deep Back', 'RB', 6]]);
+    const commish = [{ teamId: 'A', playerId: 'p2', costRound: 3 }];
+    const candidates = keeperCandidates([team], POOL, 2, 6, 1, commish).get('A')!;
+    const injected = candidates.find(c => c.player.id === 'p2');
+    expect(injected).toBeDefined();
+    expect(injected!.commishSet).toBe(true);
+    expect(injected!.costRound).toBe(3);
+    const keepers = guessKeepers([team], POOL, 2, 6, 1, 1, commish);
+    expect(keepers).toEqual([{ teamId: 'A', playerId: 'p2', costRound: 3 }]);
   });
 });
 
