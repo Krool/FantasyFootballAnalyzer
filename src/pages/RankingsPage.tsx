@@ -13,7 +13,7 @@ import { consensusAvg, platformDelta, platformRankSource, sleeperAdpFor } from '
 import { FLEX_POSITIONS, labelForPos } from '@/data/rankingsVariants';
 import { draftableSlotCount } from '@/utils/draftEngine';
 import { normalizeName } from '@/utils/playerNames';
-import { draftValues } from '@/utils/projectionValues';
+import { draftValues, vorConfigFor } from '@/utils/projectionValues';
 import styles from './RankingsPage.module.css';
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DST'];
@@ -112,7 +112,9 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
   const valueLeague = useMemo(() => {
     const rosterSlots = league.rosterSlots ?? DEFAULT_ROSTER_SLOTS;
     return {
-      budget: DEFAULT_BUDGET,
+      // The platform's real auction budget when known (Sleeper/ESPN), so the
+      // $ column matches what the Draft Room will open with.
+      budget: league.auctionBudget ?? DEFAULT_BUDGET,
       teams: league.teams.length || league.totalTeams || 12,
       rounds: draftableSlotCount(rosterSlots),
       rosterSlots,
@@ -121,8 +123,15 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
   }, [league]);
 
   const scaledValues = useMemo(
-    () => draftValues(POOL.players, POOL.baseline, valueLeague),
-    [valueLeague],
+    () =>
+      draftValues(
+        POOL.players,
+        POOL.baseline,
+        valueLeague,
+        // Auto-detected TE premium prices TEs the same way the Draft Room does.
+        vorConfigFor({ tePremium: (league.tePremiumPerReception ?? 0) > 0 }),
+      ),
+    [valueLeague, league.tePremiumPerReception],
   );
 
   const avgById = useMemo(() => {

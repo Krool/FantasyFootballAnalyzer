@@ -336,6 +336,21 @@ describe('gradeAuctionPick', () => {
     expect(result.grade).toBe('great');
     expect(result.auctionValueGrade).toBe('Steal');
   });
+
+  it('scales spend bands to a $100 budget: $25 there is elite spend', () => {
+    // $25 of a $100 budget = $50 of the $200 baseline -> elite band.
+    const pick = makePick({ auctionValue: 25 });
+    const result = gradeAuctionPick(pick, 2, allPicks, 100);
+    expect(result.auctionValueGrade).toBe('Elite Hit');
+  });
+
+  it('scales spend bands to a $300 budget: $40 there is only medium spend', () => {
+    // $40 of a $300 budget = ~$27 of the $200 baseline -> medium band,
+    // where a top-5 finish is Great Value (not the elite band's Elite Hit).
+    const pick = makePick({ auctionValue: 40 });
+    const result = gradeAuctionPick(pick, 4, allPicks, 300);
+    expect(result.auctionValueGrade).toBe('Great Value');
+  });
 });
 
 describe('gradeAllPicks', () => {

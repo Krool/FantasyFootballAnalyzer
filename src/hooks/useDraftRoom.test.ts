@@ -72,6 +72,31 @@ describe('useDraftRoom', () => {
     expect(result.current.config.teams.map(t => t.id)).toEqual(['t3', 't1', 't2']);
   });
 
+  it('seeds the auction budget from the league when the platform exposed it', () => {
+    const league = makeLeague();
+    league.draftType = 'auction';
+    league.auctionBudget = 300;
+    const { result } = renderHook(() => useDraftRoom(league));
+    expect(result.current.config.budget).toBe(300);
+  });
+
+  it('defaults the budget to $200 when the platform did not expose one', () => {
+    const { result } = renderHook(() => useDraftRoom(makeLeague()));
+    expect(result.current.config.budget).toBe(200);
+  });
+
+  it('auto-enables the TE premium toggle when the league pays a TE bonus', () => {
+    const league = makeLeague();
+    league.tePremiumPerReception = 0.5;
+    const { result } = renderHook(() => useDraftRoom(league));
+    expect(result.current.config.tePremium).toBe(true);
+  });
+
+  it('leaves the TE premium toggle off without a detected bonus', () => {
+    const { result } = renderHook(() => useDraftRoom(makeLeague()));
+    expect(result.current.config.tePremium).toBeFalsy();
+  });
+
   it('refuses to start with zero rounds or a sub-$1/slot auction budget', () => {
     const { result } = renderHook(() => useDraftRoom(makeLeague()));
     act(() => {

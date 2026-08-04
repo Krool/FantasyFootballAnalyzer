@@ -181,15 +181,19 @@ export function gradePick(
 export function gradeAuctionPick(
   pick: DraftPick,
   positionRank: number,
-  allPicks: DraftPick[]
+  allPicks: DraftPick[],
+  budget: number = 200
 ): { grade: DraftGrade; auctionValueGrade: string } {
-  const cost = pick.auctionValue || 0;
+  // The spend bands below are calibrated to a $200 budget; scale the pick's
+  // cost so a $50 player in a $100 league grades like a $100 player in $200.
+  const budgetScale = budget > 0 ? 200 / budget : 1;
+  const cost = (pick.auctionValue || 0) * budgetScale;
 
   // Count how many players at this position were drafted
   const positionPicks = allPicks.filter(p => p.player.position === pick.player.position);
   const totalAtPosition = positionPicks.length;
 
-  // For auction, grade based on:
+  // For auction, grade based on (at a $200 budget):
   // - High spend ($40+): Did you get a top 3 performer? (you paid elite price)
   // - Medium spend ($15-39): Did you get a starter? (top 8-10)
   // - Low spend ($5-14): Did you find value? (top 15)
@@ -274,7 +278,9 @@ export function gradeAllPicks(league: League): GradedPick[] {
     const valueOverExpected = expectedRank - positionRank;
 
     if (isAuction) {
-      const { grade, auctionValueGrade } = gradeAuctionPick(pick, positionRank, allPicks);
+      const { grade, auctionValueGrade } = gradeAuctionPick(
+        pick, positionRank, allPicks, league.auctionBudget ?? 200
+      );
       const auctionRound = auctionRounds?.get(`${pick.teamId}-${pick.pickNumber}`);
       return {
         ...pick,

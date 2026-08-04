@@ -100,9 +100,14 @@ function configFromLeague(league: League): DraftRoomConfig {
     myTeamId: myLeagueTeam?.id ?? teams[0]?.id ?? '',
     rosterSlots,
     scoring: league.scoringType,
+    // Auto-detected TE premium (Sleeper bonus_rec_te); the setup toggle
+    // remains the override.
+    tePremium: (league.tePremiumPerReception ?? 0) > 0 ? true : undefined,
     keepersPerTeam: 1,
     keeperEscalation: 1,
-    budget: DEFAULT_BUDGET,
+    // The platform's real auction budget when it exposes one (Sleeper/ESPN);
+    // still editable in setup.
+    budget: league.auctionBudget ?? DEFAULT_BUDGET,
     rounds: draftableSlotCount(rosterSlots),
     mode: 'mock',
     // Default mock auctions to live bidding: bids are called one at a time so
