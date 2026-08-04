@@ -3,6 +3,24 @@ import { applyCors } from './_cors.js';
 
 const YAHOO_API_BASE = 'https://fantasysports.yahooapis.com/fantasy/v2';
 
+// Yahoo's XML serializes a repeated element with ONE child as a bare object
+// where multiples give a list (one manager vs two, one division vs four).
+// Force the known repeated tags to always parse as arrays so client code
+// never has to branch on 1-vs-N.
+const ALWAYS_ARRAY = new Set([
+  'manager',
+  'roster_position',
+  'stat',
+  'division',
+  'eligible_position',
+  'matchup',
+  'team',
+  'player',
+  'draft_result',
+  'transaction',
+  'game_week',
+]);
+
 export default async function handler(req, res) {
   // GET only: the upstream fetch below is hardcoded to GET, so admitting
   // POST here would silently execute a future write call as a read.
@@ -79,7 +97,8 @@ export default async function handler(req, res) {
         attributeNamePrefix: '@_',
         textNodeName: '#text',
         parseAttributeValue: true,
-        trimValues: true
+        trimValues: true,
+        isArray: (name) => ALWAYS_ARRAY.has(name)
       });
       const jsonData = parser.parse(responseText);
       return res.status(200).json(jsonData);

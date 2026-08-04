@@ -133,6 +133,52 @@ describe('yahoo-api allowed endpoints reach Yahoo', () => {
     expect(res.body).toEqual({ ok: true })
   })
 
+  it('forces known repeated tags to arrays even with a single child', async () => {
+    // Yahoo XML serializes a one-child collection as a bare object; the
+    // isArray option must normalize these so client code never branches on
+    // 1-vs-N (single manager on a team, single transaction, etc.).
+    const xml = `<?xml version="1.0"?>
+      <fantasy_content>
+        <league>
+          <name>Solo League</name>
+          <transactions count="1"><transaction><type>add</type></transaction></transactions>
+          <scoreboard>
+            <matchup>
+              <teams count="1">
+                <team>
+                  <managers count="1"><manager><nickname>solo</nickname></manager></managers>
+                </team>
+              </teams>
+            </matchup>
+          </scoreboard>
+        </league>
+      </fantasy_content>`
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/xml' },
+      text: async () => xml,
+    })))
+
+    const res = mockRes()
+    await handler(mockReq({ query: { endpoint: '/league/nfl.l.1/scoreboard' }, headers: AUTH }), res)
+
+    expect(res.statusCode).toBe(200)
+    const league = res.body.fantasy_content.league
+    // Scalar tags stay scalars.
+    expect(league.name).toBe('Solo League')
+    // Repeated tags parse as length-1 arrays, not bare objects.
+    expect(Array.isArray(league.transactions.transaction)).toBe(true)
+    expect(league.transactions.transaction).toHaveLength(1)
+    const matchups = league.scoreboard.matchup
+    expect(Array.isArray(matchups)).toBe(true)
+    const teams = matchups[0].teams.team
+    expect(Array.isArray(teams)).toBe(true)
+    const managers = teams[0].managers.manager
+    expect(Array.isArray(managers)).toBe(true)
+    expect(managers[0].nickname).toBe('solo')
+  })
+
   it('maps an upstream 401 to a 401 token-expired response', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({
       ok: false,
