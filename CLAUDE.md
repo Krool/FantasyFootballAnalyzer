@@ -56,6 +56,9 @@ changes do.
   guest mode keep working. The in-code default is the old github.io URL, so the
   Vercel value is what matters.
 - Yahoo client id/secret live in Vercel env (never in the bundle).
+- `ALLOW_DEV_OAUTH=1` (optional, dev/preview only) lets `yahoo-callback`
+  redirect OAuth tokens to `localhost:5173`/`4173` instead of `FRONTEND_URL`.
+  Unset in production.
 - The Yahoo developer-app redirect URI targets the Vercel
   `/api/yahoo-callback` host and does not change when the frontend domain
   changes.

@@ -33,7 +33,6 @@ export interface UseTargetsReturn {
   avoided: Set<string>;
   // Cycles neutral -> starred -> avoided -> neutral.
   cycle: (playerId: string) => void;
-  toggleStar: (playerId: string) => void;
 }
 
 export function useTargets(season: number): UseTargetsReturn {
@@ -48,18 +47,6 @@ export function useTargets(season: number): UseTargetsReturn {
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, [season]);
-
-  const persist = useCallback(
-    (next: TargetsState) => {
-      setState(next);
-      try {
-        localStorage.setItem(storageKey(season), JSON.stringify(next));
-      } catch (err) {
-        logger.warn('[useTargets] Failed to persist:', err);
-      }
-    },
-    [season],
-  );
 
   const cycle = useCallback(
     (playerId: string) => {
@@ -86,20 +73,8 @@ export function useTargets(season: number): UseTargetsReturn {
     [season],
   );
 
-  const toggleStar = useCallback(
-    (playerId: string) => {
-      const starred = new Set(state.starred);
-      const avoided = new Set(state.avoided);
-      avoided.delete(playerId);
-      if (starred.has(playerId)) starred.delete(playerId);
-      else starred.add(playerId);
-      persist({ starred: [...starred], avoided: [...avoided] });
-    },
-    [state, persist],
-  );
-
   const starred = useMemo(() => new Set(state.starred), [state.starred]);
   const avoided = useMemo(() => new Set(state.avoided), [state.avoided]);
 
-  return { starred, avoided, cycle, toggleStar };
+  return { starred, avoided, cycle };
 }

@@ -155,6 +155,13 @@ data again (**verified**). Treat these as the riskiest; prefer `api.sleeper.com`
 populates `matchups` and `playerWeeklyPoints`, so it gets every feature: luck
 analysis, Player Journey stints, post-trade verdicts, live draft sync, history.
 
+Gotcha (2026-08): when the league's current draft hasn't run,
+`/draft/{id}/picks` returns commissioner-set keepers as pick stubs, not last
+season's results. `loadLeague` routes a non-complete draft's picks to
+`league.upcomingDraft` (pick order + keeper stubs) rather than
+`teams[].draftPicks`, so keeper guessing still reads the prior season's real
+draft via `loadKeeperSourceTeams`.
+
 Known adapter gaps: the live auction nomination metadata above is unused
 (live sync follows picks only). Draft type and pick `metadata.amount` are
 mapped (June 2026).
@@ -352,7 +359,7 @@ functions in `api/`:
 | Function | Role |
 |----------|------|
 | `yahoo-auth` | builds the Yahoo authorize URL; secret stays in Vercel env |
-| `yahoo-callback` | registered redirect URI; exchanges the code, redirects to the SPA with tokens in the URL **hash fragment** (`/#/yahoo-success`), state re-validated against an origin allowlist |
+| `yahoo-callback` | registered redirect URI; exchanges the code, redirects to the SPA at `/yahoo-success` with tokens in the URL **fragment** (`#tokens=...`, never sent to the server), state re-validated against an origin allowlist |
 | `yahoo-refresh` | mints new access tokens from the long-lived refresh token |
 | `yahoo-api` | authenticated proxy to `fantasysports.yahooapis.com`, SSRF-guarded by path regex, converts XML to JSON (`fast-xml-parser`) |
 

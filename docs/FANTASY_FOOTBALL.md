@@ -215,6 +215,11 @@ June 2026. This section keeps only the domain-level traps.
 - **Sleeper**: draft object has `type` (`snake` / `auction` / `linear`),
   `settings.budget`, `pick_timer`, per-position slot counts, `draft_order`.
   Picks carry `is_keeper` and `metadata.amount` (auction price, string).
+  **Before the draft runs**, `/draft/{id}/picks` returns commissioner-set
+  keepers as pick stubs — NOT last season's results. `loadLeague` routes a
+  non-complete draft's picks to `league.upcomingDraft` (pick order + keeper
+  stubs) instead of `teams[].draftPicks`, so keeper guessing still reads the
+  prior season's real draft.
 
 ### Practical consequences for this app
 
@@ -224,7 +229,10 @@ June 2026. This section keeps only the domain-level traps.
    (default $200) is the right design there.
 2. Pre-draft leagues exist with settings and teams but empty rosters; the
    Draft Room must function with last season's league loaded (it does:
-   teams/slots seed the setup form and are editable).
+   teams/slots seed the setup form and are editable). On Sleeper, when the
+   upcoming draft already has a commish-set pick order or keepers, the Draft
+   Room seeds setup from them (`league.upcomingDraft`) instead of leaving
+   teams in roster order; both stay editable.
 3. Yahoo keeper data via API is unreliable; do not assume kept players appear
    in draft results.
 4. Yahoo DOES serve weekly player points and weekly matchup scores - via the
