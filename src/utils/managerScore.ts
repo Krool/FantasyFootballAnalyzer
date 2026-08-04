@@ -51,6 +51,10 @@ export function managerScores(league: League): ManagerScore[] {
       ties: t.ties || 0,
       pointsFor: t.pointsFor || 0,
     })),
+    10,
+    // Only allPlayWinPct is consumed here (median-immune), but pass the flag
+    // so any future use of luckScore in scoring stays correct.
+    { medianMatchup: league.hasMedianMatchup },
   );
   const luckById = new Map(luck.map(m => [m.teamId, m]));
 

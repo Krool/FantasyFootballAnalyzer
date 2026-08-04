@@ -145,7 +145,11 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         winner: { teamId: luckiest.teamId, teamName: luckiest.teamName },
         value: `+${luckiest.luckScore.toFixed(1)}`,
         description: 'Most wins above expected',
-        detail: `${luckiest.actualWins}W vs ${luckiest.expectedWins.toFixed(1)} expected`,
+        // Median leagues: luck is scored on the h2h record, so the detail
+        // must show the same basis or the numbers won't add up.
+        detail: luckiest.medianAdjusted
+          ? `${luckiest.h2hWins} h2h W vs ${luckiest.expectedWins.toFixed(1)} expected`
+          : `${luckiest.actualWins}W vs ${luckiest.expectedWins.toFixed(1)} expected`,
         icon: '🍀',
       });
     }
@@ -162,7 +166,9 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         winner: { teamId: unluckiest.teamId, teamName: unluckiest.teamName },
         value: unluckiest.luckScore.toFixed(1),
         description: 'Most wins below expected',
-        detail: `${unluckiest.actualWins}W vs ${unluckiest.expectedWins.toFixed(1)} expected`,
+        detail: unluckiest.medianAdjusted
+          ? `${unluckiest.h2hWins} h2h W vs ${unluckiest.expectedWins.toFixed(1)} expected`
+          : `${unluckiest.actualWins}W vs ${unluckiest.expectedWins.toFixed(1)} expected`,
         icon: '💔',
       });
     }

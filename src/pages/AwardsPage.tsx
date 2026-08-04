@@ -36,8 +36,10 @@ export function AwardsPage({ league }: AwardsPageProps) {
       pointsFor: t.pointsFor || 0,
     }));
 
-    return calculateLuckMetrics(matchupData, teams);
-  }, [league.matchups, league.teams]);
+    return calculateLuckMetrics(matchupData, teams, 10, {
+      medianMatchup: league.hasMedianMatchup,
+    });
+  }, [league.matchups, league.teams, league.hasMedianMatchup]);
 
   // Calculate all awards
   const awards = useMemo(() => {
@@ -127,6 +129,12 @@ export function AwardsPage({ league }: AwardsPageProps) {
         {luckMetrics.length > 0 && (
           <section className={styles.luckSection}>
             <h2 className={styles.categoryTitle}>Luck Analysis</h2>
+            {league.hasMedianMatchup && (
+              <p className={styles.categoryNote}>
+                Median league — luck compares head-to-head results only; the
+                extra weekly median win is excluded.
+              </p>
+            )}
             <div className={`${styles.luckTable} scroll-x-hint`}>
               <table>
                 <thead>

@@ -21,10 +21,20 @@ export interface WeeklyScore {
 export interface LuckMetrics {
   teamId: string;
   teamName: string;
-  // Record
+  // Record as the platform reports it (in median leagues this includes the
+  // weekly median wins).
   actualWins: number;
   actualLosses: number;
   actualTies: number;
+  // Head-to-head record counted from the matchups themselves. In a normal
+  // league this equals the platform record; in a median league it is the
+  // real-opponent record only.
+  h2hWins: number;
+  h2hLosses: number;
+  h2hTies: number;
+  // True when luckScore was computed on the h2h record because the league
+  // plays a median matchup (see calculateLuckMetrics options).
+  medianAdjusted?: boolean;
   // All-Play (if you played everyone every week)
   allPlayWins: number;
   allPlayLosses: number;
@@ -64,7 +74,15 @@ export interface MatchupData {
 export function calculateLuckMetrics(
   matchups: MatchupData[],
   teams: Array<{ id: string; name: string; wins: number; losses: number; ties: number; pointsFor: number }>,
-  closeGameThreshold: number = 10
+  closeGameThreshold: number = 10,
+  options?: {
+    // The league awards an extra weekly W/L vs the league median, so the
+    // platform win total already contains median wins. expectedWins here IS
+    // the median expectation, so comparing it against that total counts the
+    // median twice and the whole league reads as lucky. When set, luckScore
+    // uses the head-to-head record counted from the matchups instead.
+    medianMatchup?: boolean;
+  }
 ): LuckMetrics[] {
   // Build weekly scores for each team
   const teamScores = new Map<string, WeeklyScore[]>();
@@ -193,8 +211,16 @@ export function calculateLuckMetrics(
     const biggestWin = Math.max(0, ...scores.filter(s => s.won).map(s => s.margin));
     const biggestLoss = Math.max(0, ...scores.filter(s => !s.won && !s.tied).map(s => Math.abs(s.margin)));
 
-    // Calculate luck score
-    const luckScore = team.wins - expectedWins;
+    // Head-to-head record from the matchups themselves.
+    const h2hWins = scores.filter(s => s.won).length;
+    const h2hTies = scores.filter(s => s.tied).length;
+    const h2hLosses = scores.length - h2hWins - h2hTies;
+
+    // Luck score: actual wins vs the median expectation. In a median league
+    // the platform record already contains median wins, so use the h2h
+    // record — same basis as expectedWins — or everyone reads as lucky.
+    const winsForLuck = options?.medianMatchup ? h2hWins : team.wins;
+    const luckScore = winsForLuck - expectedWins;
 
     // Determine luck rating
     let luckRating: LuckMetrics['luckRating'];
@@ -223,6 +249,10 @@ export function calculateLuckMetrics(
       actualWins: team.wins,
       actualLosses: team.losses,
       actualTies: team.ties,
+      h2hWins,
+      h2hLosses,
+      h2hTies,
+      medianAdjusted: options?.medianMatchup || undefined,
       allPlayWins: allPlay.wins,
       allPlayLosses: allPlay.losses,
       allPlayTies: allPlay.ties,

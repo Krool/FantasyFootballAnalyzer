@@ -109,6 +109,8 @@ function generateAwards(league: League): PdfAward[] {
             ties: t.ties || 0,
             pointsFor: t.pointsFor || 0,
           })),
+          10,
+          { medianMatchup: league.hasMedianMatchup },
         )
       : undefined;
 

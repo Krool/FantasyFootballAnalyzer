@@ -50,11 +50,13 @@ export function TeamsPage({ league }: TeamsPageProps) {
       pointsFor: t.pointsFor || 0,
     }));
 
-    const metrics = calculateLuckMetrics(matchupData, teams);
+    const metrics = calculateLuckMetrics(matchupData, teams, 10, {
+      medianMatchup: league.hasMedianMatchup,
+    });
     const map = new Map<string, LuckMetrics>();
     metrics.forEach(m => map.set(m.teamId, m));
     return map;
-  }, [league.matchups, league.teams]);
+  }, [league.matchups, league.teams, league.hasMedianMatchup]);
 
   // One number to argue about: draft + waivers + trades + schedule-adjusted
   // results, each normalized within the league.
@@ -115,6 +117,12 @@ export function TeamsPage({ league }: TeamsPageProps) {
           <p className={styles.subtitle}>
             {league.totalTeams} teams in {league.name}
           </p>
+          {league.hasMedianMatchup && (
+            <p className={styles.subtitle}>
+              Median league — luck compares head-to-head results only; the extra
+              weekly median win is excluded.
+            </p>
+          )}
         </div>
 
         {scores.length > 0 && (

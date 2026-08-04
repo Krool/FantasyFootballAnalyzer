@@ -109,6 +109,8 @@ export function TeamDetail({ league, team, onBack }: TeamDetailProps) {
               ties: t.ties || 0,
               pointsFor: t.pointsFor || 0,
             })),
+            10,
+            { medianMatchup: league.hasMedianMatchup },
           )
         : undefined;
     return calculateAllAwards({ league, luckMetrics: luck }).filter(

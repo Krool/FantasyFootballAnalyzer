@@ -161,6 +161,47 @@ describe('calculateLuckMetrics', () => {
   });
 });
 
+describe('calculateLuckMetrics median-league mode', () => {
+  it('counts the head-to-head record from matchups', () => {
+    const { teams, matchups } = makeTestData();
+    const metrics = calculateLuckMetrics(matchups, teams);
+
+    const t1 = metrics.find(m => m.teamId === 't1')!;
+    expect(t1.h2hWins).toBe(3);
+    expect(t1.h2hLosses).toBe(0);
+    expect(t1.h2hTies).toBe(0);
+    const t4 = metrics.find(m => m.teamId === 't4')!;
+    expect(t4.h2hWins).toBe(0);
+    expect(t4.h2hLosses).toBe(3);
+    expect(metrics.every(m => m.medianAdjusted === undefined)).toBe(true);
+  });
+
+  it('scores luck on h2h wins when the league plays a median matchup', () => {
+    const { teams, matchups } = makeTestData();
+    // Median league: platform records include weekly median wins. t1 went
+    // 3-0 h2h and beat the median all 3 weeks -> platform record 6-0.
+    const medianTeams = teams.map(t =>
+      t.id === 't1' ? { ...t, wins: 6, losses: 0 } : t,
+    );
+
+    const unadjusted = calculateLuckMetrics(matchups, medianTeams);
+    const adjusted = calculateLuckMetrics(matchups, medianTeams, 10, {
+      medianMatchup: true,
+    });
+
+    const t1Un = unadjusted.find(m => m.teamId === 't1')!;
+    const t1Adj = adjusted.find(m => m.teamId === 't1')!;
+    // Without the flag the double-counted median wins read as +3 luck.
+    expect(t1Un.luckScore).toBe(3); // 6 platform wins - 3 expected
+    // With the flag, luck is h2h wins vs expectation: a neutral 0.
+    expect(t1Adj.luckScore).toBe(0); // 3 h2h wins - 3 expected
+    expect(t1Adj.medianAdjusted).toBe(true);
+    // The displayed record stays the platform record.
+    expect(t1Adj.actualWins).toBe(6);
+    expect(t1Adj.h2hWins).toBe(3);
+  });
+});
+
 describe('getLuckiestTeam', () => {
   it('returns team with highest luck score', () => {
     const { teams, matchups } = makeTestData();

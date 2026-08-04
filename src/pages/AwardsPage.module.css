@@ -65,6 +65,12 @@
   align-items: baseline;
   justify-content: space-between;
 }
+.categoryNote {
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #888);
+  margin: 0.25rem 0 0.75rem;
+}
+
 .categoryTitle::after {
   content: '';
   flex: 1;
