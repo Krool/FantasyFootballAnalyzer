@@ -486,6 +486,56 @@ describe('sleeper loadLeague with an unrun draft (commish keepers + order)', () 
   });
 });
 
+describe('sleeper loadLeague pre-draft pick-order variants', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  async function loadWithDraft(draft: Record<string, unknown>): Promise<League> {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input).replace('https://api.sleeper.app/v1', '');
+      if (path === `/league/${LEAGUE_ID}`) {
+        return jsonResponse({ ...leagueFixture, status: 'pre_draft' });
+      }
+      if (path === `/draft/${DRAFT_ID}`) {
+        return jsonResponse({ draft_id: DRAFT_ID, type: 'snake', status: 'pre_draft', ...draft });
+      }
+      if (path === `/draft/${DRAFT_ID}/picks`) return jsonResponse([]);
+      return jsonResponse(routeSleeper(String(input)));
+    }));
+    return loadLeague(LEAGUE_ID);
+  }
+
+  it('prefers slot_to_roster_id when Sleeper provides it', async () => {
+    const league = await loadWithDraft({
+      // Contradicts draft_order on purpose: the slot map is authoritative.
+      slot_to_roster_id: { '1': 3, '2': 1, '3': 4, '4': 2 },
+      draft_order: { u1: 1, u2: 2, u3: 3, u4: 4 },
+    });
+    expect(league.upcomingDraft?.order).toEqual(['3', '1', '4', '2']);
+  });
+
+  it('dedupes a co-owned roster resolved twice from draft_order', async () => {
+    // u9 co-owns roster 2 (see rostersFixture); if Sleeper ever lists both
+    // the owner and co-owner in draft_order, roster 2 must not appear twice
+    // (keep its earliest slot) and the order must still cover every roster.
+    const league = await loadWithDraft({
+      slot_to_roster_id: null,
+      draft_order: { u2: 1, u9: 2, u4: 3, u1: 4, u3: 5 },
+    });
+    expect(league.upcomingDraft?.order).toEqual(['2', '4', '1', '3']);
+  });
+
+  it('drops a partial order rather than seating unresolved teams wrong', async () => {
+    // u5 is not in the league: only 3 of 4 rosters resolve, so no order.
+    const league = await loadWithDraft({
+      slot_to_roster_id: null,
+      draft_order: { u1: 1, u2: 2, u5: 3 },
+    });
+    expect(league.upcomingDraft?.order).toBeUndefined();
+  });
+});
+
 describe('sleeper loadLeague my-team detection', () => {
   afterAll(() => {
     vi.unstubAllGlobals();

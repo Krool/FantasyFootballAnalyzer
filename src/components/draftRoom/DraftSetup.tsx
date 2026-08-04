@@ -8,10 +8,10 @@ import { useKeeperSourceTeams } from '@/hooks/useKeeperSource';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { SnakeFormat } from '@/utils/snakeOrder';
 import {
+  commishKeepersFromUpcoming,
   guessKeepers,
   keeperCandidates,
   resolveKeeperRounds,
-  type CommishKeeper,
 } from '@/utils/keeperGuess';
 import { loadDraftArchive, removeFromDraftArchive } from '@/utils/draftRoomCache';
 import {
@@ -134,18 +134,10 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
   // board (Sleeper pre-draft picks), mapped from platform player ids onto the
   // bundled pool. These pin the guess for their teams; the user can still
   // override.
-  const commishKeepers = useMemo<CommishKeeper[]>(() => {
-    const set = league.upcomingDraft?.keepers ?? [];
-    if (set.length === 0) return [];
-    const bySleeperId = new Map<string, string>();
-    for (const p of room.pool.players) {
-      if (p.sleeperId) bySleeperId.set(p.sleeperId, p.id);
-    }
-    return set.flatMap(k => {
-      const playerId = bySleeperId.get(k.sleeperPlayerId);
-      return playerId ? [{ teamId: k.teamId, playerId, costRound: k.round }] : [];
-    });
-  }, [league.upcomingDraft, room.pool.players]);
+  const commishKeepers = useMemo(
+    () => commishKeepersFromUpcoming(league.upcomingDraft, room.pool.players),
+    [league.upcomingDraft, room.pool.players],
+  );
   const candidatesByTeam = useMemo(
     () =>
       keeperCandidates(
@@ -232,11 +224,20 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
     const teams = config.teams.filter((_, i) => i !== index);
     const patch: Parameters<typeof updateConfig>[0] = { teams };
     if (removed.id === config.myTeamId && teams.length > 0) patch.myTeamId = teams[0].id;
+    // Orphaned keepers must go with their team: an assignment pointing at a
+    // nonexistent teamId is never auto-logged but stays reserved, silently
+    // removing the player from the pool (and stalling the auction keeper
+    // auto-log entirely).
+    if (config.keepers?.some(k => k.teamId === removed.id)) {
+      patch.keepers = config.keepers.filter(k => k.teamId !== removed.id);
+    }
     updateConfig(patch);
   };
 
   const addTeam = () => {
-    const id = `team-${Date.now()}`;
+    // Suffix beyond the timestamp: two same-millisecond adds would collide,
+    // and duplicate ids collapse in the engine's team map.
+    const id = `team-${Date.now()}-${config.teams.length}`;
     setTeams([...config.teams, { id, name: `Team ${config.teams.length + 1}` }]);
   };
 

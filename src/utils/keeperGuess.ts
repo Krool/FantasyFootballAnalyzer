@@ -36,6 +36,25 @@ export interface CommishKeeper {
   costRound: number;
 }
 
+// Map the platform's keeper stubs (Sleeper player ids) onto pool player ids.
+// A stub whose player isn't in the bundled pool is dropped (retired /
+// unranked); keeperCandidates handles clamping the round.
+export function commishKeepersFromUpcoming(
+  upcoming: { keepers: Array<{ teamId: string; sleeperPlayerId: string; round: number }> } | undefined,
+  pool: PoolPlayer[],
+): CommishKeeper[] {
+  const stubs = upcoming?.keepers ?? [];
+  if (stubs.length === 0) return [];
+  const bySleeperId = new Map<string, string>();
+  for (const p of pool) {
+    if (p.sleeperId) bySleeperId.set(p.sleeperId, p.id);
+  }
+  return stubs.flatMap(k => {
+    const playerId = bySleeperId.get(k.sleeperPlayerId);
+    return playerId ? [{ teamId: k.teamId, playerId, costRound: k.round }] : [];
+  });
+}
+
 export interface KeeperCandidate {
   teamId: string;
   player: PoolPlayer;
@@ -161,9 +180,14 @@ export function keeperCandidates(
     // platform board outranks our eligibility model.
     for (const set of commish) {
       if (set.teamId !== team.id) continue;
+      // Clamp to the room's real rounds: Sleeper's board can have more rounds
+      // than this room derives (e.g. roster slots the app doesn't model). An
+      // unclamped costRound past `rounds` would reserve the player but never
+      // auto-log him - he'd silently vanish from the draft pool.
+      const costRound = Math.min(Math.max(1, set.costRound), rounds);
       const existing = candidates.find(c => c.player.id === set.playerId);
       if (existing) {
-        existing.costRound = set.costRound;
+        existing.costRound = costRound;
         existing.commishSet = true;
         continue;
       }
@@ -171,13 +195,13 @@ export function keeperCandidates(
       if (!player) continue; // not in this year's pool: nothing to show
       const market = marketRank(player);
       const expert = player.overallRank;
-      const slotRank = midRankOfRound(set.costRound, teamCount);
+      const slotRank = midRankOfRound(costRound, teamCount);
       const playerWorth = ((player.baseValue ?? 1) + valueAtRank(rankSorted, market)) / 2;
       candidates.push({
         teamId: team.id,
         player,
-        lastRound: Math.min(rounds, set.costRound + escalation),
-        costRound: set.costRound,
+        lastRound: Math.min(rounds, costRound + escalation),
+        costRound,
         marketRound: Math.max(1, Math.ceil(market / teamCount)),
         expertRound: Math.max(1, Math.ceil(expert / teamCount)),
         surplus: playerWorth - valueAtRank(rankSorted, slotRank),

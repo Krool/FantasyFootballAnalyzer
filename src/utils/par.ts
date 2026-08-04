@@ -87,6 +87,13 @@ export function parseSleeperRosterPositions(rosterPositions: string[]): RosterSl
       case 'IR':
         slots.IR++;
         break;
+      default:
+        // Slots the app doesn't model (IDP: DL/LB/DB/IDP_FLEX, TAXI, etc.)
+        // still consume a draft pick each. Counting them as bench keeps the
+        // room's round count matching the platform's real draft length;
+        // dropping them silently shorts the draft by that many rounds.
+        if (pos !== 'TAXI') slots.BENCH++;
+        break;
     }
   });
 

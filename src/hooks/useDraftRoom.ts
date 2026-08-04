@@ -380,7 +380,13 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
     if (state.phase !== 'drafting' || state.config.draftType !== 'auction') return;
     const keepers = state.config.keepers;
     if (!keepers?.length) return;
-    const next = keepers.find(k => !derived.draftedPlayerIds.has(k.playerId));
+    // Skip keepers whose team is unknown (e.g. the team was removed in setup
+    // after keepers were assigned): the sale would fail validation, no event
+    // would land, and this effect's deps would never change - stalling every
+    // remaining keeper behind the broken one.
+    const next = keepers.find(
+      k => !derived.draftedPlayerIds.has(k.playerId) && derived.teams.has(k.teamId),
+    );
     if (!next) return;
     const maxBid = derived.teams.get(next.teamId)?.maxBid ?? 1;
     const price = Math.min(Math.max(1, next.keeperPrice ?? 1), Math.max(1, maxBid));

@@ -267,6 +267,65 @@ describe('useLiveDraftSync', () => {
     expect(result.current.error).toMatch(/missing from the bundled pool/);
   });
 
+  it('skips picks whose player is already on the board (auto-logged keepers)', async () => {
+    // Keeper league: the room auto-logs keepers itself, and Sleeper's feed
+    // carries those same keeper picks. Ingest must dedupe by player identity;
+    // filtering by pick_no vs event count would re-feed the keeper and kill
+    // the session on "already drafted".
+    const logEvents = vi.fn(() => null);
+    const pool = makePool([
+      makePoolPlayer('pool-1', 'sleeper-1'),
+      makePoolPlayer('pool-2', 'sleeper-2'),
+    ]);
+    const room = makeRoom({
+      logEvents,
+      pool,
+      // The keeper (pool-1) is already logged; note pickCount (1) equals the
+      // feed's first pick_no, the exact drift that broke the positional filter.
+      derived: { draftedPlayerIds: new Set(['pool-1']), pickCount: 1 },
+    });
+    mockedGetLeagueDrafts.mockResolvedValue([makeDraftStub()]);
+    mockedGetLiveDraftPicks.mockResolvedValue([
+      makePick({ pick_no: 1, roster_id: 1, player_id: 'sleeper-1', is_keeper: true }),
+      makePick({ pick_no: 2, roster_id: 2, player_id: 'sleeper-2' }),
+    ]);
+
+    const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+
+    await act(async () => {
+      result.current.toggle();
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(logEvents).toHaveBeenCalledWith([
+      { kind: 'snake_pick', playerId: 'pool-2', teamId: '2', isKeeper: undefined },
+    ]);
+    expect(result.current.status).toBe('syncing');
+    expect(result.current.enabled).toBe(true);
+  });
+
+  it('survives an already-drafted rejection (keeper auto-log racing the poll)', async () => {
+    const logEvents = vi.fn(() => ({
+      index: 0,
+      error: 'That player has already been drafted.',
+    }));
+    const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);
+    const room = makeRoom({ logEvents, pool });
+    mockedGetLeagueDrafts.mockResolvedValue([makeDraftStub()]);
+    mockedGetLiveDraftPicks.mockResolvedValue([makePick({ pick_no: 1 })]);
+
+    const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+
+    await act(async () => {
+      result.current.toggle();
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    // The duplicate is dropped by the reducer; the session keeps polling.
+    expect(result.current.enabled).toBe(true);
+    expect(result.current.error).toBeNull();
+  });
+
   it('stops and reports the rejection when the batch ingest refuses a pick', async () => {
     const logEvents = vi.fn(() => ({ index: 0, error: 'Player already drafted' }));
     const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);

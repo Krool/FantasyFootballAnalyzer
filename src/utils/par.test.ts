@@ -36,6 +36,16 @@ describe('parseSleeperRosterPositions', () => {
     expect(result.SUPERFLEX).toBe(1);
   });
 
+  it('counts unmodeled slots (IDP etc.) as bench so round counts stay honest', () => {
+    // IDP slots consume a real draft pick each; dropping them shorts the
+    // Draft Room's round count vs the platform's actual draft length.
+    const positions = ['QB', 'RB', 'DL', 'LB', 'DB', 'IDP_FLEX', 'BN'];
+    const result = parseSleeperRosterPositions(positions);
+    expect(result.QB).toBe(1);
+    expect(result.RB).toBe(1);
+    expect(result.BENCH).toBe(5); // 1 real bench + 4 unmodeled IDP slots
+  });
+
   it('handles empty positions array', () => {
     const result = parseSleeperRosterPositions([]);
 

@@ -86,16 +86,20 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
         if (cancelled) return;
         setStatus('syncing');
 
-        // Only ingest what the log doesn't have. Sleeper pick_no is 1-based
-        // and strictly ordered, exactly like our event count.
-        const fresh = picks
-          .filter(p => p.pick_no > derived.pickCount)
-          .sort((a, b) => a.pick_no - b.pick_no);
+        // Ingest by player identity, not position. In a keeper league the
+        // room auto-logs keepers itself (possibly at different rounds than
+        // Sleeper's board), and Sleeper's picks feed carries those same
+        // keepers, so pick_no and our event count drift apart. Filtering by
+        // pick_no > pickCount would re-feed an already-logged keeper (killing
+        // the session on "already drafted") or silently skip a real pick.
+        // A pick whose player is already on our board is one we already have.
+        const fresh = [...picks].sort((a, b) => a.pick_no - b.pick_no);
 
         // Map the whole backlog first, then ingest it as ONE validated batch:
         // logEvent per pick would validate every pick against the same
         // pre-batch board and stamp them with the same stale seq.
         const batch = [];
+        const pickNos: number[] = [];
         for (const pick of fresh) {
           const playerId = bySleeperId.get(pick.player_id);
           const teamId = pick.roster_id !== null ? String(pick.roster_id) : null;
@@ -103,6 +107,7 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
             stop('A drafted player is missing from the bundled pool; switching back to manual logging.');
             return;
           }
+          if (derived.draftedPlayerIds.has(playerId)) continue;
           if (!teamId || !teamIds.has(teamId)) {
             stop('A pick belongs to a team this room does not know; switching back to manual logging.');
             return;
@@ -124,12 +129,18 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
                   isKeeper: pick.is_keeper ?? undefined,
                 },
           );
+          pickNos.push(pick.pick_no);
         }
         if (batch.length > 0) {
           const rejection = logEvents(batch);
           if (rejection) {
+            // A duplicate can still slip through when a keeper auto-log races
+            // this poll (our drafted-set snapshot predates it). The reducer
+            // refuses the duplicate either way; let the next tick re-sync
+            // instead of killing the session over it.
+            if (rejection.error === 'That player has already been drafted.') return;
             stop(
-              `Sleeper pick ${fresh[rejection.index].pick_no} was rejected (${rejection.error}). Switching back to manual logging.`,
+              `Sleeper pick ${pickNos[rejection.index]} was rejected (${rejection.error}). Switching back to manual logging.`,
             );
             return;
           }
@@ -147,7 +158,7 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
       cancelled = true;
       clearInterval(timer);
     };
-  }, [enabled, available, league.id, derived.pickCount, bySleeperId, teamIds, config.draftType, logEvents, stop]);
+  }, [enabled, available, league.id, derived.draftedPlayerIds, bySleeperId, teamIds, config.draftType, logEvents, stop]);
 
   // Leaving the drafting phase (complete or reset) ends the session.
   useEffect(() => {

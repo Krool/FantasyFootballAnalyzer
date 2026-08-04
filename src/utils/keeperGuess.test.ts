@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Player, Team } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
-import { guessKeepers, keeperCandidates } from './keeperGuess';
+import { commishKeepersFromUpcoming, guessKeepers, keeperCandidates } from './keeperGuess';
 
 function poolPlayer(id: string, name: string, pos: string, rank: number, value: number | null): PoolPlayer {
   return {
@@ -180,6 +180,26 @@ describe('commissioner-set keepers', () => {
     expect(candidates[0].costRound).toBe(2);
   });
 
+  it('clamps a commish round past the room\'s rounds instead of stranding the player', () => {
+    // Sleeper's board can have more rounds than the room derives; an
+    // unclamped costRound is never auto-logged and the player silently
+    // vanishes from the pool.
+    const team = leagueTeam('A', [['Star Back', 'RB', 5]]);
+    const commish = [{ teamId: 'A', playerId: 'p1', costRound: 14 }];
+    const keepers = guessKeepers([team], POOL, 2, 6, 1, 1, commish);
+    expect(keepers).toEqual([{ teamId: 'A', playerId: 'p1', costRound: 6 }]);
+  });
+
+  it('skips a commish keeper who is not in this year\'s pool', () => {
+    const team = leagueTeam('A', [['Star Back', 'RB', 5]]);
+    const commish = [{ teamId: 'A', playerId: 'retired-guy', costRound: 3 }];
+    const candidates = keeperCandidates([team], POOL, 2, 6, 1, commish).get('A')!;
+    expect(candidates.some(c => c.player.id === 'retired-guy')).toBe(false);
+    // The team still gets its normal best-candidate guess.
+    const keepers = guessKeepers([team], POOL, 2, 6, 1, 1, commish);
+    expect(keepers).toEqual([{ teamId: 'A', playerId: 'p1', costRound: 4 }]);
+  });
+
   it('injects a commish keeper the eligibility model would have excluded', () => {
     // Commish set a player who never appears in the team's draft history
     // (trade exception, rule we cannot see): he must still show up and win.
@@ -192,6 +212,33 @@ describe('commissioner-set keepers', () => {
     expect(injected!.costRound).toBe(3);
     const keepers = guessKeepers([team], POOL, 2, 6, 1, 1, commish);
     expect(keepers).toEqual([{ teamId: 'A', playerId: 'p2', costRound: 3 }]);
+  });
+});
+
+describe('commishKeepersFromUpcoming', () => {
+  const pool = [
+    { ...poolPlayer('p1', 'Star Back', 'RB', 1, 60), sleeperId: 's-100' },
+    { ...poolPlayer('p2', 'Great Receiver', 'WR', 2, 55), sleeperId: 's-200' },
+    poolPlayer('p3', 'Good Back', 'RB', 3, 40), // no sleeperId
+  ];
+
+  it('maps platform keeper stubs onto pool ids by sleeperId', () => {
+    const upcoming = {
+      keepers: [
+        { teamId: '4', sleeperPlayerId: 's-200', round: 7 },
+        { teamId: '2', sleeperPlayerId: 's-100', round: 3 },
+      ],
+    };
+    expect(commishKeepersFromUpcoming(upcoming, pool)).toEqual([
+      { teamId: '4', playerId: 'p2', costRound: 7 },
+      { teamId: '2', playerId: 'p1', costRound: 3 },
+    ]);
+  });
+
+  it('drops stubs whose player is not in the pool and handles no upcoming draft', () => {
+    const upcoming = { keepers: [{ teamId: '1', sleeperPlayerId: 's-999', round: 5 }] };
+    expect(commishKeepersFromUpcoming(upcoming, pool)).toEqual([]);
+    expect(commishKeepersFromUpcoming(undefined, pool)).toEqual([]);
   });
 });
 

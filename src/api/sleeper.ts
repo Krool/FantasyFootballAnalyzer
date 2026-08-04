@@ -279,7 +279,19 @@ function draftOrderTeamIds(
   }
   if (bySlot.length === 0) return undefined;
   bySlot.sort((a, b) => a[0] - b[0]);
-  return bySlot.map(([, rosterId]) => String(rosterId));
+  // A co-owned roster can resolve twice from draft_order (owner and co-owner
+  // both listed). Keep its earliest slot; a duplicated entry would silently
+  // push some other team to the end of the order.
+  const seen = new Set<number>();
+  const order: string[] = [];
+  for (const [, rosterId] of bySlot) {
+    if (seen.has(rosterId)) continue;
+    seen.add(rosterId);
+    order.push(String(rosterId));
+  }
+  // A partial order (some rosters unresolved) would look authoritative while
+  // seating the missing teams wrong; better to fall back to league order.
+  return order.length === rosters.length ? order : undefined;
 }
 
 // Load complete league data
