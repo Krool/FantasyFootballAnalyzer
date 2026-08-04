@@ -220,6 +220,32 @@ export interface League {
     // Commissioner-set keepers already on the board, at the round they cost.
     keepers: Array<{ teamId: string; sleeperPlayerId: string; round: number }>;
   };
+  // The league plays an extra weekly matchup against the league median
+  // (Sleeper league_average_match, ESPN WIN_BONUS_TOP_HALF, Yahoo
+  // uses_median_score). Platform win totals include those median wins, so
+  // luck analysis switches to a head-to-head basis when this is set.
+  hasMedianMatchup?: boolean;
+  // Auction draft budget when the platform exposes it (Sleeper
+  // draft.settings.budget; ESPN draftSettings.auctionBudget, AUCTION type
+  // only). Yahoo does not expose it; absent means "unknown, assume $200".
+  auctionBudget?: number;
+  // Playoff shape, when the platform exposes it. Not yet consumed beyond
+  // Sleeper's playoffStartWeek trim; stored for future playoff features.
+  playoffStartWeek?: number;
+  playoffTeams?: number;
+  playoffRoundType?: 'one_week' | 'two_week_championship' | 'two_week_rounds';
+  // Best ball league (Sleeper settings.best_ball). Starters are
+  // auto-optimal, so lineup-decision metrics measure less than they claim.
+  isBestBall?: boolean;
+  // TE-premium bonus points per TE reception (Sleeper bonus_rec_te). Seeds
+  // the Draft Room's TE premium toggle.
+  tePremiumPerReception?: number;
+  // League starts individual defensive players (DL/LB/DB slots). Those slots
+  // and players are not modeled; surfaces show an honest notice instead.
+  hasIDP?: boolean;
+  // Set when scoringType is 'custom': downstream pricing treats it as
+  // half-PPR, so dollar values and ranks are an approximation.
+  scoringIsApproximate?: boolean;
   // Guest mode: a synthetic league built from user-picked draft settings
   // instead of a real connection (no teams, trades, matchups, or history).
   // Lets Rankings and the Draft Room work without logging in. Routing, the
@@ -308,6 +334,16 @@ export namespace SleeperAPI {
     settings: {
       draft_rounds: number;
       type: number; // 0 = redraft, 1 = keeper, 2 = dynasty
+      // Extra weekly matchup vs the league median (median leagues).
+      league_average_match?: number;
+      best_ball?: number;
+      playoff_week_start?: number;
+      playoff_teams?: number;
+      // 0 = one-week rounds, 1 = two-week championship, 2 = two-week rounds.
+      playoff_round_type?: number;
+      // IR and taxi sizes live here, NOT in roster_positions.
+      reserve_slots?: number;
+      taxi_slots?: number;
     };
     draft_id: string;
     // Points at last season's league: renewals chain backward, never forward.
@@ -330,7 +366,8 @@ export namespace SleeperAPI {
 
   export interface Roster {
     roster_id: number;
-    owner_id: string;
+    // Null on orphaned rosters (owner left / commissioner-run team).
+    owner_id: string | null;
     // Co-managers; the primary owner is not repeated here.
     co_owners?: string[] | null;
     league_id: string;
@@ -409,8 +446,11 @@ export namespace SleeperAPI {
 
   export interface Matchup {
     roster_id: number;
-    matchup_id: number;
+    // Null for teams with no matchup that week (e.g. playoff byes).
+    matchup_id: number | null;
     points: number;
+    // Commissioner score override; when non-null it supersedes points.
+    custom_points?: number | null;
     starters: string[];
     starters_points: number[];
     players: string[];
@@ -443,6 +483,9 @@ export namespace ESPNAPI {
       name: string;
       draftSettings: {
         type: string; // "SNAKE" or "AUCTION"
+        // Present even in snake leagues; only meaningful when type AUCTION.
+        auctionBudget?: number;
+        keeperCount?: number;
       };
       rosterSettings: {
         positionLimits: Record<string, number>;
@@ -452,6 +495,17 @@ export namespace ESPNAPI {
           statId: number;
           points: number;
         }>;
+        // "WIN_BONUS_TOP_HALF" = median league (extra weekly win for the
+        // top half of scores).
+        scoringEnhancementType?: string;
+      };
+      scheduleSettings?: {
+        // Regular-season matchup periods; playoffs start at count + 1.
+        matchupPeriodCount?: number;
+        playoffTeamCount?: number;
+        // matchupPeriodId -> scoringPeriodIds. 2-week playoff rounds make
+        // one matchup period span several NFL weeks.
+        matchupPeriods?: Record<string, number[]>;
       };
     };
     teams: Team[];
@@ -463,6 +517,9 @@ export namespace ESPNAPI {
     id: number;
     name: string;
     abbrev: string;
+    // Pre-~2019 seasons: name is absent; the team name is location+nickname.
+    location?: string;
+    nickname?: string;
     owners: string[];
     roster?: {
       entries: RosterEntry[];

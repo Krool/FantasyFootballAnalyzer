@@ -358,9 +358,11 @@ export async function loadLeague(leagueId: string): Promise<League> {
   const rosterMap = new Map<number, SleeperAPI.Roster>();
   rosters.forEach(roster => rosterMap.set(roster.roster_id, roster));
 
-  // Build owner map (roster_id -> owner_id)
+  // Build owner map (roster_id -> owner_id). Orphaned rosters have no owner.
   const rosterOwnerMap = new Map<number, string>();
-  rosters.forEach(roster => rosterOwnerMap.set(roster.roster_id, roster.owner_id));
+  rosters.forEach(roster => {
+    if (roster.owner_id) rosterOwnerMap.set(roster.roster_id, roster.owner_id);
+  });
 
   // Determine scoring type from settings. A standard league may send rec: 0 OR
   // omit the key entirely; both mean "no reception scoring", so treat a missing
@@ -633,7 +635,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
   // Build team name map for trades
   const teamNameMap = new Map<string, string>();
   rosters.forEach(roster => {
-    const owner = userMap.get(roster.owner_id);
+    const owner = roster.owner_id ? userMap.get(roster.owner_id) : undefined;
     const teamName = owner?.display_name || owner?.username || `Team ${roster.roster_id}`;
     teamNameMap.set(String(roster.roster_id), teamName);
   });
@@ -704,10 +706,12 @@ export async function loadLeague(leagueId: string): Promise<League> {
   // settable, so a name match can flag someone else's roster.
   const myUserId = loadLastConnection()?.sleeper?.userId ?? null;
   const teams: Team[] = rosters.map(roster => {
-    const owner = userMap.get(roster.owner_id);
+    const owner = roster.owner_id ? userMap.get(roster.owner_id) : undefined;
     const teamName = owner?.display_name || owner?.username || `Team ${roster.roster_id}`;
     // Owner plus co-managers: a co-managed roster is still the user's own.
-    const ownerUserIds = [roster.owner_id, ...(roster.co_owners ?? [])].filter(Boolean);
+    const ownerUserIds = [roster.owner_id, ...(roster.co_owners ?? [])].filter(
+      (id): id is string => Boolean(id)
+    );
     const isMyTeam = myUserId !== null && ownerUserIds.includes(myUserId);
 
     const draftPicksForTeam = (teamDraftPicks.get(roster.roster_id) || []).map(pick => ({
@@ -826,7 +830,9 @@ export async function loadKeeperSourceTeams(leagueId: string): Promise<KeeperSou
   });
 
   return rosters.map(roster => ({
-    ownerUserIds: [roster.owner_id, ...(roster.co_owners ?? [])].filter(Boolean),
+    ownerUserIds: [roster.owner_id, ...(roster.co_owners ?? [])].filter(
+      (id): id is string => Boolean(id)
+    ),
     draftPicks: picksByRoster.get(roster.roster_id) ?? [],
     roster: roster.players?.map(id => convertPlayer(id, players)) ?? [],
   }));
@@ -928,7 +934,7 @@ export async function loadLeagueHistory(leagueId: string, maxSeasons: number = 5
       // so the History page can show the right trophy.
       const teamsWithStandings = rosters
         .map(roster => {
-          const owner = userMap.get(roster.owner_id);
+          const owner = roster.owner_id ? userMap.get(roster.owner_id) : undefined;
           return {
             id: String(roster.roster_id),
             // owner_id is stable across seasons even when roster IDs renumber
@@ -1005,11 +1011,13 @@ export async function loadHeadToHeadRecords(
       const rosterToOwner = new Map<number, string>();
       const rosterToName = new Map<number, string>();
       rosters.forEach(roster => {
-        rosterToOwner.set(roster.roster_id, roster.owner_id);
-        const owner = userMap.get(roster.owner_id);
+        const owner = roster.owner_id ? userMap.get(roster.owner_id) : undefined;
         const name = owner?.display_name || owner?.username || `Team ${roster.roster_id}`;
         rosterToName.set(roster.roster_id, name);
-        ownerIdToName.set(roster.owner_id, name);
+        if (roster.owner_id) {
+          rosterToOwner.set(roster.roster_id, roster.owner_id);
+          ownerIdToName.set(roster.owner_id, name);
+        }
       });
 
       // Find our team's roster ID for this season

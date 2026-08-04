@@ -8,6 +8,10 @@ import { logger } from '@/utils/logger';
 // v3: added Team.isMyTeam + ownerUserIds, which drive the Draft Room "me"
 //     preselect. Final-season snapshots live 30 days, so without a bump a
 //     pre-v3 cache silently preselects the first team as "you" for weeks.
+// v3 stays for the 2026-08 settings fields (hasMedianMatchup, auctionBudget,
+//     playoff*, isBestBall, tePremiumPerReception, hasIDP,
+//     scoringIsApproximate): all optional, absent = "unknown", and every
+//     consumer treats them that way, so old snapshots stay valid.
 const CACHE_VERSION = 3;
 const KEY_PREFIX = 'ffa:league:v' + CACHE_VERSION + ':';
 
