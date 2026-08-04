@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-08-03T13:38:13.482Z",
+ "fetchedAt": "2026-08-04T11:44:18.551Z",
  "data": {
   "players": [
    {
@@ -964,6 +964,18 @@
     "ptsStd": 131.6
    },
    {
+    "name": "Parker Washington",
+    "pos": "WR",
+    "team": "JAX",
+    "adpHalfPpr": 81.1,
+    "adpPpr": 83.2,
+    "adpStd": 83.3,
+    "adp2qb": 103,
+    "ptsHalfPpr": 158.2,
+    "ptsPpr": 190.7,
+    "ptsStd": 125.7
+   },
+   {
     "name": "Alec Pierce",
     "pos": "WR",
     "team": "IND",
@@ -1048,18 +1060,6 @@
     "ptsStd": 299.34
    },
    {
-    "name": "Parker Washington",
-    "pos": "WR",
-    "team": "JAX",
-    "adpHalfPpr": 87.4,
-    "adpPpr": 89.1,
-    "adpStd": 90.4,
-    "adp2qb": 112,
-    "ptsHalfPpr": 158.2,
-    "ptsPpr": 190.7,
-    "ptsStd": 125.7
-   },
-   {
     "name": "Jaxson Dart",
     "pos": "QB",
     "team": "NYG",
@@ -1106,18 +1106,6 @@
     "ptsHalfPpr": 108.5,
     "ptsPpr": 120,
     "ptsStd": 97
-   },
-   {
-    "name": "Ricky Pearsall",
-    "pos": "WR",
-    "team": "SF",
-    "adpHalfPpr": 92.6,
-    "adpPpr": 99.8,
-    "adpStd": 85.8,
-    "adp2qb": 109.5,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
    },
    {
     "name": "Chris Godwin",
@@ -3112,18 +3100,6 @@
     "ptsStd": 57.1
    },
    {
-    "name": "Chris Brazzell",
-    "pos": "WR",
-    "team": "CAR",
-    "adpHalfPpr": 219.5,
-    "adpPpr": 230.8,
-    "adpStd": 201.9,
-    "adp2qb": 240,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
     "name": "Buffalo Bills",
     "pos": "DST",
     "team": "BUF",
@@ -3731,6 +3707,30 @@
     "adpPpr": 378,
     "adpStd": 355,
     "adp2qb": 388,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Chris Brazzell",
+    "pos": "WR",
+    "team": "CAR",
+    "adpHalfPpr": 400,
+    "adpPpr": 400,
+    "adpStd": 400,
+    "adp2qb": 400,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Ricky Pearsall",
+    "pos": "WR",
+    "team": "SF",
+    "adpHalfPpr": 400,
+    "adpPpr": 400,
+    "adpStd": 400,
+    "adp2qb": 400,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
