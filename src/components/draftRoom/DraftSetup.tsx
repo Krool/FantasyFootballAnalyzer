@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { League, RosterSlots, ScoringType } from '@/types';
 import type { DraftRoomTeam } from '@/types/draft';
@@ -155,6 +155,33 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
 
   const teamKeeperIds = (teamId: string) =>
     (config.keepers ?? []).filter(k => k.teamId === teamId).map(k => k.playerId);
+
+  // A keeper league always keeps someone, so the section starts ON with the
+  // guesses pre-filled (commish-set keepers pinned) instead of waiting for
+  // the user to find the checkbox. Runs once when candidates arrive (the
+  // prior-season fetch is async); unchecking afterwards sticks.
+  const keepersAutoEnabled = useRef(false);
+  useEffect(() => {
+    if (keepersAutoEnabled.current) return;
+    if (config.keepers !== undefined) {
+      keepersAutoEnabled.current = true;
+      return;
+    }
+    if (isDynasty || (leagueType !== 'keeper' && commishKeepers.length === 0)) return;
+    if (!anyKeeperCandidates) return;
+    keepersAutoEnabled.current = true;
+    updateConfig({
+      keepers: guessKeepers(
+        keeperTeams,
+        room.pool.players,
+        config.teams.length,
+        config.rounds,
+        keepersPerTeam,
+        escalation,
+        commishKeepers,
+      ),
+    });
+  });
 
   const toggleKeepers = (on: boolean) => {
     updateConfig({
