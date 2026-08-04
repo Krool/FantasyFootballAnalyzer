@@ -68,11 +68,13 @@ function ListCard({
   lists,
   listKey,
   copied,
+  failed,
   onCopy,
 }: {
   lists: ShareLists;
   listKey: ShareListKey;
   copied: boolean;
+  failed: boolean;
   onCopy: (key: ShareListKey) => void;
 }) {
   const auction = lists.draftType === 'auction';
@@ -84,7 +86,7 @@ function ListCard({
         <h4 className={styles.cardTitle}>{shareListTitle(lists, listKey)}</h4>
         {!empty && (
           <button type="button" className={styles.copyBtn} onClick={() => onCopy(listKey)}>
-            {copied ? 'Copied' : 'Copy'}
+            {copied ? 'Copied' : failed ? 'Copy failed' : 'Copy'}
           </button>
         )}
       </div>
@@ -134,6 +136,7 @@ function ListCard({
 export function RecapShare({ config, recaps }: RecapShareProps) {
   const { playClick } = useSounds();
   const [copiedKey, setCopiedKey] = useState<ShareListKey | 'all' | null>(null);
+  const [failedKey, setFailedKey] = useState<ShareListKey | 'all' | null>(null);
 
   const lists = useMemo(
     () =>
@@ -153,10 +156,17 @@ export function RecapShare({ config, recaps }: RecapShareProps) {
     navigator.clipboard
       .writeText(text)
       .then(() => {
+        setFailedKey(null);
         setCopiedKey(key);
         setTimeout(() => setCopiedKey(current => (current === key ? null : current)), 2000);
       })
-      .catch(err => logger.warn('Clipboard write failed:', err));
+      .catch(err => {
+        // A silent failure reads as success (the user assumes it copied);
+        // say so on the button itself.
+        logger.warn('Clipboard write failed:', err);
+        setFailedKey(key);
+        setTimeout(() => setFailedKey(current => (current === key ? null : current)), 2500);
+      });
   };
 
   if (recaps.length === 0) return null;
@@ -171,12 +181,13 @@ export function RecapShare({ config, recaps }: RecapShareProps) {
             lists={lists}
             listKey={key}
             copied={copiedKey === key}
+            failed={failedKey === key}
             onCopy={copy}
           />
         ))}
       </div>
       <button type="button" className={styles.copyAll} onClick={() => copy('all')}>
-        {copiedKey === 'all' ? 'Copied' : 'Copy everything'}
+        {copiedKey === 'all' ? 'Copied' : failedKey === 'all' ? 'Copy failed' : 'Copy everything'}
       </button>
     </div>
   );

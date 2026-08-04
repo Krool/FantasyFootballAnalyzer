@@ -172,6 +172,9 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
   const [selectedYahooLeague, setSelectedYahooLeague] = useState('');
   const [loadingYahooLeagues, setLoadingYahooLeagues] = useState(false);
   const [yahooError, setYahooError] = useState<string | null>(null);
+  // The auth-URL fetch takes a beat; an undisabled button invites double
+  // clicks that fire overlapping OAuth starts (and double-counts analytics).
+  const [yahooLoginBusy, setYahooLoginBusy] = useState(false);
 
   // Sleeper league finder (username → leagues, no auth needed)
   const [sleeperUsername, setSleeperUsername] = useState(saved?.sleeper?.username ?? '');
@@ -354,6 +357,8 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
   };
 
   const handleYahooLogin = async () => {
+    if (yahooLoginBusy) return;
+    setYahooLoginBusy(true);
     try {
       Analytics.connectAttempt('yahoo');
       const authUrl = await getAuthUrl();
@@ -363,9 +368,11 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
         // Storage blocked: the login still works, the tab just won't restore.
       }
       window.location.href = authUrl;
+      // Deliberately stay busy on success: the page is navigating away.
     } catch (err) {
       logger.error('Failed to get Yahoo auth URL:', err);
       setYahooError('Could not start Yahoo login. Try again.');
+      setYahooLoginBusy(false);
     }
   };
 
@@ -457,9 +464,10 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                 type="button"
                 className="btn btn-primary"
                 onClick={handleYahooLogin}
+                disabled={yahooLoginBusy}
               >
                 <span className={styles.yahooLogo}>Y!</span>
-                Log in with Yahoo
+                {yahooLoginBusy ? 'Opening Yahoo…' : 'Log in with Yahoo'}
               </button>
               {yahooError && <p className={styles.error} role="alert">{yahooError}</p>}
             </div>

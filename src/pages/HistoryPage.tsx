@@ -21,6 +21,8 @@ export function HistoryPage({ league }: HistoryPageProps) {
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [rivalries, setRivalries] = useState<HeadToHeadRecord[]>([]);
   const [rivalriesLoading, setRivalriesLoading] = useState(false);
+  // A failed fetch must not masquerade as "this team has no records".
+  const [rivalriesError, setRivalriesError] = useState<string | null>(null);
 
   // Check if platform supports history
   const supportsHistory = league.platform === 'sleeper' || league.platform === 'espn';
@@ -80,6 +82,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
 
     const loadRivalries = async () => {
       setRivalriesLoading(true);
+      setRivalriesError(null);
       try {
         let result: { records: Map<string, HeadToHeadRecord>; teamName: string };
 
@@ -102,7 +105,10 @@ export function HistoryPage({ league }: HistoryPageProps) {
         setRivalries(rivalryArray);
       } catch (err) {
         logger.error('Failed to load rivalries:', err);
-        if (!cancelled) setRivalries([]);
+        if (!cancelled) {
+          setRivalries([]);
+          setRivalriesError('Could not load head-to-head records. Pick the team again to retry.');
+        }
       } finally {
         if (!cancelled) setRivalriesLoading(false);
       }
@@ -300,7 +306,13 @@ export function HistoryPage({ league }: HistoryPageProps) {
                 </div>
               )}
 
-              {!rivalriesLoading && selectedTeamId && rivalries.length === 0 && (
+              {!rivalriesLoading && selectedTeamId && rivalriesError && (
+                <div className={styles.noRivalries} role="alert">
+                  {rivalriesError}
+                </div>
+              )}
+
+              {!rivalriesLoading && selectedTeamId && !rivalriesError && rivalries.length === 0 && (
                 <div className={styles.noRivalries}>
                   No head-to-head records found for this team.
                 </div>

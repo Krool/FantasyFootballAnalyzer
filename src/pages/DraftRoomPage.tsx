@@ -137,8 +137,11 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
   }, [selected, derived.draftedPlayerIds]);
 
   // Draft-day speed: "/" jumps to player search, Ctrl+Z undoes the last pick.
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
+  // The handler lives in a ref so the listener mounts ONCE: this page
+  // re-renders on every draft event, and a dep-less effect was tearing down
+  // and re-registering the window listener hundreds of times per draft.
+  const keydownRef = useRef<(e: KeyboardEvent) => void>(() => {});
+  keydownRef.current = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       const typing = target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA';
       // Drafting only: post-draft the Board tab is an empty pool search,
@@ -163,10 +166,12 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
         e.preventDefault();
         quickDraft(selected);
       }
-    };
+  };
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => keydownRef.current(e);
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  });
+  }, []);
 
   const { playClick, playSuccess, playError, playOnTheClock, isMuted, toggleMute } = useSounds();
 
@@ -506,6 +511,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                   type="button"
                   className={liveSync.enabled ? styles.syncBtnOn : styles.syncBtn}
                   onClick={liveSync.toggle}
+                  disabled={liveSync.enabled && liveSync.status === 'connecting'}
                   title={
                     liveSync.enabled
                       ? 'Auto-ingesting picks from the Sleeper draft every 10 seconds. Click to go back to manual logging.'
