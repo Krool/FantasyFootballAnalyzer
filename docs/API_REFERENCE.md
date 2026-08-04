@@ -61,6 +61,41 @@ domain unchanged.
 League identity: new `league_id` every season; walk `previous_league_id`
 backward. League `status`: `pre_draft` / `drafting` / `in_season` / `complete`.
 
+### Settings and response edge cases (audited 2026-08, adapter reads them)
+
+- `settings.league_average_match: 1` — median league: every team plays an
+  extra weekly match vs the league median, so platform records include median
+  wins. Luck analysis must compare on the h2h record (the adapter flags
+  `hasMedianMatchup`; luck.ts adjusts).
+- `settings.best_ball: 1` — starters are auto-optimal; lineup-decision
+  metrics measure less than they claim.
+- `settings.reserve_slots` / `taxi_slots` — IR and taxi sizes live HERE, not
+  in `roster_positions` (which never contains `IR`/`TAXI`). The adapter takes
+  IR from `reserve_slots`; taxi is not modeled.
+- `scoring_settings.bonus_rec_te` — the canonical TE-premium field (also
+  `bonus_rec_rb`/`bonus_rec_wr` exist). Detected and seeds the Draft Room
+  toggle.
+- Playoffs: `playoff_week_start`, `playoff_teams`, `playoff_round_type`
+  (0 one-week rounds, 1 two-week championship, 2 two-week rounds),
+  `playoff_seed_type`. `settings.type`: 0 redraft / 1 keeper / 2 dynasty —
+  note `max_keepers` is 1 even in redraft leagues; never use it as the
+  keeper signal.
+- Draft `settings.budget` — the real auction budget (imported since 2026-08).
+  `settings.player_type`: 1 = rookies-only draft (rounds << roster size).
+- Matchups: `matchup_id` is **null** for teams with no matchup that week
+  (playoff byes) — never pair nulls; `custom_points` non-null is a
+  commissioner override that supersedes `points`; `starters` contains the
+  literal string `"0"` for empty slots; DEF "player ids" are team codes
+  (`"DEN"`), not numerics.
+- Rosters: `owner_id` null on orphaned teams; `co_owners`/`reserve`/`taxi`
+  are null-or-array; scoring floats carry float32 artifacts
+  (`0.03999999910593033`) — round before summing/display.
+- Scoring keys are all optional and many old leagues carry explicit `0.0`s —
+  presence does not mean enabled.
+- IDP: `roster_positions` values `DL`/`LB`/`DB`/`IDP_FLEX` (flagged as
+  `hasIDP`, not modeled). Guillotine leagues have NO settings flag at all
+  (run manually by commissioners); detection is heuristic-only.
+
 Avatars: `https://sleepercdn.com/avatars/{avatar_id}` (or `/thumbs/`).
 Player headshots: `https://sleepercdn.com/content/nfl/players/{player_id}.jpg`
 (**verified**).
@@ -202,6 +237,42 @@ AAV $60.96). This powers ESPN's own live draft results page.
 `X-Fantasy-Filter` grammar is enforced: a `limit` without a sort returns
 `FILTER_LIMIT_MISSING_SORT`. Free agents: filter `filterStatus: FREEAGENT/WAIVERS`.
 
+## Settings and response edge cases (audited 2026-08 via espn-api/ffscrapr source)
+
+- **Median leagues**: `scoringSettings.scoringEnhancementType ===
+  "WIN_BONUS_TOP_HALF"` — top half of weekly scores gets a bonus win.
+  Adapter flags `hasMedianMatchup`; luck analysis adjusts to the h2h basis.
+- **`draftSettings.auctionBudget` is present even in SNAKE leagues** (a
+  dormant default) — only meaningful when `type === 'AUCTION'`. Imported
+  since 2026-08. `keeperCount` / `keeperCountFuture` can differ when a league
+  is transitioning.
+- **Matchup periods vs scoring periods** (the classic bug):
+  `scheduleSettings.matchupPeriods` maps `{matchupPeriodId: [scoringPeriodIds]}`
+  — 2-week playoff rounds make one matchup period span several NFL weeks, and
+  `variablePlayoffMatchupPeriodLength` lets round lengths differ. Never
+  compute `matchupPeriod == week` for playoff games. Our weekly fetch loops
+  iterate scoring periods (always weekly) and luck excludes playoff games, so
+  nothing currently consumes the map; comments in espn.ts mark where it
+  matters if playoff analysis is ever built. `playoffSeedingRule` can be
+  `TOTAL_POINTS_SCORED` / `H2H_RECORD` / `INTRA_DIVISION_RECORD` (division
+  record flips the tiebreaker hierarchy).
+- **`scoringItems[].pointsOverrides`** (keyed by stat-category id) beats
+  `points` when present — espn-api reads override key "16". Our scoring
+  detection reads `points` only; PPR detection must use statId 53 (41 is the
+  raw receptions stat, not the scored one). Bucket-variant stat ids exist
+  ("every 10 yards") — computing points from raw yards is wrong in bucket
+  leagues. `homeTeamBonus`/`playoffHomeTeamBonus` exist and can differ.
+- **Historical seasons**: `teams[].name` absent — use `location` +
+  `nickname`; `roster.entries` can be absent; `members` can be missing
+  entirely; pre-2018 `leagueHistory` returns a JSON **array** (endpoint
+  unused by this app). `teams[].owners` is 0..n GUIDs (co-owned/abandoned).
+- **IDP/odd slots**: lineup slot ids 8-15 are defensive (DT/DE/LB/DL/CB/S/
+  DB/DP), 18 = punter, 19 = head coach, 1 = team QB. Adapter flags ids 8-15
+  as `hasIDP`; none are modeled.
+- Player stats arrays mix `statSourceId` 0 (actual) and 1 (projected) per
+  week — filter or double-count; top-level `proTeamId` is the CURRENT team,
+  wrong for historical weeks after midseason trades.
+
 ## Trades: the empty-items problem
 
 `mTransactions2` shows `TRADE_ACCEPT` rows with empty `items`. Workarounds, in
@@ -248,9 +319,10 @@ parallel season probe. Populates everything including `playerWeeklyPoints`
 
 Known adapter gaps: trade verdicts still use full-season totals even though
 weekly points now exist (post-trade verdicts would need the same windowed PAR
-treatment Yahoo got); PAR ignores actual `positionLimits` (assumes classic
-lineup); season probe drops rate-limited/401 years silently - which
-post-Aug-2025 means cookie-less public leagues silently lose all but ~2 years.
+treatment Yahoo got); season probe drops rate-limited/401 years silently -
+which post-Aug-2025 means cookie-less public leagues silently lose all but ~2
+years. (Fixed 2026-08: PAR now uses the league's real `positionLimits` via
+the shared par.ts replacement model instead of a hardcoded classic lineup.)
 
 ---
 
@@ -380,6 +452,46 @@ Our adapter ignores the chain and matches leagues **by name** across hardcoded
 game keys, which drops renamed leagues and ambiguous duplicates. Walking
 `renew` would be strictly better.
 
+## Settings and response edge cases (audited 2026-08 via yfpy/yahoo_fantasy_api source)
+
+- **Every scalar is a string** (`"is_auction_draft": "1"`, `"uses_faab":
+  "0"`) — `"0"` is truthy; always `String(x) === '1'` or parse explicitly.
+- **Median leagues**: `settings.uses_median_score === "1"` — extra weekly
+  W/L vs the league median; records sum to more games than weeks. Adapter
+  flags `hasMedianMatchup`.
+- **Playoffs**: gate on `uses_playoff === "1"` before reading
+  `playoff_start_week` / `num_playoff_teams`. `has_multiweek_championship ===
+  "1"` means ONE matchup object spans two NFL weeks (`week_start`/`week_end`)
+  — per-week iteration misses or double-counts it. Consolation matchups
+  carry `is_consolation`; filter both flags.
+- **Ties**: `winner_team_key` is entirely ABSENT when `is_tied === "1"`
+  (common in whole-point leagues, `uses_fractional_points === "0"`). Our
+  scoreboard parsing compares `team_points.total` itself, so it never reads
+  the field; regression-tested.
+- **XML→JSON 1-vs-N**: a repeated element with one child parses as a bare
+  object. Since 2026-08 `api/yahoo-api.js` forces the known repeated tags
+  (manager, roster_position, stat, division, eligible_position, matchup,
+  team, player, draft_result, transaction, game_week) to arrays via the
+  parser's `isArray` option; client-side `Array.isArray` guards remain as
+  belt-and-suspenders.
+- **Scoring**: `uses_fractional_points` ("0" = points truncate) and
+  `uses_negative_points` ("0" = weekly scores floor at 0) make recomputed
+  raw sums disagree with Yahoo. `stat_categories` entries with
+  `is_only_display_stat: "1"` (e.g. raw DEF points-allowed next to the
+  scored tiers) score nothing — filter before summing stats x modifiers.
+  Bonus thresholds ride in a `bonuses` sub-struct most wrappers drop.
+- **Keeper/dynasty**: no reliable league-level flag exists; per-player
+  `is_keeper` population is league-config dependent. The adapter deliberately
+  leaves `leagueType` absent (unknown) rather than claiming redraft.
+- **IDP**: roster positions `D`/`DL`/`LB`/`DB`/`CB`/`S`/`DE`/`DT` (flagged
+  `hasIDP`, not modeled; parsing them must not trigger the synthetic-lineup
+  fallback). Yahoo team defense is always `DEF` (never `D/ST`).
+- `renew`/`renewed` use `{game_id}_{league_id}` with an UNDERSCORE — not a
+  league key; transform to `{game_id}.l.{league_id}` to walk the chain.
+  Absent/empty on first-season leagues. `clinched_playoffs` is absent (not
+  "0") before clinching. Co-managed teams have multiple `manager` entries;
+  `nickname` can be `"--hidden--"` — `guid` is the stable id.
+
 ## Rate limits
 
 No documented number. The "999" of lore is **Error 999 "Unable to process
@@ -436,7 +548,8 @@ What the platform API offers vs what our adapter currently delivers.
 | Transactions + FAAB | yes | **yes** | auth-gated, lossy trades | **yes** (3-tier heuristic) | yes, solid | **yes** (weeks from `game_weeks`) |
 | Draft results + auction cost | yes | **yes** (real `type` + `metadata.amount`) | yes (`bidAmount`, `nominatingTeamId`) | **yes** | yes (`cost`) | **yes** |
 | Keeper flags on picks | yes (`is_keeper`) | **yes** | yes (`keeper`) | **yes** (June 2026) | unreliable | no |
-| Auction budget pre-draft | yes (`settings.budget`) | no | yes (`auctionBudget`) | yes | **not exposed** | editable default (correct design) |
+| Auction budget pre-draft | yes (`settings.budget`) | **yes** (2026-08) | yes (`auctionBudget`) | **yes** (2026-08) | **not exposed** | editable default (correct design) |
+| Median-matchup flag | yes (`league_average_match`) | **yes** (2026-08) | yes (`WIN_BONUS_TOP_HALF`) | **yes** (2026-08) | yes (`uses_median_score`) | **yes** (2026-08) |
 | Live draft feed | poll `/draft/{id}` + `/picks`; auction nomination state in draft metadata | **picks only** (10s poll) | none exists | - | none exists | - |
 | League history chain | `previous_league_id` | **yes** (15-hop cap) | same id + `seasonId` | **yes** (7yr probe; 2yr without cookies post-Aug-2025) | `renew`/`renewed` chain | **no - name-matching instead** |
 | Platform ADP / projections | undocumented projections endpoints | **yes** (build pipeline) | `kona_player_info` (+ no-league `leaguedefaults/3`), no auth | **no - unused** | `draft_analysis` | **yes** |

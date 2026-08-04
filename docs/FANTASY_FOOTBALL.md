@@ -138,7 +138,14 @@ depth chart, and rankings all read it.
   IDP slot in the schema and no IDP players in the bundled pool. Loading does
   not crash. Offense parses normally; defensive players land on the bench in
   the depth chart, and IDP starter slots are not counted toward roster size.
+  Since 2026-08 all three parsers set `league.hasIDP` and the Draft Room and
+  Rankings show an honest "not modeled" notice instead of failing silently.
   Treat full IDP support as out of scope until the pool carries IDP rankings.
+- **Median-matchup leagues** (all three platforms expose a flag) award an
+  extra weekly W/L vs the league median. `league.hasMedianMatchup` drives the
+  luck-analysis adjustment (h2h basis; see luck.ts) and page notes.
+- **Best ball** (Sleeper `settings.best_ball`) sets `league.isBestBall`;
+  lineup-decision metrics get a caveat, not a suppression.
 
 ## Games started vs games played
 
@@ -211,8 +218,10 @@ June 2026. This section keeps only the domain-level traps.
 
 ### Practical consequences for this app
 
-1. Only ESPN reliably exposes the auction budget pre-draft; the Draft Room's
-   editable budget input (default $200) is the right design for Yahoo.
+1. Sleeper (`draft.settings.budget`) and ESPN (`auctionBudget`, AUCTION type
+   only) expose the auction budget and the Draft Room seeds from it
+   (2026-08); Yahoo genuinely does not expose one, so the editable input
+   (default $200) is the right design there.
 2. Pre-draft leagues exist with settings and teams but empty rosters; the
    Draft Room must function with last season's league loaded (it does:
    teams/slots seed the setup form and are editable).
