@@ -12,6 +12,21 @@ import {
 
 const BASE_URL = 'https://api.sleeper.app/v1';
 
+// A matchup's real score: commissioner overrides (custom_points) supersede
+// the computed points when set.
+const matchupPoints = (m: SleeperAPI.Matchup): number => m.custom_points ?? m.points ?? 0;
+
+// Sleeper playoff_round_type -> model union.
+const PLAYOFF_ROUND_TYPES: Record<number, NonNullable<League['playoffRoundType']>> = {
+  0: 'one_week',
+  1: 'two_week_championship',
+  2: 'two_week_rounds',
+};
+
+// Individual-defensive-player slots. Not modeled in RosterSlots; their
+// presence flags the league so surfaces can say so honestly.
+const SLEEPER_IDP_POSITIONS = new Set(['DL', 'LB', 'DB', 'IDP_FLEX']);
+
 // Promise-based cache for player data to prevent race conditions
 // Using a Promise cache ensures concurrent calls share the same request
 let playerCachePromise: Promise<Record<string, SleeperAPI.Player>> | null = null;
@@ -288,6 +303,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
   // both so the Draft Room can open already configured.
   let draftFormat: League['draftFormat'] = 'standard';
   let upcomingDraft: League['upcomingDraft'];
+  let auctionBudget: number | undefined;
   if (leagueData.draft_id) {
     try {
       const [draft, picks] = await Promise.all([
@@ -313,6 +329,9 @@ export async function loadLeague(leagueId: string): Promise<League> {
       }
       if (draft?.type === 'auction') {
         draftType = 'auction';
+        // The real auction budget; the Draft Room seeds its (editable)
+        // budget from this instead of assuming $200.
+        auctionBudget = draft.settings?.budget || undefined;
       } else if (draft?.type === 'linear') {
         draftFormat = 'linear';
       } else if ((draft?.settings?.reversal_round ?? 0) >= 3) {
@@ -381,8 +400,10 @@ export async function loadLeague(leagueId: string): Promise<League> {
     scoringType = 'custom';
   }
 
-  // Parse roster slots for PAR calculation
+  // Parse roster slots for PAR calculation. IR size lives in settings
+  // (reserve_slots), not roster_positions, so the parser always reads 0.
   const rosterSlots: RosterSlots = parseSleeperRosterPositions(leagueData.roster_positions || []);
+  rosterSlots.IR = leagueData.settings?.reserve_slots ?? rosterSlots.IR;
 
   // Calculate replacement levels based on league settings
   const replacementLevels = calculateReplacementLevels(rosterSlots, leagueData.total_rosters);
@@ -425,6 +446,9 @@ export async function loadLeague(leagueId: string): Promise<League> {
     weekMatchups.forEach(matchup => {
       if (matchup.starters && matchup.starters_points) {
         matchup.starters.forEach((playerId, index) => {
+          // Empty lineup slots come through as the string "0"; recording
+          // them would fabricate a phantom "player" start every week.
+          if (playerId === '0' || playerId === '') return;
           const points = matchup.starters_points[index] || 0;
           const key = `${matchup.roster_id}-${playerId}`;
           const weekMap = playerStartsByRosterAndWeek.get(key) || new Map<number, number>();
@@ -648,7 +672,9 @@ export async function loadLeague(leagueId: string): Promise<League> {
     for (const matchup of weekMatchups) {
       for (const [playerId, points] of Object.entries(matchup.players_points ?? {})) {
         if (!points) continue;
-        (playerWeeklyPoints[playerId] ??= {})[week] = points;
+        // Sleeper serves float32 artifacts (0.10000000149...); round to 2dp
+        // so sums and displays stay clean.
+        (playerWeeklyPoints[playerId] ??= {})[week] = Math.round(points * 100) / 100;
       }
     }
   });
@@ -657,8 +683,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
   // metrics compare against regular-season records, so playoff weeks would
   // bias scores against playoff teams. Unplayed weeks (both sides zero)
   // are skipped too — a phantom 0-0 reads as an all-play tie for everyone.
-  const playoffStart = (leagueData.settings as { playoff_week_start?: number })
-    ?.playoff_week_start || 15;
+  const playoffStart = leagueData.settings?.playoff_week_start || 15;
   const weeklyMatchups: WeeklyMatchup[] = [];
   allMatchups.forEach((weekMatchups, weekIndex) => {
     const week = weekIndex + 1;
@@ -676,8 +701,8 @@ export async function loadLeague(leagueId: string): Promise<League> {
     // Convert pairs to WeeklyMatchup format
     matchupPairs.forEach(pair => {
       if (pair.length === 2) {
-        const p1 = pair[0].points || 0;
-        const p2 = pair[1].points || 0;
+        const p1 = matchupPoints(pair[0]);
+        const p2 = matchupPoints(pair[1]);
         if (p1 === 0 && p2 === 0) return; // future/unplayed week
         weeklyMatchups.push({
           week,
@@ -778,6 +803,20 @@ export async function loadLeague(leagueId: string): Promise<League> {
     status,
     loadedAt: Date.now(),
     upcomingDraft,
+    hasMedianMatchup: leagueData.settings?.league_average_match === 1 || undefined,
+    isBestBall: leagueData.settings?.best_ball === 1 || undefined,
+    tePremiumPerReception:
+      (scoringSettings?.bonus_rec_te ?? 0) > 0 ? scoringSettings.bonus_rec_te : undefined,
+    auctionBudget,
+    playoffStartWeek: playoffStart,
+    playoffTeams: leagueData.settings?.playoff_teams,
+    playoffRoundType:
+      leagueData.settings?.playoff_round_type != null
+        ? PLAYOFF_ROUND_TYPES[leagueData.settings.playoff_round_type]
+        : undefined,
+    hasIDP:
+      (leagueData.roster_positions || []).some(p => SLEEPER_IDP_POSITIONS.has(p)) || undefined,
+    scoringIsApproximate: scoringType === 'custom' || undefined,
   };
 }
 
@@ -1040,8 +1079,7 @@ export async function loadHeadToHeadRecords(
 
       // Load regular-season matchups only; playoff games aren't "rivalry"
       // games in the H2H sense and skew the totals.
-      const playoffStart = (leagueData.settings as { playoff_week_start?: number })
-        ?.playoff_week_start || 15;
+      const playoffStart = leagueData.settings?.playoff_week_start || 15;
       const weekCount = Math.min(17, playoffStart - 1);
       for (let week = 1; week <= weekCount; week++) {
         try {
@@ -1077,8 +1115,8 @@ export async function loadHeadToHeadRecords(
           }
 
           // Update record. A 0-0 "matchup" is an unplayed week, not a tie.
-          const ourScore = ourMatchup.points || 0;
-          const oppScore = opponentMatchup.points || 0;
+          const ourScore = matchupPoints(ourMatchup);
+          const oppScore = matchupPoints(opponentMatchup);
           if (ourScore === 0 && oppScore === 0) continue;
           const won = ourScore > oppScore;
           const tied = ourScore === oppScore;

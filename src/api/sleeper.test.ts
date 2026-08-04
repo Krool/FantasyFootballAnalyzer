@@ -578,6 +578,145 @@ describe('sleeper loadLeague scoring detection', () => {
   });
 });
 
+describe('sleeper loadLeague settings edge cases', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // Route table with per-path overrides on top of the shared fixtures.
+  async function loadWith(overrides: Record<string, unknown>): Promise<League> {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input).replace('https://api.sleeper.app/v1', '');
+      if (path in overrides) return jsonResponse(overrides[path]);
+      return jsonResponse(routeSleeper(String(input)));
+    }));
+    return loadLeague(LEAGUE_ID);
+  }
+
+  const withSettings = (extra: Record<string, unknown>) => ({
+    [`/league/${LEAGUE_ID}`]: { ...leagueFixture, settings: { ...leagueFixture.settings, ...extra } },
+  });
+
+  it('reads the median-matchup flag from league_average_match', async () => {
+    const league = await loadWith(withSettings({ league_average_match: 1 }));
+    expect(league.hasMedianMatchup).toBe(true);
+  });
+
+  it('leaves hasMedianMatchup unset when the setting is absent', async () => {
+    const league = await loadWith({});
+    expect(league.hasMedianMatchup).toBeUndefined();
+  });
+
+  it('flags best ball leagues', async () => {
+    const league = await loadWith(withSettings({ best_ball: 1 }));
+    expect(league.isBestBall).toBe(true);
+  });
+
+  it('detects TE premium from bonus_rec_te', async () => {
+    const league = await loadWith({
+      [`/league/${LEAGUE_ID}`]: { ...leagueFixture, scoring_settings: { rec: 0.5, bonus_rec_te: 0.5 } },
+    });
+    expect(league.tePremiumPerReception).toBe(0.5);
+    expect(league.scoringType).toBe('half_ppr');
+  });
+
+  it('takes the IR size from settings.reserve_slots, not roster_positions', async () => {
+    const league = await loadWith(withSettings({ reserve_slots: 2 }));
+    expect(league.rosterSlots?.IR).toBe(2);
+  });
+
+  it('surfaces playoff shape settings', async () => {
+    const league = await loadWith(withSettings({ playoff_teams: 6, playoff_round_type: 1 }));
+    expect(league.playoffStartWeek).toBe(15);
+    expect(league.playoffTeams).toBe(6);
+    expect(league.playoffRoundType).toBe('two_week_championship');
+  });
+
+  it('imports the auction budget from the draft object', async () => {
+    const league = await loadWith({
+      [`/draft/${DRAFT_ID}`]: { draft_id: DRAFT_ID, type: 'auction', status: 'complete', settings: { budget: 300 } },
+    });
+    expect(league.draftType).toBe('auction');
+    expect(league.auctionBudget).toBe(300);
+  });
+
+  it('leaves auctionBudget unset for snake drafts', async () => {
+    const league = await loadWith({});
+    expect(league.auctionBudget).toBeUndefined();
+  });
+
+  it('prefers a commissioner custom_points override over computed points', async () => {
+    const week1 = matchupsForWeek(1).map(m =>
+      m.roster_id === 1 ? { ...m, custom_points: 55 } : m,
+    );
+    const league = await loadWith({ [`/league/${LEAGUE_ID}/matchups/1`]: week1 });
+    const w1 = league.matchups!.filter(m => m.week === 1);
+    expect(w1.find(m => m.team1Id === '1')!.team1Points).toBe(55);
+  });
+
+  it('skips null-matchup_id entries (playoff byes) without fabricating pairings', async () => {
+    const week1 = [
+      ...matchupsForWeek(1).filter(m => m.roster_id <= 2),
+      // Two teams on bye: matchup_id null, must not pair with each other.
+      { ...matchupsForWeek(1)[2], matchup_id: null },
+      { ...matchupsForWeek(1)[3], matchup_id: null },
+    ];
+    const league = await loadWith({ [`/league/${LEAGUE_ID}/matchups/1`]: week1 });
+    const w1 = league.matchups!.filter(m => m.week === 1);
+    expect(w1).toHaveLength(1);
+    expect(w1[0].team1Id).toBe('1');
+  });
+
+  it('tolerates an orphaned roster (owner_id null)', async () => {
+    const orphaned = rostersFixture.map(r =>
+      r.roster_id === 4 ? { ...r, owner_id: null } : r,
+    );
+    const league = await loadWith({ [`/league/${LEAGUE_ID}/rosters`]: orphaned });
+    const team4 = league.teams.find(t => t.id === '4')!;
+    expect(team4.name).toBe('Team 4');
+    expect(team4.ownerUserIds).toEqual([]);
+  });
+
+  it('ignores the "0" empty-slot placeholder in starters arrays', async () => {
+    // Week 3 with an empty slot between the two real starters; the waiver
+    // pickup's since-pickup math must be unaffected.
+    const week3 = matchupsForWeek(3).map(m =>
+      m.roster_id === 1
+        ? { ...m, starters: ['101', '0', '105'], starters_points: [20, 0, 15] }
+        : m,
+    );
+    const league = await loadWith({ [`/league/${LEAGUE_ID}/matchups/3`]: week3 });
+    const tx = league.teams.find(t => t.id === '1')!.transactions![0];
+    expect(tx.adds[0].pointsSincePickup).toBe(15);
+    expect(tx.adds[0].gamesSincePickup).toBe(1);
+  });
+
+  it('flags IDP leagues without counting IDP slots', async () => {
+    const league = await loadWith({
+      [`/league/${LEAGUE_ID}`]: {
+        ...leagueFixture,
+        roster_positions: [...leagueFixture.roster_positions, 'DL', 'LB', 'IDP_FLEX'],
+      },
+    });
+    expect(league.hasIDP).toBe(true);
+    // IDP slots don't leak into the modeled schema.
+    expect(league.rosterSlots?.QB).toBe(1);
+  });
+
+  it('marks custom scoring as approximate', async () => {
+    const league = await loadWith({
+      [`/league/${LEAGUE_ID}`]: { ...leagueFixture, scoring_settings: { rec: 0.75 } },
+    });
+    expect(league.scoringType).toBe('custom');
+    expect(league.scoringIsApproximate).toBe(true);
+  });
+
+  it('does not mark mainstream scoring as approximate', async () => {
+    const league = await loadWith({});
+    expect(league.scoringIsApproximate).toBeUndefined();
+  });
+});
+
 describe('sleeper loadLeagueHistory / loadHeadToHeadRecords', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
