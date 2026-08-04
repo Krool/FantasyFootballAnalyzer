@@ -500,6 +500,99 @@ describe('espn loadLeague scoring detection', () => {
   });
 });
 
+describe('espn loadLeague settings edge cases', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // Reuse the full route table with a modified main league body.
+  async function loadWithBody(body: unknown): Promise<League> {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('view=mTeam')) return jsonResponse(body);
+      return jsonResponse(routeESPN(url));
+    }));
+    return loadLeague(LEAGUE_ID, SEASON);
+  }
+
+  const withSettings = (extra: Record<string, unknown>) => ({
+    ...mainLeagueBody,
+    settings: { ...mainLeagueBody.settings, ...extra },
+  });
+
+  it('detects a median league from scoringEnhancementType', async () => {
+    const league = await loadWithBody(withSettings({
+      scoringSettings: {
+        scoringItems: [{ statId: 53, points: 1 }],
+        scoringEnhancementType: 'WIN_BONUS_TOP_HALF',
+      },
+    }));
+    expect(league.hasMedianMatchup).toBe(true);
+  });
+
+  it('leaves hasMedianMatchup unset without the enhancement', async () => {
+    const league = await loadWithBody(mainLeagueBody);
+    expect(league.hasMedianMatchup).toBeUndefined();
+  });
+
+  it('imports the auction budget for auction drafts', async () => {
+    const league = await loadWithBody(withSettings({
+      draftSettings: { type: 'AUCTION', auctionBudget: 300 },
+    }));
+    expect(league.auctionBudget).toBe(300);
+  });
+
+  it('ignores the dormant auctionBudget in snake leagues', async () => {
+    const league = await loadWithBody(withSettings({
+      draftSettings: { type: 'SNAKE', auctionBudget: 200 },
+    }));
+    expect(league.draftType).toBe('snake');
+    expect(league.auctionBudget).toBeUndefined();
+  });
+
+  it('derives playoff shape from scheduleSettings', async () => {
+    const league = await loadWithBody(withSettings({
+      scheduleSettings: { matchupPeriodCount: 14, playoffTeamCount: 6 },
+    }));
+    expect(league.playoffStartWeek).toBe(15);
+    expect(league.playoffTeams).toBe(6);
+  });
+
+  it('flags IDP leagues from defensive slot ids', async () => {
+    const league = await loadWithBody(withSettings({
+      rosterSettings: {
+        positionLimits: { ...mainLeagueBody.settings.rosterSettings.positionLimits, 10: 2, 11: 1 },
+      },
+    }));
+    expect(league.hasIDP).toBe(true);
+  });
+
+  it('leaves hasIDP unset for offense-only leagues', async () => {
+    const league = await loadWithBody(mainLeagueBody);
+    expect(league.hasIDP).toBeUndefined();
+  });
+
+  it('marks custom scoring as approximate', async () => {
+    const league = await loadWithBody(withSettings({
+      scoringSettings: { scoringItems: [{ statId: 53, points: 0.25 }] },
+    }));
+    expect(league.scoringType).toBe('custom');
+    expect(league.scoringIsApproximate).toBe(true);
+  });
+
+  it('tolerates history-shaped teams: location+nickname names, rosters without entries', async () => {
+    const historyTeams = mainLeagueBody.teams.map(t =>
+      t.id === 3
+        ? { ...t, name: undefined, location: 'Flaming', nickname: 'Moes', roster: {} }
+        : t,
+    );
+    const league = await loadWithBody({ ...mainLeagueBody, teams: historyTeams });
+    const team3 = league.teams.find(t => t.id === '3')!;
+    expect(team3.name).toBe('Flaming Moes');
+    expect(team3.roster).toEqual([]);
+  });
+});
+
 describe('espn loadLeagueHistory', () => {
   afterEach(() => {
     vi.unstubAllGlobals();

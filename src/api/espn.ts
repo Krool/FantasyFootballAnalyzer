@@ -163,7 +163,8 @@ function buildPlayerMap(leagueData: ESPNAPI.League, season: number): Map<string,
   const playerMap = new Map<string, PlayerData>();
 
   leagueData.teams.forEach(team => {
-    team.roster?.entries.forEach(entry => {
+    // Historical seasons can return a roster object with no entries.
+    team.roster?.entries?.forEach(entry => {
       if (entry.playerPoolEntry?.player) {
         const espnPlayer = entry.playerPoolEntry.player;
         playerMap.set(String(espnPlayer.id), {
@@ -412,10 +413,15 @@ export async function loadLeague(
 
   // Determine draft type
   const draftType = leagueData.settings.draftSettings?.type === 'AUCTION' ? 'auction' : 'snake';
+  // auctionBudget is present even in snake leagues (a dormant default), so
+  // only surface it when the draft is actually an auction.
+  const auctionBudget =
+    draftType === 'auction'
+      ? leagueData.settings.draftSettings?.auctionBudget || undefined
+      : undefined;
   // ESPN exposes a keeper count but no clear dynasty flag, so we only infer
   // keeper leagues here (dynasty users can switch the mode in setup).
-  const keeperCount =
-    (leagueData.settings.draftSettings as { keeperCount?: number } | undefined)?.keeperCount ?? 0;
+  const keeperCount = leagueData.settings.draftSettings?.keeperCount ?? 0;
   const leagueType: League['leagueType'] = keeperCount > 0 ? 'keeper' : 'redraft';
 
   // Build player map from roster data FIRST (before draft processing)
@@ -480,9 +486,12 @@ export async function loadLeague(
   }
   logger.debug('[ESPN] Draft picks processed, missing player data:', missingDraftPlayers);
 
-  // Build team name map
+  // Build team name map. Pre-~2019 seasons have no `name`; the team name is
+  // location + nickname.
+  const espnTeamName = (t: ESPNAPI.Team): string =>
+    t.name || [t.location, t.nickname].filter(Boolean).join(' ') || `Team ${t.id}`;
   const teamNameMap = new Map<number, string>();
-  leagueData.teams.forEach(t => teamNameMap.set(t.id, t.name || `Team ${t.id}`));
+  leagueData.teams.forEach(t => teamNameMap.set(t.id, espnTeamName(t)));
 
   // Helper to get player info
   const getPlayer = (playerId: number): Player => {
@@ -1316,11 +1325,11 @@ export async function loadLeague(
   const teams: Team[] = leagueData.teams.map(espnTeam => {
     const ownerIds = espnTeam.owners || [];
     const primaryOwner = ownerIds.length > 0 ? memberMap.get(ownerIds[0]) : undefined;
-    const teamName = espnTeam.name || `Team ${espnTeam.id}`;
+    const teamName = espnTeamName(espnTeam);
 
     // Get roster with season points
     const roster: Player[] = [];
-    espnTeam.roster?.entries.forEach(entry => {
+    espnTeam.roster?.entries?.forEach(entry => {
       if (entry.playerPoolEntry?.player) {
         const player = convertPlayer(entry.playerPoolEntry.player);
         roster.push(player);
@@ -1376,6 +1385,22 @@ export async function loadLeague(
   );
   const hasSuperflex = rosterSlots.SUPERFLEX > 0;
   logger.debug('[ESPN] Roster slots:', rosterSlots, hasSuperflex ? '(superflex)' : '');
+
+  // IDP slot ids (DT 8, DE 9, LB 10, DL 11, CB 12, S 13, DB 14, DP 15). Not
+  // modeled in RosterSlots; presence flags the league for honest notices.
+  const posLimits = leagueData.settings.rosterSettings?.positionLimits || {};
+  const hasIDP = [8, 9, 10, 11, 12, 13, 14, 15].some(id => (posLimits[id] || 0) > 0);
+
+  // Median league: ESPN awards the top half of weekly scores a bonus win.
+  const hasMedianMatchup =
+    leagueData.settings.scoringSettings?.scoringEnhancementType === 'WIN_BONUS_TOP_HALF';
+
+  // Playoff shape from scheduleSettings; matchupPeriodCount is the
+  // regular-season length, so playoffs start the following period.
+  const scheduleSettings = leagueData.settings.scheduleSettings;
+  const playoffStartWeek = scheduleSettings?.matchupPeriodCount
+    ? scheduleSettings.matchupPeriodCount + 1
+    : undefined;
 
   // Build weekly matchups for luck analysis from team records.
   // ESPN provides schedule data in the mMatchup view — including FUTURE
@@ -1437,6 +1462,12 @@ export async function loadLeague(
     playerWeeklyPoints: Object.keys(playerWeeklyPoints).length > 0 ? playerWeeklyPoints : undefined,
     status,
     loadedAt: Date.now(),
+    hasMedianMatchup: hasMedianMatchup || undefined,
+    auctionBudget,
+    playoffStartWeek,
+    playoffTeams: scheduleSettings?.playoffTeamCount,
+    hasIDP: hasIDP || undefined,
+    scoringIsApproximate: scoringType === 'custom' || undefined,
   };
 }
 
