@@ -398,11 +398,11 @@ export async function getAvailableSeasons(
 }
 
 // Parse roster settings to get position slot counts
-export function parseRosterSettings(settings: any): { QB: number; RB: number; WR: number; TE: number; FLEX: number; SUPERFLEX: number; K: number; DST: number; BENCH: number; IR: number; hasSuperflex: boolean } {
+export function parseRosterSettings(settings: any): { QB: number; RB: number; WR: number; TE: number; FLEX: number; SUPERFLEX: number; K: number; DST: number; BENCH: number; IR: number; hasSuperflex: boolean; hasIDP: boolean } {
   const rosterPositions = settings?.roster_positions?.roster_position || [];
   const posList = Array.isArray(rosterPositions) ? rosterPositions : [rosterPositions];
 
-  const slots = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0, IR: 0, hasSuperflex: false };
+  const slots = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0, IR: 0, hasSuperflex: false, hasIDP: false };
   let parsedAny = false;
 
   for (const pos of posList) {
@@ -421,6 +421,13 @@ export function parseRosterSettings(settings: any): { QB: number; RB: number; WR
       case 'K': slots.K += count; parsedAny = true; break;
       case 'DEF': case 'D/ST': case 'DST': slots.DST += count; parsedAny = true; break;
       case 'BN': slots.BENCH += count; parsedAny = true; break;
+      // Individual defensive players. Not counted into the modeled slots
+      // (there is no IDP slot in the schema), but flagged so surfaces can
+      // say so — and marked parsed so a real IDP league's offense doesn't
+      // get the synthetic-lineup fallback stacked on top.
+      case 'D': case 'DL': case 'LB': case 'DB': case 'CB': case 'S':
+      case 'DE': case 'DT':
+        slots.hasIDP = true; parsedAny = true; break;
       default:
         // Yahoo spells injured reserve 'IR' but also ships variants like
         // 'IR+' depending on league settings.
@@ -583,6 +590,23 @@ export async function loadLeague(leagueKey: string): Promise<League> {
     hasSuperflex: rosterSlots.hasSuperflex,
     status,
     loadedAt: Date.now(),
+    // leagueType is deliberately left absent: Yahoo has no reliable
+    // keeper/dynasty flag in settings (keeper data is per-player and
+    // unreliable), and absent = "unknown" is more honest than 'redraft'.
+    hasMedianMatchup:
+      String(leagueInfo.settings?.uses_median_score) === '1' || undefined,
+    ...(String(leagueInfo.settings?.uses_playoff) === '1'
+      ? {
+          playoffStartWeek: parseInt(leagueInfo.settings?.playoff_start_week) || undefined,
+          playoffTeams: parseInt(leagueInfo.settings?.num_playoff_teams) || undefined,
+          playoffRoundType:
+            String(leagueInfo.settings?.has_multiweek_championship) === '1'
+              ? ('two_week_championship' as const)
+              : undefined,
+        }
+      : {}),
+    hasIDP: rosterSlots.hasIDP || undefined,
+    scoringIsApproximate: scoringType === 'custom' || undefined,
   };
 }
 
@@ -825,7 +849,8 @@ function weekForTimestamp(ranges: GameWeekRange[], timestamp: number): number | 
 // Weekly matchup scores for luck analysis. Regular season only: luck metrics
 // compare against regular-season records, so playoff/consolation weeks would
 // bias scores against playoff teams. Unplayed 0-0 weeks are skipped too.
-async function getWeeklyMatchups(
+// Exported for tests (tie regression: winner_team_key is absent on ties).
+export async function getWeeklyMatchups(
   leagueKey: string,
   maxWeek: number,
   onCallDone?: () => void,

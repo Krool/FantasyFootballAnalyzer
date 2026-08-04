@@ -80,6 +80,31 @@ describe('parseRosterSettings', () => {
     expect(slots.SUPERFLEX).toBe(1);
     expect(slots.hasSuperflex).toBe(true);
   });
+
+  it('flags IDP positions without counting them into modeled slots', () => {
+    const slots = parseRosterSettings(rosterSettings([
+      { position: 'QB', count: '1' },
+      { position: 'WR', count: '3' },
+      { position: 'DL', count: '2' },
+      { position: 'LB', count: '2' },
+      { position: 'DB', count: '1' },
+      { position: 'BN', count: '5' },
+    ]));
+    expect(slots.hasIDP).toBe(true);
+    // Offense parsed normally — IDP must not trigger the synthetic fallback
+    // (which would force WR back to 2) nor leak into any modeled slot.
+    expect(slots.WR).toBe(3);
+    expect(slots.QB).toBe(1);
+    expect(slots.RB).toBe(0);
+  });
+
+  it('leaves hasIDP false for offense-only leagues', () => {
+    const slots = parseRosterSettings(rosterSettings([
+      { position: 'QB', count: '1' },
+      { position: 'BN', count: '5' },
+    ]));
+    expect(slots.hasIDP).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -543,6 +568,131 @@ describe('yahoo enrichPlayersWithStats (weekly data)', () => {
     expect(side1.pointsLost).toBe(15);
     expect(side1.netValue).toBe(25);
     expect(trade.winner).toBe(TEAM_1);
+  });
+});
+
+describe('yahoo loadLeague settings edge cases', () => {
+  beforeEach(() => {
+    localStorage.setItem('yahoo_access_token', 'test-token');
+    localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // Reuse the loadLeague route table, overriding only the settings blob.
+  async function loadWithSettings(extra: Record<string, unknown>): Promise<League> {
+    const body = {
+      fantasy_content: {
+        league: {
+          ...leagueBody.fantasy_content.league,
+          settings: { ...leagueBody.fantasy_content.league.settings, ...extra },
+        },
+      },
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      const match = url.match(/endpoint=([^&]+)/);
+      const endpoint = match ? decodeURIComponent(match[1]) : '';
+      if (endpoint === `/league/${LEAGUE_KEY};out=settings,standings,teams`) {
+        return jsonResponse(body);
+      }
+      return jsonResponse(routeYahoo(url));
+    }));
+    return loadLeague(LEAGUE_KEY);
+  }
+
+  it('reads the median-matchup flag from uses_median_score', async () => {
+    const league = await loadWithSettings({ uses_median_score: '1' });
+    expect(league.hasMedianMatchup).toBe(true);
+  });
+
+  it('treats the string "0" as median off (Yahoo booleans are strings)', async () => {
+    const league = await loadWithSettings({ uses_median_score: '0' });
+    expect(league.hasMedianMatchup).toBeUndefined();
+  });
+
+  it('surfaces playoff shape when uses_playoff is on', async () => {
+    const league = await loadWithSettings({
+      uses_playoff: '1',
+      playoff_start_week: '15',
+      num_playoff_teams: '6',
+      has_multiweek_championship: '1',
+    });
+    expect(league.playoffStartWeek).toBe(15);
+    expect(league.playoffTeams).toBe(6);
+    expect(league.playoffRoundType).toBe('two_week_championship');
+  });
+
+  it('ignores playoff fields when uses_playoff is off', async () => {
+    const league = await loadWithSettings({
+      uses_playoff: '0',
+      playoff_start_week: '15',
+      num_playoff_teams: '6',
+    });
+    expect(league.playoffStartWeek).toBeUndefined();
+    expect(league.playoffTeams).toBeUndefined();
+  });
+
+  it('flags IDP leagues from defensive roster positions', async () => {
+    const positions = [
+      ...leagueBody.fantasy_content.league.settings.roster_positions.roster_position,
+      { position: 'DL', count: '2' },
+      { position: 'DB', count: '2' },
+    ];
+    const league = await loadWithSettings({ roster_positions: { roster_position: positions } });
+    expect(league.hasIDP).toBe(true);
+  });
+
+  it('never claims a leagueType (Yahoo has no reliable keeper/dynasty flag)', async () => {
+    const league = await loadWithSettings({});
+    expect(league.leagueType).toBeUndefined();
+  });
+
+  it('leaves auctionBudget unset (Yahoo does not expose it)', async () => {
+    const league = await loadWithSettings({});
+    expect(league.auctionBudget).toBeUndefined();
+  });
+
+  it('records a tied matchup without crashing when winner_team_key is absent', async () => {
+    // Yahoo omits winner_team_key entirely on ties (is_tied: "1"); the
+    // adapter compares team_points itself, so this must parse cleanly.
+    // Regression guard for the scoreboard path.
+    const scoreboardBody = {
+      fantasy_content: {
+        league: {
+          scoreboard: {
+            matchups: {
+              matchup: [
+                {
+                  week: '2',
+                  is_tied: '1',
+                  teams: {
+                    team: [
+                      { team_key: TEAM_1, team_points: { total: '100.00' } },
+                      { team_key: TEAM_2, team_points: { total: '100.00' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      const match = url.match(/endpoint=([^&]+)/);
+      const endpoint = match ? decodeURIComponent(match[1]) : '';
+      if (endpoint.includes('/scoreboard;week=')) return jsonResponse(scoreboardBody);
+      return jsonResponse(routeYahoo(url));
+    }));
+    const { getWeeklyMatchups } = await import('./yahoo');
+    const matchups = await getWeeklyMatchups(LEAGUE_KEY, 1);
+    expect(matchups).toHaveLength(1);
+    expect(matchups[0].team1Points).toBe(100);
+    expect(matchups[0].team2Points).toBe(100);
   });
 });
 
