@@ -54,10 +54,16 @@ export default async function handler(req, res) {
     // Make request to Yahoo API
     const yahooUrl = `${YAHOO_API_BASE}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
 
-    // Verify constructed URL stays within Yahoo API origin
+    // Verify the constructed URL stays within the Yahoo Fantasy API. Origin
+    // alone is not enough: the endpoint pattern admits `.` and `/`, so `..`
+    // segments could normalize past /fantasy/v2 to another path on the same
+    // host (still only with the caller's own token, but out of scope).
     const parsedUrl = new URL(yahooUrl);
     if (parsedUrl.origin !== 'https://fantasysports.yahooapis.com') {
       return res.status(400).json({ error: 'Invalid endpoint - URL origin mismatch' });
+    }
+    if (!parsedUrl.pathname.startsWith('/fantasy/v2/')) {
+      return res.status(400).json({ error: 'Invalid endpoint - path escapes the fantasy API' });
     }
 
     const yahooResponse = await fetch(yahooUrl, {

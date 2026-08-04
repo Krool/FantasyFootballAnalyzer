@@ -38,6 +38,17 @@ describe('scrubString', () => {
     expect(scrubbed).toContain('espn_s2=[redacted]');
   });
 
+  it('redacts the OAuth fragment payload even without a query string', () => {
+    // /yahoo-success carries #tokens=<urlencoded JSON>; the payload is
+    // URL-encoded so no literal `access_token=` appears for the key=value
+    // rule, and with no `?` the query-string rule never fires.
+    const url =
+      'https://fantasyfootballanalyzer.app/yahoo-success#tokens=%7B%22access_token%22%3A%22ya29SECRET%22%7D';
+    const scrubbed = scrubString(url);
+    expect(scrubbed).not.toContain('ya29SECRET');
+    expect(scrubbed).toContain('#tokens=[redacted]');
+  });
+
   it('redacts a token spilled into a free-form message', () => {
     expect(scrubString('fetch failed with access_token=ya29.SECRETvalue here')).not.toContain(
       'ya29.SECRETvalue',

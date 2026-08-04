@@ -41,8 +41,9 @@ export default async function handler(req, res) {
     });
 
     if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.text();
-      console.error('Token refresh failed:', tokenResponse.status, errorData);
+      // Status only, never the body: same logging policy as yahoo-api.js
+      // (uninspected upstream strings stay out of persistent server logs).
+      console.error('Token refresh failed:', tokenResponse.status);
       // Preserve the failure class for the client: it retries 5xx/429 as
       // transient but treats other 4xx as "refresh token rejected" and signs
       // the user out. Collapsing a Yahoo outage into 401 here would destroy

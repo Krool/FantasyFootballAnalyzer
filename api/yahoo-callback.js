@@ -72,8 +72,10 @@ export default async function handler(req, res) {
     });
 
     if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.text();
-      console.error('Token exchange failed:', errorData);
+      // Status only, never the body: yahoo-api.js sets the logging policy
+      // (uninspected upstream strings must not land in persistent logs on
+      // the host that holds the client secret).
+      console.error('Token exchange failed:', tokenResponse.status);
       return res.redirect(`${FRONTEND_URL}/yahoo-error?error=token_exchange`);
     }
 

@@ -25,6 +25,12 @@ const SENSITIVE_KEY = /s2|swid|cookie|token|auth|secret|password|credential|sess
 // Exported for tests: the "anonymized error logs" promise rests on this.
 export function scrubString(value: string): string {
   return value
+    // The OAuth return puts the whole token payload in the URL fragment
+    // (#tokens=<urlencoded JSON>). The key=value rule below misses it (the
+    // payload is URL-encoded, so there's no literal `access_token=`), and
+    // the query-string rule only catches it when a `?` happens to precede
+    // the fragment. Redact the fragment payload directly.
+    .replace(/#tokens=[^\s"']+/gi, '#tokens=' + REDACTED)
     // Drop query strings entirely: league ids, oauth codes, access tokens.
     .replace(/\?[^\s"']+/g, '?' + REDACTED)
     // SWID-style GUIDs, with or without the wrapping braces.
@@ -35,7 +41,7 @@ export function scrubString(value: string): string {
     // are base64 blobs, not GUIDs, and a cookie has no leading `?`), so redact
     // the value of any known credential key wherever `key=value` appears.
     .replace(
-      /\b(espn_s2|swid|access_token|refresh_token|oauth_token|code)=[^\s;"'&]+/gi,
+      /\b(espn_s2|swid|access_token|refresh_token|oauth_token|code|tokens)=[^\s;"'&]+/gi,
       '$1=' + REDACTED,
     )
     // Bare numeric league ids interpolated into messages or breadcrumb paths
