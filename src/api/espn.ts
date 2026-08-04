@@ -233,6 +233,10 @@ export async function loadLeague(
   // at all — fetching 17 weeks of each (34 proxied calls for private leagues)
   // is pure waste, so skip straight to processing.
   const hasDrafted = leagueData.draftDetail?.drafted !== false;
+  // Note: these weekly fetch loops iterate SCORING periods (NFL weeks), which
+  // stay weekly even in leagues with 2-week playoff matchup rounds. If
+  // playoff-round analysis is ever built, the matchup-period -> scoring-period
+  // map is available at settings.scheduleSettings.matchupPeriods.
   const currentWeek = hasDrafted ? Math.max(leagueData.status?.currentMatchupPeriod || 0, 17) : 0;
   logger.debug('[ESPN] Current week:', currentWeek, hasDrafted ? '' : '(pre-draft league, skipping weekly fetches)');
 
@@ -1396,6 +1400,10 @@ export async function loadLeague(
     schedule.forEach((matchup: any) => {
       if (!matchup.home || !matchup.away || !matchup.matchupPeriodId) return;
       const played = matchup.winner && matchup.winner !== 'UNDECIDED';
+      // Playoff games are excluded here, which also sidesteps ESPN's 2-week
+      // playoff rounds (one matchupPeriod spanning several scoring periods).
+      // Anything that ever consumes playoff matchups must translate via
+      // settings.scheduleSettings.matchupPeriods, not matchupPeriodId == week.
       const regularSeason = !matchup.playoffTierType || matchup.playoffTierType === 'NONE';
       if (!played || !regularSeason) return;
       weeklyMatchups.push({

@@ -246,6 +246,14 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
           <p className={styles.subtitle}>
             {isGuest ? 'Guest mode' : league.name} · {POOL.season} Draft Prep
           </p>
+          {(league.scoringIsApproximate || league.hasIDP) && (
+            <p className={styles.subtitle}>
+              {league.scoringIsApproximate &&
+                'Custom scoring — values priced as half-PPR, approximate. '}
+              {league.hasIDP &&
+                'IDP league — defensive players are not in this pool.'}
+            </p>
+          )}
         </div>
 
         <div className={styles.settingsBar}>

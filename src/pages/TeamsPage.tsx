@@ -123,6 +123,12 @@ export function TeamsPage({ league }: TeamsPageProps) {
               weekly median win is excluded.
             </p>
           )}
+          {league.isBestBall && (
+            <p className={styles.subtitle}>
+              Best ball — starters are auto-optimized, so points-since-pickup
+              and lineup-based numbers reflect optimal lineups, not decisions.
+            </p>
+          )}
         </div>
 
         {scores.length > 0 && (

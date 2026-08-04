@@ -306,6 +306,27 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
           QBs go for first-round picks / $40+ in superflex.
         </div>
       )}
+      {league.hasIDP && (
+        <div className={styles.warnBox}>
+          <strong>IDP league detected.</strong> Defensive players aren't in
+          this pool — values cover offense, K, and D/ST only, and your IDP
+          rounds aren't counted here.
+        </div>
+      )}
+      {league.isBestBall && (
+        <div className={styles.warnBox}>
+          <strong>Best ball league.</strong> Lineups set themselves each week,
+          so bench depth and weekly ceiling matter more than a
+          set-your-lineup league's values assume.
+        </div>
+      )}
+      {league.scoringIsApproximate && (
+        <div className={styles.warnBox}>
+          <strong>Custom scoring detected.</strong> This league's scoring
+          doesn't match a standard preset, so values are priced as half-PPR
+          and are approximate.
+        </div>
+      )}
       {isDynasty && (
         <div className={styles.warnBox}>
           <strong>Dynasty mode.</strong>{' '}
@@ -508,6 +529,8 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
               Drives player values and the mock AI's market. TE premium and 6pt
               passing TDs are estimated from preset projections, not per-play
               scoring, so treat their bumps as approximate.
+              {(league.tePremiumPerReception ?? 0) > 0 &&
+                ` Detected a +${league.tePremiumPerReception}/reception TE bonus in your league settings.`}
             </p>
           </CollapsibleSection>
 
