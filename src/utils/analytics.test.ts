@@ -86,6 +86,36 @@ describe('Analytics named helpers', () => {
     expect(gtag).toHaveBeenCalledWith('event', 'pdf_exported', { report_type: 'draft' });
   });
 
+  it('pageView carries the query string for campaign attribution', () => {
+    const gtag = vi.fn();
+    window.gtag = gtag;
+    window.history.replaceState(null, '', '/rankings?utm_source=reddit&utm_medium=post');
+
+    Analytics.pageView('/rankings');
+
+    expect(gtag).toHaveBeenCalledWith('event', 'page_view', {
+      page_path: '/rankings?utm_source=reddit&utm_medium=post',
+      page_location: `${window.location.origin}/rankings?utm_source=reddit&utm_medium=post`,
+      page_title: document.title,
+    });
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('pageView strips the query string on OAuth-return routes', () => {
+    const gtag = vi.fn();
+    window.gtag = gtag;
+    window.history.replaceState(null, '', '/yahoo-success?state=abc123');
+
+    Analytics.pageView('/yahoo-success');
+
+    expect(gtag).toHaveBeenCalledWith('event', 'page_view', {
+      page_path: '/yahoo-success',
+      page_location: `${window.location.origin}/yahoo-success`,
+      page_title: document.title,
+    });
+    window.history.replaceState(null, '', '/');
+  });
+
   it('every helper silently no-ops when gtag is absent', () => {
     // Sanity check that the wrapper never throws even when the analytics
     // script failed to load (e.g., behind an ad blocker).

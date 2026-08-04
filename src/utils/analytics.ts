@@ -7,6 +7,10 @@ declare global {
 }
 
 export function trackEvent(eventName: string, params?: Record<string, unknown>) {
+  // A local dev server must not pollute the production GA property (Sentry is
+  // PROD-gated the same way). Checked via MODE, not PROD, so the test env -
+  // which stubs gtag and asserts calls - stays live.
+  if (import.meta.env.MODE === "development") return;
   if (typeof window !== "undefined" && window.gtag) {
     window.gtag("event", eventName, params);
   }
@@ -84,14 +88,18 @@ export const Analytics = {
     });
   },
 
-  // SPA page_view with a path-only location. gtag's automatic page_view is off
-  // (send_page_view:false in index.html) because its page_location is the raw
-  // URL, which on the /yahoo-success OAuth return carries tokens; we send the
-  // pathname only so credentials never reach Google Analytics.
+  // SPA page_view. gtag's automatic page_view is off (send_page_view:false in
+  // index.html) because its page_location is the raw URL, which on the
+  // /yahoo-success OAuth return carries tokens. We rebuild the location
+  // ourselves: pathname plus - except on the OAuth-return routes - the query
+  // string, so campaign attribution (?utm_*) works while credentials never
+  // reach Google Analytics. The hash is never sent on any route.
   pageView: (path: string) => {
+    const search =
+      typeof window !== "undefined" && !path.startsWith("/yahoo-") ? window.location.search : "";
     trackEvent("page_view", {
-      page_path: path,
-      page_location: (typeof window !== "undefined" ? window.location.origin : "") + path,
+      page_path: path + search,
+      page_location: (typeof window !== "undefined" ? window.location.origin : "") + path + search,
       page_title: typeof document !== "undefined" ? document.title : undefined,
     });
   },
