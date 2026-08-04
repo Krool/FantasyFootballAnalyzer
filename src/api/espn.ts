@@ -1,6 +1,7 @@
 import type { ESPNAPI, League, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, RosterSlots, WeeklyMatchup, SeasonSummary, HeadToHeadRecord, MatchupResult } from '@/types';
 import { logger } from '@/utils/logger';
 import { decideTradeWinner } from '@/utils/tradeVerdict';
+import { calculateReplacementLevels } from '@/utils/par';
 
 // Direct ESPN API for public leagues
 const ESPN_DIRECT_URL = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons';
@@ -1081,40 +1082,24 @@ export async function loadLeague(
   // Build position rankings to calculate replacement level baselines
   const totalTeamsCount = leagueData.teams.length;
 
-  // ESPN's positionLimits is complex and may have negative values or unexpected structure
-  // Use sensible defaults based on standard league settings
-  // Standard lineup: 1 QB, 2 RB, 2 WR, 1 TE, 1 FLEX, 1 K, 1 D/ST
+  // The league's REAL parsed lineup. This block used to compute replacement
+  // levels from a hardcoded classic lineup; now it parses positionLimits
+  // (hoisted from below - the returned League reuses this) and runs the
+  // shared par.ts model (FLEX 40/40/20, SUPERFLEX QB-dominant, x1.25 bench
+  // buffer), the same math as the Sleeper and Yahoo adapters. ESPN rosters
+  // spell team defense 'D/ST', so par.ts's DEF key is remapped.
   logger.debug('[ESPN] Raw position limits:', leagueData.settings.rosterSettings?.positionLimits);
-
-  const rosterSlotsForPAR = {
-    QB: 1,
-    RB: 2,
-    WR: 2,
-    TE: 1,
-    FLEX: 1, // RB/WR/TE flex
-    K: 1,
-    DST: 1,
-  };
-
-  // SUPERFLEX (ESPN "OP" = slot 7) is QB-dominant: managers start a second QB,
-  // so fold it into the QB replacement depth at a 0.75 share (matching par.ts
-  // and the VOR config). Without this a superflex QB is measured against ~QB13
-  // instead of ~QB24 and shows far too little PAR, undervaluing QBs in trade
-  // grades and waivers. positionLimits[7] is read as in the returned rosterSlots
-  // below; the guard tolerates ESPN's odd/negative limit values.
-  const superflexSlots = Math.max(0, leagueData.settings.rosterSettings?.positionLimits?.[7] || 0);
-  const sfQBShare = 0.75;
-
-  // Calculate replacement level for each position
-  // Replacement = (starters * teams) + 1
-  // FLEX counts toward RB/WR since they're most commonly flexed
+  const rosterSlots: RosterSlots = parseEspnRosterSlots(
+    leagueData.settings.rosterSettings?.positionLimits
+  );
+  const levels = calculateReplacementLevels(rosterSlots, totalTeamsCount);
   const replacementRank: Record<string, number> = {
-    QB: (rosterSlotsForPAR.QB + superflexSlots * sfQBShare) * totalTeamsCount + 1,
-    RB: (rosterSlotsForPAR.RB + rosterSlotsForPAR.FLEX * 0.6) * totalTeamsCount + 1, // 60% of flex to RB
-    WR: (rosterSlotsForPAR.WR + rosterSlotsForPAR.FLEX * 0.3) * totalTeamsCount + 1, // 30% of flex to WR
-    TE: (rosterSlotsForPAR.TE + rosterSlotsForPAR.FLEX * 0.1) * totalTeamsCount + 1, // 10% of flex to TE
-    K: rosterSlotsForPAR.K * totalTeamsCount + 1,
-    'D/ST': rosterSlotsForPAR.DST * totalTeamsCount + 1,
+    QB: levels.QB,
+    RB: levels.RB,
+    WR: levels.WR,
+    TE: levels.TE,
+    K: levels.K,
+    'D/ST': levels.DEF,
   };
 
   logger.debug('[ESPN] Teams:', totalTeamsCount);
@@ -1379,10 +1364,7 @@ export async function loadLeague(
     scoringType = 'standard';
   }
 
-  // Extract roster slot settings for PAR calculation (see parseEspnRosterSlots).
-  const rosterSlots: RosterSlots = parseEspnRosterSlots(
-    leagueData.settings.rosterSettings?.positionLimits
-  );
+  // rosterSlots was parsed above (PAR block) from positionLimits.
   const hasSuperflex = rosterSlots.SUPERFLEX > 0;
   logger.debug('[ESPN] Roster slots:', rosterSlots, hasSuperflex ? '(superflex)' : '');
 

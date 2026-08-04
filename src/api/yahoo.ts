@@ -1,7 +1,7 @@
 import type { League, LeagueCredentials, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, WeeklyMatchup } from '@/types';
 import { logger } from '@/utils/logger';
 import { decideTradeWinner } from '@/utils/tradeVerdict';
-import { calculateGamesPAR } from '@/utils/par';
+import { calculateGamesPAR, calculateReplacementLevels } from '@/utils/par';
 
 // Backend API URL - Vercel deployment
 const API_BASE = import.meta.env.VITE_YAHOO_API_URL || 'https://fantasy-football-analyzer-mu.vercel.app';
@@ -1051,21 +1051,12 @@ export async function enrichPlayersWithStats(
     QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 0, K: 1, DST: 1, BENCH: 6, IR: 1
   };
 
-  // Calculate replacement level for each position
-  // Replacement = (starters * teams) + 1
-  // FLEX counts toward RB/WR since they're most commonly flexed. SUPERFLEX is
-  // mostly a second QB (0.75) with the rest spilling into the flex pool (0.25),
-  // matching par.ts; without this QB replacement sits far too high and QB PAR
-  // (and every QB-involving trade/waiver verdict) is understated in superflex.
-  const sf = rosterSlots.SUPERFLEX || 0;
-  const flexPool = (rosterSlots.FLEX + sf * 0.25) * totalTeamsCount;
+  // Shared replacement-level model from par.ts: FLEX split 40/40/20 across
+  // RB/WR/TE, SUPERFLEX QB-dominant (0.75), and a x1.25 bench buffer - the
+  // exact math the Sleeper adapter uses, so the same league grades the same
+  // on every platform. (This replaced a local 60/30/10-no-buffer formula.)
   const replacementRank: Record<string, number> = {
-    QB: Math.round((rosterSlots.QB + sf * 0.75) * totalTeamsCount) + 1,
-    RB: (rosterSlots.RB * totalTeamsCount) + Math.floor(flexPool * 0.6) + 1,
-    WR: (rosterSlots.WR * totalTeamsCount) + Math.floor(flexPool * 0.3) + 1,
-    TE: (rosterSlots.TE * totalTeamsCount) + Math.floor(flexPool * 0.1) + 1,
-    K: rosterSlots.K * totalTeamsCount + 1,
-    DEF: rosterSlots.DST * totalTeamsCount + 1,
+    ...calculateReplacementLevels(rosterSlots, totalTeamsCount),
   };
 
   logger.debug('[Yahoo] Replacement ranks by position:', replacementRank);

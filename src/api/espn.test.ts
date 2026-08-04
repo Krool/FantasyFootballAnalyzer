@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { ESPNAPI, League } from '@/types';
 import { loadHeadToHeadRecords, loadLeague, loadLeagueHistory, parseEspnRosterSlots } from './espn';
+import { calculateReplacementLevels } from '@/utils/par';
 
 // Fixture: a 4-team public ESPN auction league, season 2025 (a past season,
 // so status derives to final). Schedule has weeks 1-3 played, week 14
@@ -755,13 +756,10 @@ describe('espn loadLeague PAR replacement baseline', () => {
     };
   }
 
-  it('subtracts a real (ceiled-rank) replacement baseline instead of collapsing to 0', async () => {
-    // WR replacement rank for 4 teams is fractional (2.3 * 4 + 1 = 10.2). Give WR
-    // a pool deeper than that rank so the OLD code's players[9.2] -> undefined ->
-    // 0 path would fire. The base fixture already contributes two WRs (Lamb 280,
-    // Nacua 190); these bench values are chosen so the merged pool's 11th-ranked
-    // WR (ceil(10.2)-1 = index 10, first player past the effective starters) is
-    // exactly 85: 300,290,280,260,240,210,190,170,150,140,[85],70,60.
+  it('uses the shared par.ts replacement level on the real parsed lineup', async () => {
+    // Deepen the WR pool past the replacement level. The base fixture already
+    // contributes two WRs (Lamb 280, Nacua 190); merged and sorted the pool is
+    // 300,290,280,260,240,210,190,170,150,140,85,70,60 (13 WRs).
     const deepWRs = [300, 290, 260, 240, 210, 170, 150, 140, 85, 70, 60].map((pts, i) => benchWR(500 + i, pts));
     const body = {
       ...mainLeagueBody,
@@ -779,11 +777,22 @@ describe('espn loadLeague PAR replacement baseline', () => {
     const add = league.teams.find(t => t.id === '1')!.transactions![0].adds[0];
     const par = (add as unknown as { pointsAboveReplacement: number }).pointsAboveReplacement;
 
-    // Puka (WR) put up 130 pts over 13 games since pickup. Replacement WR = 85,
-    // prorated 85/17*13 = 65, so PAR = 130 - 65 = 65. Under the old bug the WR
-    // baseline collapsed to 0 and PAR wrongly equalled the full 130.
+    // Derive the expectation from the SHARED model so this test guards
+    // against the adapter re-diverging from par.ts. Fixture lineup: WR 2,
+    // FLEX 1, SUPERFLEX 1, 4 teams -> effective WR 2 + 0.4 + 0.1 = 2.5;
+    // level = ceil(4 * 2.5 * 1.25) = 13 -> 13th WR = 60 season points.
+    const wrLevel = calculateReplacementLevels(
+      parseEspnRosterSlots(mainLeagueBody.settings.rosterSettings.positionLimits),
+      4,
+    ).WR;
+    expect(wrLevel).toBe(13);
+    const wrPool = [300, 290, 280, 260, 240, 210, 190, 170, 150, 140, 85, 70, 60];
+    const baseline = wrPool[wrLevel - 1];
+
+    // Puka (WR) put up 130 pts over 13 games since pickup; the baseline
+    // prorates to 13 of 17 games: 130 - 60/17*13 = 84.1.
     expect(add.pointsSincePickup).toBe(130);
-    expect(par).toBe(65);
+    expect(par).toBe(Math.round((130 - (baseline / 17) * 13) * 10) / 10);
   });
 });
 
