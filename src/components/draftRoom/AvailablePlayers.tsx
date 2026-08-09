@@ -39,7 +39,7 @@ interface AvailablePlayersProps {
   handcuffFor?: Map<string, string>;
   // Draft-queue wiring for the per-row + button.
   queue?: { queued: Set<string>; toggle: (id: string) => void };
-  inputRef?: RefObject<HTMLInputElement>;
+  inputRef?: RefObject<HTMLInputElement | null>;
 }
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST'];
