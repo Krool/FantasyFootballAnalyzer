@@ -86,6 +86,21 @@
 
   /* Layout heights (kept in sync between Ticker and Header) */
   --ticker-h: 38px;
+
+  /* Page h1 size, shared by every page's .title. One token because the floor
+     has to be tuned against the narrowest phone: Bowlby One is a very wide
+     face and the longest unbreakable heading word ("QUARTERBACK", from
+     /rankings/qb) ran past a 375px viewport at the old 56px floor. Overflowing
+     the viewport is what makes iOS Safari shrink-to-fit the whole document on
+     load, so the page opens at the wrong zoom. Keep the phone step below. */
+  --page-title: clamp(56px, 9vw, 140px);
+}
+
+/* 640px matches the compact-masthead breakpoint. 10vw keeps the ramp
+   continuous: it hits the 56px ceiling right at 560px, so there is no jump
+   where this query ends and the desktop clamp takes over. */
+@media (max-width: 640px) {
+  :root { --page-title: clamp(34px, 10vw, 56px); }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -96,6 +111,17 @@ html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+
+  /* Backstop against sideways drift. Any element that spills past the viewport
+     costs twice on a phone: iOS Safari shrinks the initial scale to fit it, so
+     the page loads zoomed out, and the document gains a horizontal pan that
+     fights vertical scrolling. `clip` is the one we want (it does not make the
+     root a scroll container, so position: sticky keeps working); `hidden` is
+     the fallback for Safari < 16 and is overridden wherever clip is supported.
+     This hides symptoms, it does not excuse them — real overflow still gets
+     fixed at the source, as --page-title above was. */
+  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -103,7 +129,10 @@ body {
   background-color: var(--ink);
   color: var(--bone);
   line-height: 1.55;
+  /* dvh so a short page does not sit 60-100px taller than the visible area
+     while the mobile URL bar is expanded. vh first for browsers without dvh. */
   min-height: 100vh;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   /* Atmospheric noise + faint grid */
   background-image:
@@ -111,6 +140,17 @@ body {
     repeating-linear-gradient(90deg, transparent 0 79px, rgba(241,236,225,0.025) 79px 80px),
     radial-gradient(ellipse at top, #15140f 0%, var(--ink) 60%);
   background-attachment: fixed;
+}
+
+/* The pinned background is the single worst thing on a touch screen. Fixed
+   attachment paints the noise grid against the VIEWPORT, so a pinch-zoom
+   scales the content while the grid stays locked to the screen — the texture
+   visibly slides under the type — and every scroll/zoom frame re-rasterizes a
+   full-viewport layer that mobile GPUs cannot cheaply cache. Scroll-attached,
+   the grid rides with the page and zoom stays smooth. Desktop keeps the
+   pinned look. */
+@media (pointer: coarse) {
+  body { background-attachment: scroll; }
 }
 
 a { color: inherit; text-decoration: none; }
@@ -129,6 +169,24 @@ input, select, textarea { font-family: inherit; color: var(--bone); }
   select,
   textarea {
     font-size: 16px !important;
+  }
+
+  /* Controls opt out of double-tap-to-zoom. Two wins: taps register instantly
+     instead of after the ~300ms wait for a possible second tap, and quick
+     repeat taps (queueing players, stepping a counter) stop randomly zooming
+     the page. Scoped to controls on purpose — pinch-zoom still works
+     everywhere, and double-tap zoom still works on the tables and prose where
+     it is actually useful. */
+  a,
+  button,
+  summary,
+  label,
+  [role='button'],
+  [role='tab'],
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    touch-action: manipulation;
   }
 }
 
