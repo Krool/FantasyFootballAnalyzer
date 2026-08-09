@@ -317,6 +317,24 @@ Buttons never have border-radius. Buttons never use a soft shadow.
 Note the placeholder swap to italic serif. This is intentional and creates
 character.
 
+### Native controls (selects, checkboxes, radios)
+
+`src/index.css` reskins these globally, so a plain `<select>` or
+`<input type="checkbox">` already lands in the system. Do not re-solve it per
+module:
+
+- `select` gets `appearance: none`, square corners, and a bone-dim triangle
+  caret that turns lime on hover/focus. The global rule is written as
+  `select:not([hidden])` purely to outrank module `.select` classes, which
+  set `padding` as a shorthand and would otherwise wipe the caret's gutter.
+  A module still owns its own border, size, and type.
+- Checkboxes and radios inherit `accent-color: var(--lime)`. Left alone the
+  browser draws them in system blue, which is the one hue nothing else on the
+  site uses.
+- Scrollbars are thin, `--bone-dim` on `--ink-3`, via `scrollbar-color` with a
+  `::-webkit-scrollbar` fallback for browsers without it. A default OS thumb
+  is the only rounded object that ever reaches the page.
+
 ### Tables
 
 ```css

@@ -156,6 +156,67 @@ body {
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; font-family: inherit; }
 input, select, textarea { font-family: inherit; color: var(--bone); }
+select { background-color: var(--ink); }
+
+/* ─── Native control reskin ───
+   Left alone, the browser draws <select> with a rounded frame and a gray
+   caret and check/radio boxes in system blue: the only rounded shapes and the
+   only unapproved hue on a page whose whole language is square edges and
+   lime. Reskinning is done once here rather than in the ~20 modules that own
+   a dropdown.
+
+   The :not([hidden]) bump is deliberate. Module rules like `.select` and
+   `.settingsSelect` (0,1,0) would otherwise outrank a bare `select` and, by
+   declaring `padding` as a shorthand, wipe the gutter the caret sits in. The
+   attribute selector buys one point of specificity so the caret keeps its
+   space while every module keeps its own border, size, and type. */
+select:not([hidden]) {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+  padding-right: 1.9rem;
+  /* Bone-dim triangle. Inline SVG cannot read a CSS variable, so the two
+     states are two literals of --bone-dim and --lime. */
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath fill='%23948e80' d='M0 0h9L4.5 6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 9px 6px;
+  cursor: pointer;
+}
+
+select:not([hidden]):hover,
+select:not([hidden]):focus {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath fill='%23d6ff2e' d='M0 0h9L4.5 6z'/%3E%3C/svg%3E");
+}
+
+select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* The open list is drawn by the OS. Where a UA honors these (Windows Chrome
+   does), it lands on ink instead of a white sliver. */
+select option { background-color: var(--ink); color: var(--bone); }
+
+input[type='checkbox'], input[type='radio'] {
+  accent-color: var(--lime);
+  cursor: pointer;
+}
+
+/* ─── Scrollbars ───
+   The inner board scrollers put a rounded gray OS thumb inside a 2px bone
+   frame. Standard properties first (Chrome 121+, Firefox, Safari 18.2+);
+   Chrome ignores the ::-webkit- pseudos entirely once scrollbar-color is
+   set, so the fallback only runs where the standard one is unsupported. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bone-dim) var(--ink-3);
+}
+
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--ink-3); }
+  ::-webkit-scrollbar-thumb { background: var(--bone-dim); border-radius: 0; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--lime); }
+  ::-webkit-scrollbar-corner { background: var(--ink-3); }
+}
 
 /* iOS Safari auto-zooms the viewport when a focused input's computed font
    size is under 16px, and the zoom sticks after blur: connect a league on
@@ -457,25 +518,28 @@ input, select, textarea { font-family: inherit; color: var(--bone); }
   }
 }
 
-/* Horizontal-scroll affordance for wide tables on touch screens, where
-   scrollbars are invisible until you're already scrolling. A faint bone fade
-   sits at each edge; the ink "cover" layers scroll with the content
+/* Horizontal-scroll affordance for wide tables. A faint bone fade sits at
+   each edge; the ink "cover" layers scroll with the content
    (background-attachment: local) and slide over the fade at the scroll ends,
    so the hint only shows when there are more columns off-screen. The host
    must set background-color, not the background shorthand, or these layers
-   get reset. */
-@media (pointer: coarse) {
-  .scroll-x-hint {
-    background-image:
-      linear-gradient(90deg, var(--ink) 40%, transparent),
-      linear-gradient(270deg, var(--ink) 40%, transparent),
-      linear-gradient(90deg, rgba(241, 236, 225, 0.2), transparent),
-      linear-gradient(270deg, rgba(241, 236, 225, 0.2), transparent);
-    background-position: left, right, left, right;
-    background-size: 32px 100%, 32px 100%, 12px 100%, 12px 100%;
-    background-repeat: no-repeat;
-    background-attachment: local, local, scroll, scroll;
-  }
+   get reset.
+
+   Not scoped to touch. It was, on the reasoning that desktop has a visible
+   scrollbar to give the game away, but a tall inner scroller parks its
+   horizontal bar hundreds of pixels down the page or off the fold entirely:
+   the rankings board clips its last column at 1440 wide with nothing on
+   screen saying so. */
+.scroll-x-hint {
+  background-image:
+    linear-gradient(90deg, var(--ink) 40%, transparent),
+    linear-gradient(270deg, var(--ink) 40%, transparent),
+    linear-gradient(90deg, rgba(241, 236, 225, 0.2), transparent),
+    linear-gradient(270deg, rgba(241, 236, 225, 0.2), transparent);
+  background-position: left, right, left, right;
+  background-size: 32px 100%, 32px 100%, 12px 100%, 12px 100%;
+  background-repeat: no-repeat;
+  background-attachment: local, local, scroll, scroll;
 }
 
 /* Inside the mobile draft sheet the sheet body is the scroller. Inner panes
