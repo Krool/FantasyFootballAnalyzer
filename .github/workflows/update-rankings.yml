@@ -1,7 +1,7 @@
 # Keeps draft rankings and auction values fresh: fetches FantasyPros, ESPN,
-# and Sleeper data, rebuilds the bundled pool, and redeploys the site when
-# the data actually changed. Runs daily and on demand (Actions tab -> Update
-# rankings -> Run workflow).
+# Sleeper, and Yahoo data, rebuilds the bundled pool, and redeploys the site
+# when the data actually changed. Runs daily and on demand (Actions tab ->
+# Update rankings -> Run workflow).
 
 name: Update rankings
 
