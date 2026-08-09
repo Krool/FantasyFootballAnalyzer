@@ -29,7 +29,13 @@ const SITE_LABEL: Record<Platform, string> = {
 // doesn't rank at all would post a huge fake delta. Cards only consider
 // players inside the rounds people actually draft.
 const CARD_CONSENSUS_CAP = 150;
-const CARD_COUNT = 3;
+// A single position's pool sits deeper than the overall board (every kicker
+// and defense is past 130 consensus, and TEs thin out fast), so filtering to
+// one would leave the cards half empty under the overall cap. Widening to the
+// depth Yahoo's board still covers keeps ten real rows without reaching into
+// the range where the sites' lists run out and the deltas go fake.
+const CARD_CONSENSUS_CAP_POS = 200;
+const CARD_COUNT = 10;
 
 type Direction = 'values' | 'reaches';
 type SortKey = 'consensus' | Platform | 'spread';
@@ -130,10 +136,24 @@ export function ValuesPage({ league, onUpdateGuest }: ValuesPageProps) {
 
   // The headline: each site's biggest values (or reaches), inside the
   // draftable range. This is the answer to "where do I wait on him".
+  // Follows the position filter (so "biggest WR values on Yahoo" is one click)
+  // but deliberately not the search box: narrowing a top-ten card to whichever
+  // player you happen to be typing tells you nothing.
   const cards = useMemo(() => {
+    const cap = posFilter === 'ALL' ? CARD_CONSENSUS_CAP : CARD_CONSENSUS_CAP_POS;
     return SITES.map(site => {
       const ranked = rows
-        .filter(r => r.consensus <= CARD_CONSENSUS_CAP && r.sites[site].delta != null)
+        .filter(
+          r =>
+            (posFilter === 'ALL' || r.player.pos === posFilter) &&
+            r.consensus <= cap &&
+            r.sites[site].delta != null &&
+            // Only players actually on the side of the ledger the card claims
+            // to show. A thin position can run out of real values long before
+            // ten rows, and padding "Biggest values" with negative deltas
+            // would say the opposite of what it means.
+            (direction === 'values' ? r.sites[site].delta! > 0 : r.sites[site].delta! < 0),
+        )
         .sort((a, b) =>
           direction === 'values'
             ? b.sites[site].delta! - a.sites[site].delta!
@@ -141,7 +161,7 @@ export function ValuesPage({ league, onUpdateGuest }: ValuesPageProps) {
         );
       return { site, rows: ranked.slice(0, CARD_COUNT) };
     });
-  }, [rows, direction]);
+  }, [rows, direction, posFilter]);
 
   const visible = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase();
@@ -252,6 +272,22 @@ export function ValuesPage({ league, onUpdateGuest }: ValuesPageProps) {
           </span>
         </div>
 
+        {/* The position filter governs the cards as well as the board, so it
+            sits above both rather than down with the table's own search. */}
+        <div className={styles.chips}>
+          {positions.map(pos => (
+            <button
+              key={pos}
+              type="button"
+              className={posFilter === pos ? styles.chipOn : styles.chip}
+              aria-pressed={posFilter === pos}
+              onClick={() => { playFilter(); setPosFilter(pos); }}
+            >
+              {pos === 'ALL' ? 'All' : labelForPos(pos)}
+            </button>
+          ))}
+        </div>
+
         <div className={styles.cards}>
           {cards.map(({ site, rows: top }) => (
             <div key={site} className={styles.card}>
@@ -259,21 +295,26 @@ export function ValuesPage({ league, onUpdateGuest }: ValuesPageProps) {
                 {SITE_LABEL[site]}
                 <span className={styles.cardTag}>
                   {direction === 'values' ? 'Biggest values' : 'Biggest reaches'}
+                  {posFilter !== 'ALL' && ` · ${posFilter}`}
                 </span>
               </h2>
               {top.length === 0 ? (
                 <p className={styles.cardEmpty}>
-                  No {SITE_LABEL[site]} market data in this pool yet. It fills in
-                  on the next daily rankings update.
+                  {yahooCovered === 0 && site === 'yahoo'
+                    ? `No ${SITE_LABEL[site]} market data in this pool yet. It fills in on the next daily rankings update.`
+                    : direction === 'values'
+                      ? `${SITE_LABEL[site]} drafts everyone here at or ahead of consensus. Nothing falls to you.`
+                      : `${SITE_LABEL[site]} reaches on nobody here.`}
                 </p>
               ) : (
                 <ol className={styles.cardList}>
-                  {top.map(r => (
+                  {top.map((r, i) => (
                     <li key={r.player.id} className={styles.cardRow}>
+                      <span className={styles.cardRank} aria-hidden="true">{i + 1}</span>
                       <button
                         type="button"
                         className={styles.cardName}
-                        onClick={() => { setSort(site); setQuery(''); setPosFilter('ALL'); }}
+                        onClick={() => { setSort(site); setQuery(''); }}
                         title={`Sort the board by ${SITE_LABEL[site]}`}
                       >
                         {r.player.name}
@@ -303,18 +344,11 @@ export function ValuesPage({ league, onUpdateGuest }: ValuesPageProps) {
             value={query}
             onChange={e => setQuery(e.target.value)}
           />
-          <div className={styles.chips}>
-            {positions.map(pos => (
-              <button
-                key={pos}
-                type="button"
-                className={posFilter === pos ? styles.chipOn : styles.chip}
-                onClick={() => { playFilter(); setPosFilter(pos); }}
-              >
-                {pos === 'ALL' ? 'All' : labelForPos(pos)}
-              </button>
-            ))}
-          </div>
+          {posFilter !== 'ALL' && (
+            <span className={styles.filterNote}>
+              Filtered to {labelForPos(posFilter)}
+            </span>
+          )}
         </div>
 
         <div className={`${styles.tableWrapper} scroll-x-hint`}>

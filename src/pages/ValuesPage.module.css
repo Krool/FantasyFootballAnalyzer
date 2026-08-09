@@ -197,15 +197,28 @@
   gap: 0.5rem;
 }
 
+/* rank | name+meta | delta. The rank column is fixed so ten rows of names
+   start on the same x, which is what makes the list scannable. */
 .cardRow {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1.4rem 1fr auto;
   align-items: baseline;
-  column-gap: 0.6rem;
+  column-gap: 0.55rem;
+}
+
+.cardRank {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: right;
+  color: color-mix(in srgb, var(--bone-dim) 65%, var(--ink));
 }
 
 .cardName {
-  grid-column: 1;
+  grid-column: 2;
   justify-self: start;
   border: none;
   background: none;
@@ -224,7 +237,7 @@
 }
 
 .cardMeta {
-  grid-column: 1;
+  grid-column: 2;
   grid-row: 2;
   font-family: var(--font-mono);
   font-size: 0.62rem;
@@ -235,11 +248,11 @@
 
 .cardRow > .deltaGood,
 .cardRow > .deltaBad {
-  grid-column: 2;
+  grid-column: 3;
   grid-row: 1 / span 2;
   align-self: center;
   font-family: var(--font-mono);
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .cardEmpty {
@@ -280,10 +293,20 @@
   font-family: var(--font-body);
 }
 
+/* Sits between the direction toggle and the cards: it drives both. */
 .chips {
   display: flex;
   gap: 0.35rem;
   flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.filterNote {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
 }
 
 .chip,
