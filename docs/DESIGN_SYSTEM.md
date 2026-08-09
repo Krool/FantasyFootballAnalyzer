@@ -211,6 +211,14 @@ Every page that isn't the Home page uses this header pattern:
 
 When extending: copy this exact pattern. Don't invent a new page header.
 
+**Board pages** (Rankings, Site Values, anything whose reason to exist is a
+scrolling table) use the same pattern at a smaller cap: `--page-title-board`
+instead of `--page-title`, `2rem 0 3rem` page padding, and a `1.5rem` header
+margin. At full size the headline and its rule pushed the first data row past
+430px on a 1440x900 screen, so you scrolled the page to reach the board and
+then scrolled the board. The masthead still reads as a masthead; it just
+stops eating half the fold on the pages people work in.
+
 ### Card
 
 Two flavors: **dark card** (default, on the ink background) and **lime card**
