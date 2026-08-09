@@ -357,10 +357,21 @@
   border-bottom: 2px solid var(--bone);
   transition: background .2s ease, transform .2s ease;
   overflow: hidden;
-  /* Two of these cards are anchors (links to the tool landing pages); keep
-     them visually identical to the plain cards. */
+  /* Five of these cards are anchors (the guest-usable tools and the two tool
+     landing pages); the rest describe features that need a connected league.
+     At rest all twelve read as one grid. The difference shows on hover. */
   text-decoration: none;
   color: inherit;
+}
+
+/* The lime stripe and the icon kick are the reward for a click, so only the
+   cards that actually go somewhere get them. Firing the full hover on a plain
+   div is a promise the card cannot keep: it was ten dead affordances against
+   two live ones, with nothing to tell them apart. */
+a.feature .featureTitle::after {
+  content: ' →';
+  color: var(--lime);
+  font-size: 0.8em;
 }
 .feature::before {
   content: '';
@@ -372,13 +383,13 @@
   transform-origin: left;
   transition: transform .35s cubic-bezier(.2,.8,.2,1);
 }
-.feature:hover {
+a.feature:hover {
   background: var(--ink-2);
 }
-.feature:hover::before {
+a.feature:hover::before {
   transform: scaleX(1);
 }
-.feature:hover .featureIcon {
+a.feature:hover .featureIcon {
   color: var(--lime);
   transform: rotate(-4deg) scale(1.05);
 }

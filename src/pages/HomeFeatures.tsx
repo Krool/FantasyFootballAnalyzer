@@ -26,7 +26,7 @@ export function HomeFeatures() {
         </p>
       </a>
 
-      <div className={styles.feature}>
+      <a className={styles.feature} href={`${base}draft-room`}>
         <div className={styles.featureIcon}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="4" y="4" width="16" height="16" rx="2" />
@@ -46,9 +46,9 @@ export function HomeFeatures() {
           Practice snake or auction drafts against AI opponents
           with their own tendencies, at your own pace.
         </p>
-      </div>
+      </a>
 
-      <div className={styles.feature}>
+      <a className={styles.feature} href={`${base}draft-room`}>
         <div className={styles.featureIcon}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10" />
@@ -63,9 +63,9 @@ export function HomeFeatures() {
           Track your snake or auction draft as it happens.
           Budget inflation, pick suggestions, and survival odds.
         </p>
-      </div>
+      </a>
 
-      <div className={styles.feature}>
+      <a className={styles.feature} href={`${base}rankings`}>
         <div className={styles.featureIcon}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="8" y1="6" x2="21" y2="6" />
@@ -81,7 +81,7 @@ export function HomeFeatures() {
           FantasyPros, ESPN, Sleeper, and Yahoo boards side by side.
           Sort by ADP or dollar value. Star your targets.
         </p>
-      </div>
+      </a>
 
       <a className={styles.feature} href={`${base}trade-analyzer`}>
         <div className={styles.featureIcon}>

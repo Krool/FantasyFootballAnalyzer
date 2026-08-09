@@ -154,15 +154,22 @@ export function Header({
         {isGuest && (
           <div className={`${styles.leagueGroup} ${styles.guestGroup}`}>
             <span className={styles.guestTag}>Guest</span>
-            <button
-              onClick={handleChangeLeague}
-              className={styles.connectCta}
-              title="Connect your real league for team names, grades, and history"
-              aria-label="Connect your league"
-            >
-              <span className={styles.connectCtaFull}>Connect your league</span>
-              <span className={styles.connectCtaShort} aria-hidden="true">Connect</span>
-            </button>
+            {/* Everywhere but home, GuestBanner renders directly below this
+                row with the same CTA, so the two sat a hundred pixels apart
+                saying the same thing. The banner keeps it there: it carries
+                the explanation of what a connection buys. Home has no banner,
+                so the header owns the CTA. */}
+            {location.pathname === '/' && (
+              <button
+                onClick={handleChangeLeague}
+                className={styles.connectCta}
+                title="Connect your real league for team names, grades, and history"
+                aria-label="Connect your league"
+              >
+                <span className={styles.connectCtaFull}>Connect your league</span>
+                <span className={styles.connectCtaShort} aria-hidden="true">Connect</span>
+              </button>
+            )}
           </div>
         )}
 

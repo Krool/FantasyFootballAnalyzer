@@ -94,13 +94,24 @@
      the viewport is what makes iOS Safari shrink-to-fit the whole document on
      load, so the page opens at the wrong zoom. Keep the phone step below. */
   --page-title: clamp(56px, 9vw, 140px);
+
+  /* Board pages (Rankings, Site Values) run a scrolling table as their whole
+     reason to exist, and the full-size headline plus its rule pushed the
+     first row past 430px on a 1440x900 screen: you scrolled the page to reach
+     the board, then scrolled the board. Same formula, roughly half the cap,
+     so the masthead still lands as a masthead and the data starts near the
+     fold. */
+  --page-title-board: clamp(40px, 5.2vw, 76px);
 }
 
 /* 640px matches the compact-masthead breakpoint. 10vw keeps the ramp
    continuous: it hits the 56px ceiling right at 560px, so there is no jump
    where this query ends and the desktop clamp takes over. */
 @media (max-width: 640px) {
-  :root { --page-title: clamp(34px, 10vw, 56px); }
+  :root {
+    --page-title: clamp(34px, 10vw, 56px);
+    --page-title-board: clamp(30px, 8vw, 44px);
+  }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
