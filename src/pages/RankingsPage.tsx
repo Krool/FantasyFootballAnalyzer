@@ -312,7 +312,7 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
           <span className={styles.settingsSpacer} />
           <span
             className={styles.settingsDim}
-            title="Rankings refresh daily from FantasyPros, ESPN, and Sleeper"
+            title="Rankings refresh daily from FantasyPros, ESPN, Yahoo, and Sleeper"
           >
             Updated {updated.toLocaleDateString()}
           </span>
@@ -405,7 +405,7 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
                   'AVG',
                   superflex
                     ? 'Consensus average of the FantasyPros superflex rank and Sleeper superflex ADP'
-                    : 'Consensus average of FantasyPros rank, ESPN ADP, and Sleeper ADP',
+                    : 'Consensus average of FantasyPros rank, ESPN ADP, Yahoo ADP rank, and Sleeper ADP',
                 )}
                 {sortableTh('delta', `Δ ${source.label}`, source.describe)}
                 {sortableTh(

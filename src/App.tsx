@@ -17,6 +17,7 @@ import { DEFAULT_GUEST_SETTINGS, loadGuestSettings, type GuestSettings } from '@
 const DraftPage = lazy(() => import('@/pages/DraftPage').then(m => ({ default: m.DraftPage })));
 const DraftRoomPage = lazy(() => import('@/pages/DraftRoomPage').then(m => ({ default: m.DraftRoomPage })));
 const RankingsPage = lazy(() => import('@/pages/RankingsPage').then(m => ({ default: m.RankingsPage })));
+const ValuesPage = lazy(() => import('@/pages/ValuesPage').then(m => ({ default: m.ValuesPage })));
 const TradesPage = lazy(() => import('@/pages/TradesPage').then(m => ({ default: m.TradesPage })));
 const WaiversPage = lazy(() => import('@/pages/WaiversPage').then(m => ({ default: m.WaiversPage })));
 const TeamsPage = lazy(() => import('@/pages/TeamsPage').then(m => ({ default: m.TeamsPage })));
@@ -88,6 +89,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/draft': 'Draft Analysis',
   '/draft-room': 'Draft Room',
   '/rankings': 'Rankings',
+  '/values': 'Site Values',
   '/trades': 'Trades',
   '/waivers': 'Waivers',
   '/teams': 'Teams',
@@ -519,6 +521,12 @@ function App() {
           <Route
             path="/rankings"
             element={league ? <RankingsPage league={league} onUpdateGuest={updateGuest} /> : <GuestAutoEnter onEnter={enterGuest} />}
+          />
+          {/* Where each site's draft market disagrees with the consensus.
+              Public like /rankings: needs only the bundled pool. */}
+          <Route
+            path="/values"
+            element={league ? <ValuesPage league={league} onUpdateGuest={updateGuest} /> : <GuestAutoEnter onEnter={enterGuest} />}
           />
           {/* Per-position landing pages: /rankings/qb, /rb, /wr, /te, /k, /dst,
               /flex. Real prerendered files; unknown slugs fall back to /rankings. */}

@@ -47,10 +47,12 @@ export function consensusAvg(
   // are 1QB markets that drag QBs back down, which is the whole bug. The SF
   // rank falls back to the 1QB overall rank for players without a superflex
   // snapshot entry (and for the deep pool where the two boards agree anyway).
+  // Yahoo's board is a 1QB market like ESPN's, so it joins the blend in the
+  // standard case and is dropped in superflex for the same reason ESPN is.
   const signals = (
     superflex
       ? [player.overallRankSF ?? player.overallRank, sleeperAdpFor(player, scoring, true)]
-      : [player.overallRank, player.espnAdp, sleeperAdpFor(player, scoring, false)]
+      : [player.overallRank, player.espnAdp, player.yahooAdpRank, sleeperAdpFor(player, scoring, false)]
   ).filter((n): n is number => n != null);
   // The lead signal (overallRank / overallRankSF fallback) is always present,
   // so signals is never empty.
@@ -58,8 +60,6 @@ export function consensusAvg(
 }
 
 // The ranking column that represents "the platform you're drafting on".
-// Yahoo doesn't ship ADP in the pool yet, so a Yahoo league compares the
-// FantasyPros expert rank against the consensus instead.
 export interface PlatformRankSource {
   // Short column label, e.g. "SLPR ADP".
   label: string;
@@ -89,11 +89,15 @@ export function platformRankSource(
         value: p => p.espnAdp,
       };
     case 'yahoo':
+      // Yahoo's board is 1QB-only, so a superflex league gets no meaningful
+      // Yahoo signal; fall back to the FantasyPros superflex rank there rather
+      // than compare a 1QB Yahoo rank against a superflex consensus.
       return {
-        label: 'FP',
-        describe:
-          'No Yahoo rankings in the pool yet, so this is FantasyPros rank minus the consensus average. Positive: experts are lower on him than the ADP market.',
-        value: p => (superflex ? p.overallRankSF ?? p.overallRank : p.overallRank),
+        label: 'YHOO',
+        describe: superflex
+          ? "Yahoo's ADP board is 1QB-only, so superflex compares the FantasyPros superflex rank against the consensus instead."
+          : 'Yahoo ADP rank minus the consensus average. Positive: Yahoo drafts him later than consensus, so he should fall to you.',
+        value: p => (superflex ? p.overallRankSF ?? p.overallRank : p.yahooAdpRank),
       };
   }
 }

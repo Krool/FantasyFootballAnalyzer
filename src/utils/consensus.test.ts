@@ -27,6 +27,19 @@ describe('consensusAvg', () => {
     expect(consensusAvg(player({ overallRank: 10, sleeperAdp: 20 }))).toBe(15);
     expect(consensusAvg(player({ overallRank: 10 }))).toBe(10);
   });
+
+  it('blends Yahoo in as a fourth signal', () => {
+    const p = player({ overallRank: 10, espnAdp: 14, sleeperAdp: 12, yahooAdpRank: 8 });
+    expect(consensusAvg(p)).toBe(11); // (10+14+12+8)/4
+  });
+
+  it('drops Yahoo in superflex, like ESPN, since its board is 1QB-only', () => {
+    const qb = player({
+      pos: 'QB', overallRank: 30, overallRankSF: 4,
+      espnAdp: 34, yahooAdpRank: 32, sleeperAdp2qb: 6,
+    });
+    expect(consensusAvg(qb, 'half_ppr', true)).toBe(5); // (4+6)/2
+  });
 });
 
 describe('sleeperAdpFor', () => {
@@ -77,10 +90,14 @@ describe('sleeperAdpFor', () => {
     const qb = player({ pos: 'QB', overallRank: 26, overallRankSF: 1, espnAdp: 24, sleeperAdp2qb: 3 });
     expect(consensusAvg(qb, 'half_ppr')).toBe(25); // 1QB ignores SF rank: (26+24)/2
     expect(consensusAvg(qb, 'half_ppr', true)).toBe(2); // SF: (1+3)/2
-    // The Yahoo "FP" column tracks the SF rank in superflex so its delta stays
-    // consistent with the consensus.
+    // Yahoo's board is 1QB-only, so superflex swaps it for the FantasyPros SF
+    // rank rather than compare a 1QB number against a superflex consensus.
     expect(platformRankSource('yahoo', 'half_ppr', true).value(qb)).toBe(1);
-    expect(platformRankSource('yahoo', 'half_ppr', false).value(qb)).toBe(26);
+    // With no Yahoo entry, the 1QB Yahoo column has nothing to show.
+    expect(platformRankSource('yahoo', 'half_ppr', false).value(qb)).toBeUndefined();
+    expect(platformRankSource('yahoo', 'half_ppr', false).value(
+      player({ ...qb, yahooAdpRank: 30 }),
+    )).toBe(30);
   });
 });
 
@@ -95,8 +112,17 @@ describe('platformDelta', () => {
     expect(platformDelta(p, platformRankSource('sleeper'))).toBe(0);
   });
 
-  it('falls back to FantasyPros rank for Yahoo', () => {
-    expect(platformDelta(p, platformRankSource('yahoo'))).toBe(-2);
+  it('uses the Yahoo ADP rank when the pool covers the player', () => {
+    // overallRank 10, espn 14, sleeper 12, yahoo 24 -> consensus 15.
+    const withYahoo = player({ overallRank: 10, espnAdp: 14, sleeperAdp: 12, yahooAdpRank: 24 });
+    expect(consensusAvg(withYahoo)).toBe(15);
+    expect(platformDelta(withYahoo, platformRankSource('yahoo'))).toBe(9);
+  });
+
+  it('has no Yahoo delta for a player off Yahoo\'s board', () => {
+    // Yahoo's list runs ~220 deep, so deep sleepers carry no Yahoo number
+    // and must show nothing rather than a fabricated zero.
+    expect(platformDelta(p, platformRankSource('yahoo'))).toBeUndefined();
   });
 
   it('is undefined when the platform has no number for the player', () => {

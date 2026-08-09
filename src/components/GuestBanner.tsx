@@ -15,9 +15,9 @@ export function GuestBanner({ onConnect }: GuestBannerProps) {
       <div className={`container ${styles.inner}`}>
         <p className={styles.text}>
           <span className={styles.tag}>Guest mode</span>
-          Rankings and the draft room only. Connect your league for real team
-          names, draft grades, trades, awards, and history. Switching seasons
-          needs a login.
+          Rankings, site values, and the draft room only. Connect your league
+          for real team names, draft grades, trades, awards, and history.
+          Switching seasons needs a login.
         </p>
         <button
           type="button"

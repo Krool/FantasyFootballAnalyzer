@@ -1,0 +1,590 @@
+.page {
+  padding: 3rem 0 5rem;
+}
+
+.header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 3px solid var(--bone);
+}
+
+.title {
+  font-family: var(--font-headline);
+  font-size: var(--page-title);
+  font-weight: 400;
+  line-height: 0.82;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  color: var(--bone);
+  margin: 0 0 0.5rem;
+}
+
+.subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin: 0;
+}
+
+.subtitle::before {
+  content: '◆ ';
+}
+
+.lede {
+  max-width: 62ch;
+  margin: 0.9rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--bone-dim);
+}
+
+.settingsBar {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  border: 2px solid var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  background: var(--ink);
+}
+
+.settingsItem,
+.settingsDim {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+
+.settingsDim {
+  color: var(--bone-dim);
+}
+
+.settingsSpacer {
+  flex: 1;
+}
+
+.settingsControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+
+.settingsSelect {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bone);
+  background: var(--ink);
+  border: 2px solid var(--bone);
+  padding: 0.3rem 0.4rem;
+  cursor: pointer;
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.tab,
+.tabOn {
+  padding: 0.45rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border: 2px solid var(--bone-dim);
+  background: transparent;
+  color: var(--bone-dim);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--bone);
+  border-color: var(--bone);
+}
+
+.tabOn {
+  background: var(--lime);
+  color: var(--ink);
+  border-color: var(--lime);
+  box-shadow: 3px 3px 0 var(--bone);
+}
+
+.tabHint {
+  margin-left: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+/* Headline cards: the three sites' extremes, readable without scrolling the
+   board. One card per site, side by side on desktop, stacked on phones. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 860px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  border: 2px solid var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  background: var(--ink);
+  padding: 0.9rem 1rem 1rem;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--rule);
+  font-family: var(--font-headline);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: var(--bone);
+}
+
+.cardTag {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+
+.cardList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cardRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  column-gap: 0.6rem;
+}
+
+.cardName {
+  grid-column: 1;
+  justify-self: start;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1rem;
+  text-align: left;
+  color: var(--bone);
+}
+
+.cardName:hover {
+  color: var(--lime);
+}
+
+.cardMeta {
+  grid-column: 1;
+  grid-row: 2;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.cardRow > .deltaGood,
+.cardRow > .deltaBad {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+}
+
+.cardEmpty {
+  margin: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
+}
+
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.search {
+  flex: 0 1 360px;
+  min-width: 200px;
+  padding: 0.75rem 0.9rem;
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.search:focus {
+  outline: none;
+  border-color: var(--lime);
+  box-shadow: 4px 4px 0 var(--lime);
+}
+
+.search::placeholder {
+  color: var(--bone-dim);
+  font-style: italic;
+  font-family: var(--font-body);
+}
+
+.chips {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.chip,
+.chipOn {
+  padding: 0.35rem 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 2px solid var(--bone-dim);
+  background: transparent;
+  color: var(--bone-dim);
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--bone);
+  border-color: var(--bone);
+}
+
+.chipOn {
+  background: var(--lime);
+  color: var(--ink);
+  border-color: var(--lime);
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100dvh - 280px);
+  min-height: 420px;
+  border: 2px solid var(--bone);
+  box-shadow: 5px 5px 0 var(--bone);
+  background-color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .tableWrapper {
+    max-height: calc(100dvh - 240px);
+    min-height: 300px;
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--ink);
+  font-weight: 700;
+  color: var(--bone-dim);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  border-bottom: 2px solid var(--bone);
+  padding: 0.6rem 0.65rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table th.num {
+  text-align: right;
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.sortable:hover {
+  color: var(--lime);
+}
+
+.sortable::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--lime);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+
+.sortable:hover::after { transform: scaleX(1); }
+
+.table th.sorted {
+  color: var(--lime);
+}
+
+.sortArrow {
+  margin-left: 0.25rem;
+  font-size: 0.85em;
+}
+
+.table td {
+  border-bottom: 1px dashed var(--rule);
+  padding: 0.45rem 0.65rem;
+  color: var(--bone);
+}
+
+.row:hover {
+  background: var(--ink-2);
+}
+
+.row:hover td:first-child {
+  box-shadow: inset 4px 0 0 var(--lime);
+}
+
+.player {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.dim {
+  color: var(--bone-dim);
+}
+
+.num {
+  text-align: right;
+}
+
+.consCell {
+  font-weight: 700;
+}
+
+.deltaGood {
+  color: var(--lime);
+  font-weight: 700;
+}
+
+.deltaBad {
+  color: var(--blood-text);
+  font-weight: 700;
+}
+
+/* The site's own board position, trailing its delta. Dim and small: the
+   delta is the story, the raw number is the receipt. */
+.rawRank {
+  margin-left: 0.45rem;
+  font-size: 0.72em;
+  color: var(--bone-dim);
+}
+
+.emptyRow {
+  text-align: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
+  padding: 2rem 1rem !important;
+}
+
+.truncated {
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  border-top: 2px solid var(--rule);
+}
+
+.footnote {
+  max-width: 78ch;
+  margin: 1.25rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--bone-dim);
+}
+
+.rookieTag,
+.injuryTag {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.08rem 0.25rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.rookieTag {
+  color: var(--gold);
+  border: 1px solid var(--gold);
+}
+
+.injuryTag {
+  color: var(--blood-text);
+  border: 1px solid var(--blood);
+}
+
+.starCell {
+  width: 1.6rem;
+  text-align: center;
+  padding-left: 0.3rem;
+  padding-right: 0;
+}
+
+.star,
+.starOn,
+.starAvoid {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0.15rem;
+  color: color-mix(in srgb, var(--bone-dim) 55%, var(--ink));
+}
+
+@media (pointer: coarse) {
+  .star,
+  .starOn,
+  .starAvoid {
+    font-size: 1rem;
+    padding: 0.6rem 0.5rem;
+  }
+  .starCell {
+    width: 2.4rem;
+  }
+}
+
+.star:hover {
+  color: var(--bone-dim);
+}
+
+.starOn {
+  color: var(--gold);
+}
+
+.starAvoid {
+  color: var(--blood-text);
+}
+
+/* Phone: pin the star and name so a row keeps its identity while the three
+   site columns scroll under it. Same layering contract as the Rankings board:
+   body cells (auto) < pinned name (1) < sticky header (2) < pinned header (3). */
+@media (max-width: 640px) {
+  .table td.starCell,
+  .table thead th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--ink);
+    width: 2.4rem;
+    min-width: 2.4rem;
+    box-sizing: border-box;
+    padding-left: 0.2rem;
+    padding-right: 0.2rem;
+  }
+  .table .player {
+    position: sticky;
+    left: 2.4rem;
+    z-index: 1;
+    background: var(--ink);
+    border-right: 2px solid var(--bone-dim);
+    max-width: 55vw;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .table .player .playerName {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .table thead th { z-index: 2; }
+  .table thead th:first-child { z-index: 3; }
+  .table thead th.playerHead {
+    position: sticky;
+    left: 2.4rem;
+    z-index: 3;
+    border-right: 2px solid var(--bone-dim);
+  }
+  .table th {
+    padding: 0.5rem 0.4rem;
+    letter-spacing: 0.1em;
+  }
+  .table td {
+    padding: 0.45rem 0.4rem;
+  }
+  .page { padding: 1.25rem 0 3rem; }
+  .title { font-size: 40px; }
+  .header {
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+  }
+}

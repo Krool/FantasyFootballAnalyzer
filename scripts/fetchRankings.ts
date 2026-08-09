@@ -12,8 +12,10 @@
 // - Sleeper: api.sleeper.com/projections is the endpoint Sleeper's own web
 //   client uses; public, undocumented. api.sleeper.app/v1/players/nfl is
 //   the documented players dump (injury status, depth charts, experience).
-// - Yahoo (average_cost auction values) needs an OAuth token and is not
-//   fetched here yet.
+// - Yahoo ADP comes via FantasyPros' ADP board (source id 236), not Yahoo
+//   directly, so it needs no OAuth. Yahoo's own draft-analysis endpoint
+//   (average_pick / average_cost auction values) still does, and is not
+//   fetched here.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -39,7 +41,7 @@ const FP_API_KEY = 'zjxN52G3lP4fORpHRftGI2mTU8cTwxVNvkjByM3j';
 // A truncated or empty source response must not silently gut the pool: the
 // daily Action would commit and deploy it. These floors are well under the
 // normal counts (FP ~500, ESPN 400, Sleeper ~250+) but catch a dead source.
-const MIN_ROWS = { fp: 400, espn: 200, sleeper: 150, sleeperPlayers: 300 };
+const MIN_ROWS = { fp: 400, espn: 200, sleeper: 150, sleeperPlayers: 300, yahoo: 150 };
 
 const ESPN_POSITION_MAP: Record<number, string> = {
   1: 'QB', 2: 'RB', 3: 'WR', 4: 'TE', 5: 'K', 16: 'DST',
@@ -184,6 +186,47 @@ async function fetchFantasyProsSuperflex(): Promise<void> {
   writeRaw(`fp-superflex.${SEASON}.json`, { scoring: FP_SCORING, players });
 }
 
+// Yahoo ADP, by way of FantasyPros. Yahoo's own draft-analysis endpoint needs
+// an OAuth token (see the auth note at the top), but FantasyPros carries Yahoo
+// as one of the three sources behind its ADP board, and the same public FP key
+// can isolate it: type=adp with filters=<sourceId>. The three ids on that board
+// are 236 (Yahoo! Sports), 439 (RTSports), 4350 (Sleeper); we only want Yahoo,
+// since Sleeper ADP already comes straight from Sleeper.
+//
+// Caveat that shapes the field name: a single-source response returns a dense
+// 1..N ordering in rank_ave, not a decimal ADP, so this is a Yahoo ADP *rank*.
+// It lives on the same "how early is he gone" scale as overallRank, which is
+// what the consensus blend needs, but it is not the raw average pick and must
+// not be labelled as one.
+//
+// Non-fatal on its own: a missing snapshot just drops the Yahoo column.
+const FP_ADP_SOURCE_YAHOO = 236;
+
+async function fetchYahooAdp(): Promise<void> {
+  const url = `https://api.fantasypros.com/v2/json/nfl/${SEASON}/consensus-rankings?type=adp&scoring=${FP_SCORING}&position=ALL&week=0&filters=${FP_ADP_SOURCE_YAHOO}`;
+  const json = (await getJson(url, { 'x-api-key': FP_API_KEY })) as {
+    players: Array<{
+      player_name: string;
+      player_team_id: string;
+      player_position_id: string;
+      rank_ave?: string | number | null;
+      rank_ecr?: number | null;
+    }>;
+  };
+  if (!Array.isArray(json.players)) throw new Error('Yahoo ADP payload has no players array');
+  const players = json.players
+    .map(p => ({
+      name: p.player_name,
+      team: p.player_team_id,
+      pos: p.player_position_id,
+      rank: Number(p.rank_ave ?? p.rank_ecr) || null,
+    }))
+    .filter((p): p is { name: string; team: string; pos: string; rank: number } => p.rank != null);
+  assertMinRows('Yahoo ADP', players.length, MIN_ROWS.yahoo);
+  console.log(`Yahoo ADP: ${players.length} players (${FP_SCORING}, via FantasyPros source ${FP_ADP_SOURCE_YAHOO})`);
+  writeRaw(`yahoo-adp.${SEASON}.json`, { scoring: FP_SCORING, source: FP_ADP_SOURCE_YAHOO, players });
+}
+
 async function fetchEspn(): Promise<void> {
   const url = `https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/${SEASON}/segments/0/leaguedefaults/3?view=kona_player_info`;
   const filter = { players: { limit: 400, sortAdp: { sortAsc: true, sortPriority: 1 } } };
@@ -311,12 +354,16 @@ for (const r of results) {
 const optional = await Promise.allSettled([
   fetchFantasyProsDynasty(),
   fetchFantasyProsSuperflex(),
+  fetchYahooAdp(),
 ]);
 if (optional[0].status === 'rejected') {
   console.warn('Dynasty rankings unavailable (non-fatal):', optional[0].reason);
 }
 if (optional[1].status === 'rejected') {
   console.warn('Superflex rankings unavailable (non-fatal):', optional[1].reason);
+}
+if (optional[2].status === 'rejected') {
+  console.warn('Yahoo ADP unavailable (non-fatal):', optional[2].reason);
 }
 
 if (failed) {

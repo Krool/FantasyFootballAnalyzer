@@ -86,7 +86,7 @@ the SPA deep-link shim. The catch-all route redirects unknown paths to `/`.
 **Guest mode**: these routes work with no login, backed by a synthetic guest
 league (`src/utils/guestLeague.ts`):
 
-- `/` (home), `/draft-room`, `/rankings`, `/rankings/:variant`,
+- `/` (home), `/draft-room`, `/rankings`, `/rankings/:variant`, `/values`,
   `/trade-analyzer`, `/draft-grades`.
 
 The league-analysis routes require a real loaded league and redirect guests to
@@ -95,9 +95,19 @@ The league-analysis routes require a real loaded league and redirect guests to
 
 **Prerender**: `scripts/prerender.tsx` runs as the final build step and bakes
 real static HTML for the indexable public routes (home, `/rankings`, the
-per-position pages, `/draft-room`, `/trade-analyzer`, `/draft-grades`) so they
+per-position pages, `/values`, `/draft-room`, `/trade-analyzer`,
+`/draft-grades`) so they
 are crawlable without JS. `vite.config.ts` emits `sitemap.xml` for the same set
 and stamps build metadata (`VITE_BUILD_TIME`, `VITE_BUILD_SHA`).
+
+**Site Values** (`/values`, third draft-prep tab): where each site's draft
+market disagrees with the consensus of all of them, in both directions
+(values = the site drafts him late, reaches = it drafts him early). The delta
+math is shared with the Rankings board via `src/utils/consensus.ts`; this page
+just shows all three platforms at once instead of the league's one. The
+focused draft-prep nav in `Header.tsx` is keyed on pathname (`isDraftPrep`),
+not on guest state, so a new public draft-prep route must be added there or it
+renders the full league nav, whose links bounce guests.
 
 **Per-position rankings pages** (`/rankings/qb` .. `/rankings/flex`): slugs,
 positions, and labels live in `src/data/rankingsVariants.ts`, the single source
@@ -129,7 +139,7 @@ The client points at the proxy via `VITE_ESPN_PROXY_URL` / `VITE_YAHOO_API_URL`
 
 ## Draft data pipeline
 
-`scripts/fetchRankings.ts` pulls FantasyPros/ESPN/Sleeper snapshots into
+`scripts/fetchRankings.ts` pulls FantasyPros/ESPN/Sleeper/Yahoo snapshots into
 `data/raw/`; `scripts/buildDraftPool.ts` joins them (plus
 `data/salary_cap_values.csv`) into `src/data/draftPool.<season>.json` and
 regenerates `src/data/draftPool.ts`, the indirection module the app imports.
@@ -138,6 +148,18 @@ Never import a seasoned pool JSON directly from app code; never edit
 (January still belongs to last season; February onward is the new one) via
 `scripts/season.ts`, overridable with `--season=`. Player ids are stable
 slugs (name+pos, `dst-<team>`); saved Draft Room sessions depend on that.
+
+**Yahoo ADP** arrives through FantasyPros, not Yahoo. Yahoo's own
+draft-analysis endpoint needs OAuth, but FantasyPros carries Yahoo as one of
+three sources behind its ADP board, and the same public FP key isolates it:
+`type=adp&filters=236` (236 = Yahoo! Sports; 439 = RTSports, 4350 = Sleeper).
+If FantasyPros reshuffles those source ids, re-read them from the Expert/Site
+table on `fantasypros.com/nfl/adp/half-point-ppr-overall.php`. A single-source
+response returns a dense 1..N ordering, NOT a decimal average pick, which is
+why the pool field is `yahooAdpRank` and the UI never calls it an ADP. It
+covers only ~220 players, so deep sleepers carry no Yahoo number. The fetch is
+optional (non-fatal), like dynasty and superflex: losing it drops the Yahoo
+column instead of reddening the daily Action.
 Do not change the id scheme without a session migration.
 
 `src/data/draftPool.<season>.json`, `src/data/draftPool.ts`, and everything in

@@ -9,6 +9,7 @@
 //   data/raw/espn-values.<season>.json  (optional: ESPN ADP + auction values)
 //   data/raw/sleeper-adp.<season>.json  (optional: Sleeper ADP + projections)
 //   data/raw/sleeper-players.json       (optional: injury/rookie/depth/ids)
+//   data/raw/yahoo-adp.<season>.json    (optional: Yahoo ADP rank, via FantasyPros)
 // Outputs:
 //   src/data/draftPool.<season>.json    (the pool data)
 //   src/data/draftPool.ts               (regenerated indirection module the
@@ -68,6 +69,7 @@ interface PoolPlayer {
   sleeperAdpPpr?: number;
   sleeperAdpStd?: number;
   sleeperAdp2qb?: number; // 2QB/superflex ADP
+  yahooAdpRank?: number; // Yahoo ADP as a dense 1..N ordering, not an average pick
   // Sleeper season-long projected points by scoring format.
   projPts?: number; // half-PPR
   projPtsPpr?: number;
@@ -424,6 +426,18 @@ const superflexSnapshot = loadRawSnapshot<{ players: SuperflexRow[] }>(`fp-super
 // scale only nudges the very bottom of the order.
 joinSource('Superflex', superflexSnapshot?.players, (player, row) => {
   if (Number.isFinite(row.rank)) player.overallRankSF = row.rank;
+});
+
+interface YahooAdpRow {
+  name: string; pos: string; team: string; rank: number;
+}
+const yahooSnapshot = loadRawSnapshot<{ players: YahooAdpRow[] }>(`yahoo-adp.${SEASON}.json`);
+// Yahoo's ADP board arrives as a dense 1..N ordering, not a decimal average
+// pick (see fetchYahooAdp), hence yahooAdpRank rather than yahooAdp. Same
+// "how early is he gone" scale as overallRank, which is all the consensus
+// blend needs; do not present it as a raw ADP.
+joinSource('Yahoo ADP', yahooSnapshot?.players, (player, row) => {
+  if (Number.isFinite(row.rank) && row.rank > 0) player.yahooAdpRank = row.rank;
 });
 
 interface SleeperPlayerRow {

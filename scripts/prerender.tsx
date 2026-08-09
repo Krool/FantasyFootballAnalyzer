@@ -125,6 +125,70 @@ function buildRankingsMarkup(
   )
 }
 
+// Crawlable snapshot of the Site Values board: for each site, the players it
+// drafts furthest from the consensus in both directions. Real data, not landing
+// copy, so the page is worth indexing on its own terms.
+function buildValuesMarkup(
+  pool: { season: number; players: any[] },
+  consensusAvg: (p: any, scoring: string) => number,
+  platformRankSource: (platform: string, scoring: string) => { value: (p: any) => number | undefined },
+  opts: { limit: number; consensusCap: number },
+): string {
+  const scoring = 'half_ppr'
+  const SITES: Array<[string, string]> = [
+    ['sleeper', 'Sleeper'],
+    ['espn', 'ESPN'],
+    ['yahoo', 'Yahoo'],
+  ]
+  const sections = SITES.map(([key, label]) => {
+    const src = platformRankSource(key, scoring)
+    const scored = pool.players
+      .map((p: any) => {
+        const cons = consensusAvg(p, scoring)
+        const rank = src.value(p)
+        return { p, cons, rank, delta: rank == null ? null : rank - cons }
+      })
+      .filter(r => r.delta != null && Number.isFinite(r.cons) && r.cons <= opts.consensusCap)
+      .sort((a, b) => b.delta! - a.delta!)
+
+    const table = (rows: typeof scored, caption: string) =>
+      `<h3>${esc(caption)}</h3>` +
+      `<table><thead><tr><th>Player</th><th>Pos</th><th>Team</th>` +
+      `<th>${esc(label)}</th><th>Consensus</th><th>Difference</th></tr></thead><tbody>` +
+      rows
+        .map(
+          r =>
+            `<tr><td>${esc(r.p.name)}</td><td>${esc(r.p.pos)}</td><td>${esc(r.p.team)}</td>` +
+            `<td>${Math.round(r.rank!)}</td><td>${Math.round(r.cons)}</td>` +
+            `<td>${r.delta! > 0 ? '+' : ''}${r.delta!.toFixed(1)}</td></tr>`,
+        )
+        .join('') +
+      `</tbody></table>`
+
+    // A site the current pool has no market for (Yahoo, until the daily
+    // rankings Action first runs with the Yahoo fetch) is omitted rather than
+    // shipping an empty table with headers and no rows.
+    if (scored.length === 0) return ''
+
+    return (
+      `<section><h2>${esc(label)}</h2>` +
+      table(scored.slice(0, opts.limit), `Best values on ${label}`) +
+      table(scored.slice(-opts.limit).reverse(), `Biggest reaches on ${label}`) +
+      `</section>`
+    )
+  }).join('')
+
+  return (
+    `<section><h1>${pool.season} Fantasy Football Draft Values by Site</h1>` +
+    `<p>Sleeper, ESPN, and Yahoo each draft from their own board. These are the ` +
+    `players each site prices furthest from the consensus of all of them, so you ` +
+    `know where a player falls to you and where he goes early. Half PPR, ` +
+    `refreshed daily, no login required.</p>` +
+    sections +
+    `</section>`
+  )
+}
+
 // Crawlable landing copy for the Draft Room (the live page is the interactive
 // setup form, which can't be server-rendered, so this is descriptive content
 // targeting mock-draft / draft-simulator searches).
@@ -232,7 +296,8 @@ async function prerender() {
 
     // --- Public guest routes (real files so they return 200 and index) ---
     const { POOL } = await vite.ssrLoadModule('/src/data/draftPool.ts')
-    const { consensusAvg, sleeperAdpFor } = await vite.ssrLoadModule('/src/utils/consensus.ts')
+    const { consensusAvg, sleeperAdpFor, platformRankSource } =
+      await vite.ssrLoadModule('/src/utils/consensus.ts')
 
     const rankingsFaq = faqJsonLd([
       ['Are these fantasy football rankings free?', 'Yes. No account and no signup. The project is open source.'],
@@ -287,6 +352,26 @@ async function prerender() {
           `and Sleeper ${v.label.toLowerCase()} consensus, half PPR, with auction values. No login.`,
       })
     }
+
+    const valuesFaq = faqJsonLd([
+      ['Why do Sleeper, ESPN, and Yahoo rank players differently?', 'Each site runs its own draft market, so ADP drifts apart between them. A player can be a third-round pick on one site and a fifth-round pick on another.'],
+      ['What does the difference column mean?', 'The site\'s board position minus the consensus of every source. Positive means that site drafts him later than consensus, so he should fall to you there.'],
+      ['Is this free?', 'Yes. No account and no signup. The project is open source.'],
+      ['How often does it update?', `Daily, from FantasyPros, ESPN, Sleeper, and Yahoo for the ${POOL.season} season.`],
+    ])
+    writeRoute({
+      path: 'values',
+      markup:
+        buildValuesMarkup(POOL, consensusAvg, platformRankSource, {
+          limit: 15,
+          consensusCap: 150,
+        }) + valuesFaq,
+      title: `${POOL.season} Fantasy Football Draft Values: Sleeper vs ESPN vs Yahoo ADP`,
+      desc:
+        `Where Sleeper, ESPN, and Yahoo ADP disagree with consensus for ${POOL.season}. ` +
+        `The players each site drafts late (wait on him) and early (he will be gone), ` +
+        `half PPR, updated daily. Free, no login.`,
+    })
 
     // --- Tool landing pages (same component the live routes render) ---
     const { ToolLanding } = await vite.ssrLoadModule('/src/pages/ToolLanding.tsx')

@@ -139,6 +139,11 @@ export interface PoolPlayer {
   // Sleeper 2QB/superflex ADP: QBs go far earlier here. Used when the league
   // has a SUPERFLEX slot so the board and mock AI price QBs realistically.
   sleeperAdp2qb?: number;
+  // Yahoo's ADP board, sourced through FantasyPros (no Yahoo OAuth needed).
+  // A dense 1..N ordering rather than a decimal average pick, which is why
+  // it is a "rank" and not a "yahooAdp": same "how early is he gone" scale
+  // as overallRank, but never present it to the user as a raw ADP.
+  yahooAdpRank?: number;
   // Expert disagreement band around the consensus rank (FantasyPros
   // rank_min/rank_max/rank_std): wide band = the experts can't agree.
   rankMin?: number;

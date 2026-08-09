@@ -55,11 +55,12 @@ export function Header({
   const location = useLocation();
   const navigate = useNavigate();
   const { playClick, playExport, playPageTransition, playError, isMuted, toggleMute } = useSounds();
-  // Draft prep routes share a focused nav (Draft + Rankings only). Rankings
+  // Draft prep routes share a focused nav (Draft + Rankings + Values). Rankings
   // covers the per-position landing routes (/rankings/qb etc.) too, so they get
   // the focused nav instead of the full league nav (whose links bounce guests).
   const isRankings = location.pathname === '/rankings' || location.pathname.startsWith('/rankings/');
-  const isDraftPrep = location.pathname === '/draft-room' || isRankings;
+  const isValues = location.pathname === '/values';
+  const isDraftPrep = location.pathname === '/draft-room' || isRankings || isValues;
 
   const handleExportPdf = () => {
     if (league) {
@@ -186,6 +187,14 @@ export function Header({
                   aria-current={isRankings ? 'page' : undefined}
                 >
                   Rankings
+                </Link>
+                <Link
+                  to="/values"
+                  className={`${styles.navLink} ${isValues ? styles.active : ''}`}
+                  onClick={handleNavClick}
+                  aria-current={isValues ? 'page' : undefined}
+                >
+                  Values
                 </Link>
               </>
             ) : (
