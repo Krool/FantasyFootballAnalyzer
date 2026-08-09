@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-08-09T11:24:52.421Z",
+ "fetchedAt": "2026-08-09T17:33:12.329Z",
  "data": {
   "players": [
    {
@@ -321,8 +321,8 @@
     "pos": "QB",
     "team": "DET",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "NA",
+    "injuryBodyPart": "Personal",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 12,
@@ -3693,7 +3693,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "7694",
@@ -3875,7 +3875,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "7989",
@@ -4663,8 +4663,8 @@
     "pos": "QB",
     "team": "BAL",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
@@ -4720,7 +4720,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "8219",
@@ -5768,8 +5768,8 @@
     "pos": "TE",
     "team": "GB",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Neck",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
@@ -5859,8 +5859,8 @@
     "pos": "WR",
     "team": "GB",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Ankle",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
@@ -6358,7 +6358,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "11210",
@@ -6522,8 +6522,8 @@
     "pos": "RB",
     "team": "GB",
     "status": "Active",
-    "injuryStatus": "PUP",
-    "injuryBodyPart": "Undisclosed",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
@@ -7450,7 +7450,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "11638",
@@ -8641,8 +8641,8 @@
     "pos": "WR",
     "team": "GB",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Toe",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -11844,7 +11844,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "13430",
@@ -13307,19 +13307,6 @@
     "name": "Kyre Duplessis",
     "pos": "WR",
     "team": "DEN",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 0,
-    "depthChartOrder": null
-   },
-   {
-    "sleeperId": "14058",
-    "name": "Malick Meiga",
-    "pos": "WR",
-    "team": "CAR",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
