@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-08-09T17:33:12.780Z",
+ "fetchedAt": "2026-08-10T11:44:03.355Z",
  "data": {
   "scoring": "HALF",
   "players": [
@@ -61,30 +61,30 @@
     "tier": 2
    },
    {
-    "name": "CeeDee Lamb",
-    "team": "DAL",
+    "name": "Malik Nabers",
+    "team": "NYG",
     "pos": "WR",
     "rank": 9,
     "tier": 2
    },
    {
-    "name": "Malik Nabers",
-    "team": "NYG",
+    "name": "CeeDee Lamb",
+    "team": "DAL",
     "pos": "WR",
     "rank": 10,
-    "tier": 2
-   },
-   {
-    "name": "Drake London",
-    "team": "ATL",
-    "pos": "WR",
-    "rank": 11,
     "tier": 2
    },
    {
     "name": "Jeremiyah Love",
     "team": "ARI",
     "pos": "RB",
+    "rank": 11,
+    "tier": 2
+   },
+   {
+    "name": "Drake London",
+    "team": "ATL",
+    "pos": "WR",
     "rank": 12,
     "tier": 2
    },
@@ -187,15 +187,15 @@
     "tier": 4
    },
    {
-    "name": "Garrett Wilson",
-    "team": "NYJ",
+    "name": "Carnell Tate",
+    "team": "TEN",
     "pos": "WR",
     "rank": 27,
     "tier": 4
    },
    {
-    "name": "Carnell Tate",
-    "team": "TEN",
+    "name": "Garrett Wilson",
+    "team": "NYJ",
     "pos": "WR",
     "rank": 28,
     "tier": 4
@@ -229,15 +229,15 @@
     "tier": 4
    },
    {
-    "name": "A.J. Brown",
-    "team": "NE",
+    "name": "Luther Burden III",
+    "team": "CHI",
     "pos": "WR",
     "rank": 33,
     "tier": 4
    },
    {
-    "name": "Luther Burden III",
-    "team": "CHI",
+    "name": "A.J. Brown",
+    "team": "NE",
     "pos": "WR",
     "rank": 34,
     "tier": 4
@@ -254,7 +254,7 @@
     "team": "BAL",
     "pos": "QB",
     "rank": 36,
-    "tier": 4
+    "tier": 5
    },
    {
     "name": "Colston Loveland",
@@ -285,23 +285,23 @@
     "tier": 5
    },
    {
+    "name": "Makai Lemon",
+    "team": "PHI",
+    "pos": "WR",
+    "rank": 41,
+    "tier": 5
+   },
+   {
     "name": "Tee Higgins",
     "team": "CIN",
     "pos": "WR",
-    "rank": 41,
+    "rank": 42,
     "tier": 5
    },
    {
     "name": "Joe Burrow",
     "team": "CIN",
     "pos": "QB",
-    "rank": 42,
-    "tier": 5
-   },
-   {
-    "name": "Makai Lemon",
-    "team": "PHI",
-    "pos": "WR",
     "rank": 43,
     "tier": 5
    },
@@ -352,14 +352,14 @@
     "team": "PHI",
     "pos": "RB",
     "rank": 50,
-    "tier": 5
+    "tier": 6
    },
    {
     "name": "Patrick Mahomes II",
     "team": "KC",
     "pos": "QB",
     "rank": 51,
-    "tier": 5
+    "tier": 6
    },
    {
     "name": "Tucker Kraft",
@@ -376,15 +376,15 @@
     "tier": 6
    },
    {
-    "name": "Christian McCaffrey",
-    "team": "SF",
+    "name": "Quinshon Judkins",
+    "team": "CLE",
     "pos": "RB",
     "rank": 54,
     "tier": 6
    },
    {
-    "name": "Quinshon Judkins",
-    "team": "CLE",
+    "name": "Christian McCaffrey",
+    "team": "SF",
     "pos": "RB",
     "rank": 55,
     "tier": 6
@@ -397,16 +397,16 @@
     "tier": 6
    },
    {
-    "name": "Jalen Hurts",
-    "team": "PHI",
-    "pos": "QB",
+    "name": "Harold Fannin Jr.",
+    "team": "CLE",
+    "pos": "TE",
     "rank": 57,
     "tier": 6
    },
    {
-    "name": "Harold Fannin Jr.",
-    "team": "CLE",
-    "pos": "TE",
+    "name": "Jalen Hurts",
+    "team": "PHI",
+    "pos": "QB",
     "rank": 58,
     "tier": 6
    },
@@ -467,15 +467,15 @@
     "tier": 6
    },
    {
-    "name": "Javonte Williams",
-    "team": "DAL",
+    "name": "Jadarian Price",
+    "team": "SEA",
     "pos": "RB",
     "rank": 67,
     "tier": 6
    },
    {
-    "name": "Jadarian Price",
-    "team": "SEA",
+    "name": "Javonte Williams",
+    "team": "DAL",
     "pos": "RB",
     "rank": 68,
     "tier": 6
@@ -502,15 +502,15 @@
     "tier": 6
    },
    {
-    "name": "KC Concepcion",
-    "team": "CLE",
+    "name": "Alec Pierce",
+    "team": "IND",
     "pos": "WR",
     "rank": 72,
     "tier": 6
    },
    {
-    "name": "Alec Pierce",
-    "team": "IND",
+    "name": "KC Concepcion",
+    "team": "CLE",
     "pos": "WR",
     "rank": 73,
     "tier": 6
@@ -635,16 +635,16 @@
     "tier": 7
    },
    {
-    "name": "David Montgomery",
-    "team": "HOU",
-    "pos": "RB",
+    "name": "Isaiah Likely",
+    "team": "NYG",
+    "pos": "TE",
     "rank": 91,
     "tier": 7
    },
    {
-    "name": "Isaiah Likely",
-    "team": "NYG",
-    "pos": "TE",
+    "name": "David Montgomery",
+    "team": "HOU",
+    "pos": "RB",
     "rank": 92,
     "tier": 7
    },
@@ -688,25 +688,25 @@
     "team": "LAR",
     "pos": "WR",
     "rank": 98,
-    "tier": 8
-   },
-   {
-    "name": "Mike Evans",
-    "team": "SF",
-    "pos": "WR",
-    "rank": 99,
-    "tier": 8
+    "tier": 7
    },
    {
     "name": "Michael Pittman Jr.",
     "team": "PIT",
     "pos": "WR",
-    "rank": 100,
+    "rank": 99,
     "tier": 8
    },
    {
     "name": "Courtland Sutton",
     "team": "DEN",
+    "pos": "WR",
+    "rank": 100,
+    "tier": 8
+   },
+   {
+    "name": "Mike Evans",
+    "team": "SF",
     "pos": "WR",
     "rank": 101,
     "tier": 8
@@ -1041,16 +1041,16 @@
     "tier": 9
    },
    {
-    "name": "J.K. Dobbins",
-    "team": "DEN",
-    "pos": "RB",
+    "name": "Terrance Ferguson",
+    "team": "LAR",
+    "pos": "TE",
     "rank": 149,
     "tier": 9
    },
    {
-    "name": "Terrance Ferguson",
-    "team": "LAR",
-    "pos": "TE",
+    "name": "J.K. Dobbins",
+    "team": "DEN",
+    "pos": "RB",
     "rank": 150,
     "tier": 9
    },
