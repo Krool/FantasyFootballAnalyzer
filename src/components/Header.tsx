@@ -61,6 +61,14 @@ export function Header({
   const isRankings = location.pathname === '/rankings' || location.pathname.startsWith('/rankings/');
   const isValues = location.pathname === '/values';
   const isDraftPrep = location.pathname === '/draft-room' || isRankings || isValues;
+  // The league nav is only navigable with a real connected league: every one
+  // of its links redirects a guest to /rankings, and the PDF button is a
+  // silent no-op without a league to export. It was rendering on the public
+  // tool landings (/trade-analyzer, /draft-grades), which a visitor reaches
+  // from search with no league at all: eight controls, none of which went
+  // anywhere. Keyed on the league rather than another pathname list so the
+  // next public route cannot reintroduce this.
+  const showLeagueNav = !!league && !isGuest && !isDraftPrep;
 
   const handleExportPdf = () => {
     if (league) {
@@ -175,9 +183,11 @@ export function Header({
 
         {location.pathname !== '/' && (
           <nav className={styles.nav} aria-label="Main navigation">
-            {isDraftPrep ? (
+            {!showLeagueNav ? (
               /* Draft prep is its own focused mode: just the draft-state
-                 tabs, no season-analysis noise. */
+                 tabs, no season-analysis noise. It is also the fallback for
+                 anyone without a connected league, since these three are the
+                 only routes that work without one. */
               <>
                 <Link
                   to="/draft-room"
