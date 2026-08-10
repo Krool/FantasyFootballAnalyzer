@@ -1,16 +1,18 @@
+/* Tighter than the standard 3rem/2.5rem page rhythm on purpose: see
+   --page-title-board. Every pixel above the board is a row you cannot see. */
 .page {
-  padding: 3rem 0 5rem;
+  padding: 2rem 0 3rem;
 }
 
 .header {
-  margin-bottom: 2rem;
-  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
   border-bottom: 3px solid var(--bone);
 }
 
 .title {
   font-family: var(--font-headline);
-  font-size: var(--page-title);
+  font-size: var(--page-title-board);
   font-weight: 400;
   line-height: 0.82;
   text-transform: uppercase;
@@ -337,7 +339,10 @@
 .tableWrapper {
   overflow-x: auto;
   overflow-y: auto;
-  max-height: calc(100dvh - 280px);
+  /* Matches the Rankings board: the reservation is what sits above the board
+     once the page is scrolled, and the compact masthead is off screen by
+     then. 280px was measured against the full-size headline. */
+  max-height: calc(100dvh - 200px);
   min-height: 420px;
   border: 2px solid var(--bone);
   box-shadow: 5px 5px 0 var(--bone);
