@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-08-10T11:44:03.097Z",
+ "fetchedAt": "2026-08-11T11:41:10.661Z",
  "data": {
   "players": [
    {
@@ -352,6 +352,18 @@
     "ptsStd": 165.7
    },
    {
+    "name": "Malik Nabers",
+    "pos": "WR",
+    "team": "NYG",
+    "adpHalfPpr": 30,
+    "adpPpr": 25.2,
+    "adpStd": 30.3,
+    "adp2qb": 37.4,
+    "ptsHalfPpr": 186.3,
+    "ptsPpr": 227.3,
+    "ptsStd": 145.3
+   },
+   {
     "name": "Chris Olave",
     "pos": "WR",
     "team": "NO",
@@ -424,18 +436,6 @@
     "ptsStd": 141.9
    },
    {
-    "name": "Malik Nabers",
-    "pos": "WR",
-    "team": "NYG",
-    "adpHalfPpr": 38.2,
-    "adpPpr": 27.3,
-    "adpStd": 34.3,
-    "adp2qb": 42.4,
-    "ptsHalfPpr": 186.3,
-    "ptsPpr": 227.3,
-    "ptsStd": 145.3
-   },
-   {
     "name": "Lamar Jackson",
     "pos": "QB",
     "team": "BAL",
@@ -472,16 +472,16 @@
     "ptsStd": 165.5
    },
    {
-    "name": "Travis Etienne",
-    "pos": "RB",
-    "team": "NO",
-    "adpHalfPpr": 39.5,
-    "adpPpr": 36.7,
-    "adpStd": 29.7,
-    "adp2qb": 54,
-    "ptsHalfPpr": 189.7,
-    "ptsPpr": 207.7,
-    "ptsStd": 171.7
+    "name": "Colston Loveland",
+    "pos": "TE",
+    "team": "CHI",
+    "adpHalfPpr": 39.9,
+    "adpPpr": 38.3,
+    "adpStd": 46.6,
+    "adp2qb": 55.5,
+    "ptsHalfPpr": 173.4,
+    "ptsPpr": 215.4,
+    "ptsStd": 131.4
    },
    {
     "name": "Bucky Irving",
@@ -508,30 +508,6 @@
     "ptsStd": 147.2
    },
    {
-    "name": "TreVeyon Henderson",
-    "pos": "RB",
-    "team": "NE",
-    "adpHalfPpr": 41.3,
-    "adpPpr": 47.8,
-    "adpStd": 36.5,
-    "adp2qb": 61.5,
-    "ptsHalfPpr": 162,
-    "ptsPpr": 179.5,
-    "ptsStd": 144.5
-   },
-   {
-    "name": "Colston Loveland",
-    "pos": "TE",
-    "team": "CHI",
-    "adpHalfPpr": 42.1,
-    "adpPpr": 41.2,
-    "adpStd": 49.5,
-    "adp2qb": 58.4,
-    "ptsHalfPpr": 173.4,
-    "ptsPpr": 215.4,
-    "ptsStd": 131.4
-   },
-   {
     "name": "Emeka Egbuka",
     "pos": "WR",
     "team": "TB",
@@ -556,6 +532,18 @@
     "ptsStd": 147.2
    },
    {
+    "name": "TreVeyon Henderson",
+    "pos": "RB",
+    "team": "NE",
+    "adpHalfPpr": 44.4,
+    "adpPpr": 47.8,
+    "adpStd": 39.4,
+    "adp2qb": 64.5,
+    "ptsHalfPpr": 162,
+    "ptsPpr": 179.5,
+    "ptsStd": 144.5
+   },
+   {
     "name": "Luther Burden",
     "pos": "WR",
     "team": "CHI",
@@ -575,9 +563,9 @@
     "adpPpr": 56.6,
     "adpStd": 55.6,
     "adp2qb": 67,
-    "ptsHalfPpr": 178.7,
-    "ptsPpr": 216.2,
-    "ptsStd": 141.2
+    "ptsHalfPpr": 176.8,
+    "ptsPpr": 213.8,
+    "ptsStd": 139.8
    },
    {
     "name": "Jaylen Waddle",
@@ -590,6 +578,18 @@
     "ptsHalfPpr": 182.5,
     "ptsPpr": 221,
     "ptsStd": 144
+   },
+   {
+    "name": "Travis Etienne",
+    "pos": "RB",
+    "team": "NO",
+    "adpHalfPpr": 46.5,
+    "adpPpr": 42.2,
+    "adpStd": 34.4,
+    "adp2qb": 62,
+    "ptsHalfPpr": 189.7,
+    "ptsPpr": 207.7,
+    "ptsStd": 171.7
    },
    {
     "name": "Quinshon Judkins",
@@ -614,6 +614,18 @@
     "ptsHalfPpr": 159.6,
     "ptsPpr": 201.1,
     "ptsStd": 118.1
+   },
+   {
+    "name": "Joe Burrow",
+    "pos": "QB",
+    "team": "CIN",
+    "adpHalfPpr": 51.5,
+    "adpPpr": 55.5,
+    "adpStd": 54,
+    "adp2qb": 10.4,
+    "ptsHalfPpr": 306.12,
+    "ptsPpr": 306.12,
+    "ptsStd": 306.12
    },
    {
     "name": "Jameson Williams",
@@ -700,16 +712,16 @@
     "ptsStd": 152.2
    },
    {
-    "name": "Joe Burrow",
-    "pos": "QB",
-    "team": "CIN",
-    "adpHalfPpr": 58.2,
-    "adpPpr": 57.1,
-    "adpStd": 60.4,
-    "adp2qb": 10.4,
-    "ptsHalfPpr": 306.12,
-    "ptsPpr": 306.12,
-    "ptsStd": 306.12
+    "name": "Jadarian Price",
+    "pos": "RB",
+    "team": "SEA",
+    "adpHalfPpr": 58,
+    "adpPpr": 70,
+    "adpStd": 80,
+    "adp2qb": 130,
+    "ptsHalfPpr": 160.5,
+    "ptsPpr": 170,
+    "ptsStd": 151
    },
    {
     "name": "D'Andre Swift",
@@ -748,18 +760,6 @@
     "ptsStd": 139.9
    },
    {
-    "name": "Jadarian Price",
-    "pos": "RB",
-    "team": "SEA",
-    "adpHalfPpr": 63,
-    "adpPpr": 80.3,
-    "adpStd": 101.1,
-    "adp2qb": 143,
-    "ptsHalfPpr": 160.5,
-    "ptsPpr": 170,
-    "ptsStd": 151
-   },
-   {
     "name": "Christian Watson",
     "pos": "WR",
     "team": "GB",
@@ -772,6 +772,18 @@
     "ptsStd": 144.6
    },
    {
+    "name": "Parker Washington",
+    "pos": "WR",
+    "team": "JAX",
+    "adpHalfPpr": 64.1,
+    "adpPpr": 70.2,
+    "adpStd": 74.4,
+    "adp2qb": 90,
+    "ptsHalfPpr": 176.4,
+    "ptsPpr": 212.4,
+    "ptsStd": 140.4
+   },
+   {
     "name": "Jayden Daniels",
     "pos": "QB",
     "team": "WAS",
@@ -779,9 +791,21 @@
     "adpPpr": 62.1,
     "adpStd": 65.7,
     "adp2qb": 8,
-    "ptsHalfPpr": 314.52,
-    "ptsPpr": 314.52,
-    "ptsStd": 314.52
+    "ptsHalfPpr": 308.72,
+    "ptsPpr": 308.72,
+    "ptsStd": 308.72
+   },
+   {
+    "name": "Jordyn Tyson",
+    "pos": "WR",
+    "team": "NO",
+    "adpHalfPpr": 65.5,
+    "adpPpr": 63.3,
+    "adpStd": 62.4,
+    "adp2qb": 81.2,
+    "ptsHalfPpr": 145.6,
+    "ptsPpr": 178.6,
+    "ptsStd": 112.6
    },
    {
     "name": "Brian Thomas",
@@ -844,30 +868,6 @@
     "ptsStd": 310.54
    },
    {
-    "name": "RJ Harvey",
-    "pos": "RB",
-    "team": "DEN",
-    "adpHalfPpr": 69.3,
-    "adpPpr": 68.4,
-    "adpStd": 40.1,
-    "adp2qb": 68.3,
-    "ptsHalfPpr": 125.6,
-    "ptsPpr": 144.1,
-    "ptsStd": 107.1
-   },
-   {
-    "name": "Jordyn Tyson",
-    "pos": "WR",
-    "team": "NO",
-    "adpHalfPpr": 71.6,
-    "adpPpr": 69,
-    "adpStd": 69.8,
-    "adp2qb": 86.9,
-    "ptsHalfPpr": 145.6,
-    "ptsPpr": 178.6,
-    "ptsStd": 112.6
-   },
-   {
     "name": "Chuba Hubbard",
     "pos": "RB",
     "team": "CAR",
@@ -916,16 +916,16 @@
     "ptsStd": 124.2
    },
    {
-    "name": "Makai Lemon",
-    "pos": "WR",
-    "team": "PHI",
-    "adpHalfPpr": 77.9,
-    "adpPpr": 76.6,
-    "adpStd": 76.5,
-    "adp2qb": 97.6,
-    "ptsHalfPpr": 138.5,
-    "ptsPpr": 168.5,
-    "ptsStd": 108.5
+    "name": "J.K. Dobbins",
+    "pos": "RB",
+    "team": "DEN",
+    "adpHalfPpr": 77.2,
+    "adpPpr": 84.2,
+    "adpStd": 68.3,
+    "adp2qb": 108.5,
+    "ptsHalfPpr": 147.2,
+    "ptsPpr": 160.2,
+    "ptsStd": 134.2
    },
    {
     "name": "DK Metcalf",
@@ -962,30 +962,6 @@
     "ptsHalfPpr": 143.1,
     "ptsPpr": 154.6,
     "ptsStd": 131.6
-   },
-   {
-    "name": "Parker Washington",
-    "pos": "WR",
-    "team": "JAX",
-    "adpHalfPpr": 81.1,
-    "adpPpr": 83.2,
-    "adpStd": 83.3,
-    "adp2qb": 103,
-    "ptsHalfPpr": 176.4,
-    "ptsPpr": 212.4,
-    "ptsStd": 140.4
-   },
-   {
-    "name": "Alec Pierce",
-    "pos": "WR",
-    "team": "IND",
-    "adpHalfPpr": 81.8,
-    "adpPpr": 83.6,
-    "adpStd": 87.6,
-    "adp2qb": 110.9,
-    "ptsHalfPpr": 150.9,
-    "ptsPpr": 177.9,
-    "ptsStd": 123.9
    },
    {
     "name": "Tony Pollard",
@@ -1048,6 +1024,18 @@
     "ptsStd": 295.48
    },
    {
+    "name": "RJ Harvey",
+    "pos": "RB",
+    "team": "DEN",
+    "adpHalfPpr": 86,
+    "adpPpr": 86.6,
+    "adpStd": 56.4,
+    "adp2qb": 94.4,
+    "ptsHalfPpr": 125.6,
+    "ptsPpr": 144.1,
+    "ptsStd": 107.1
+   },
+   {
     "name": "Caleb Williams",
     "pos": "QB",
     "team": "CHI",
@@ -1072,18 +1060,6 @@
     "ptsStd": 296.54
    },
    {
-    "name": "J.K. Dobbins",
-    "pos": "RB",
-    "team": "DEN",
-    "adpHalfPpr": 90.6,
-    "adpPpr": 92.5,
-    "adpStd": 74.7,
-    "adp2qb": 115.9,
-    "ptsHalfPpr": 147.2,
-    "ptsPpr": 160.2,
-    "ptsStd": 134.2
-   },
-   {
     "name": "Blake Corum",
     "pos": "RB",
     "team": "LAR",
@@ -1106,6 +1082,30 @@
     "ptsHalfPpr": 108.5,
     "ptsPpr": 120,
     "ptsStd": 97
+   },
+   {
+    "name": "Alec Pierce",
+    "pos": "WR",
+    "team": "IND",
+    "adpHalfPpr": 92.2,
+    "adpPpr": 90.4,
+    "adpStd": 93.6,
+    "adp2qb": 120.2,
+    "ptsHalfPpr": 150.9,
+    "ptsPpr": 177.9,
+    "ptsStd": 123.9
+   },
+   {
+    "name": "Makai Lemon",
+    "pos": "WR",
+    "team": "PHI",
+    "adpHalfPpr": 92.2,
+    "adpPpr": 88.7,
+    "adpStd": null,
+    "adp2qb": 110.4,
+    "ptsHalfPpr": 138.5,
+    "ptsPpr": 168.5,
+    "ptsStd": 108.5
    },
    {
     "name": "Chris Godwin",
@@ -1228,6 +1228,18 @@
     "ptsStd": 96.1
    },
    {
+    "name": "Josh Downs",
+    "pos": "WR",
+    "team": "IND",
+    "adpHalfPpr": 102.2,
+    "adpPpr": 108.4,
+    "adpStd": 111.1,
+    "adp2qb": 132.2,
+    "ptsHalfPpr": 143.4,
+    "ptsPpr": 180.4,
+    "ptsStd": 106.4
+   },
+   {
     "name": "Oronde Gadsden",
     "pos": "TE",
     "team": "LAC",
@@ -1322,6 +1334,18 @@
     "ptsHalfPpr": 162.6,
     "ptsPpr": 197.6,
     "ptsStd": 127.6
+   },
+   {
+    "name": "Jordan Mason",
+    "pos": "RB",
+    "team": "MIN",
+    "adpHalfPpr": 111.2,
+    "adpPpr": 119.2,
+    "adpStd": 100.2,
+    "adp2qb": 138.4,
+    "ptsHalfPpr": 143.7,
+    "ptsPpr": 153.7,
+    "ptsStd": 133.7
    },
    {
     "name": "Travis Kelce",
@@ -1480,18 +1504,6 @@
     "ptsStd": 61.4
    },
    {
-    "name": "Josh Downs",
-    "pos": "WR",
-    "team": "IND",
-    "adpHalfPpr": 121,
-    "adpPpr": 125.1,
-    "adpStd": 133.4,
-    "adp2qb": 156.2,
-    "ptsHalfPpr": 143.4,
-    "ptsPpr": 180.4,
-    "ptsStd": 106.4
-   },
-   {
     "name": "Zach Charbonnet",
     "pos": "RB",
     "team": "SEA",
@@ -1514,18 +1526,6 @@
     "ptsHalfPpr": 104,
     "ptsPpr": 104,
     "ptsStd": 104
-   },
-   {
-    "name": "Jordan Mason",
-    "pos": "RB",
-    "team": "MIN",
-    "adpHalfPpr": 124.6,
-    "adpPpr": 130.5,
-    "adpStd": 111.7,
-    "adp2qb": 155.4,
-    "ptsHalfPpr": 143.7,
-    "ptsPpr": 153.7,
-    "ptsStd": 133.7
    },
    {
     "name": "Seattle Seahawks",
@@ -1672,6 +1672,18 @@
     "ptsStd": 278.52
    },
    {
+    "name": "Deebo Samuel",
+    "pos": "WR",
+    "team": "SF",
+    "adpHalfPpr": 134.1,
+    "adpPpr": 141.2,
+    "adpStd": 138.4,
+    "adp2qb": 158.5,
+    "ptsHalfPpr": 127.7,
+    "ptsPpr": 155.7,
+    "ptsStd": 99.7
+   },
+   {
     "name": "Stefon Diggs",
     "pos": "WR",
     "team": "WAS",
@@ -1679,9 +1691,9 @@
     "adpPpr": 125.9,
     "adpStd": 115.5,
     "adp2qb": 133,
-    "ptsHalfPpr": 132,
-    "ptsPpr": 163,
-    "ptsStd": 101
+    "ptsHalfPpr": 125.3,
+    "ptsPpr": 157.3,
+    "ptsStd": 93.3
    },
    {
     "name": "Denver Broncos",
@@ -1960,6 +1972,18 @@
     "ptsStd": 82.4
    },
    {
+    "name": "Ja'Kobi Lane",
+    "pos": "WR",
+    "team": "BAL",
+    "adpHalfPpr": 151.2,
+    "adpPpr": 166.6,
+    "adpStd": 168.3,
+    "adp2qb": 178.4,
+    "ptsHalfPpr": 74.1,
+    "ptsPpr": 90.1,
+    "ptsStd": 58.1
+   },
+   {
     "name": "Dylan Sampson",
     "pos": "RB",
     "team": "CLE",
@@ -2162,18 +2186,6 @@
     "ptsHalfPpr": 47.2,
     "ptsPpr": 52.2,
     "ptsStd": 42.2
-   },
-   {
-    "name": "Deebo Samuel",
-    "pos": "WR",
-    "team": "SF",
-    "adpHalfPpr": 158.7,
-    "adpPpr": 164.3,
-    "adpStd": 149.6,
-    "adp2qb": 173.4,
-    "ptsHalfPpr": 127.7,
-    "ptsPpr": 155.7,
-    "ptsStd": 99.7
    },
    {
     "name": "T.J. Hockenson",
@@ -2594,18 +2606,6 @@
     "ptsHalfPpr": 48.5,
     "ptsPpr": 52.5,
     "ptsStd": 44.5
-   },
-   {
-    "name": "Ja'Kobi Lane",
-    "pos": "WR",
-    "team": "BAL",
-    "adpHalfPpr": 191.7,
-    "adpPpr": 197.8,
-    "adpStd": 181.9,
-    "adp2qb": 207.3,
-    "ptsHalfPpr": 74.1,
-    "ptsPpr": 90.1,
-    "ptsStd": 58.1
    },
    {
     "name": "Los Angeles Chargers",
@@ -5634,7 +5634,7 @@
    {
     "name": "Teddy Bridgewater",
     "pos": "QB",
-    "team": "DET",
+    "team": "FA",
     "adpHalfPpr": null,
     "adpPpr": null,
     "adpStd": null,
@@ -5807,9 +5807,9 @@
     "adpPpr": null,
     "adpStd": null,
     "adp2qb": null,
-    "ptsHalfPpr": 24.6,
-    "ptsPpr": 29.6,
-    "ptsStd": 19.6
+    "ptsHalfPpr": 26,
+    "ptsPpr": 31.5,
+    "ptsStd": 20.5
    },
    {
     "name": "Max Bredeson",
