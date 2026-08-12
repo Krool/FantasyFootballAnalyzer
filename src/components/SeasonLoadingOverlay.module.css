@@ -7,6 +7,7 @@
   align-items: flex-start;
   padding: 18vh 1rem 0;
   background: rgba(10, 10, 10, 0.72);
+  animation: veilIn 0.3s ease;
 }
 
 .panel {
@@ -17,6 +18,12 @@
   background: var(--ink-2);
   border: 1px solid var(--bone);
   box-shadow: var(--shadow-offset);
+  animation: veilIn 0.3s ease;
+}
+
+@keyframes veilIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .text {
@@ -46,5 +53,5 @@
 .fill {
   height: 100%;
   background: var(--lime);
-  transition: width 0.3s ease;
+  transition: width 0.4s ease;
 }

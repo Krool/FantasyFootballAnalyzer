@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState, type RefObject } from 'react';
+import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -48,6 +48,9 @@ interface AvailablePlayersProps {
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DST'];
 const MAX_ROWS = 250;
+// How long a just-drafted row lingers, fading out, before it drops from the
+// DOM. Matches TierBoard's ghost timing.
+const LEAVE_MS = 350;
 
 // Touch screens get a placeholder without the keyboard cheat sheet. Evaluated
 // once: pointer type doesn't change mid-session, and jsdom/prerender lack
@@ -245,6 +248,44 @@ export function AvailablePlayers({
     setCursor(c => Math.min(c, Math.max(0, visible.length - 1)));
   }, [visible.length]);
 
+  // A just-drafted player briefly stays rendered as a fading ghost row
+  // instead of vanishing the instant the pick logs (derived.available drops
+  // him immediately). One shared row per player id, appended after the real
+  // rows in both layouts below.
+  const prevAvailableRef = useRef<Map<string, PoolPlayer>>(new Map());
+  const [leaving, setLeaving] = useState<Map<string, PoolPlayer>>(new Map());
+  const leaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    const prev = prevAvailableRef.current;
+    const current = new Map(derived.available.map(p => [p.id, p]));
+    if (prev.size > 0) {
+      for (const [id, player] of prev) {
+        if (current.has(id) || !derived.draftedPlayerIds.has(id)) continue;
+        setLeaving(l => new Map(l).set(id, player));
+        const timer = setTimeout(() => {
+          setLeaving(l => {
+            const next = new Map(l);
+            next.delete(id);
+            return next;
+          });
+          leaveTimers.current.delete(id);
+        }, LEAVE_MS);
+        leaveTimers.current.set(id, timer);
+      }
+    }
+    prevAvailableRef.current = current;
+  }, [derived.available, derived.draftedPlayerIds]);
+
+  useEffect(() => {
+    const timers = leaveTimers.current;
+    return () => {
+      for (const t of timers.values()) clearTimeout(t);
+    };
+  }, []);
+
+  const leavingPlayers = useMemo(() => [...leaving.values()], [leaving]);
+
   return (
     <div className={styles.board}>
       <div className={styles.controls}>
@@ -393,6 +434,11 @@ export function AvailablePlayers({
               </Fragment>
             ))}
             {visible.length === 0 && <li className={styles.mEmpty}>No available players match.</li>}
+            {leavingPlayers.map(p => (
+              <li key={`leaving-${p.id}`} className={styles.mRowDraftOut} aria-hidden="true">
+                {p.name} drafted
+              </li>
+            ))}
           </ul>
           {rows.length > MAX_ROWS && (
             <div className={styles.truncated}>
@@ -734,6 +780,11 @@ export function AvailablePlayers({
                 </td>
               </tr>
             )}
+            {leavingPlayers.map(p => (
+              <tr key={`leaving-${p.id}`} className={styles.rowDraftOut} aria-hidden="true">
+                <td colSpan={colCount}>{p.name} drafted</td>
+              </tr>
+            ))}
           </tbody>
         </table>
         {rows.length > MAX_ROWS && (

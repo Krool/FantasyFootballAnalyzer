@@ -76,11 +76,26 @@
   box-shadow: 5px 5px 0 var(--bone);
   overflow: hidden;
   transition: transform .2s ease, box-shadow .2s ease;
+  animation: tradeCardIn 0.4s cubic-bezier(.2, .8, .2, 1) backwards;
 }
 .tradeCard:hover {
   transform: translate(-2px,-2px);
   box-shadow: 7px 7px 0 var(--lime);
   border-color: var(--lime);
+}
+
+/* Staggered slide-in-from-left, one trade card at a time; the stagger caps
+   at 6 so a long history doesn't drag entrance out forever. */
+.tradeCard:nth-child(1) { animation-delay: 0ms; }
+.tradeCard:nth-child(2) { animation-delay: 80ms; }
+.tradeCard:nth-child(3) { animation-delay: 160ms; }
+.tradeCard:nth-child(4) { animation-delay: 240ms; }
+.tradeCard:nth-child(5) { animation-delay: 320ms; }
+.tradeCard:nth-child(n+6) { animation-delay: 400ms; }
+
+@keyframes tradeCardIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 .tradeCard.incomplete {
@@ -144,6 +159,15 @@
 
 .tradeSide.winner {
   background: linear-gradient(180deg, rgba(214,255,46,0.08), transparent 50%);
+  animation: winnerPulse 0.4s ease 0.4s 1;
+}
+
+/* One-shot bloom once the card entrance has settled, so the eye lands on
+   the winning side without it feeling like part of the slide-in. */
+@keyframes winnerPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(214,255,46,0); }
+  50%  { box-shadow: inset 0 0 24px 4px rgba(214,255,46,0.25); }
+  100% { box-shadow: 0 0 0 0 rgba(214,255,46,0); }
 }
 .tradeSide.winner::before {
   content: '★ WINNER';

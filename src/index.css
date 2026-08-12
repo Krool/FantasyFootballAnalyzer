@@ -384,7 +384,7 @@ html {
   color: var(--bone);
   font-family: var(--font-mono);
   font-size: 0.9rem;
-  transition: border-color .15s ease, box-shadow .15s ease;
+  transition: border-color .15s ease, box-shadow .2s ease;
 }
 .input:focus {
   outline: none;
@@ -499,6 +499,16 @@ html {
 .skip-nav:focus {
   position: fixed; left: 0; top: 0;
   width: auto; height: auto; overflow: visible;
+}
+
+/* Route entrance fade. Keyed on pathname in App.tsx so every navigation
+   re-triggers it; entrance-only, nothing choreographed on exit. */
+.page-in {
+  animation: pageIn 0.25s ease-out;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ─── Reduced motion ─── */

@@ -288,7 +288,7 @@
   background: var(--lime);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.2s ease;
+  transition: transform 0.35s cubic-bezier(.2, .8, .2, 1);
 }
 
 .sortable:hover::after { transform: scaleX(1); }

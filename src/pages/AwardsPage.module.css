@@ -102,6 +102,21 @@
   grid-template-rows: subgrid;
   grid-row: span 6;
   align-content: start;
+  animation: awardPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+}
+
+/* Staggered pop-in, ~60ms apart; past the 6th card they all pop together
+   rather than trailing out forever. */
+.awardCard:nth-child(1) { animation-delay: 0ms; }
+.awardCard:nth-child(2) { animation-delay: 60ms; }
+.awardCard:nth-child(3) { animation-delay: 120ms; }
+.awardCard:nth-child(4) { animation-delay: 180ms; }
+.awardCard:nth-child(5) { animation-delay: 240ms; }
+.awardCard:nth-child(n+6) { animation-delay: 300ms; }
+
+@keyframes awardPop {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
 }
 .awardCard::before {
   content: '★ TROPHY';

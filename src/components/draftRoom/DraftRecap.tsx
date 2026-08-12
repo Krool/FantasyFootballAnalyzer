@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { gradeDraftSession, rosterAsText } from '@/utils/draftRecap';
 import { findStacks } from '@/utils/stacks';
 import { logger } from '@/utils/logger';
+import { vibrate } from '@/utils/haptics';
 import { RecapShare } from './RecapShare';
 import styles from './DraftRecap.module.css';
 
@@ -49,6 +50,18 @@ export function DraftRecap({ room }: DraftRecapProps) {
     else if (grade.startsWith('C')) playGrade('bad');
     else playGrade('terrible');
   };
+
+  // The recap's own reveal: fanfare for your grade the moment the card
+  // mounts (the same sound a click on any card plays), plus a light buzz.
+  // One-shot, keyed off the grade so undo -> redraft can replay it.
+  const revealedGradeRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!mine || revealedGradeRef.current === mine.grade) return;
+    revealedGradeRef.current = mine.grade;
+    gradeSound(mine.grade);
+    vibrate(50);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mine?.grade]);
 
   if (recaps.length === 0) return null;
 

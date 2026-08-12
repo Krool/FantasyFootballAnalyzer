@@ -478,6 +478,9 @@ function App() {
         )}
         <RouteErrorBoundary resetKey={location.pathname}>
         <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="spinner" /></div>}>
+        {/* Keyed on pathname so each route swap gets a fresh entrance fade
+            (pageIn, in index.css). Entrance-only - no exit orchestration. */}
+        <div key={location.pathname} className="page-in">
         <Routes>
           <Route
             path="/"
@@ -557,6 +560,7 @@ function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </div>
         </Suspense>
         </RouteErrorBoundary>
       </main>

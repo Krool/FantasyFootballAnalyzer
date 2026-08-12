@@ -126,6 +126,37 @@
   text-align: center;
 }
 
+/* Ghost row for a player who was just drafted off this column: fades and
+   slides out instead of vanishing the instant the pick logs. */
+.playerLeaving {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.1rem;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px dashed var(--rule);
+  pointer-events: none;
+  animation: rowDraftOut 0.35s cubic-bezier(.2, .8, .2, 1) forwards;
+}
+
+@keyframes rowDraftOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playerLeaving {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 /* Print clips scroll panes to their on-screen window at the current scroll
    offset; let every column run its full length on paper. */
 @media print {

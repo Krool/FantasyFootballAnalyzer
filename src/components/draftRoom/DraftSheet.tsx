@@ -121,8 +121,14 @@ export function DraftSheet({ tabs, active, onTabChange, children }: DraftSheetPr
       </div>
       {/* draft-sheet-body is a global hook: inner panes cap their own height
           against the page viewport, which must relax inside the sheet (the
-          sheet body is the scroller here). See index.css. */}
-      <div className={`${styles.body} draft-sheet-body`}>{children}</div>
+          sheet body is the scroller here). See index.css. The inner div is
+          keyed on the active tab so switching tabs re-mounts it and replays
+          the fade-in instead of only fading in on the sheet's first open. */}
+      <div className={`${styles.body} draft-sheet-body`}>
+        <div key={active} className={styles.pane}>
+          {children}
+        </div>
+      </div>
     </div>
   );
 }

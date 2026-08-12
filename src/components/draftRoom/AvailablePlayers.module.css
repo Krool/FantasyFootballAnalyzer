@@ -65,6 +65,19 @@
   background: var(--lime);
   color: var(--ink);
   border-color: var(--lime);
+  animation: chipPop 0.2s ease;
+}
+
+@keyframes chipPop {
+  0% { transform: scale(0.95); }
+  60% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chipOn {
+    animation: none;
+  }
 }
 
 /* Roster-fill count riding on a chip ("RB 1/2"). Inherits the chip color in
@@ -199,8 +212,32 @@
   background: var(--ink-2);
 }
 
+/* Lime left spine, animated: a ::before bar grows down from the top instead
+   of the box-shadow just appearing. Needs position: relative on the cell so
+   the bar has something to anchor to. */
 .rowSelected td:first-child {
-  box-shadow: inset 4px 0 0 var(--lime);
+  position: relative;
+}
+
+.rowSelected td:first-child::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--lime);
+  transform-origin: top;
+  animation: spineGrow 0.25s cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes spineGrow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rowSelected td:first-child::before {
+    animation: none;
+  }
 }
 
 .rowSelected td {
@@ -487,6 +524,47 @@
   font-style: italic;
   color: var(--bone-dim);
   padding: 2rem 1rem !important;
+}
+
+/* A just-drafted row lingers briefly (see the `leaving` map in
+   AvailablePlayers.tsx) and fades out instead of vanishing instantly. */
+.rowDraftOut td {
+  color: var(--bone-dim);
+  font-style: italic;
+  pointer-events: none;
+}
+
+.rowDraftOut,
+.mRowDraftOut {
+  animation: rowDraftOut 0.35s cubic-bezier(.2, .8, .2, 1) forwards;
+}
+
+.mRowDraftOut {
+  padding: 0.5rem 0.55rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-style: italic;
+  color: var(--bone-dim);
+  pointer-events: none;
+}
+
+@keyframes rowDraftOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rowDraftOut,
+  .mRowDraftOut {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 .truncated {

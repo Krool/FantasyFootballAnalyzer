@@ -136,10 +136,27 @@
   color: var(--ink);
   background: var(--gold);
   padding: 0.15rem 0.45rem;
+  display: inline-block;
+  animation: statusAlertPop 0.3s cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes statusAlertPop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .statusBarMine {
+    animation: none;
+  }
+
+  .statusAlert {
     animation: none;
   }
 }
@@ -175,6 +192,32 @@
   color: var(--ink);
   border-color: var(--lime);
   box-shadow: 3px 3px 0 var(--bone);
+}
+
+/* Keyed on the active board tab (see DraftRoomPage.tsx), so this remounts
+   and replays the fade every time the tab switches. */
+.tabPane {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: tabFadeIn 0.2s ease-out;
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabPane {
+    animation: none;
+  }
 }
 
 .statusSpacer {

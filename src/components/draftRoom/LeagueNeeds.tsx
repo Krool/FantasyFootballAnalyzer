@@ -23,7 +23,12 @@ export function LeagueNeeds({ room, layout }: LeagueNeedsProps) {
           return (
             <li key={pos} className={styles.row}>
               <span className={styles.rowPos}>{pos}</span>
-              <span className={needCount > 0 ? styles.rowValue : styles.rowValueDim}>
+              {/* Keyed on the count so a change (a starter slot fills or
+                  opens up) remounts the span and replays the pulse. */}
+              <span
+                key={needCount}
+                className={`${needCount > 0 ? styles.rowValue : styles.rowValueDim} ${styles.countPulse}`}
+              >
                 {needCount === 0 ? 'all set' : `${needCount} team${needCount === 1 ? '' : 's'} need a starter`}
               </span>
               {fullTeams.length > 0 && (

@@ -76,6 +76,29 @@
   border-bottom: none;
 }
 
+/* A roster slot going from open to filled: the new pick slides in from the
+   right and fades, instead of just appearing. See RosterSummary.tsx. */
+.rowIn {
+  animation: pickEntryIn 0.35s cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes pickEntryIn {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rowIn {
+    animation: none;
+  }
+}
+
 .rowPos {
   color: var(--bone-dim);
   font-size: 0.65rem;
@@ -100,6 +123,25 @@
 
 .rowValueDim {
   color: var(--bone-dim);
+}
+
+/* League Needs: a positional count remounts on change (keyed in
+   LeagueNeeds.tsx) and pulses so a fill/open swing actually catches the eye. */
+.countPulse {
+  display: inline-block;
+  animation: countPulse 0.3s ease;
+}
+
+@keyframes countPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .countPulse {
+    animation: none;
+  }
 }
 
 /* Reserved keeper marker in a lineup row: spoken for, not yet logged. */

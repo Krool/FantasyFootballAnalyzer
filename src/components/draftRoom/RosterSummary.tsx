@@ -58,7 +58,11 @@ export function RosterSummary({ state, rosterSlots, reserved, listClassName, sho
     <>
       <ul className={listClassName ?? styles.list}>
         {lineup.map(({ key, label, pick }) => (
-          <li key={key} className={styles.row}>
+          // A slot's row starts empty ("open") and only ever fills in, never
+          // reverts, so the class flips once per row: no exit orchestration
+          // needed, and the animation naturally plays exactly once (a CSS
+          // animation restarts only when the class list actually changes).
+          <li key={key} className={pick ? `${styles.row} ${styles.rowIn}` : styles.row}>
             <span className={styles.rowPos}>{label}</span>
             {pick ? (
               pick.isReserved ? (

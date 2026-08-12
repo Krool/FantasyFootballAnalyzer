@@ -30,6 +30,7 @@ import { TeamsTab } from '@/components/draftRoom/TeamsTab';
 import { TierBoard } from '@/components/draftRoom/TierBoard';
 import { detectRun } from '@/utils/draftAlerts';
 import { allKeepers, fullPositions, lineupRows, reservedKeepersFor } from '@/utils/draftEngine';
+import { vibrate } from '@/utils/haptics';
 import { picksUntilMine } from '@/utils/pickPreview';
 import { nextPickFor } from '@/utils/snakeOrder';
 import styles from './DraftRoomPage.module.css';
@@ -201,7 +202,10 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
   // the user's pick (snake) or nomination (auction).
   const wasMyTurnRef = useRef(false);
   useEffect(() => {
-    if (myTurn && !wasMyTurnRef.current) playOnTheClock();
+    if (myTurn && !wasMyTurnRef.current) {
+      playOnTheClock();
+      vibrate([60, 30, 60]);
+    }
     wasMyTurnRef.current = myTurn;
   }, [myTurn, playOnTheClock]);
 
@@ -367,6 +371,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
     if (error) playError();
     else {
       playSuccess();
+      vibrate(40);
       setSelected(null);
     }
   };
@@ -741,16 +746,20 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                         </button>
                       ))}
                     </div>
-                    {boardTab === 'board' && playersPane}
-                    {boardTab === 'tiers' && (
-                      <TierBoard room={room} selectedId={selected?.id ?? null} onSelect={setSelected} />
-                    )}
-                    {boardTab === 'teams' && (
-                      <TeamsTab room={room} viewTeamId={viewTeamId} onViewTeam={setViewTeamId} />
-                    )}
-                    {boardTab === 'nfl' && (
-                      <NflTeams room={room} selectedId={selected?.id ?? null} onSelect={setSelected} />
-                    )}
+                    {/* Keyed on the tab so switching remounts the pane and
+                        replays the fade-in instead of only fading in once. */}
+                    <div key={boardTab} className={styles.tabPane}>
+                      {boardTab === 'board' && playersPane}
+                      {boardTab === 'tiers' && (
+                        <TierBoard room={room} selectedId={selected?.id ?? null} onSelect={setSelected} />
+                      )}
+                      {boardTab === 'teams' && (
+                        <TeamsTab room={room} viewTeamId={viewTeamId} onViewTeam={setViewTeamId} />
+                      )}
+                      {boardTab === 'nfl' && (
+                        <NflTeams room={room} selectedId={selected?.id ?? null} onSelect={setSelected} />
+                      )}
+                    </div>
                   </div>
                   <div className={styles.colSide}>
                     <div className={styles.tabs}>

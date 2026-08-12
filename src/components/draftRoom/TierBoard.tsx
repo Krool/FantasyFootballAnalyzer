@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
@@ -8,6 +8,10 @@ import { inflateValue } from '@/utils/inflation';
 import type { StarterPos } from '@/utils/draftEngine';
 import { STARTER_POSITIONS } from '@/utils/draftEngine';
 import styles from './TierBoard.module.css';
+
+// How long a just-drafted row lingers, fading out, before it actually drops
+// from the DOM. Matches AvailablePlayers' ghost timing.
+const LEAVE_MS = 350;
 
 interface TierBoardProps {
   room: UseDraftRoomReturn;
@@ -26,6 +30,40 @@ export function TierBoard({ room, selectedId, onSelect }: TierBoardProps) {
   const isAuction = config.draftType === 'auction';
   const { playClick } = useSounds();
 
+  // A just-drafted player briefly stays rendered (in his own ghost row) so
+  // the row can fade out instead of vanishing the instant the pick logs.
+  const prevAvailableRef = useRef<Map<string, PoolPlayer>>(new Map());
+  const [leaving, setLeaving] = useState<Map<string, PoolPlayer>>(new Map());
+  const leaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    const prev = prevAvailableRef.current;
+    const current = new Map(derived.available.map(p => [p.id, p]));
+    if (prev.size > 0) {
+      for (const [id, player] of prev) {
+        if (current.has(id) || !derived.draftedPlayerIds.has(id)) continue;
+        setLeaving(l => new Map(l).set(id, player));
+        const timer = setTimeout(() => {
+          setLeaving(l => {
+            const next = new Map(l);
+            next.delete(id);
+            return next;
+          });
+          leaveTimers.current.delete(id);
+        }, LEAVE_MS);
+        leaveTimers.current.set(id, timer);
+      }
+    }
+    prevAvailableRef.current = current;
+  }, [derived.available, derived.draftedPlayerIds]);
+
+  useEffect(() => {
+    const timers = leaveTimers.current;
+    return () => {
+      for (const t of timers.values()) clearTimeout(t);
+    };
+  }, []);
+
   const columns = useMemo(() => {
     return STARTER_POSITIONS.map(pos => {
       const players = derived.available.filter(p => p.pos === pos).slice(0, PER_POSITION);
@@ -35,9 +73,15 @@ export function TierBoard({ room, selectedId, onSelect }: TierBoardProps) {
         group.push(p);
         tiers.set(p.tier, group);
       }
-      return { pos, players, tiers: [...tiers.entries()].sort((a, b) => a[0] - b[0]) };
+      const leavingHere = [...leaving.values()].filter(p => p.pos === pos);
+      return {
+        pos,
+        players,
+        tiers: [...tiers.entries()].sort((a, b) => a[0] - b[0]),
+        leaving: leavingHere,
+      };
     });
-  }, [derived.available]);
+  }, [derived.available, leaving]);
 
   const superflex = config.rosterSlots.SUPERFLEX > 0;
   const detail = (p: PoolPlayer) => {
@@ -48,7 +92,7 @@ export function TierBoard({ room, selectedId, onSelect }: TierBoardProps) {
 
   return (
     <div className={styles.board}>
-      {columns.map(({ pos, players, tiers }) => (
+      {columns.map(({ pos, players, tiers, leaving: leavingHere }) => (
         <div key={pos} className={styles.column}>
           <div className={styles.columnHeader}>
             <span className={styles.columnPos}>{pos}</span>
@@ -91,6 +135,16 @@ export function TierBoard({ room, selectedId, onSelect }: TierBoardProps) {
             </div>
           ))}
           {players.length === 0 && <div className={styles.empty}>Position drained.</div>}
+          {leavingHere.length > 0 && (
+            <div className={styles.tierGroup}>
+              {leavingHere.map(p => (
+                <div key={p.id} className={styles.playerLeaving} aria-hidden="true">
+                  <span className={styles.playerName}>{p.name}</span>
+                  <span className={styles.playerMeta}>Drafted</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>
