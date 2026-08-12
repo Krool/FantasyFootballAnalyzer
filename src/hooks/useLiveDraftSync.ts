@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { League } from '@/types';
-import { getLeagueDrafts, getLiveDraftPicks } from '@/api/sleeperDraft';
+import { getDraft, getLeagueDrafts, getLiveDraftPicks, parseDraftId } from '@/api/sleeperDraft';
+import type { SleeperDraftStub } from '@/api/sleeperDraft';
 import { logger } from '@/utils/logger';
 import type { UseDraftRoomReturn } from './useDraftRoom';
 
@@ -17,6 +18,13 @@ export interface UseLiveDraftSyncReturn {
   // Picks the pool couldn't identify, kept so the room can tell the user
   // which ones to log by hand instead of silently drifting.
   unmapped: string[];
+  // Set when the watched draft's shape (format, teams, rounds) disagrees with
+  // this room's, which would seat picks or pace advice wrongly.
+  mismatch: string | null;
+  // The draft being watched by explicit id, if any (mock rehearsal).
+  watchId: string | null;
+  // Accepts a sleeper.com draft URL or a bare id; empty clears it.
+  setWatch: (input: string) => boolean;
   toggle: () => void;
 }
 
@@ -32,7 +40,12 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
   const [status, setStatus] = useState<LiveSyncStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [unmapped, setUnmapped] = useState<string[]>([]);
+  const [mismatch, setMismatch] = useState<string | null>(null);
+  const [watchId, setWatchId] = useState<string | null>(null);
   const draftIdRef = useRef<string | null>(null);
+  // Draft slot (1-based) -> room team id, for a watched draft whose picks
+  // carry no roster id of ours. config.teams is already in draft-slot order.
+  const slotSeats = useMemo(() => config.teams.map(t => t.id), [config.teams]);
 
   // A guest's `platform` is just the Rankings delta lens, not a real Sleeper
   // league, so live sync never applies (there's no draft id to poll).
@@ -55,6 +68,7 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
     setStatus(message ? 'error' : 'idle');
     setError(message);
     setUnmapped([]);
+    setMismatch(null);
   }, []);
 
   const toggle = useCallback(() => {
@@ -67,6 +81,54 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
     setEnabled(true);
   }, [enabled, stop]);
 
+  // Point the sync at a specific draft instead of the league's own. Sleeper
+  // lists mock drafts under neither the league nor the user, so pasting the
+  // id from its URL is the only way to rehearse against a live mock.
+  const setWatch = useCallback(
+    (input: string) => {
+      const trimmed = input.trim();
+      draftIdRef.current = null;
+      stop(null);
+      if (trimmed === '') {
+        setWatchId(null);
+        return true;
+      }
+      const id = parseDraftId(trimmed);
+      if (!id) return false;
+      setWatchId(id);
+      return true;
+    },
+    [stop],
+  );
+
+  // What a watched draft's own settings say its board looks like, so the room
+  // can flag a shape it would seat or pace wrongly (3RR being the one that
+  // silently reorders every pick from round 3 on).
+  const shapeMismatch = useCallback(
+    (draft: SleeperDraftStub): string | null => {
+      const format =
+        draft.type === 'linear'
+          ? 'linear'
+          : (draft.settings?.reversal_round ?? 0) >= 3
+            ? '3rr'
+            : 'standard';
+      const problems: string[] = [];
+      if (format !== (config.snakeFormat ?? 'standard')) {
+        problems.push(`it runs ${format === '3rr' ? '3RR' : format}, this room is set to ${config.snakeFormat ?? 'standard'}`);
+      }
+      const teams = draft.settings?.teams;
+      if (teams && teams !== config.teams.length) {
+        problems.push(`${teams} teams vs this room's ${config.teams.length}`);
+      }
+      const rounds = draft.settings?.rounds;
+      if (rounds && rounds !== config.rounds) {
+        problems.push(`${rounds} rounds vs this room's ${config.rounds}`);
+      }
+      return problems.length > 0 ? problems.join('; ') : null;
+    },
+    [config.snakeFormat, config.teams.length, config.rounds],
+  );
+
   useEffect(() => {
     if (!enabled || !available) return;
     let cancelled = false;
@@ -74,17 +136,28 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
     const syncOnce = async () => {
       try {
         if (!draftIdRef.current) {
-          const drafts = await getLeagueDrafts(league.id);
-          if (cancelled) return;
-          // The draft that's actually running wins; otherwise the newest.
-          const active =
-            drafts.find(d => d.status === 'drafting') ??
-            drafts.sort((a, b) => (b.start_time ?? 0) - (a.start_time ?? 0))[0];
-          if (!active) {
-            stop('No Sleeper draft found for this league yet.');
-            return;
+          if (watchId) {
+            const draft = await getDraft(watchId).catch(() => null);
+            if (cancelled) return;
+            if (!draft) {
+              stop(`No Sleeper draft found for id ${watchId}.`);
+              return;
+            }
+            setMismatch(shapeMismatch(draft));
+            draftIdRef.current = draft.draft_id;
+          } else {
+            const drafts = await getLeagueDrafts(league.id);
+            if (cancelled) return;
+            // The draft that's actually running wins; otherwise the newest.
+            const active =
+              drafts.find(d => d.status === 'drafting') ??
+              drafts.sort((a, b) => (b.start_time ?? 0) - (a.start_time ?? 0))[0];
+            if (!active) {
+              stop('No Sleeper draft found for this league yet.');
+              return;
+            }
+            draftIdRef.current = active.draft_id;
           }
-          draftIdRef.current = active.draft_id;
         }
 
         const picks = await getLiveDraftPicks(draftIdRef.current);
@@ -108,7 +181,16 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
         const skipped: string[] = [];
         for (const pick of fresh) {
           const playerId = bySleeperId.get(pick.player_id);
-          const teamId = pick.roster_id !== null ? String(pick.roster_id) : null;
+          // A watched draft's roster ids are its own league's, not ours (a
+          // mock leaves them null entirely), so seat those picks by draft
+          // slot: config.teams is in slot order, so slot N is seat N and the
+          // user's own picks land on the user's team. The league's own draft
+          // keeps roster_id, which is authoritative there.
+          const teamId = watchId
+            ? (slotSeats[pick.draft_slot - 1] ?? null)
+            : pick.roster_id !== null
+              ? String(pick.roster_id)
+              : (slotSeats[pick.draft_slot - 1] ?? null);
           // An id the pool doesn't carry used to end the session. Mid-draft
           // that costs far more than the one pick: the rest of the board
           // still syncs fine, so skip this pick, name it, and let the user
@@ -174,12 +256,12 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
       cancelled = true;
       clearInterval(timer);
     };
-  }, [enabled, available, league.id, derived.draftedPlayerIds, bySleeperId, teamIds, config.draftType, logEvents, stop]);
+  }, [enabled, available, league.id, watchId, shapeMismatch, slotSeats, derived.draftedPlayerIds, bySleeperId, teamIds, config.draftType, logEvents, stop]);
 
   // Leaving the drafting phase (complete or reset) ends the session.
   useEffect(() => {
     if (!available && enabled) stop(null);
   }, [available, enabled, stop]);
 
-  return { available, enabled, status, error, unmapped, toggle };
+  return { available, enabled, status, error, unmapped, mismatch, watchId, setWatch, toggle };
 }

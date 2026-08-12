@@ -103,6 +103,8 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
   const searchRef = useRef<HTMLInputElement>(null);
   // The board is the selection surface: clicking a row feeds the logger.
   const [selected, setSelected] = useState<PoolPlayer | null>(null);
+  // Typed text that isn't a Sleeper draft URL or id.
+  const [watchBad, setWatchBad] = useState(false);
   const [boardTab, setBoardTab] = useState<BoardTab>('board');
   // Phone drafting swaps the three-panel grid for a Sleeper-style bottom
   // sheet: the board owns the screen and these tabs ride in the sheet.
@@ -506,6 +508,19 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                   {run.pos} RUN
                 </span>
               )}
+              {liveSync.available && !liveSync.enabled && (
+                <input
+                  type="text"
+                  className={watchBad ? styles.watchInputBad : styles.watchInput}
+                  placeholder="Mock draft URL (optional)"
+                  defaultValue={liveSync.watchId ?? ''}
+                  onChange={e => {
+                    // Blank clears back to the league's own draft.
+                    setWatchBad(!liveSync.setWatch(e.target.value) && e.target.value.trim() !== '');
+                  }}
+                  title="Paste a sleeper.com draft URL to follow that draft instead of your league's. Sleeper doesn't list mocks under a league, so this is the only way to rehearse against one."
+                />
+              )}
               {liveSync.available && (
                 <button
                   type="button"
@@ -567,6 +582,28 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
             {liveSync.error && (
               <p className={styles.shortcutLegend} role="alert">
                 Live sync stopped: {liveSync.error}
+              </p>
+            )}
+
+            {watchBad && (
+              <p className={styles.shortcutLegend} role="alert">
+                That isn't a Sleeper draft link. Paste the URL from the draft
+                itself, like sleeper.com/draft/nfl/1234567890.
+              </p>
+            )}
+
+            {liveSync.mismatch && (
+              <p className={styles.shortcutLegend} role="alert">
+                Heads up: that draft doesn't match this room ({liveSync.mismatch}).
+                Picks still land, but the board order and pick advice follow this
+                room's settings.
+              </p>
+            )}
+
+            {liveSync.watchId && liveSync.enabled && !liveSync.mismatch && (
+              <p className={styles.shortcutLegend}>
+                Following draft {liveSync.watchId}, seated by draft slot. Clear
+                the field to go back to your league's own draft.
               </p>
             )}
 

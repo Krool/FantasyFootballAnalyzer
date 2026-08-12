@@ -10,6 +10,10 @@ export interface SleeperDraftStub {
   type: 'snake' | 'auction' | 'linear';
   season: string;
   start_time: number | null;
+  // Present on the single-draft fetch. slot_to_roster_id seats each draft
+  // slot; reversal_round >= 3 is Sleeper's third-round reversal.
+  slot_to_roster_id?: Record<string, number | null> | null;
+  settings?: { rounds?: number; teams?: number; reversal_round?: number } | null;
 }
 
 export interface SleeperLivePick {
@@ -18,6 +22,7 @@ export interface SleeperLivePick {
   picked_by: string; // user id; empty string for unowned slots
   round: number;
   pick_no: number;
+  draft_slot: number;
   is_keeper: boolean | null;
   // Sleeper repeats the drafted player's identity here, which is the only
   // thing we can name a pick by when its id isn't in the bundled pool.
@@ -42,4 +47,18 @@ export function getLeagueDrafts(leagueId: string): Promise<SleeperDraftStub[]> {
 
 export function getLiveDraftPicks(draftId: string): Promise<SleeperLivePick[]> {
   return fetchJson(`/draft/${draftId}/picks`);
+}
+
+// A single draft by id. Sleeper lists mock drafts under neither the league
+// nor the user, so a mock is only reachable this way - by the id in its URL.
+export function getDraft(draftId: string): Promise<SleeperDraftStub> {
+  return fetchJson(`/draft/${draftId}`);
+}
+
+// Accepts a full sleeper.com draft URL or a bare id.
+export function parseDraftId(input: string): string | null {
+  const trimmed = input.trim();
+  if (/^\d{6,}$/.test(trimmed)) return trimmed;
+  const match = trimmed.match(/\/draft\/[a-z]+\/(\d{6,})/i);
+  return match ? match[1] : null;
 }

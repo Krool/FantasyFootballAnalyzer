@@ -11,18 +11,23 @@ import { NEUTRAL_INFLATION } from '@/utils/inflation';
 import type { DraftRoomPhase, UseDraftRoomReturn } from './useDraftRoom';
 import type { SleeperDraftStub, SleeperLivePick } from '@/api/sleeperDraft';
 
-vi.mock('@/api/sleeperDraft', () => ({
+vi.mock('@/api/sleeperDraft', async importOriginal => ({
+  // parseDraftId is pure string work; keep the real one so the tests exercise
+  // the same URL parsing the room does.
+  ...(await importOriginal<typeof import('@/api/sleeperDraft')>()),
   getLeagueDrafts: vi.fn(),
   getLiveDraftPicks: vi.fn(),
+  getDraft: vi.fn(),
 }));
 
-import { getLeagueDrafts, getLiveDraftPicks } from '@/api/sleeperDraft';
+import { getDraft, getLeagueDrafts, getLiveDraftPicks } from '@/api/sleeperDraft';
 import { useLiveDraftSync } from './useLiveDraftSync';
 
 const POLL_MS = 10_000; // mirrors the private POLL_MS in useLiveDraftSync.ts
 
 const mockedGetLeagueDrafts = vi.mocked(getLeagueDrafts);
 const mockedGetLiveDraftPicks = vi.mocked(getLiveDraftPicks);
+const mockedGetDraft = vi.mocked(getDraft);
 
 function makeLeague(overrides: Partial<League> = {}): League {
   return {
@@ -142,6 +147,7 @@ function makePick(overrides: Partial<SleeperLivePick> = {}): SleeperLivePick {
     picked_by: 'u1',
     round: 1,
     pick_no: 1,
+    draft_slot: 1,
     is_keeper: null,
     ...overrides,
   };
@@ -150,6 +156,7 @@ function makePick(overrides: Partial<SleeperLivePick> = {}): SleeperLivePick {
 beforeEach(() => {
   vi.useFakeTimers();
   mockedGetLeagueDrafts.mockReset();
+  mockedGetDraft.mockReset();
   mockedGetLiveDraftPicks.mockReset();
 });
 
@@ -410,5 +417,99 @@ describe('useLiveDraftSync', () => {
     const room = makeRoom();
     const { result } = renderHook(() => useLiveDraftSync(makeLeague({ isGuest: true }), room));
     expect(result.current.available).toBe(false);
+  });
+
+  describe('watching a draft by id (mock rehearsal)', () => {
+    it('follows the pasted draft instead of the league, seating picks by draft slot', async () => {
+      // Sleeper lists mocks under neither the league nor the user, and their
+      // picks carry no roster_id at all - the seat is the draft slot. Slot 2
+      // must land on the room's second team, not on a roster id.
+      const logEvents = vi.fn(() => null);
+      const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);
+      const room = makeRoom({ logEvents, pool });
+      mockedGetDraft.mockResolvedValue(makeDraftStub({ draft_id: '1392983398426902528' }));
+      mockedGetLiveDraftPicks.mockResolvedValue([
+        makePick({ pick_no: 2, draft_slot: 2, roster_id: null, picked_by: '' }),
+      ]);
+
+      const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+
+      act(() => {
+        expect(result.current.setWatch('https://sleeper.com/draft/nfl/1392983398426902528')).toBe(true);
+      });
+      await act(async () => {
+        result.current.toggle();
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      expect(mockedGetLeagueDrafts).not.toHaveBeenCalled();
+      expect(mockedGetDraft).toHaveBeenCalledWith('1392983398426902528');
+      expect(logEvents).toHaveBeenCalledWith([
+        { kind: 'snake_pick', playerId: 'pool-1', teamId: '2', isKeeper: undefined },
+      ]);
+      expect(result.current.watchId).toBe('1392983398426902528');
+      expect(result.current.status).toBe('syncing');
+    });
+
+    it('flags a watched draft whose format disagrees with the room (3RR)', async () => {
+      // The room's board order and pick advice stay on its own settings, so a
+      // 3RR draft watched from a standard room seats picks in a different
+      // order than the source. Say so rather than drift silently.
+      const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);
+      const room = makeRoom({ pool, config: { snakeFormat: 'standard' } });
+      mockedGetDraft.mockResolvedValue(
+        makeDraftStub({ settings: { reversal_round: 3, teams: 2, rounds: 10 } }),
+      );
+      mockedGetLiveDraftPicks.mockResolvedValue([]);
+
+      const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+
+      act(() => {
+        result.current.setWatch('1392983398426902528');
+      });
+      await act(async () => {
+        result.current.toggle();
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      expect(result.current.mismatch).toMatch(/3RR/);
+      expect(result.current.enabled).toBe(true);
+    });
+
+    it('stays quiet when the watched draft matches the room, and clears back to the league', async () => {
+      const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);
+      const room = makeRoom({ pool, config: { snakeFormat: '3rr', rounds: 10 } });
+      mockedGetDraft.mockResolvedValue(
+        makeDraftStub({ settings: { reversal_round: 3, teams: 2, rounds: 10 } }),
+      );
+      mockedGetLiveDraftPicks.mockResolvedValue([]);
+
+      const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+
+      act(() => {
+        result.current.setWatch('1392983398426902528');
+      });
+      await act(async () => {
+        result.current.toggle();
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      expect(result.current.mismatch).toBeNull();
+
+      // Clearing the field returns to the league's own draft.
+      act(() => {
+        result.current.setWatch('');
+      });
+      expect(result.current.watchId).toBeNull();
+      expect(result.current.enabled).toBe(false);
+    });
+
+    it('rejects text that is not a Sleeper draft link', () => {
+      const room = makeRoom();
+      const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+      act(() => {
+        expect(result.current.setWatch('my league')).toBe(false);
+      });
+      expect(result.current.watchId).toBeNull();
+    });
   });
 });

@@ -437,6 +437,28 @@
   border-color: var(--lime);
 }
 
+/* Paste a Sleeper draft URL to follow a draft other than the league's own
+   (a mock). Sized to the button row, not the form fields in setup. */
+.watchInput {
+  width: 13rem;
+  padding: 0.3rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  border: 2px solid var(--bone-dim);
+  background: transparent;
+  color: var(--bone);
+}
+
+.watchInput:focus {
+  outline: none;
+  border-color: var(--lime);
+}
+
+.watchInputBad {
+  composes: watchInput;
+  border-color: var(--blood);
+}
+
 /* Transient flourish when you land a clear value pick. A fixed toast, not an
    in-flow banner: appearing mid-page shoved the whole board down for 1.8s
    and yanked it back, the main "the room jumps around" offender. */
