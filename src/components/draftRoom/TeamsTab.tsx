@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
-import { reservedKeepersFor } from '@/utils/draftEngine';
+import { allKeepers, reservedKeepersFor } from '@/utils/draftEngine';
 import { RosterSummary } from './RosterSummary';
 import panel from './Panels.module.css';
 import styles from './TeamsTab.module.css';
@@ -69,12 +69,12 @@ export function TeamsTab({ room, viewTeamId, onViewTeam }: TeamsTabProps) {
       team
         ? reservedKeepersFor(
             team.id,
-            config.keepers,
+            allKeepers(config),
             derived.reservedPlayerIds,
             new Map(room.pool.players.map(p => [p.id, p])),
           )
         : [],
-    [team, config.keepers, derived.reservedPlayerIds, room.pool.players],
+    [team, config, derived.reservedPlayerIds, room.pool.players],
   );
 
   if (!team || !state) return null;

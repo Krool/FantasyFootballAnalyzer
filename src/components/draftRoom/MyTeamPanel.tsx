@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { starterPlanCost } from '@/utils/auctionMath';
-import { reservedKeepersFor } from '@/utils/draftEngine';
+import { allKeepers, reservedKeepersFor } from '@/utils/draftEngine';
 import { RosterSummary } from './RosterSummary';
 import styles from './Panels.module.css';
 
@@ -27,11 +27,11 @@ export function MyTeamPanel({ room }: MyTeamPanelProps) {
     () =>
       reservedKeepersFor(
         config.myTeamId,
-        config.keepers,
+        allKeepers(config),
         derived.reservedPlayerIds,
         new Map(room.pool.players.map(p => [p.id, p])),
       ),
-    [config.myTeamId, config.keepers, derived.reservedPlayerIds, room.pool.players],
+    [config, derived.reservedPlayerIds, room.pool.players],
   );
 
   if (!me) return null;

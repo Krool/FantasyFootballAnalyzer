@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { League } from '@/types';
+import type { KeeperAssignment } from '@/types/draft';
 import { getDraft, getLeagueDrafts, getLiveDraftPicks, parseDraftId } from '@/api/sleeperDraft';
 import type { SleeperDraftStub } from '@/api/sleeperDraft';
 import type { SleeperLivePick } from '@/api/sleeperDraft';
@@ -8,6 +9,18 @@ import { logger } from '@/utils/logger';
 import type { UseDraftRoomReturn } from './useDraftRoom';
 
 const POLL_MS = 10_000;
+
+// Splits a pick_no-sorted feed into the picks the board has actually reached
+// and the ones sitting ahead of it. Picks are made in order, so the unbroken
+// run 1, 2, 3, ... is the board; the first gap ends it. Everything after is
+// pre-placed (Sleeper seats keepers on the pick they cost before the draft
+// opens). A feed with no pick 1 yet is entirely ahead, which is right: nothing
+// has been drafted.
+export function splitAtGap<T extends { pick_no: number }>(sorted: T[]): [T[], T[]] {
+  let end = 0;
+  while (end < sorted.length && sorted[end].pick_no === end + 1) end++;
+  return [sorted.slice(0, end), sorted.slice(end)];
+}
 
 export type LiveSyncStatus = 'idle' | 'connecting' | 'syncing' | 'error';
 
@@ -40,7 +53,7 @@ export interface UseLiveDraftSyncReturn {
 // logEvent path manual entry uses. Yahoo/ESPN stay manual (Yahoo has no
 // public draft feed; ESPN picks carry ids the pool doesn't map yet).
 export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseLiveDraftSyncReturn {
-  const { config, derived, phase, pool, logEvents } = room;
+  const { config, derived, phase, pool, logEvents, setLiveKeepers } = room;
   const [enabled, setEnabled] = useState(false);
   const [status, setStatus] = useState<LiveSyncStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -73,13 +86,20 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
 
   const teamIds = useMemo(() => new Set(config.teams.map(t => t.id)), [config.teams]);
 
-  const stop = useCallback((message: string | null) => {
-    setEnabled(false);
-    setStatus(message ? 'error' : 'idle');
-    setError(message);
-    setUnmapped([]);
-    setMismatch(null);
-  }, []);
+  const stop = useCallback(
+    (message: string | null) => {
+      setEnabled(false);
+      setStatus(message ? 'error' : 'idle');
+      setError(message);
+      setUnmapped([]);
+      setMismatch(null);
+      // Reservations only make sense while something is feeding them. Left
+      // behind, they would hold players out of a board the user is now logging
+      // by hand, with no way to release them.
+      setLiveKeepers([]);
+    },
+    [setLiveKeepers],
+  );
 
   const toggle = useCallback(() => {
     if (enabled) {
@@ -228,7 +248,17 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
         // pick_no > pickCount would re-feed an already-logged keeper (killing
         // the session on "already drafted") or silently skip a real pick.
         // A pick whose player is already on our board is one we already have.
-        const fresh = [...picks].sort((a, b) => a.pick_no - b.pick_no);
+        const sorted = [...picks].sort((a, b) => a.pick_no - b.pick_no);
+
+        // Sleeper seats a keeper on the pick he costs the moment the draft
+        // opens, so the feed contains picks from rounds nobody has reached.
+        // Logging those on arrival would count picks the board hasn't made and
+        // run the clock ahead by one team per keeper. Split the feed at the
+        // first gap instead: the unbroken run from pick 1 is what has actually
+        // happened, and anything past it is pre-placed. Those are reserved
+        // (out of the pool, shown as kept) until the run reaches them, exactly
+        // as Sleeper shows them.
+        const [made, ahead] = splitAtGap(sorted);
 
         // Map the whole backlog first, then ingest it as ONE validated batch:
         // logEvent per pick would validate every pick against the same
@@ -236,7 +266,7 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
         const batch = [];
         const pickNos: number[] = [];
         const skipped: string[] = [];
-        for (const pick of fresh) {
+        for (const pick of made) {
           const playerId = bySleeperId.get(pick.player_id);
           // A watched draft's roster ids are its own league's, not ours (a
           // mock leaves them null entirely), so seat those picks by draft
@@ -288,6 +318,26 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
         // setting or every poll re-renders the room with equal content.
         setUnmapped(prev => (prev.join('|') === skipped.join('|') ? prev : skipped));
 
+        // Hold the pre-placed keepers out of the pool without logging them.
+        // Only is_keeper picks: any other pick past the gap is a feed we don't
+        // understand, and reserving a player nobody kept would strand him.
+        // A keeper the pool can't identify simply isn't reservable; he surfaces
+        // in `unmapped` if and when the board reaches his pick.
+        const reserved: KeeperAssignment[] = [];
+        for (const pick of ahead) {
+          if (pick.is_keeper !== true) continue;
+          const playerId = bySleeperId.get(pick.player_id);
+          if (!playerId || derived.draftedPlayerIds.has(playerId)) continue;
+          const teamId = watchId
+            ? seatForSlot(pick.draft_slot, seatOffsetRef.current)
+            : pick.roster_id !== null
+              ? String(pick.roster_id)
+              : seatForSlot(pick.draft_slot, 0);
+          if (!teamId || !teamIds.has(teamId)) continue;
+          reserved.push({ teamId, playerId, costRound: pick.round });
+        }
+        setLiveKeepers(reserved);
+
         if (batch.length > 0) {
           const rejection = logEvents(batch);
           if (rejection) {
@@ -315,7 +365,7 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
       cancelled = true;
       clearInterval(timer);
     };
-  }, [enabled, available, league.id, watchId, shapeMismatch, detectSlot, seatForSlot, slotSeats, config.myTeamId, derived.draftedPlayerIds, bySleeperId, teamIds, config.draftType, logEvents, stop]);
+  }, [enabled, available, league.id, watchId, shapeMismatch, detectSlot, seatForSlot, slotSeats, config.myTeamId, derived.draftedPlayerIds, bySleeperId, teamIds, config.draftType, logEvents, setLiveKeepers, stop]);
 
   // Leaving the drafting phase (complete or reset) ends the session.
   useEffect(() => {

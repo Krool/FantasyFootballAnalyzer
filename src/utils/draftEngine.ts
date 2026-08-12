@@ -222,6 +222,21 @@ export function lineupRows<T extends { player: PoolPlayer }>(
 // A keeper a team holds that the draft hasn't auto-logged yet. Roster panels
 // show these as filled slots from pick one: the player is spoken for even
 // though no event exists yet.
+// Every keeper the room is holding: the ones set up here plus the ones a
+// synced Sleeper draft pre-placed on future picks. Both are reserved out of
+// the pool and shown as kept, so anything that asks "who is being held?" must
+// ask this rather than config.keepers alone.
+export function allKeepers(config: DraftRoomConfig): KeeperAssignment[] {
+  const own = config.keepers ?? [];
+  const live = config.liveKeepers ?? [];
+  if (live.length === 0) return own;
+  if (own.length === 0) return live;
+  // A player set up as a keeper here and also kept in the synced draft is one
+  // reservation, not two.
+  const seen = new Set(own.map(k => k.playerId));
+  return [...own, ...live.filter(k => !seen.has(k.playerId))];
+}
+
 export interface ReservedKeeper {
   player: PoolPlayer;
   costRound?: number;
@@ -340,10 +355,11 @@ export function deriveDraftState(
     }
   }
 
-  // Keepers are held out of the pool until auto-logged: snake keepers at their
-  // cost round, auction keepers as pre-draft sales the moment the draft starts.
+  // Keepers are held out of the pool until logged: snake keepers at their
+  // cost round, auction keepers as pre-draft sales the moment the draft starts,
+  // and a synced draft's pre-placed keepers when its board reaches their pick.
   const reservedPlayerIds = new Set(
-    (config.keepers ?? []).filter(k => !draftedPlayerIds.has(k.playerId)).map(k => k.playerId),
+    allKeepers(config).filter(k => !draftedPlayerIds.has(k.playerId)).map(k => k.playerId),
   );
 
   // Dynasty leagues order by dynasty value, not redraft rank; a rookie draft
@@ -393,7 +409,10 @@ export function validateEvent(
   if (state.isComplete) return 'The draft is already complete.';
   if (state.draftedPlayerIds.has(event.playerId)) return 'That player has already been drafted.';
   if (state.reservedPlayerIds.has(event.playerId)) {
-    const keeper = config.keepers?.find(k => k.playerId === event.playerId);
+    // allKeepers, not config.keepers: a synced draft's pre-placed keeper is
+    // reserved the same way, and the sync logs him for real once the board
+    // reaches his pick.
+    const keeper = allKeepers(config).find(k => k.playerId === event.playerId);
     const allowed =
       !!keeper &&
       ((event.kind === 'snake_pick' && event.teamId === keeper.teamId) ||

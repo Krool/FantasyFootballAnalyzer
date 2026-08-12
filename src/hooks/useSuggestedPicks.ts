@@ -3,6 +3,7 @@ import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useTargets } from '@/hooks/useTargets';
 import { marketAdp } from '@/utils/consensus';
+import { allKeepers } from '@/utils/draftEngine';
 import { availableHandcuffs } from '@/utils/stacks';
 import { suggestPicks } from '@/utils/suggestions';
 import { simulateTakenOdds } from '@/utils/survival';
@@ -28,7 +29,7 @@ export function useSuggestedPicks(room: UseDraftRoomReturn, enabled: boolean): U
   // The user's reserved keepers count as roster for advice purposes
   // (handcuffs, stacks, byes) before the cost round logs the pick.
   const keeperPlayers = useMemo(() => {
-    const mine = (config.keepers ?? []).filter(
+    const mine = allKeepers(config).filter(
       k => k.teamId === config.myTeamId && derived.reservedPlayerIds.has(k.playerId),
     );
     if (mine.length === 0) return [];
@@ -36,7 +37,7 @@ export function useSuggestedPicks(room: UseDraftRoomReturn, enabled: boolean): U
     return mine
       .map(k => byId.get(k.playerId))
       .filter((p): p is PoolPlayer => p !== undefined);
-  }, [config.keepers, config.myTeamId, derived.reservedPlayerIds, pool.players]);
+  }, [config, derived.reservedPlayerIds, pool.players]);
 
   const superflex = config.rosterSlots.SUPERFLEX > 0;
   const adpOf = useCallback(

@@ -5,7 +5,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import type { League } from '@/types';
-import type { DraftRoomConfig, DraftEventInput, PoolPlayer, DraftPoolFile } from '@/types/draft';
+import type {
+  DraftRoomConfig,
+  DraftEventInput,
+  KeeperAssignment,
+  PoolPlayer,
+  DraftPoolFile,
+} from '@/types/draft';
 import type { DerivedDraftState } from '@/utils/draftEngine';
 import { NEUTRAL_INFLATION } from '@/utils/inflation';
 import type { DraftRoomPhase, UseDraftRoomReturn } from './useDraftRoom';
@@ -104,6 +110,7 @@ interface RoomOverrides {
   pool?: DraftPoolFile;
   logEvent?: (event: DraftEventInput) => string | null;
   logEvents?: (events: DraftEventInput[]) => { index: number; error: string } | null;
+  setLiveKeepers?: (keepers: KeeperAssignment[]) => void;
 }
 
 function makeRoom(overrides: RoomOverrides = {}): UseDraftRoomReturn {
@@ -119,6 +126,7 @@ function makeRoom(overrides: RoomOverrides = {}): UseDraftRoomReturn {
     pool: overrides.pool ?? makePool([]),
     resumable: null,
     updateConfig: vi.fn(),
+    setLiveKeepers: overrides.setLiveKeepers ?? vi.fn(),
     start: vi.fn(),
     logEvent: overrides.logEvent ?? vi.fn(() => null),
     logEvents: overrides.logEvents ?? vi.fn(() => null),
@@ -193,6 +201,153 @@ describe('useLiveDraftSync', () => {
     ]);
     expect(result.current.status).toBe('syncing');
     expect(result.current.enabled).toBe(true);
+  });
+
+  describe('keepers Sleeper pre-placed on future picks', () => {
+    // Sleeper seats a keeper on the pick he costs the moment the draft opens,
+    // so its feed carries picks from rounds nobody has reached. Logging those
+    // on arrival would count picks that have not happened and run the room's
+    // clock ahead by one team per keeper. Shape taken from a real 12-team
+    // mock: a dense run of picks plus keepers parked in rounds 4 and 13.
+    const twelve = Array.from({ length: 12 }, (_, i) => ({
+      id: String(i + 1),
+      name: `Team ${i + 1}`,
+    }));
+
+    it('reserves them instead of logging them, leaving the pick count on the board', async () => {
+      const logEvents = vi.fn(() => null);
+      const setLiveKeepers = vi.fn();
+      const pool = makePool([
+        makePoolPlayer('pool-1', 'sleeper-1'),
+        makePoolPlayer('pool-2', 'sleeper-2'),
+        makePoolPlayer('bowers', 'sleeper-bowers'),
+        makePoolPlayer('irving', 'sleeper-irving'),
+      ]);
+      const room = makeRoom({ logEvents, setLiveKeepers, pool, config: { teams: twelve } });
+      mockedGetLeagueDrafts.mockResolvedValue([makeDraftStub()]);
+      mockedGetLiveDraftPicks.mockResolvedValue([
+        makePick({ player_id: 'sleeper-1', pick_no: 1, draft_slot: 1, roster_id: 1 }),
+        makePick({ player_id: 'sleeper-2', pick_no: 2, draft_slot: 2, roster_id: 2 }),
+        // Rounds the board is nowhere near.
+        makePick({
+          player_id: 'sleeper-bowers', pick_no: 44, round: 4, draft_slot: 8,
+          roster_id: 8, is_keeper: true,
+        }),
+        makePick({
+          player_id: 'sleeper-irving', pick_no: 153, round: 13, draft_slot: 4,
+          roster_id: 4, is_keeper: true,
+        }),
+      ]);
+
+      const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+
+      await act(async () => {
+        result.current.toggle();
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      // Only the two picks actually made; the clock stays on pick 3.
+      expect(logEvents).toHaveBeenCalledWith([
+        { kind: 'snake_pick', playerId: 'pool-1', teamId: '1', isKeeper: undefined },
+        { kind: 'snake_pick', playerId: 'pool-2', teamId: '2', isKeeper: undefined },
+      ]);
+      // ...but both keepers are held out of the pool, on the right teams.
+      expect(setLiveKeepers).toHaveBeenCalledWith([
+        { teamId: '8', playerId: 'bowers', costRound: 4 },
+        { teamId: '4', playerId: 'irving', costRound: 13 },
+      ]);
+      expect(result.current.status).toBe('syncing');
+    });
+
+    it('logs one for real once the board reaches its pick', async () => {
+      // The gap closes: pick 3 arrives and the keeper at 4 is now part of the
+      // unbroken run, so it stops being a reservation and becomes a pick.
+      const logEvents = vi.fn(() => null);
+      const setLiveKeepers = vi.fn();
+      const pool = makePool([
+        makePoolPlayer('pool-1', 'sleeper-1'),
+        makePoolPlayer('pool-2', 'sleeper-2'),
+        makePoolPlayer('pool-3', 'sleeper-3'),
+        makePoolPlayer('kept', 'sleeper-kept'),
+      ]);
+      const room = makeRoom({ logEvents, setLiveKeepers, pool, config: { teams: twelve } });
+      mockedGetLeagueDrafts.mockResolvedValue([makeDraftStub()]);
+      mockedGetLiveDraftPicks.mockResolvedValue([
+        makePick({ player_id: 'sleeper-1', pick_no: 1, draft_slot: 1, roster_id: 1 }),
+        makePick({ player_id: 'sleeper-2', pick_no: 2, draft_slot: 2, roster_id: 2 }),
+        makePick({ player_id: 'sleeper-3', pick_no: 3, draft_slot: 3, roster_id: 3 }),
+        makePick({
+          player_id: 'sleeper-kept', pick_no: 4, draft_slot: 4, roster_id: 4, is_keeper: true,
+        }),
+      ]);
+
+      const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+
+      await act(async () => {
+        result.current.toggle();
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      expect(logEvents).toHaveBeenCalledWith([
+        { kind: 'snake_pick', playerId: 'pool-1', teamId: '1', isKeeper: undefined },
+        { kind: 'snake_pick', playerId: 'pool-2', teamId: '2', isKeeper: undefined },
+        { kind: 'snake_pick', playerId: 'pool-3', teamId: '3', isKeeper: undefined },
+        { kind: 'snake_pick', playerId: 'kept', teamId: '4', isKeeper: true },
+      ]);
+      expect(setLiveKeepers).toHaveBeenCalledWith([]);
+    });
+
+    it('releases the reservations when the user switches back to manual', async () => {
+      const setLiveKeepers = vi.fn();
+      const pool = makePool([makePoolPlayer('kept', 'sleeper-kept')]);
+      const room = makeRoom({ setLiveKeepers, pool, config: { teams: twelve } });
+      mockedGetLeagueDrafts.mockResolvedValue([makeDraftStub()]);
+      mockedGetLiveDraftPicks.mockResolvedValue([
+        makePick({
+          player_id: 'sleeper-kept', pick_no: 44, round: 4, draft_slot: 8,
+          roster_id: 8, is_keeper: true,
+        }),
+      ]);
+
+      const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+
+      await act(async () => {
+        result.current.toggle();
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      expect(setLiveKeepers).toHaveBeenLastCalledWith([
+        { teamId: '8', playerId: 'kept', costRound: 4 },
+      ]);
+
+      act(() => result.current.toggle());
+      // Nothing feeds them any more, so they must go back into the pool.
+      expect(setLiveKeepers).toHaveBeenLastCalledWith([]);
+    });
+
+    it('ignores a non-keeper pick sitting past the gap', async () => {
+      // Picks are made in order, so a plain pick beyond the run is a feed we
+      // do not understand. Reserving that player would strand him on a team
+      // nobody drafted him to; it waits until the run reaches him.
+      const logEvents = vi.fn(() => null);
+      const setLiveKeepers = vi.fn();
+      const pool = makePool([makePoolPlayer('odd', 'sleeper-odd')]);
+      const room = makeRoom({ logEvents, setLiveKeepers, pool, config: { teams: twelve } });
+      mockedGetLeagueDrafts.mockResolvedValue([makeDraftStub()]);
+      mockedGetLiveDraftPicks.mockResolvedValue([
+        makePick({ player_id: 'sleeper-odd', pick_no: 9, draft_slot: 9, roster_id: 9 }),
+      ]);
+
+      const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+
+      await act(async () => {
+        result.current.toggle();
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      expect(logEvents).not.toHaveBeenCalled();
+      expect(setLiveKeepers).toHaveBeenCalledWith([]);
+      expect(result.current.status).toBe('syncing');
+    });
   });
 
   it('dispatches an auction_sale event for an auction draft with a bid amount', async () => {
@@ -428,10 +583,14 @@ describe('useLiveDraftSync', () => {
       // picks carry no roster_id at all - the seat is the draft slot. Slot 2
       // must land on the room's second team, not on a roster id.
       const logEvents = vi.fn(() => null);
-      const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);
+      const pool = makePool([
+        makePoolPlayer('pool-0', 'sleeper-0'),
+        makePoolPlayer('pool-1', 'sleeper-1'),
+      ]);
       const room = makeRoom({ logEvents, pool });
       mockedGetDraft.mockResolvedValue(makeDraftStub({ draft_id: '1392983398426902528' }));
       mockedGetLiveDraftPicks.mockResolvedValue([
+        makePick({ player_id: 'sleeper-0', pick_no: 1, draft_slot: 1, roster_id: null, picked_by: '' }),
         makePick({ pick_no: 2, draft_slot: 2, roster_id: null, picked_by: '' }),
       ]);
 
@@ -448,6 +607,7 @@ describe('useLiveDraftSync', () => {
       expect(mockedGetLeagueDrafts).not.toHaveBeenCalled();
       expect(mockedGetDraft).toHaveBeenCalledWith('1392983398426902528');
       expect(logEvents).toHaveBeenCalledWith([
+        { kind: 'snake_pick', playerId: 'pool-0', teamId: '1', isKeeper: undefined },
         { kind: 'snake_pick', playerId: 'pool-1', teamId: '2', isKeeper: undefined },
       ]);
       expect(result.current.watchId).toBe('1392983398426902528');

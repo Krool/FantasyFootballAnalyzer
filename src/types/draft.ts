@@ -60,6 +60,14 @@ export interface DraftRoomConfig {
   // Keeper players are held out of the pool and auto-logged (snake: at their
   // cost round; auction: as pre-draft sales when the draft starts).
   keepers?: KeeperAssignment[];
+  // Keepers discovered in a synced Sleeper draft rather than set up here.
+  // Sleeper pre-places a keeper on the pick it costs, so its feed carries
+  // picks from rounds the board hasn't reached yet. Those are reserved (held
+  // out of the pool, shown as kept) but NOT logged as events until the board
+  // arrives at them, so they can't inflate the pick count or shift the clock.
+  // Owned by useLiveDraftSync, which rewrites it wholesale each poll; unlike
+  // the rest of config it stays writable after the draft starts.
+  liveKeepers?: KeeperAssignment[];
   // How many keepers each team may hold. Drives the setup UI; default 1.
   keepersPerTeam?: number;
   // Snake keeper cost: how many rounds earlier than last year the keeper

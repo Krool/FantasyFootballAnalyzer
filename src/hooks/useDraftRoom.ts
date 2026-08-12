@@ -7,6 +7,7 @@ import type {
   DraftPoolFile,
   DraftRoomConfig,
   DraftRoomTeam,
+  KeeperAssignment,
 } from '@/types/draft';
 import { deriveDraftState, draftableSlotCount, validateEvent } from '@/utils/draftEngine';
 import type { DerivedDraftState } from '@/utils/draftEngine';
@@ -44,6 +45,7 @@ interface DraftRoomState {
 
 type Action =
   | { type: 'UPDATE_CONFIG'; patch: Partial<DraftRoomConfig> }
+  | { type: 'SET_LIVE_KEEPERS'; keepers: KeeperAssignment[] }
   | { type: 'START' }
   | { type: 'LOG_EVENT'; event: DraftEvent }
   | { type: 'UNDO' }
@@ -139,6 +141,24 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
       }
       return { ...state, config };
     }
+    case 'SET_LIVE_KEEPERS': {
+      // The one config field live sync owns, and the one exempt from the
+      // freeze above: a synced draft reveals its pre-placed keepers only while
+      // it runs. It reserves players, it does not touch budgets, slots, or
+      // turn order, so it cannot reinterpret an already-logged event.
+      if (state.phase !== 'drafting' || state.readOnly) return state;
+      const next = action.keepers;
+      const current = state.config.liveKeepers ?? [];
+      // Rewritten from the whole feed every poll, so bail when nothing moved
+      // or the room re-renders (and re-derives) on a 10s heartbeat forever.
+      if (
+        current.length === next.length &&
+        current.every((k, i) => k.playerId === next[i].playerId && k.teamId === next[i].teamId)
+      ) {
+        return state;
+      }
+      return { ...state, config: { ...state.config, liveKeepers: next } };
+    }
     case 'START': {
       if (state.phase !== 'setup' || state.config.teams.length < 2) return state;
       // A zero-round config would enter 'drafting' with totalPicks = 0 and
@@ -148,7 +168,16 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
       if (state.config.draftType === 'auction' && state.config.budget < state.config.rounds) {
         return state;
       }
-      return { ...state, phase: 'drafting', events: [], readOnly: false };
+      // liveKeepers belongs to whichever draft was last synced; carrying it
+      // into a fresh board would hold those players out of a pool nobody kept
+      // them in. Sync repopulates it on its first poll.
+      return {
+        ...state,
+        phase: 'drafting',
+        config: { ...state.config, liveKeepers: undefined },
+        events: [],
+        readOnly: false,
+      };
     }
     case 'LOG_EVENT': {
       if (state.phase !== 'drafting') return state;
@@ -185,7 +214,12 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
       return { ...state, events: state.events.slice(0, cut - 1), phase: 'drafting' };
     }
     case 'RESET':
-      return { phase: 'setup', config: { ...state.config }, events: [], readOnly: false };
+      return {
+        phase: 'setup',
+        config: { ...state.config, liveKeepers: undefined },
+        events: [],
+        readOnly: false,
+      };
     case 'RESUME':
       return {
         phase: action.session.phase,
@@ -212,6 +246,9 @@ export interface UseDraftRoomReturn {
   // A previously saved session for this league, offered as "Resume".
   resumable: DraftRoomSession | null;
   updateConfig: (patch: Partial<DraftRoomConfig>) => void;
+  // Live sync only: reserve a synced draft's pre-placed keepers mid-draft.
+  // Replaces the whole set, so pass every one still ahead of the board.
+  setLiveKeepers: (keepers: KeeperAssignment[]) => void;
   start: () => void;
   // Returns a rejection message, or null when the event was logged.
   logEvent: (event: DraftEventInput) => string | null;
@@ -423,6 +460,7 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
     pool: POOL,
     resumable,
     updateConfig: useCallback(patch => dispatch({ type: 'UPDATE_CONFIG', patch }), []),
+    setLiveKeepers: useCallback(keepers => dispatch({ type: 'SET_LIVE_KEEPERS', keepers }), []),
     start: useCallback(() => dispatch({ type: 'START' }), []),
     logEvent,
     logEvents,

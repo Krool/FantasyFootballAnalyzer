@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RosterSlots } from '@/types';
 import type { DraftEvent, DraftRoomConfig, PoolPlayer } from '@/types/draft';
-import { deriveDraftState, draftableSlotCount, validateEvent } from './draftEngine';
+import { allKeepers, deriveDraftState, draftableSlotCount, validateEvent } from './draftEngine';
 
 const SLOTS: RosterSlots = { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 0, K: 1, DST: 1, BENCH: 2, IR: 1 };
 
@@ -214,6 +214,41 @@ describe('keepers', () => {
     expect(state.reservedPlayerIds.size).toBe(0);
     expect(state.draftedPlayerIds.has('RB1')).toBe(true);
     expect(state.teams.get('B')!.picks).toHaveLength(1);
+  });
+
+  it('reserves a synced draft\'s keepers without letting them touch the clock', () => {
+    // Sleeper pre-places a keeper on the pick he costs, so live sync reserves
+    // him rather than logging him. He must leave the pool like any keeper, and
+    // - the whole point - must not count as a pick that has happened.
+    const synced = makeConfig({
+      draftType: 'snake',
+      liveKeepers: [{ teamId: 'B', playerId: 'RB1', costRound: 4 }],
+    });
+    const state = deriveDraftState(synced, pool, []);
+    expect(state.reservedPlayerIds.has('RB1')).toBe(true);
+    expect(state.available.some(p => p.id === 'RB1')).toBe(false);
+    expect(state.pickCount).toBe(0);
+    expect(state.onTheClockId).toBe('A');
+  });
+
+  it('lets the owning team log a synced keeper when the board reaches him', () => {
+    const synced = makeConfig({
+      draftType: 'snake',
+      liveKeepers: [{ teamId: 'B', playerId: 'RB1', costRound: 4 }],
+    });
+    const state = deriveDraftState(synced, pool, []);
+    expect(validateEvent(synced, state, pick('RB1', 'A'))).toMatch(/reserved as a keeper/);
+    expect(validateEvent(synced, state, pick('RB1', 'B'))).toBeNull();
+  });
+
+  it('counts a player kept in both places once', () => {
+    const both = makeConfig({
+      draftType: 'snake',
+      keepers: [{ teamId: 'B', playerId: 'RB1', costRound: 2 }],
+      liveKeepers: [{ teamId: 'B', playerId: 'RB1', costRound: 2 }],
+    });
+    expect(allKeepers(both)).toHaveLength(1);
+    expect(deriveDraftState(both, pool, []).reservedPlayerIds.size).toBe(1);
   });
 
   it('reserves auction keepers until they are auto-logged as pre-draft sales', () => {
