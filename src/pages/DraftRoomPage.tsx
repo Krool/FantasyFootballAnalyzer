@@ -25,12 +25,11 @@ import { NflTeams } from '@/components/draftRoom/NflTeams';
 import { NominationPanel } from '@/components/draftRoom/NominationPanel';
 import { PickLog } from '@/components/draftRoom/PickLog';
 import { QueuePanel } from '@/components/draftRoom/QueuePanel';
-import { SnakeLogger } from '@/components/draftRoom/SnakeLogger';
 import { TeamBoard } from '@/components/draftRoom/TeamBoard';
 import { TeamsTab } from '@/components/draftRoom/TeamsTab';
 import { TierBoard } from '@/components/draftRoom/TierBoard';
 import { detectRun } from '@/utils/draftAlerts';
-import { fullPositions } from '@/utils/draftEngine';
+import { allKeepers, fullPositions, lineupRows, reservedKeepersFor } from '@/utils/draftEngine';
 import { picksUntilMine } from '@/utils/pickPreview';
 import { nextPickFor } from '@/utils/snakeOrder';
 import styles from './DraftRoomPage.module.css';
@@ -70,6 +69,10 @@ const BOARD_TABS: Array<{ key: BoardTab; label: string; title: string }> = [
   { key: 'nfl', label: 'NFL Teams', title: 'The pool by NFL roster: stacks, handcuffs, teammates' },
 ];
 
+// Desktop right rail: one element, tabbed. Roster is the default; Queue
+// only exists while drafting; Log holds the pick log (with Undo/CSV).
+type SideTab = 'roster' | 'queue' | 'log';
+
 type SheetTabKey = 'players' | 'queue' | 'team' | 'log';
 
 const SHEET_TABS: Array<{ key: SheetTabKey; label: string }> = [
@@ -106,6 +109,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
   // Typed text that isn't a Sleeper draft URL or id.
   const [watchBad, setWatchBad] = useState(false);
   const [boardTab, setBoardTab] = useState<BoardTab>('board');
+  const [sideTab, setSideTab] = useState<SideTab>('roster');
   // Phone drafting swaps the three-panel grid for a Sleeper-style bottom
   // sheet: the board owns the screen and these tabs ride in the sheet.
   const isPhone = useMediaQuery('(max-width: 640px)');
@@ -205,6 +209,38 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
     () => new Map(room.pool.players.map(p => [p.id, p])),
     [room.pool.players],
   );
+
+  // Roster-fill counts for the board's filter chips ("RB 1/2"), keepers
+  // included so a reserved slot reads as filled from pick one. This replaced
+  // the "Still need:" line in the roster panel.
+  const slotCounts = useMemo(() => {
+    if (phase !== 'drafting') return undefined;
+    const me = derived.teams.get(config.myTeamId);
+    if (!me) return undefined;
+    const reserved = reservedKeepersFor(
+      config.myTeamId,
+      allKeepers(config),
+      derived.reservedPlayerIds,
+      playerById,
+    );
+    const entries = [...me.picks, ...reserved];
+    const lineup = lineupRows(entries, config.rosterSlots);
+    const counts = new Map<string, { filled: number; total: number }>();
+    for (const row of lineup) {
+      if (row.slot === 'BENCH') continue;
+      // Superflex folds into the FLEX chip; there's no SFLX filter.
+      const key = row.slot === 'SUPERFLEX' ? 'FLEX' : row.slot;
+      const c = counts.get(key) ?? { filled: 0, total: 0 };
+      c.total += 1;
+      if (row.pick) c.filled += 1;
+      counts.set(key, c);
+    }
+    const rosterSize = config.draftType === 'snake'
+      ? config.rounds
+      : Object.values(config.rosterSlots).reduce((sum, n) => sum + n, 0);
+    counts.set('ALL', { filled: entries.length, total: rosterSize });
+    return counts;
+  }, [phase, config, derived.teams, derived.reservedPlayerIds, playerById]);
 
   // Celebrate your own value picks: a snake player who slid well past his board
   // rank, or an auction buy comfortably under his adjusted value.
@@ -367,17 +403,28 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
 
   const clearSelection = () => setSelected(null);
 
-  // Shared between the desktop three-panel grid and the phone bottom sheet.
+  // The Queue tab only exists while drafting; fall back to the roster when
+  // the draft completes (or resets) with it open.
+  const activeSideTab: SideTab = sideTab === 'queue' && phase !== 'drafting' ? 'roster' : sideTab;
+  // Queued players still on the open board (drafted and keeper-reserved ones
+  // fall out of the panel the same way).
+  const queuedCount = useMemo(
+    () =>
+      queue.ids.filter(
+        id => !derived.draftedPlayerIds.has(id) && !derived.reservedPlayerIds.has(id),
+      ).length,
+    [queue.ids, derived.draftedPlayerIds, derived.reservedPlayerIds],
+  );
+
+  // The money logger, auction only. Snake picks log through the per-row
+  // Draft buttons (plus the D key), with Undo in the status bar and the
+  // Pick Log; the old Log Pick panel is gone.
   const logger =
-    phase === 'drafting' ? (
-      isAuction ? (
-        isMock ? (
-          <MockBidPanel room={room} sim={sim} selected={selected} onLogged={clearSelection} />
-        ) : (
-          <AuctionLogger room={room} selected={selected} onLogged={clearSelection} />
-        )
+    phase === 'drafting' && isAuction ? (
+      isMock ? (
+        <MockBidPanel room={room} sim={sim} selected={selected} onLogged={clearSelection} />
       ) : (
-        <SnakeLogger room={room} selected={selected} onLogged={clearSelection} simPaused={sim.paused} />
+        <AuctionLogger room={room} selected={selected} onLogged={clearSelection} />
       )
     ) : null;
 
@@ -394,6 +441,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
       suggested={isSnake ? suggested : undefined}
       handcuffFor={isSnake ? handcuffFor : undefined}
       queue={phase === 'drafting' ? { queued: queue.queued, toggle: queue.toggle } : undefined}
+      slotCounts={slotCounts}
       inputRef={searchRef}
     />
   );
@@ -676,11 +724,8 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
               </DraftSheet>
             ) : (
               <>
-                <div className={styles.grid}>
-                  <div className={styles.colLog}>
-                    {logger}
-                    <PickLog room={room} />
-                  </div>
+                <div className={logger ? styles.grid : `${styles.grid} ${styles.gridNoLog}`}>
+                  {logger && <div className={styles.colLog}>{logger}</div>}
                   <div className={styles.colMain}>
                     <div className={styles.tabs}>
                       {BOARD_TABS.map(tab => (
@@ -708,19 +753,51 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                     )}
                   </div>
                   <div className={styles.colSide}>
-                    {isAuction && phase === 'drafting' && (
-                      <NominationPanel room={room} onSelect={setSelected} />
+                    <div className={styles.tabs}>
+                      <button
+                        type="button"
+                        className={activeSideTab === 'roster' ? styles.tabOn : styles.tab}
+                        aria-pressed={activeSideTab === 'roster'}
+                        onClick={() => setSideTab('roster')}
+                        title="Your roster, lineup-shaped"
+                      >
+                        Roster
+                      </button>
+                      {phase === 'drafting' && (
+                        <button
+                          type="button"
+                          className={activeSideTab === 'queue' ? styles.tabOn : styles.tab}
+                          aria-pressed={activeSideTab === 'queue'}
+                          onClick={() => setSideTab('queue')}
+                          title="Your ordered shortlist; queue players with the + button on the board"
+                        >
+                          Queue{queuedCount > 0 ? ` · ${queuedCount}` : ''}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className={activeSideTab === 'log' ? styles.tabOn : styles.tab}
+                        aria-pressed={activeSideTab === 'log'}
+                        onClick={() => setSideTab('log')}
+                        title="Every logged pick, newest first, with Undo and CSV export"
+                      >
+                        Log
+                      </button>
+                    </div>
+                    {activeSideTab === 'roster' && <MyTeamPanel room={room} />}
+                    {activeSideTab === 'queue' && phase === 'drafting' && (
+                      <>
+                        {isAuction && <NominationPanel room={room} onSelect={setSelected} />}
+                        <QueuePanel room={room} queue={queue} onSelect={setSelected} />
+                      </>
                     )}
-                    {phase === 'drafting' && (
-                      <QueuePanel room={room} queue={queue} onSelect={setSelected} />
-                    )}
-                    <MyTeamPanel room={room} />
-                    {/* Post-draft every row reads FULL; the panel is noise. */}
-                    {phase !== 'complete' && <LeagueNeeds room={room} />}
+                    {activeSideTab === 'log' && <PickLog room={room} />}
                   </div>
                 </div>
 
                 <div className={styles.teamsSection}>
+                  {/* Post-draft every row reads FULL; the panel is noise. */}
+                  {phase !== 'complete' && <LeagueNeeds room={room} layout="row" />}
                   <TeamBoard room={room} />
                 </div>
               </>

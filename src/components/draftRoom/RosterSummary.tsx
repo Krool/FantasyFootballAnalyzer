@@ -2,9 +2,7 @@ import { useMemo } from 'react';
 import type { RosterSlots } from '@/types';
 import {
   lineupRows,
-  STARTER_POSITIONS,
   type DraftedPlayer,
-  type LineupSlot,
   type ReservedKeeper,
   type TeamDraftState,
 } from '@/utils/draftEngine';
@@ -29,10 +27,10 @@ type RosterEntry =
   | (DraftedPlayer & { isReserved?: undefined })
   | (ReservedKeeper & { isReserved: true });
 
-// The roster body shared by MyTeamPanel and the Teams tab: still-needed
-// starters, the lineup-shaped roster, stacks, and bye clustering. One home so
-// the two views can't drift on the rules (FLEX-open suffix, K/DST bye
-// exclusion, the 3-bye warning threshold).
+// The roster body shared by MyTeamPanel and the Teams tab: the lineup-shaped
+// roster, stacks, and bye clustering. One home so the two views can't drift
+// on the rules (K/DST bye exclusion, the 3-bye warning threshold). Open
+// starter counts live on the board's filter chips now, not here.
 export function RosterSummary({ state, rosterSlots, reserved, listClassName, showPickNumbers }: RosterSummaryProps) {
   const entries = useMemo<RosterEntry[]>(
     () => [...state.picks, ...(reserved ?? []).map(k => ({ ...k, isReserved: true as const }))],
@@ -40,12 +38,6 @@ export function RosterSummary({ state, rosterSlots, reserved, listClassName, sho
   );
   const lineup = useMemo(() => lineupRows(entries, rosterSlots), [entries, rosterSlots]);
   const players = useMemo(() => entries.map(e => e.player), [entries]);
-
-  // Open slots come from the merged lineup, not state.starterNeeds: a
-  // reserved keeper fills his slot here, and the needs line must agree with
-  // the list below it.
-  const openCount = (slot: LineupSlot) => lineup.filter(r => r.slot === slot && !r.pick).length;
-  const openNeeds = STARTER_POSITIONS.filter(pos => openCount(pos) > 0);
 
   // QB + pass-catcher pairs on the roster: correlated scoring worth seeing
   // (and worth finishing: a one-catcher stack invites adding the QB's TE).
@@ -64,16 +56,6 @@ export function RosterSummary({ state, rosterSlots, reserved, listClassName, sho
 
   return (
     <>
-      {openNeeds.length > 0 ? (
-        <p className={styles.needsLine}>
-          Still need:{' '}
-          {openNeeds.map(pos => `${openCount(pos)} ${pos}`).join(', ')}
-          {openCount('FLEX') > 0 ? ', FLEX open' : ''}
-          {openCount('SUPERFLEX') > 0 ? ', SUPERFLEX open' : ''}
-        </p>
-      ) : (
-        <p className={styles.needsLine}>All starting slots filled.</p>
-      )}
       <ul className={listClassName ?? styles.list}>
         {lineup.map(({ key, label, pick }) => (
           <li key={key} className={styles.row}>

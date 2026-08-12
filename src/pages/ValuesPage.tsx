@@ -9,10 +9,14 @@ import { DEFAULT_ROSTER_SLOTS } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
 import { useTargets } from '@/hooks/useTargets';
 import { consensusAvg, platformDelta, platformRankSource } from '@/utils/consensus';
-import { labelForPos } from '@/data/rankingsVariants';
+import { FLEX_POSITIONS, labelForPos } from '@/data/rankingsVariants';
 import styles from './ValuesPage.module.css';
 
-const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST'];
+const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DST'];
+
+// FLEX is a view over three positions; everything else matches exactly.
+const matchesPos = (pos: string, filter: string) =>
+  filter === 'ALL' || (filter === 'FLEX' ? FLEX_POSITIONS.has(pos) : pos === filter);
 const MAX_ROWS = 250;
 
 // The three sites the pool carries a real draft market for, in the order the
@@ -95,6 +99,7 @@ export function ValuesPage({ league, onUpdateGuest }: ValuesPageProps) {
       switch (pos) {
         case 'QB': return slots.QB > 0 || slots.SUPERFLEX > 0;
         case 'RB': case 'WR': case 'TE': return slots[pos] > 0 || hasFlex;
+        case 'FLEX': return hasFlex;
         case 'K': return slots.K > 0;
         case 'DST': return slots.DST > 0;
         default: return true;
@@ -145,7 +150,7 @@ export function ValuesPage({ league, onUpdateGuest }: ValuesPageProps) {
       const ranked = rows
         .filter(
           r =>
-            (posFilter === 'ALL' || r.player.pos === posFilter) &&
+            matchesPos(r.player.pos, posFilter) &&
             r.consensus <= cap &&
             r.sites[site].delta != null &&
             // Only players actually on the side of the ledger the card claims
@@ -166,7 +171,7 @@ export function ValuesPage({ league, onUpdateGuest }: ValuesPageProps) {
   const visible = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase();
     let list = rows;
-    if (posFilter !== 'ALL') list = list.filter(r => r.player.pos === posFilter);
+    if (posFilter !== 'ALL') list = list.filter(r => matchesPos(r.player.pos, posFilter));
     if (q) list = list.filter(r => r.player.name.toLowerCase().includes(q));
 
     const sorted = [...list].sort((a, b) => {

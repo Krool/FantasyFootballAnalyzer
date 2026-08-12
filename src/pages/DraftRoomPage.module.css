@@ -242,6 +242,13 @@
   margin-bottom: 2rem;
 }
 
+/* Snake drafts have no money logger, so the left track disappears and the
+   board takes the space (the pick log lives in the right rail's Log tab). */
+.gridNoLog {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 330px);
+  grid-template-areas: 'main side';
+}
+
 .colLog {
   grid-area: log;
 }
@@ -266,6 +273,9 @@
 .teamsSection {
   border-top: 2px dashed var(--bone-dim);
   padding-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 /* Not enough room for three tracks: the right-column panels stack under the
@@ -277,6 +287,11 @@
       'log main'
       'side main';
   }
+
+  .gridNoLog {
+    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+    grid-template-areas: 'side main';
+  }
 }
 
 @media (max-width: 900px) {
@@ -287,6 +302,12 @@
     grid-template-areas:
       'main'
       'log'
+      'side';
+  }
+
+  .gridNoLog {
+    grid-template-areas:
+      'main'
       'side';
   }
 }

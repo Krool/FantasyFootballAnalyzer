@@ -8,6 +8,7 @@ import { NflTeamLabel, PosBadge } from '@/components';
 import { marketAdp } from '@/utils/consensus';
 import { inflateValue } from '@/utils/inflation';
 import { normalizeName } from '@/utils/playerNames';
+import { FLEX_POSITIONS } from '@/data/rankingsVariants';
 import { injuryAbbrev, injuryTitle } from '@/utils/injury';
 import styles from './AvailablePlayers.module.css';
 
@@ -39,10 +40,13 @@ interface AvailablePlayersProps {
   handcuffFor?: Map<string, string>;
   // Draft-queue wiring for the per-row + button.
   queue?: { queued: Set<string>; toggle: (id: string) => void };
+  // My roster fill per filter chip (keepers included): "RB 1/2" on the RB
+  // chip. Keyed by chip name; ALL is picks-plus-keepers over roster size.
+  slotCounts?: Map<string, { filled: number; total: number }>;
   inputRef?: RefObject<HTMLInputElement | null>;
 }
 
-const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST'];
+const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DST'];
 const MAX_ROWS = 250;
 
 // Touch screens get a placeholder without the keyboard cheat sheet. Evaluated
@@ -66,6 +70,7 @@ export function AvailablePlayers({
   suggested,
   handcuffFor,
   queue,
+  slotCounts,
   inputRef,
 }: AvailablePlayersProps) {
   const { config, derived, scaledValues, inflation, scoring } = room;
@@ -155,7 +160,11 @@ export function AvailablePlayers({
     const q = normalizeName(deferredQuery);
     const filtered = derived.available
       .filter(p => !excludedPositions?.has(p.pos))
-      .filter(p => posFilter === 'ALL' || p.pos === posFilter)
+      .filter(
+        p =>
+          posFilter === 'ALL' ||
+          (posFilter === 'FLEX' ? FLEX_POSITIONS.has(p.pos) : p.pos === posFilter),
+      )
       .filter(p => q === '' || normalizeName(p.name).includes(q));
     if (sortBy === 'value' || sortBy === 'adj') {
       // Inflation scales every surplus by the same rate, so value and
@@ -267,21 +276,39 @@ export function AvailablePlayers({
           }}
         />
         <div className={styles.chips}>
-          {POSITIONS.map(pos => (
-            <button
-              key={pos}
-              type="button"
-              className={posFilter === pos ? styles.chipOn : styles.chip}
-              aria-pressed={posFilter === pos}
-              onClick={() => {
-                playFilter();
-                setPosFilter(pos);
-              }}
-              title={pos === 'ALL' ? 'Show every position' : `Show only ${pos}s`}
-            >
-              {pos}
-            </button>
-          ))}
+          {POSITIONS.map(pos => {
+            const count = slotCounts?.get(pos);
+            const base =
+              pos === 'ALL'
+                ? 'Show every position'
+                : pos === 'FLEX'
+                  ? 'Show flex-eligible players (RB, WR, TE)'
+                  : `Show only ${pos}s`;
+            return (
+              <button
+                key={pos}
+                type="button"
+                className={posFilter === pos ? styles.chipOn : styles.chip}
+                aria-pressed={posFilter === pos}
+                onClick={() => {
+                  playFilter();
+                  setPosFilter(pos);
+                }}
+                title={
+                  count
+                    ? `${base}. Your roster: ${count.filled} of ${count.total} filled.`
+                    : base
+                }
+              >
+                {pos}
+                {count && (
+                  <span className={styles.chipCount}>
+                    {count.filled}/{count.total}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
       {isPhone ? (

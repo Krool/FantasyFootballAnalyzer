@@ -4,15 +4,18 @@ import styles from './Panels.module.css';
 
 interface LeagueNeedsProps {
   room: UseDraftRoomReturn;
+  // 'row' spreads the positions across one wide strip (the desktop slot
+  // above the Teams board); default stacks them for a narrow panel.
+  layout?: 'row';
 }
 
-export function LeagueNeeds({ room }: LeagueNeedsProps) {
+export function LeagueNeeds({ room, layout }: LeagueNeedsProps) {
   const { config, derived } = room;
 
   return (
     <div className={styles.panel}>
       <h3 className={styles.panelTitle}>League Needs</h3>
-      <ul className={styles.list}>
+      <ul className={layout === 'row' ? styles.listRow : styles.list}>
         {STARTER_POSITIONS.map(pos => {
           if (config.rosterSlots[pos] === 0) return null;
           const needCount = derived.positionalDemand[pos];

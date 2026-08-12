@@ -159,6 +159,18 @@
   color: var(--lime);
 }
 
+/* Reserved keeper marker: spoken for from pick one, not yet logged. */
+.rosterKeeper {
+  margin-left: 0.4rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  background: var(--bone-dim);
+  padding: 0.05rem 0.3rem;
+  white-space: nowrap;
+}
+
 .stackLine {
   display: flex;
   flex-wrap: wrap;

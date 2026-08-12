@@ -56,6 +56,22 @@
   font-size: 0.78rem;
 }
 
+/* League Needs as one wide strip: the rows flow side by side instead of
+   stacking (used above the Teams board on desktop). */
+.listRow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1.75rem;
+}
+
+.listRow .row {
+  border-bottom: none;
+  padding: 0.15rem 0;
+}
+
 .row:last-child {
   border-bottom: none;
 }
@@ -177,15 +193,6 @@
 
 .planBad {
   color: var(--blood-text);
-}
-
-.needsLine {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 300;
-  font-size: 0.9rem;
-  color: var(--bone-dim);
-  margin: 0;
 }
 
 .byeLine {

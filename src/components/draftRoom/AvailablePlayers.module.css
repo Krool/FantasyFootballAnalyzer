@@ -67,6 +67,15 @@
   border-color: var(--lime);
 }
 
+/* Roster-fill count riding on a chip ("RB 1/2"). Inherits the chip color in
+   both states; dimmed so the position code stays the label. */
+.chipCount {
+  margin-left: 0.35rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
 /* Phones: the chips take their own full-width row and scroll sideways
    instead of wrapping onto a second line under the search box. */
 @media (max-width: 640px) {
