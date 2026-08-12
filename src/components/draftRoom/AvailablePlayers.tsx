@@ -362,41 +362,6 @@ export function AvailablePlayers({
                     {isAuction ? `$${adjValue(p)}` : (adp(p) != null ? Math.round(adp(p)!) : '-')}
                     <span className={styles.mStatLabel}>{isAuction ? 'Value' : 'ADP'}</span>
                   </span>
-                  <button
-                    type="button"
-                    className={
-                      starred.has(p.id) ? styles.starOn : avoided.has(p.id) ? styles.starAvoid : styles.star
-                    }
-                    onClick={e => {
-                      e.stopPropagation();
-                      cycle(p.id);
-                    }}
-                    title={
-                      starred.has(p.id)
-                        ? 'Targeted. Tap again to avoid, again to clear.'
-                        : avoided.has(p.id)
-                          ? 'Avoided. Tap to clear.'
-                          : 'Tap to target this player'
-                    }
-                    aria-label={`Toggle target status for ${p.name}`}
-                  >
-                    {avoided.has(p.id) ? '✕' : '★'}
-                  </button>
-                  {queue && (
-                    <button
-                      type="button"
-                      className={queue.queued.has(p.id) ? styles.queueBtnOn : styles.queueBtn}
-                      onClick={e => {
-                        e.stopPropagation();
-                        queue.toggle(p.id);
-                      }}
-                      title={queue.queued.has(p.id) ? 'In your queue. Tap to remove.' : 'Add to your draft queue'}
-                      aria-label={`Toggle queue for ${p.name}`}
-                      aria-pressed={queue.queued.has(p.id)}
-                    >
-                      {queue.queued.has(p.id) ? '✓' : '+'}
-                    </button>
-                  )}
                 </li>
               </Fragment>
             ))}
@@ -413,6 +378,7 @@ export function AvailablePlayers({
         <table className={styles.table}>
           <thead>
             <tr>
+              {onQuickDraft && <th aria-label="Quick draft" />}
               <th className={styles.starCell} aria-label="Target list" />
               {queue && <th className={styles.starCell} aria-label="Draft queue" />}
               <th
@@ -525,7 +491,6 @@ export function AvailablePlayers({
                   </th>
                 </>
               )}
-              {onQuickDraft && <th aria-label="Quick draft" />}
             </tr>
           </thead>
           <tbody>
@@ -562,6 +527,23 @@ export function AvailablePlayers({
                 }}
                 title={`Select ${p.name} for the pick logger`}
               >
+                {onQuickDraft && (
+                  <td className={styles.quickCell}>
+                    {!clockFullPositions?.has(p.pos) && (
+                      <button
+                        type="button"
+                        className={styles.quickBtn}
+                        onClick={e => {
+                          e.stopPropagation();
+                          onQuickDraft(p);
+                        }}
+                        title="Draft to the team on the clock"
+                      >
+                        Draft
+                      </button>
+                    )}
+                  </td>
+                )}
                 <td className={styles.starCell}>
                   <button
                     type="button"
@@ -714,23 +696,6 @@ export function AvailablePlayers({
                       );
                     })()}
                   </>
-                )}
-                {onQuickDraft && (
-                  <td className={styles.quickCell}>
-                    {!clockFullPositions?.has(p.pos) && (
-                      <button
-                        type="button"
-                        className={styles.quickBtn}
-                        onClick={e => {
-                          e.stopPropagation();
-                          onQuickDraft(p);
-                        }}
-                        title="Draft to the team on the clock"
-                      >
-                        Draft
-                      </button>
-                    )}
-                  </td>
                 )}
               </tr>
               </Fragment>

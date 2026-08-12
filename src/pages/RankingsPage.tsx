@@ -416,7 +416,7 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
                     : 'FantasyPros expert consensus rank',
                 )}
                 <th
-                  className={styles.num}
+                  className={`${styles.num} ${styles.tierCol}`}
                   title="FantasyPros tier: players in the same tier are seen as close in value, so the breaks between tiers matter more than rank order within one"
                 >
                   Tier
@@ -528,7 +528,7 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
                       {delta === undefined ? '-' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)}`}
                     </td>
                     <td className={`${styles.num} ${styles.dim}`}>{fpRank}</td>
-                    <td className={`${styles.num} ${styles.dim}`}>{p.tier}</td>
+                    <td className={`${styles.num} ${styles.dim} ${styles.tierCol}`}>{p.tier}</td>
                     <td>
                       <PosBadge pos={p.pos} posRank={p.posRank} />
                     </td>

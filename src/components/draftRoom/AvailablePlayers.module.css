@@ -67,6 +67,22 @@
   border-color: var(--lime);
 }
 
+/* Phones: the chips take their own full-width row and scroll sideways
+   instead of wrapping onto a second line under the search box. */
+@media (max-width: 640px) {
+  .chips {
+    flex: 1 0 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .chip,
+  .chipOn {
+    flex: none;
+  }
+}
+
 .tableWrapper {
   overflow-x: auto;
   overflow-y: auto;
@@ -428,9 +444,12 @@
   white-space: nowrap;
 }
 
+/* First column of the table so the button sits in view before any horizontal
+   scroll; a fixed width keeps rows aligned when a full position hides one. */
 .quickCell {
-  text-align: right;
+  text-align: left;
   white-space: nowrap;
+  width: 3.6rem;
 }
 
 .quickBtn {

@@ -195,6 +195,22 @@
   border-color: var(--lime);
 }
 
+/* Phones: the chips take their own full-width row and scroll sideways
+   instead of wrapping onto a second line under the search box. */
+@media (max-width: 640px) {
+  .chips {
+    flex: 1 0 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .chip,
+  .chipOn {
+    flex: none;
+  }
+}
+
 .tableWrapper {
   overflow-x: auto;
   overflow-y: auto;
@@ -313,24 +329,18 @@
    under it. z-index order: scrolling body cells (auto) < pinned name (1) <
    sticky header row (2) < the name header, which pins on both axes (3). */
 @media (max-width: 640px) {
-  /* The star pins too: it's the page's primary action, and pinning only the
-     name buried the star under it on any horizontal scroll. Fixed width so
-     the name column can pin flush after it. */
+  /* No star or tier columns on phones (2026-08-12): every horizontal pixel
+     goes to the stats, and the tier breaks still read from the TIER separator
+     rows. The name takes over the frozen left edge. */
+  .table th.starCell,
   .table td.starCell,
-  .table thead th:first-child {
-    position: sticky;
-    left: 0;
-    z-index: 1;
-    background: var(--ink);
-    width: 2.4rem;
-    min-width: 2.4rem;
-    box-sizing: border-box;
-    padding-left: 0.2rem;
-    padding-right: 0.2rem;
+  .table th.tierCol,
+  .table td.tierCol {
+    display: none;
   }
   .table .player {
     position: sticky;
-    left: 2.4rem;
+    left: 0;
     z-index: 1;
     background: var(--ink);
     border-right: 2px solid var(--bone-dim);
@@ -349,10 +359,9 @@
     white-space: nowrap;
   }
   .table thead th { z-index: 2; }
-  .table thead th:first-child { z-index: 3; }
   .table thead th.playerHead {
     position: sticky;
-    left: 2.4rem;
+    left: 0;
     z-index: 3;
     border-right: 2px solid var(--bone-dim);
   }
