@@ -13,6 +13,9 @@ export interface SleeperDraftStub {
   // Present on the single-draft fetch. slot_to_roster_id seats each draft
   // slot; reversal_round >= 3 is Sleeper's third-round reversal.
   slot_to_roster_id?: Record<string, number | null> | null;
+  // user_id -> draft slot. Set as soon as the order is drawn, so it names the
+  // user's seat before a single pick exists.
+  draft_order?: Record<string, number> | null;
   settings?: { rounds?: number; teams?: number; reversal_round?: number } | null;
 }
 

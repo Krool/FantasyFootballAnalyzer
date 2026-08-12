@@ -602,8 +602,10 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
 
             {liveSync.watchId && liveSync.enabled && !liveSync.mismatch && (
               <p className={styles.shortcutLegend}>
-                Following draft {liveSync.watchId}, seated by draft slot. Clear
-                the field to go back to your league's own draft.
+                {liveSync.watchSlot
+                  ? `Following draft ${liveSync.watchId} from seat ${liveSync.watchSlot}, which is mapped to your team.`
+                  : `Following draft ${liveSync.watchId}. Couldn't tell which seat is yours, so picks are seated in slot order.`}{' '}
+                Clear the field to go back to your league's own draft.
               </p>
             )}
 

@@ -163,6 +163,9 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.clearAllMocks();
+  // Seat detection reads the remembered Sleeper connection; don't leak one
+  // test's identity into the next.
+  localStorage.clear();
 });
 
 describe('useLiveDraftSync', () => {
@@ -501,6 +504,97 @@ describe('useLiveDraftSync', () => {
       });
       expect(result.current.watchId).toBeNull();
       expect(result.current.enabled).toBe(false);
+    });
+
+    it('detects your seat from draft_order and rotates it onto your team', async () => {
+      // Seat 1 of the watched draft is the user's; the user is the room's
+      // second team. The pick must land on the user's team, not on seat 1.
+      localStorage.setItem(
+        'ffa:lastconn:v1',
+        JSON.stringify({ platform: 'sleeper', sleeper: { userId: 'me' } }),
+      );
+      const logEvents = vi.fn(() => null);
+      const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);
+      const room = makeRoom({ logEvents, pool, config: { myTeamId: '2' } });
+      mockedGetDraft.mockResolvedValue(makeDraftStub({ draft_order: { me: 1 } }));
+      mockedGetLiveDraftPicks.mockResolvedValue([
+        makePick({ pick_no: 1, draft_slot: 1, roster_id: null, picked_by: 'me' }),
+      ]);
+
+      const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+      act(() => {
+        result.current.setWatch('1392983398426902528');
+      });
+      await act(async () => {
+        result.current.toggle();
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      expect(result.current.watchSlot).toBe(1);
+      expect(logEvents).toHaveBeenCalledWith([
+        { kind: 'snake_pick', playerId: 'pool-1', teamId: '2', isKeeper: undefined },
+      ]);
+    });
+
+    it('falls back to picked_by when the draft order is not published', async () => {
+      localStorage.setItem(
+        'ffa:lastconn:v1',
+        JSON.stringify({ platform: 'sleeper', sleeper: { userId: 'me' } }),
+      );
+      const logEvents = vi.fn(() => null);
+      const pool = makePool([
+        makePoolPlayer('pool-1', 'sleeper-1'),
+        makePoolPlayer('pool-2', 'sleeper-2'),
+      ]);
+      const room = makeRoom({ logEvents, pool, config: { myTeamId: '1' } });
+      mockedGetDraft.mockResolvedValue(makeDraftStub({ draft_order: null }));
+      mockedGetLiveDraftPicks.mockResolvedValue([
+        // Sleeper leaves picked_by empty on the autodrafted seats, so the one
+        // pick carrying the user's id names the user's seat.
+        makePick({ pick_no: 1, draft_slot: 1, roster_id: null, picked_by: '', player_id: 'sleeper-2' }),
+        makePick({ pick_no: 2, draft_slot: 2, roster_id: null, picked_by: 'me', player_id: 'sleeper-1' }),
+      ]);
+
+      const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+      act(() => {
+        result.current.setWatch('1392983398426902528');
+      });
+      await act(async () => {
+        result.current.toggle();
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      expect(result.current.watchSlot).toBe(2);
+      // Seat 2 -> the user's team ('1'), and seat 1 wraps to the other team.
+      expect(logEvents).toHaveBeenCalledWith([
+        { kind: 'snake_pick', playerId: 'pool-2', teamId: '2', isKeeper: undefined },
+        { kind: 'snake_pick', playerId: 'pool-1', teamId: '1', isKeeper: undefined },
+      ]);
+    });
+
+    it('seats in plain slot order when the user cannot be identified', async () => {
+      localStorage.removeItem('ffa:lastconn:v1');
+      const logEvents = vi.fn(() => null);
+      const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);
+      const room = makeRoom({ logEvents, pool, config: { myTeamId: '2' } });
+      mockedGetDraft.mockResolvedValue(makeDraftStub({ draft_order: { someone: 1 } }));
+      mockedGetLiveDraftPicks.mockResolvedValue([
+        makePick({ pick_no: 1, draft_slot: 1, roster_id: null, picked_by: '' }),
+      ]);
+
+      const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+      act(() => {
+        result.current.setWatch('1392983398426902528');
+      });
+      await act(async () => {
+        result.current.toggle();
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      expect(result.current.watchSlot).toBeNull();
+      expect(logEvents).toHaveBeenCalledWith([
+        { kind: 'snake_pick', playerId: 'pool-1', teamId: '1', isKeeper: undefined },
+      ]);
     });
 
     it('rejects text that is not a Sleeper draft link', () => {

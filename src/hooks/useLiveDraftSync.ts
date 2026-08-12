@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { League } from '@/types';
 import { getDraft, getLeagueDrafts, getLiveDraftPicks, parseDraftId } from '@/api/sleeperDraft';
 import type { SleeperDraftStub } from '@/api/sleeperDraft';
+import type { SleeperLivePick } from '@/api/sleeperDraft';
+import { loadLastConnection } from '@/utils/lastConnection';
 import { logger } from '@/utils/logger';
 import type { UseDraftRoomReturn } from './useDraftRoom';
 
@@ -23,6 +25,9 @@ export interface UseLiveDraftSyncReturn {
   mismatch: string | null;
   // The draft being watched by explicit id, if any (mock rehearsal).
   watchId: string | null;
+  // The watched draft's seat detected as yours (1-based), or null when it
+  // couldn't be worked out. Picks are rotated so this seat becomes your team.
+  watchSlot: number | null;
   // Accepts a sleeper.com draft URL or a bare id; empty clears it.
   setWatch: (input: string) => boolean;
   toggle: () => void;
@@ -42,7 +47,12 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
   const [unmapped, setUnmapped] = useState<string[]>([]);
   const [mismatch, setMismatch] = useState<string | null>(null);
   const [watchId, setWatchId] = useState<string | null>(null);
+  const [watchSlot, setWatchSlot] = useState<number | null>(null);
   const draftIdRef = useRef<string | null>(null);
+  // Seats the watched draft's slot N onto the room's slot N + seatOffset, so
+  // the seat detected as yours becomes your team. 0 until a draft resolves.
+  const seatOffsetRef = useRef(0);
+  const watchDraftRef = useRef<SleeperDraftStub | null>(null);
   // Draft slot (1-based) -> room team id, for a watched draft whose picks
   // carry no roster id of ours. config.teams is already in draft-slot order.
   const slotSeats = useMemo(() => config.teams.map(t => t.id), [config.teams]);
@@ -88,6 +98,9 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
     (input: string) => {
       const trimmed = input.trim();
       draftIdRef.current = null;
+      watchDraftRef.current = null;
+      seatOffsetRef.current = 0;
+      setWatchSlot(null);
       stop(null);
       if (trimmed === '') {
         setWatchId(null);
@@ -99,6 +112,38 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
       return true;
     },
     [stop],
+  );
+
+  // Room team for a 1-based draft slot, wrapped so a rotation can't run off
+  // either end of the table.
+  const seatForSlot = useCallback(
+    (slot: number, offset: number): string | null => {
+      const n = slotSeats.length;
+      if (n === 0 || !Number.isFinite(slot)) return null;
+      // A slot beyond the table is a shape the room can't seat at all; let
+      // the caller's unknown-team guard stop the sync rather than wrapping it
+      // onto an unrelated team.
+      if (slot < 1 || slot > n) return null;
+      return slotSeats[(((slot - 1 + offset) % n) + n) % n];
+    },
+    [slotSeats],
+  );
+
+  // Which seat in a watched draft is the user's. draft_order is the direct
+  // answer and is set the moment the order is drawn, before any pick exists;
+  // a mock joined without the order published still gives it away through
+  // picked_by on the user's own picks (Sleeper leaves it empty for the
+  // autodrafted seats). Null means "couldn't tell" - seats stay as-is.
+  const detectSlot = useCallback(
+    (draft: SleeperDraftStub, picks: SleeperLivePick[]): number | null => {
+      const myUserId = loadLastConnection()?.sleeper?.userId;
+      if (!myUserId) return null;
+      const fromOrder = draft.draft_order?.[myUserId];
+      if (typeof fromOrder === 'number' && fromOrder > 0) return fromOrder;
+      const mine = picks.filter(p => p.picked_by === myUserId);
+      return mine.length > 0 ? mine[0].draft_slot : null;
+    },
+    [],
   );
 
   // What a watched draft's own settings say its board looks like, so the room
@@ -144,6 +189,7 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
               return;
             }
             setMismatch(shapeMismatch(draft));
+            watchDraftRef.current = draft;
             draftIdRef.current = draft.draft_id;
           } else {
             const drafts = await getLeagueDrafts(league.id);
@@ -164,6 +210,17 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
         if (cancelled) return;
         setStatus('syncing');
 
+        // Line the watched draft's seats up with the room's before anything
+        // is ingested, so the very first batch already lands correctly. Slot
+        // detection can only improve within a session (draft_order published,
+        // or the user's first pick appearing), so recompute each tick.
+        if (watchId && watchDraftRef.current) {
+          const slot = detectSlot(watchDraftRef.current, picks);
+          const mySeat = slotSeats.indexOf(config.myTeamId);
+          if (slot !== null && mySeat >= 0) seatOffsetRef.current = mySeat - (slot - 1);
+          setWatchSlot(slot);
+        }
+
         // Ingest by player identity, not position. In a keeper league the
         // room auto-logs keepers itself (possibly at different rounds than
         // Sleeper's board), and Sleeper's picks feed carries those same
@@ -183,14 +240,16 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
           const playerId = bySleeperId.get(pick.player_id);
           // A watched draft's roster ids are its own league's, not ours (a
           // mock leaves them null entirely), so seat those picks by draft
-          // slot: config.teams is in slot order, so slot N is seat N and the
-          // user's own picks land on the user's team. The league's own draft
-          // keeps roster_id, which is authoritative there.
+          // slot, rotated so the seat detected as the user's becomes the
+          // user's team. Rotating rather than mapping slot-to-slot keeps who
+          // picks immediately before and after you intact, which is the part
+          // of a rehearsal that matters. The league's own draft keeps
+          // roster_id, which is authoritative there.
           const teamId = watchId
-            ? (slotSeats[pick.draft_slot - 1] ?? null)
+            ? seatForSlot(pick.draft_slot, seatOffsetRef.current)
             : pick.roster_id !== null
               ? String(pick.roster_id)
-              : (slotSeats[pick.draft_slot - 1] ?? null);
+              : seatForSlot(pick.draft_slot, 0);
           // An id the pool doesn't carry used to end the session. Mid-draft
           // that costs far more than the one pick: the rest of the board
           // still syncs fine, so skip this pick, name it, and let the user
@@ -256,12 +315,12 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
       cancelled = true;
       clearInterval(timer);
     };
-  }, [enabled, available, league.id, watchId, shapeMismatch, slotSeats, derived.draftedPlayerIds, bySleeperId, teamIds, config.draftType, logEvents, stop]);
+  }, [enabled, available, league.id, watchId, shapeMismatch, detectSlot, seatForSlot, slotSeats, config.myTeamId, derived.draftedPlayerIds, bySleeperId, teamIds, config.draftType, logEvents, stop]);
 
   // Leaving the drafting phase (complete or reset) ends the session.
   useEffect(() => {
     if (!available && enabled) stop(null);
   }, [available, enabled, stop]);
 
-  return { available, enabled, status, error, unmapped, mismatch, watchId, setWatch, toggle };
+  return { available, enabled, status, error, unmapped, mismatch, watchId, watchSlot, setWatch, toggle };
 }
