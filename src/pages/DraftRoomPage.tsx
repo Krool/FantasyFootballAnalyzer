@@ -570,6 +570,14 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
               </p>
             )}
 
+            {liveSync.unmapped.length > 0 && (
+              <p className={styles.shortcutLegend} role="alert">
+                Live sync couldn't match {liveSync.unmapped.join(', ')} to the
+                rankings pool. Everything else is syncing; log those by hand if
+                they're on the board.
+              </p>
+            )}
+
             {liveSync.enabled && liveSync.status === 'error' && (
               <p className={styles.shortcutLegend} role="alert">
                 Live sync hit a snag and is retrying. Picks may be a few seconds behind; log manually if it persists.

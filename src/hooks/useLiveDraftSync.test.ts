@@ -244,14 +244,21 @@ describe('useLiveDraftSync', () => {
     expect(result.current.status).toBe('syncing');
   });
 
-  it('stops and does not log a pick whose player is missing from the bundled pool', async () => {
+  it('keeps syncing around a pick whose player is missing from the bundled pool', async () => {
     const logEvents = vi.fn(() => null);
-    // Pool knows nothing about 'sleeper-missing'.
+    // Pool knows nothing about 'sleeper-missing'. Ending the session over one
+    // unmatched pick would cost the whole rest of a live draft, so it is named
+    // for manual entry and the other picks still land.
     const pool = makePool([makePoolPlayer('pool-1', 'sleeper-1')]);
     const room = makeRoom({ logEvents, pool });
     mockedGetLeagueDrafts.mockResolvedValue([makeDraftStub()]);
     mockedGetLiveDraftPicks.mockResolvedValue([
-      makePick({ pick_no: 1, player_id: 'sleeper-missing' }),
+      makePick({
+        pick_no: 1,
+        player_id: 'sleeper-missing',
+        metadata: { first_name: 'Ghost', last_name: 'Player' },
+      }),
+      makePick({ pick_no: 2, player_id: 'sleeper-1', roster_id: 2 }),
     ]);
 
     const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
@@ -261,10 +268,13 @@ describe('useLiveDraftSync', () => {
       await vi.advanceTimersByTimeAsync(0);
     });
 
-    expect(logEvents).not.toHaveBeenCalled();
-    expect(result.current.enabled).toBe(false);
-    expect(result.current.status).toBe('error');
-    expect(result.current.error).toMatch(/missing from the bundled pool/);
+    expect(logEvents).toHaveBeenCalledWith([
+      { kind: 'snake_pick', playerId: 'pool-1', teamId: '2', isKeeper: undefined },
+    ]);
+    expect(result.current.enabled).toBe(true);
+    expect(result.current.status).toBe('syncing');
+    expect(result.current.error).toBeNull();
+    expect(result.current.unmapped).toEqual(['pick 1 (Ghost Player)']);
   });
 
   it('skips picks whose player is already on the board (auto-logged keepers)', async () => {

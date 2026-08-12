@@ -453,8 +453,28 @@ if (sleeperPlayers) {
   // dump", which is the interesting direction here.
   let hits = 0;
   const misses: string[] = [];
+  // A DST's Sleeper id is its team code, not a numeric player id, and the
+  // dump names it "Houston Texans" against our "Texans"-style rows, so name
+  // matching never lands it. Key the DST rows by canonical team instead:
+  // that also absorbs Sleeper JAX vs FantasyPros JAC. Without this every
+  // DST is unmapped, and a live Sleeper draft drops sync the moment anyone
+  // takes a defense.
+  const dstByTeam = new Map(
+    sleeperPlayers.players
+      .filter(row => row.pos === 'DST')
+      .map(row => [canonicalTeam(row.team), row.sleeperId]),
+  );
   for (const player of players) {
-    if (player.pos === 'DST') continue; // dump models DSTs differently; skip
+    if (player.pos === 'DST') {
+      const id = dstByTeam.get(canonicalTeam(player.team));
+      if (id) {
+        player.sleeperId = id;
+        hits++;
+      } else {
+        misses.push(`${player.name} (DST ${player.team})`);
+      }
+      continue;
+    }
     const row = matchPlayer(
       { name: player.name, pos: player.pos, team: player.team },
       sleeperPlayers.players,

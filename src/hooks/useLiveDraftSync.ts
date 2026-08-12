@@ -14,6 +14,9 @@ export interface UseLiveDraftSyncReturn {
   enabled: boolean;
   status: LiveSyncStatus;
   error: string | null;
+  // Picks the pool couldn't identify, kept so the room can tell the user
+  // which ones to log by hand instead of silently drifting.
+  unmapped: string[];
   toggle: () => void;
 }
 
@@ -28,6 +31,7 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
   const [enabled, setEnabled] = useState(false);
   const [status, setStatus] = useState<LiveSyncStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [unmapped, setUnmapped] = useState<string[]>([]);
   const draftIdRef = useRef<string | null>(null);
 
   // A guest's `platform` is just the Rankings delta lens, not a real Sleeper
@@ -50,6 +54,7 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
     setEnabled(false);
     setStatus(message ? 'error' : 'idle');
     setError(message);
+    setUnmapped([]);
   }, []);
 
   const toggle = useCallback(() => {
@@ -100,12 +105,19 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
         // pre-batch board and stamp them with the same stale seq.
         const batch = [];
         const pickNos: number[] = [];
+        const skipped: string[] = [];
         for (const pick of fresh) {
           const playerId = bySleeperId.get(pick.player_id);
           const teamId = pick.roster_id !== null ? String(pick.roster_id) : null;
+          // An id the pool doesn't carry used to end the session. Mid-draft
+          // that costs far more than the one pick: the rest of the board
+          // still syncs fine, so skip this pick, name it, and let the user
+          // log it by hand if he's on our board at all.
           if (!playerId) {
-            stop('A drafted player is missing from the bundled pool; switching back to manual logging.');
-            return;
+            const meta = pick.metadata;
+            const name = [meta?.first_name, meta?.last_name].filter(Boolean).join(' ');
+            skipped.push(`pick ${pick.pick_no}${name ? ` (${name})` : ''}`);
+            continue;
           }
           if (derived.draftedPlayerIds.has(playerId)) continue;
           if (!teamId || !teamIds.has(teamId)) {
@@ -131,6 +143,10 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
           );
           pickNos.push(pick.pick_no);
         }
+        // Recomputed from the full picks feed each tick, so compare before
+        // setting or every poll re-renders the room with equal content.
+        setUnmapped(prev => (prev.join('|') === skipped.join('|') ? prev : skipped));
+
         if (batch.length > 0) {
           const rejection = logEvents(batch);
           if (rejection) {
@@ -165,5 +181,5 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
     if (!available && enabled) stop(null);
   }, [available, enabled, stop]);
 
-  return { available, enabled, status, error, toggle };
+  return { available, enabled, status, error, unmapped, toggle };
 }

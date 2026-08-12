@@ -19,7 +19,15 @@ export interface SleeperLivePick {
   round: number;
   pick_no: number;
   is_keeper: boolean | null;
-  metadata?: { amount?: string };
+  // Sleeper repeats the drafted player's identity here, which is the only
+  // thing we can name a pick by when its id isn't in the bundled pool.
+  metadata?: {
+    amount?: string;
+    first_name?: string;
+    last_name?: string;
+    position?: string;
+    team?: string;
+  };
 }
 
 async function fetchJson<T>(path: string): Promise<T> {
