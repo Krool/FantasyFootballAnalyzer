@@ -580,27 +580,13 @@ function App() {
             </a>
           </p>
         </div>
+        {/* Build version. Only rendered in deployed builds where
+            VITE_BUILD_TIME is injected; in `vite dev` the env var is
+            undefined and showing "vdev" is just noise. */}
+        {import.meta.env.VITE_BUILD_TIME && (
+          <span className="footer-version">v{import.meta.env.VITE_BUILD_TIME}</span>
+        )}
       </footer>
-
-      {/* Build version indicator. Only render in deployed builds where
-          VITE_BUILD_TIME is injected; in `vite dev` the env var is undefined
-          and showing "vdev" is just noise. */}
-      {import.meta.env.VITE_BUILD_TIME && (
-        <div style={{
-          position: 'fixed',
-          bottom: '8px',
-          left: '8px',
-          fontSize: '11px',
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
-          color: 'var(--bone-dim)',
-          fontFamily: 'var(--font-mono)',
-          pointerEvents: 'none',
-          zIndex: 9999,
-        }}>
-          v{import.meta.env.VITE_BUILD_TIME}
-        </div>
-      )}
     </div>
   );
 }

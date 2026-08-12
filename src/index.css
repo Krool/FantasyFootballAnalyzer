@@ -465,6 +465,15 @@ html {
 .site-footer a:hover { color: var(--bone); }
 .footer-link { display: inline-flex; align-items: center; gap: 0.4rem; }
 .footer-link svg { width: 14px; height: 14px; }
+/* Build stamp sits in the footer's corner instead of floating over content. */
+.site-footer { position: relative; }
+.footer-version {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.5rem;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+}
 
 /* ─── Focus ─── */
 :focus-visible {
