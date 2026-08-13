@@ -140,6 +140,13 @@
   animation: statusAlertPop 0.3s cubic-bezier(.2, .8, .2, 1);
 }
 
+/* The run badge renders twice: once inside the primary group (for the phone
+   row) and once at the end of the bar (so on desktop its arrival doesn't
+   shove the items after it). Each breakpoint shows exactly one. */
+.statusPrimary .statusAlert {
+  display: none;
+}
+
 @keyframes statusAlertPop {
   from {
     opacity: 0;
@@ -386,6 +393,10 @@
     text-overflow: ellipsis;
   }
   .statusSecondary { display: none; }
+  /* On the phone row the badge lives inside the primary group; the desktop
+     end-of-bar copy would wrap to a second row, so it swaps off. */
+  .statusPrimary .statusAlert { display: inline-block; }
+  .statusBar > .statusAlert { display: none; }
   /* With the secondary chips gone the bar wraps to at most two rows, so the
      reserved drafting height can drop from the desktop reservation. */
   .statusBarLive { min-height: 4.5rem; }
