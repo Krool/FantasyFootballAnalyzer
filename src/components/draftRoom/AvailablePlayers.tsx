@@ -16,9 +16,16 @@ interface AvailablePlayersProps {
   room: UseDraftRoomReturn;
   selectedId: string | null;
   onSelect: (player: PoolPlayer) => void;
-  // When set, each row gets a one-click draft button that logs the player
-  // straight to the on-the-clock team (snake catch-up mode).
+  // When set, the board reserves a Draft column whose one-click buttons log
+  // the player straight to the on-the-clock team (snake catch-up mode).
+  // Pass it for the WHOLE draft, not just draftable moments: the column
+  // mounting and unmounting shifts every row sideways (and slightly down)
+  // at each pick handoff.
   onQuickDraft?: (player: PoolPlayer) => void;
+  // Whether the buttons are live right now (a mock hands the AI's turns to
+  // the sim). False renders the reserved column empty instead of unmounting
+  // it - no dead buttons, no layout shift.
+  quickDraftActive?: boolean;
   // Positions dropped from the board entirely. Mock snake drafts pass the
   // positions the user's roster is full at: nobody else drafts by hand, so
   // those players are dead rows the user can only mis-click.
@@ -66,6 +73,7 @@ export function AvailablePlayers({
   selectedId,
   onSelect,
   onQuickDraft,
+  quickDraftActive = true,
   excludedPositions,
   clockFullPositions,
   yahooCosts,
@@ -376,7 +384,7 @@ export function AvailablePlayers({
                 >
                   {onQuickDraft && (
                     <span className={styles.mDraftSlot}>
-                      {!clockFullPositions?.has(p.pos) && (
+                      {quickDraftActive && !clockFullPositions?.has(p.pos) && (
                         <button
                           type="button"
                           className={styles.quickBtn}
@@ -602,7 +610,7 @@ export function AvailablePlayers({
               >
                 {onQuickDraft && (
                   <td className={styles.quickCell}>
-                    {!clockFullPositions?.has(p.pos) && (
+                    {quickDraftActive && !clockFullPositions?.has(p.pos) && (
                       <button
                         type="button"
                         className={styles.quickBtn}

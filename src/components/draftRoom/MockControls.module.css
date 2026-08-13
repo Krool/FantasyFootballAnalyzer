@@ -7,6 +7,9 @@
   gap: 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.74rem;
+  /* Meet the status bar's shared 2rem item line: rows keep one height no
+     matter which items wrap onto them (see .statusItem in DraftRoomPage). */
+  min-height: 2rem;
 }
 
 .label {

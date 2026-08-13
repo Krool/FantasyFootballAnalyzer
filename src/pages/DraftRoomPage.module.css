@@ -101,6 +101,34 @@
   font-weight: 700;
 }
 
+/* Per-pick text swaps ("YOU'RE UP" vs "On the clock: <name>", the your-next
+   distance digits) must not re-wrap the bar: a wrap change is a height
+   change, and the whole board below jumps at the handoff. Reserve steady
+   slots for the two items whose width churns every pick. */
+.statusClock {
+  min-width: 26ch;
+}
+
+.statusNext {
+  min-width: 24ch;
+}
+
+/* Desktop: every bar item meets the same 2rem line, so when the wrap
+   reshuffles (a run badge lands, Undo hops to the next row) the rows it
+   recombines into are the same height as before - the bar can only change
+   height by whole rows now, and the min-widths above keep the row count
+   steady. Phone (<=640px) keeps its own fixed-height primary row, and the
+   inline-flex here would break the phone clock's text ellipsis. */
+@media (min-width: 641px) {
+  .statusItem,
+  .statusAlert,
+  .soundBtn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+  }
+}
+
 .statusBlood {
   color: var(--blood-text);
   font-weight: 700;

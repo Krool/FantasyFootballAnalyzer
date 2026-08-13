@@ -438,7 +438,8 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
       room={room}
       selectedId={selected?.id ?? null}
       onSelect={setSelected}
-      onQuickDraft={canQuickDraft ? quickDraft : undefined}
+      onQuickDraft={phase === 'drafting' && isSnake ? quickDraft : undefined}
+      quickDraftActive={canQuickDraft}
       excludedPositions={isSnake && isMock ? myFullPositions : undefined}
       clockFullPositions={clockFullPositions}
       yahooCosts={yahoo.costs}
@@ -516,9 +517,13 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                   </span>
                 )}
               </div>
-              {isSnake && !myTurn && myNextPick !== null && (
+              {/* Rendered on your own turn too (it reads as "where you pick
+                  after this one"): the chip appearing and disappearing at
+                  every handoff re-wrapped the bar at some widths, which
+                  changed its height - a page jump right at YOU'RE UP. */}
+              {isSnake && myNextPick !== null && (
                 <span
-                  className={`${styles.statusItem} ${styles.statusSecondary}`}
+                  className={`${styles.statusItem} ${styles.statusSecondary} ${styles.statusNext}`}
                   title="Where the snake comes back to you"
                 >
                   Your next: #{myNextPick + 1} ({myNextPick - derived.pickCount} away)
@@ -653,12 +658,24 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
               </p>
             )}
 
-            {liveSync.watchId && liveSync.enabled && !liveSync.mismatch && (
-              <p className={styles.shortcutLegend}>
-                {liveSync.watchSlot
-                  ? `Following draft ${liveSync.watchId} from seat ${liveSync.watchSlot}, which is mapped to your team.`
-                  : `Following draft ${liveSync.watchId}. Couldn't tell which seat is yours, so picks are seated in slot order.`}{' '}
-                Clear the field to go back to your league's own draft.
+            {/* One persistent line for the whole time sync is on, whose text
+                swaps between healthy and retrying. The retry state used to be
+                its own paragraph that popped in and out above the board on
+                every flaky poll, bouncing the layout mid-draft. */}
+            {liveSync.enabled && (
+              <p
+                className={styles.shortcutLegend}
+                role={liveSync.status === 'error' ? 'alert' : undefined}
+              >
+                {liveSync.status === 'error'
+                  ? 'Live sync hit a snag and is retrying. Picks may be a few seconds behind; log manually if it persists.'
+                  : liveSync.watchId && !liveSync.mismatch
+                    ? `${
+                        liveSync.watchSlot
+                          ? `Following draft ${liveSync.watchId} from seat ${liveSync.watchSlot}, which is mapped to your team.`
+                          : `Following draft ${liveSync.watchId}. Couldn't tell which seat is yours, so picks are seated in slot order.`
+                      } Clear the field to go back to your league's own draft.`
+                    : 'Live sync on: pulling picks from the Sleeper draft every 10 seconds.'}
               </p>
             )}
 
@@ -667,12 +684,6 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                 Live sync couldn't match {liveSync.unmapped.join(', ')} to the
                 rankings pool. Everything else is syncing; log those by hand if
                 they're on the board.
-              </p>
-            )}
-
-            {liveSync.enabled && liveSync.status === 'error' && (
-              <p className={styles.shortcutLegend} role="alert">
-                Live sync hit a snag and is retrying. Picks may be a few seconds behind; log manually if it persists.
               </p>
             )}
 

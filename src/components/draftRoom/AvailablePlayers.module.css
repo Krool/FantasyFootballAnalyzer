@@ -499,7 +499,11 @@
 }
 
 .quickBtn {
-  padding: 0.25rem 0.55rem;
+  padding: 0.2rem 0.55rem;
+  /* Padded box tops out at the text rows' ~20px line height, so rows with a
+     button sit exactly as tall as rows without one (full-position rows drop
+     theirs) and the board doesn't ripple as buttons come and go. */
+  line-height: 1;
   font-family: var(--font-mono);
   font-size: 0.62rem;
   font-weight: 700;
