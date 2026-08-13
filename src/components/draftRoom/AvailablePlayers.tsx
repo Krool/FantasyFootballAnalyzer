@@ -370,7 +370,10 @@ export function AvailablePlayers({
                     className={styles.mCutoff}
                     title="If every pick before yours comes off the top of this list, the board above this line is gone and you choose from the players below it."
                   >
-                    ▲ Likely gone · your pick lands here ({cutoffAt} {cutoffAt === 1 ? 'pick' : 'picks'} away)
+                    {/* Phone rows are tight: the "Likely gone" half wrapped
+                        this to two lines, and the line sits between players.
+                        The arrow and the title carry that meaning. */}
+                    ▲ Your pick lands here ({cutoffAt} {cutoffAt === 1 ? 'pick' : 'picks'} away)
                   </li>
                 )}
                 <li

@@ -97,7 +97,10 @@ export function Header({
   };
 
   return (
-    <header className={styles.header}>
+    // app-header is a global hook so the phone draft room can hide the
+    // masthead and nav while a draft is live (see .draft-focus in index.css).
+    // The module class is hashed, so a stable name is the only way in.
+    <header className={`${styles.header} app-header`}>
       <div className={`container ${styles.headerContent}`}>
         <div className={styles.logoSection}>
           {league && !isGuest && (

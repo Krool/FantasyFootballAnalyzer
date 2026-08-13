@@ -368,6 +368,11 @@
   color: var(--gold);
   border-top: 2px dashed var(--gold);
   border-bottom: 1px dashed var(--rule);
+  /* One line, always: this row sits between players, so a wrap changes the
+     list's height as the cutoff moves with each pick. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mEmpty {

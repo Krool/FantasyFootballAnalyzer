@@ -587,8 +587,17 @@ html {
    has already read, and it sits between the header and the board. It comes
    back the moment the draft ends or the viewport grows. */
 @media (max-width: 640px) {
-  body.draft-focus .guest-banner {
+  body.draft-focus .guest-banner,
+  body.draft-focus .app-header {
     display: none;
+  }
+
+  /* The draft room is a fixed frame in focus mode, not a scrolling document:
+     the status strip and the board fill the screen exactly, and the board's
+     own scroller is the only thing that moves. Without this the page itself
+     scrolls, dragging the board's frozen team-name row up out of sight. */
+  body.draft-focus {
+    overflow: hidden;
   }
 }
 

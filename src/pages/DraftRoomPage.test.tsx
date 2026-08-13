@@ -108,6 +108,19 @@ describe('DraftRoomPage phone focus mode', () => {
     expect(screen.getByText(/Reset Draft/i)).toBeInTheDocument();
     // The config line the masthead used to carry.
     expect(screen.getByText(/415 Football Club · 2026 Snake/i)).toBeInTheDocument();
+    // Focus mode hides the app nav, so settings has to carry the way out.
+    expect(screen.getByRole('link', { name: /Rankings/i })).toBeInTheDocument();
+  });
+
+  it('carries a close button, since focus mode hides the app header', () => {
+    startDraftOnPhone();
+    expect(screen.getByRole('link', { name: /Leave the draft room/i })).toBeInTheDocument();
+  });
+
+  it('flags focus mode on the body so the app header and banner can hide', () => {
+    expect(document.body).not.toHaveClass('draft-focus');
+    startDraftOnPhone();
+    expect(document.body).toHaveClass('draft-focus');
   });
 
   it('keeps the controls in the status bar on a desktop viewport', () => {

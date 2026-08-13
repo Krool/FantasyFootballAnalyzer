@@ -51,11 +51,34 @@
   max-height: 21rem;
 }
 
-/* Phone drafting: the bottom sheet overlays the lower half of the screen, so
-   most of a 21rem scroller sits underneath it — including the auto-centered
-   on-the-clock cell. A shorter window (header + ~3 rounds) keeps the whole
-   strip, and the centered clock cell with it, visible above the sheet. */
 @media (max-width: 640px) {
+  /* Focus mode makes the page a fixed frame (see .pageWithSheet), so the
+     board takes the height the sheet isn't using and its scroller is the
+     only thing that moves. :global reaches the body flag the page sets -
+     the same hook pattern as .draft-sheet-body in index.css.
+
+     Sized with an explicit height rather than flex on purpose: as a flex
+     item the scroller's width resolves against the grid's own content, and
+     the grid's overflowing 92px tracks stop producing scrollable overflow -
+     which silently kills horizontal scrolling across the teams. Keeping the
+     card a plain block leaves that working.
+
+     7rem is the chrome above the scroller inside the frame: page padding,
+     the status strip and its margin, and this card's header. */
+  /* Flush to the screen edges: side borders would just eat two pixels of
+     board on a phone that has none to spare. */
+  :global(body.draft-focus) .board {
+    margin-bottom: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  :global(body.draft-focus) .scroller {
+    height: calc(100dvh - var(--sheet-h, 52dvh) - 7rem);
+    max-height: none;
+  }
+
+  /* A completed draft on a phone has no sheet and still scrolls the page. */
   .scroller {
     max-height: 12rem;
   }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { League } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
 import { useDraftQueue } from '@/hooks/useDraftQueue';
@@ -17,6 +18,7 @@ import { DraftBoard } from '@/components/draftRoom/DraftBoard';
 import { DraftRecap } from '@/components/draftRoom/DraftRecap';
 import { DraftSetup } from '@/components/draftRoom/DraftSetup';
 import { DraftSheet, type SheetTab } from '@/components/draftRoom/DraftSheet';
+import { SHEET_HEIGHT, type SheetSnap } from '@/components/draftRoom/sheetSnap';
 import { LeagueNeeds } from '@/components/draftRoom/LeagueNeeds';
 import { MockBidPanel } from '@/components/draftRoom/MockBidPanel';
 import { MockControls } from '@/components/draftRoom/MockControls';
@@ -119,6 +121,10 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
   // sheet: the board owns the screen and these tabs ride in the sheet.
   const isPhone = useMediaQuery('(max-width: 640px)');
   const [sheetTab, setSheetTab] = useState<SheetTabKey>('players');
+  // Owned here, not in the sheet: collapsing the sheet has to hand the space
+  // back to the board, so both need to read it. Opens at HALF - the player
+  // list is the reason you're on this screen.
+  const [sheetSnap, setSheetSnap] = useState<SheetSnap>('half');
   // Which roster the Teams tab is showing; lives here so flipping to another
   // tab and back doesn't lose the place. null = the user's own team.
   const [viewTeamId, setViewTeamId] = useState<string | null>(null);
@@ -138,6 +144,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
     document.body.classList.add('draft-focus');
     return () => document.body.classList.remove('draft-focus');
   }, [draftFocus]);
+
 
   // Each phase swaps the whole view (setup form -> draft board -> recap),
   // but the browser keeps the old scroll position: hitting Start at the
@@ -518,7 +525,17 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
   );
 
   return (
-    <div className={phoneSheet ? `${styles.page} ${styles.pageWithSheet}` : styles.page}>
+    <div
+      className={phoneSheet ? `${styles.page} ${styles.pageWithSheet}` : styles.page}
+      // How much of the viewport the sheet is currently eating. The board's
+      // scroller and the page's bottom padding both size against it, so
+      // minimizing the sheet grows the board instead of leaving dead space.
+      style={
+        phoneSheet
+          ? ({ '--sheet-h': SHEET_HEIGHT[sheetSnap] } as React.CSSProperties)
+          : undefined
+      }
+    >
       <div className={phase === 'setup' ? 'container' : `container ${styles.wide}`}>
         {/* The masthead is orientation, and mid-draft on a phone you are
             already oriented - it cost a screenful above the board. The same
@@ -566,7 +583,12 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                       </strong>
                     ) : (
                       <>
-                        {isAuction ? 'Nominating: ' : 'On the clock: '}
+                        {/* The strip has one job and the pick counter sits
+                            right beside the name, so the label is understood
+                            without saying it. Kept on desktop, where the bar
+                            carries other items the name could be confused
+                            with. */}
+                        {!phoneSheet && (isAuction ? 'Nominating: ' : 'On the clock: ')}
                         <strong className={styles.statusStrong}>
                           {config.teams.find(t => t.id === derived.onTheClockId)?.name}
                         </strong>
@@ -580,6 +602,20 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                   </span>
                 )}
               </div>
+              {/* Focus mode hides the app header, so the strip carries the
+                  way out. Fixed width and always rendered, so it can't shift
+                  the row. Leaving is safe: the session is saved and the room
+                  offers to resume it. */}
+              {phoneSheet && (
+                <Link
+                  to="/"
+                  className={styles.statusClose}
+                  aria-label="Leave the draft room"
+                  title="Leave the draft room. Your draft is saved."
+                >
+                  ✕
+                </Link>
+              )}
               {/* Rendered on your own turn too (it reads as "where you pick
                   after this one"): the chip appearing and disappearing at
                   every handoff re-wrapped the bar at some widths, which
@@ -744,13 +780,17 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
               </div>
             )}
 
-            {isSnake ? <DraftBoard room={room} /> : <AuctionBoard room={room} />}
+            <div className={phoneSheet ? styles.boardAnchor : undefined}>
+              {isSnake ? <DraftBoard room={room} /> : <AuctionBoard room={room} />}
+            </div>
 
             {phoneSheet ? (
               <DraftSheet
                 tabs={SHEET_TABS}
                 active={sheetTab}
                 onTabChange={key => setSheetTab(key as SheetTabKey)}
+                snap={sheetSnap}
+                onSnapChange={setSheetSnap}
               >
                 {/* Players stays pure pool: the row Draft buttons cover the
                     common logging flows, and the full logger (odd cases:
@@ -820,6 +860,23 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                     <div className={styles.settingsGroup}>
                       <span className={styles.settingsLabel}>Draft</span>
                       <div className={styles.settingsRow}>{draftControls}</div>
+                    </div>
+                    {/* Focus mode hides the app nav, so the way out lives
+                        here. Leaving is safe: the session is saved and the
+                        room offers to resume it. */}
+                    <div className={styles.settingsGroup}>
+                      <span className={styles.settingsLabel}>Leave</span>
+                      <div className={styles.settingsRow}>
+                        <Link to="/rankings" className={styles.settingsLink}>
+                          Rankings
+                        </Link>
+                        <Link to="/values" className={styles.settingsLink}>
+                          Values
+                        </Link>
+                        <Link to="/" className={styles.settingsLink}>
+                          Home
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 )}

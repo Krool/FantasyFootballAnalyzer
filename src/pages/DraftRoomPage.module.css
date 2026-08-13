@@ -610,10 +610,18 @@
   }
 }
 
-/* Phone drafting: the bottom sheet overlays the viewport bottom, so keep the
-   page's last content (the board) clear of the collapsed tab bar. */
+/* Phone drafting: a fixed frame, not a scrolling page. The page is exactly
+   one viewport tall and reserves the sheet's current height as bottom
+   padding, so the board fills the gap between the status strip and the
+   sheet - and gives that space back as the sheet is dragged up. Everything
+   that moves, moves inside the board's own scroller. */
 .pageWithSheet {
-  padding-bottom: 7rem;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-top: 0.5rem;
+  padding-bottom: var(--sheet-h, 52dvh);
 }
 
 /* ─── Phone draft focus ───
@@ -632,17 +640,85 @@
        the same reason the desktop bar reserves its tallest shape. */
     min-height: 3.25rem;
     height: 3.25rem;
-    padding: 0.5rem 0.75rem;
+    /* 52px tall, 4px padding top and bottom: exactly the 44px the close
+       button needs to stay a legal touch target without the strip growing. */
+    padding: 0.25rem 0.75rem;
     margin-bottom: 0.75rem;
     flex-wrap: nowrap;
     overflow: hidden;
-    box-shadow: 4px 4px 0 var(--bone), 0 10px 14px -10px rgb(0 0 0 / 0.85);
+    /* No offset block shadow: flush to the screen edges it would hang off
+       the right and get clipped. A plain drop shadow does the separating. */
+    box-shadow: 0 10px 14px -10px rgb(0 0 0 / 0.85);
+    border-left: none;
+    border-right: none;
   }
 
   /* Everything that isn't the live group is a direct child of the bar; in
      focus mode it has either moved to settings or is second-row detail. */
   .statusBarFocus > .statusItem,
   .statusBarFocus > .statusSpacer {
+    display: none;
+  }
+
+  /* The live group yields whatever the close button needs instead of
+     claiming the full row, so the button can't be pushed out of the strip. */
+  .statusBarFocus .statusPrimary {
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .statusClose {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-right: -0.25rem;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--bone);
+    text-decoration: none;
+    border: 2px solid var(--bone-dim);
+  }
+
+  /* The frame's flexible row: the board takes whatever is left between the
+     strip and the sheet. min-height: 0 lets it shrink below its content so
+     the board's scroller (not the page) absorbs the overflow. */
+  .boardAnchor {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  /* .wide is the shared page container. In focus mode it has to pass the
+     frame's height down to the board, and it must be pinned to the viewport
+     width: it is centred by default, so once the board made it wider than
+     the screen it overflowed BOTH edges - a dead gutter on the left and the
+     close button pushed off the right. min-width: 0 stops the wide grid
+     inside from sizing it at all. Padding goes too, so the strip and the
+     board sit flush to the screen edges. */
+  .pageWithSheet .wide {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .statusBarFocus {
+    flex: none;
+  }
+
+  /* Keyboard shortcuts on a touch phone: nothing to press, and it wrapped to
+     two lines directly above the board. */
+  .kbdHints {
     display: none;
   }
 
@@ -684,5 +760,20 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
+  }
+
+  .settingsLink {
+    padding: 0.55rem 0.9rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--bone);
+    border: 2px solid var(--bone-dim);
+    text-decoration: none;
   }
 }

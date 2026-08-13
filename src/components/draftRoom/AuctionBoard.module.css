@@ -50,6 +50,27 @@
   max-height: 23rem;
 }
 
+/* Same deal as DraftBoard on a phone: in focus mode the board fills its slot
+   in the fixed frame and its scroller is the only thing that moves. */
+@media (max-width: 640px) {
+  :global(body.draft-focus) .board {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+  }
+
+  :global(body.draft-focus) .boardHeader {
+    flex: none;
+  }
+
+  :global(body.draft-focus) .scroller {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+  }
+}
+
 .grid {
   display: grid;
   gap: 2px;

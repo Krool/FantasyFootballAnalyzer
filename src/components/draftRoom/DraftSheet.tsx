@@ -1,7 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
+import { SNAP_SHARE, type SheetSnap } from './sheetSnap';
 import styles from './DraftSheet.module.css';
-
-export type SheetSnap = 'peek' | 'half' | 'full';
 
 export interface SheetTab {
   key: string;
@@ -18,6 +17,10 @@ interface DraftSheetProps {
   tabs: SheetTab[];
   active: string;
   onTabChange: (key: string) => void;
+  // Controlled: the page needs the snap too, so the board can take back the
+  // room a collapsed sheet gives up.
+  snap: SheetSnap;
+  onSnapChange: (snap: SheetSnap) => void;
   children: ReactNode;
 }
 
@@ -27,13 +30,14 @@ interface DraftSheetProps {
 // tapping anywhere on a peeked header opens HALF; tapping the already-active
 // tab collapses back to PEEK; the chevron steps up (peek -> half -> full)
 // and back down from full.
-const SNAP_SHARE: Record<SheetSnap, number> = { peek: 0.075, half: 0.52, full: 0.94 };
-
-export function DraftSheet({ tabs, active, onTabChange, children }: DraftSheetProps) {
-  // Opens at HALF: during a draft the player list is the reason you're on
-  // this screen, and PEEK made you drag before you could do anything. HALF
-  // still leaves the board and the status strip in view above.
-  const [snap, setSnap] = useState<SheetSnap>('half');
+export function DraftSheet({
+  tabs,
+  active,
+  onTabChange,
+  snap,
+  onSnapChange: setSnap,
+  children,
+}: DraftSheetProps) {
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const drag = useRef<{ startY: number; startHeight: number } | null>(null);
   // The state above renders the height; this ref is the source of truth for
