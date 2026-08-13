@@ -6,6 +6,12 @@ export type SheetSnap = 'peek' | 'half' | 'full';
 export interface SheetTab {
   key: string;
   label: string;
+  // Set when the label is a glyph (the settings gear), so the tab still
+  // announces itself as a word to a screen reader.
+  ariaLabel?: string;
+  // Glyph tabs sit at a fixed width instead of taking an equal share, so
+  // adding one doesn't squeeze the worded tabs on a narrow phone.
+  narrow?: boolean;
 }
 
 interface DraftSheetProps {
@@ -24,7 +30,10 @@ interface DraftSheetProps {
 const SNAP_SHARE: Record<SheetSnap, number> = { peek: 0.075, half: 0.52, full: 0.94 };
 
 export function DraftSheet({ tabs, active, onTabChange, children }: DraftSheetProps) {
-  const [snap, setSnap] = useState<SheetSnap>('peek');
+  // Opens at HALF: during a draft the player list is the reason you're on
+  // this screen, and PEEK made you drag before you could do anything. HALF
+  // still leaves the board and the status strip in view above.
+  const [snap, setSnap] = useState<SheetSnap>('half');
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const drag = useRef<{ startY: number; startHeight: number } | null>(null);
   // The state above renders the height; this ref is the source of truth for
@@ -101,8 +110,11 @@ export function DraftSheet({ tabs, active, onTabChange, children }: DraftSheetPr
             <button
               key={tab.key}
               type="button"
-              className={active === tab.key ? styles.tabOn : styles.tab}
+              className={`${active === tab.key ? styles.tabOn : styles.tab} ${
+                tab.narrow ? styles.tabNarrow : ''
+              }`}
               aria-pressed={active === tab.key}
+              aria-label={tab.ariaLabel}
               onClick={() => selectTab(tab.key)}
             >
               {tab.label}

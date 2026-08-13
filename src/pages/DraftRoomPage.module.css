@@ -615,3 +615,74 @@
 .pageWithSheet {
   padding-bottom: 7rem;
 }
+
+/* ─── Phone draft focus ───
+   Ordered last on purpose: .statusBarFocus and .statusBarLive have equal
+   specificity, and the tall drafting reservations (4.5rem, and 6.75rem on
+   coarse pointers) are sized for a bar full of buttons. In focus mode those
+   buttons live in the sheet's settings pane, so the strip is one line and
+   has to win the tie on source order. */
+@media (max-width: 640px) {
+  .statusBarFocus {
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    /* Fixed, not derived: a RUN badge or a long team name swapping in must
+       not change the strip's height, or the board jumps at every handoff -
+       the same reason the desktop bar reserves its tallest shape. */
+    min-height: 3.25rem;
+    height: 3.25rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    box-shadow: 4px 4px 0 var(--bone), 0 10px 14px -10px rgb(0 0 0 / 0.85);
+  }
+
+  /* Everything that isn't the live group is a direct child of the bar; in
+     focus mode it has either moved to settings or is second-row detail. */
+  .statusBarFocus > .statusItem,
+  .statusBarFocus > .statusSpacer {
+    display: none;
+  }
+
+  .settingsPane {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 0.25rem 0 1rem;
+  }
+
+  .settingsSummary {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--bone-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .settingsGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .settingsLabel {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+  }
+
+  .settingsRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}

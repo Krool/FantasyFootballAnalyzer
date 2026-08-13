@@ -581,6 +581,17 @@ html {
   min-height: 0;
 }
 
+/* Phone draft focus: while a draft is live on a phone, DraftRoomPage sets
+   this on <body>. A live draft needs the status line, the board, and the
+   player sheet - the guest banner is a full screenful of copy the drafter
+   has already read, and it sits between the header and the board. It comes
+   back the moment the draft ends or the viewport grows. */
+@media (max-width: 640px) {
+  body.draft-focus .guest-banner {
+    display: none;
+  }
+}
+
 /* Screen-reader-only content (aria-live announcements, table captions). */
 .visually-hidden {
   position: absolute;

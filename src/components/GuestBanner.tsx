@@ -11,7 +11,10 @@ interface GuestBannerProps {
 export function GuestBanner({ onConnect }: GuestBannerProps) {
   const { playClick } = useSounds();
   return (
-    <div className={styles.banner} role="status">
+    // guest-banner is a global hook so the phone draft room can hide this
+    // while a draft is live (see .draft-focus in index.css). The module class
+    // is hashed, so a stable name is the only way to reach it from there.
+    <div className={`${styles.banner} guest-banner`} role="status">
       <div className={`container ${styles.inner}`}>
         <p className={styles.text}>
           <span className={styles.tag}>Guest mode</span>

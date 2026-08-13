@@ -16,7 +16,7 @@ import { ConnectedBanner } from '@/components/draftRoom/ConnectedBanner';
 import { DraftBoard } from '@/components/draftRoom/DraftBoard';
 import { DraftRecap } from '@/components/draftRoom/DraftRecap';
 import { DraftSetup } from '@/components/draftRoom/DraftSetup';
-import { DraftSheet } from '@/components/draftRoom/DraftSheet';
+import { DraftSheet, type SheetTab } from '@/components/draftRoom/DraftSheet';
 import { LeagueNeeds } from '@/components/draftRoom/LeagueNeeds';
 import { MockBidPanel } from '@/components/draftRoom/MockBidPanel';
 import { MockControls } from '@/components/draftRoom/MockControls';
@@ -74,13 +74,17 @@ const BOARD_TABS: Array<{ key: BoardTab; label: string; title: string }> = [
 // only exists while drafting; Log holds the pick log (with Undo/CSV).
 type SideTab = 'roster' | 'queue' | 'log';
 
-type SheetTabKey = 'players' | 'queue' | 'team' | 'log';
+type SheetTabKey = 'players' | 'queue' | 'team' | 'log' | 'settings';
 
-const SHEET_TABS: Array<{ key: SheetTabKey; label: string }> = [
+// Settings is last and wears a glyph: it holds the controls that used to
+// crowd the status bar (pace, sound, live sync, reset). They belong at the
+// bottom of a phone where the thumb already is, not stacked above the board.
+const SHEET_TABS: SheetTab[] = [
   { key: 'players', label: 'Players' },
   { key: 'queue', label: 'Queue' },
   { key: 'team', label: 'Team' },
   { key: 'log', label: 'Log' },
+  { key: 'settings', label: '⚙', ariaLabel: 'Draft settings', narrow: true },
 ];
 
 interface DraftRoomPageProps {
@@ -123,6 +127,17 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
   const lastSparkSeqRef = useRef(-1);
 
   const { phase, config, derived, undo, reset } = room;
+
+  // Phone + live draft = focus mode. The class drives the one piece of
+  // chrome this page doesn't own (the app-level guest banner); everything
+  // else it hides directly. Cleared on unmount so leaving mid-draft - back
+  // button, tab switch - can't strand the banner hidden on other pages.
+  const draftFocus = phase === 'drafting' && isPhone;
+  useEffect(() => {
+    if (!draftFocus) return;
+    document.body.classList.add('draft-focus');
+    return () => document.body.classList.remove('draft-focus');
+  }, [draftFocus]);
 
   // Each phase swaps the whole view (setup form -> draft board -> recap),
   // but the browser keeps the old scroll position: hitting Start at the
@@ -452,21 +467,69 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
     />
   );
 
-  const phoneSheet = phase === 'drafting' && isPhone;
+  const phoneSheet = draftFocus;
+
+  const configSummary = `${league.name} · ${config.season} ${isAuction ? 'Auction' : 'Snake'} · ${
+    SCORING_LABEL[config.scoring]
+  }${config.rosterSlots.SUPERFLEX > 0 ? ' · Superflex' : ''}${
+    config.tePremium ? ' · TEP' : ''
+  }${isMock ? ' · Mock' : ''}`;
+
+  // The controls that used to trail the status bar. On desktop they stay in
+  // the bar; on a phone they move into the settings pane so the bar can be a
+  // single status line. Same elements either way - one definition, so the
+  // two placements can't drift apart.
+  const draftControls = (
+    <>
+      <button
+        type="button"
+        className={styles.soundBtn}
+        onClick={toggleMute}
+        aria-pressed={isMuted}
+        title={isMuted ? 'Sounds are off. Click to unmute.' : 'Mute all app sounds'}
+      >
+        {isMuted ? '🔇' : '🔊'}
+      </button>
+      <button
+        type="button"
+        className={styles.statusUndoBtn}
+        onClick={() => {
+          playClick();
+          undo();
+        }}
+        disabled={room.events.length === 0}
+        title="Remove the last pick. Press again to keep backing out (Ctrl+Z works too)."
+      >
+        Undo
+      </button>
+      <button
+        type="button"
+        className={resetArmed ? styles.statusBtnDanger : styles.statusBtn}
+        onClick={confirmReset}
+        title={
+          resetArmed
+            ? 'Click again to delete every logged pick (completed drafts stay archived)'
+            : 'Delete every logged pick and return to setup'
+        }
+      >
+        {resetArmed ? 'Confirm Reset?' : 'Reset Draft'}
+      </button>
+    </>
+  );
 
   return (
     <div className={phoneSheet ? `${styles.page} ${styles.pageWithSheet}` : styles.page}>
       <div className={phase === 'setup' ? 'container' : `container ${styles.wide}`}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>Draft Room</h1>
-          <p className={styles.subtitle}>
-            {league.name} · {config.season} {isAuction ? 'Auction' : 'Snake'}
-            {' · '}{SCORING_LABEL[config.scoring]}
-            {config.rosterSlots.SUPERFLEX > 0 ? ' · Superflex' : ''}
-            {config.tePremium ? ' · TEP' : ''}
-            {isMock ? ' · Mock' : ''}
-          </p>
-        </div>
+        {/* The masthead is orientation, and mid-draft on a phone you are
+            already oriented - it cost a screenful above the board. The same
+            config line reappears at the top of the settings pane, which is
+            where you'd go looking for it. */}
+        {!phoneSheet && (
+          <div className={styles.header}>
+            <h1 className={styles.title}>Draft Room</h1>
+            <p className={styles.subtitle}>{configSummary}</p>
+          </div>
+        )}
 
         {showConnectedBanner && (
           <ConnectedBanner onDismiss={() => setShowConnectedBanner(false)} />
@@ -485,7 +548,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
             <div
               className={`${styles.statusBar} ${phase === 'drafting' ? styles.statusBarLive : ''} ${
                 myTurn ? styles.statusBarMine : ''
-              }`}
+              } ${phoneSheet ? styles.statusBarFocus : ''}`}
             >
               {/* The only contents that change pick to pick live together in
                   one group: on phones it renders as a single fixed-height row
@@ -566,7 +629,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                   {run.pos} RUN
                 </span>
               )}
-              {liveSync.available && !liveSync.enabled && (
+              {!phoneSheet && liveSync.available && !liveSync.enabled && (
                 <input
                   type="text"
                   className={watchBad ? styles.watchInputBad : styles.watchInput}
@@ -579,7 +642,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                   title="Paste a sleeper.com draft URL to follow that draft instead of your league's. Sleeper doesn't list mocks under a league, so this is the only way to rehearse against one."
                 />
               )}
-              {liveSync.available && (
+              {!phoneSheet && liveSync.available && (
                 <button
                   type="button"
                   className={liveSync.enabled ? styles.syncBtnOn : styles.syncBtn}
@@ -600,41 +663,15 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                     : 'Live Sync'}
                 </button>
               )}
-              <span className={styles.statusSpacer} />
-              {isMock && phase === 'drafting' && <MockControls sim={sim} isSnake={isSnake} />}
-              <button
-                type="button"
-                className={styles.soundBtn}
-                onClick={toggleMute}
-                aria-pressed={isMuted}
-                title={isMuted ? 'Sounds are off. Click to unmute.' : 'Mute all app sounds'}
-              >
-                {isMuted ? '🔇' : '🔊'}
-              </button>
-              <button
-                type="button"
-                className={styles.statusUndoBtn}
-                onClick={() => {
-                  playClick();
-                  undo();
-                }}
-                disabled={room.events.length === 0}
-                title="Remove the last pick. Press again to keep backing out (Ctrl+Z works too)."
-              >
-                Undo
-              </button>
-              <button
-                type="button"
-                className={resetArmed ? styles.statusBtnDanger : styles.statusBtn}
-                onClick={confirmReset}
-                title={
-                  resetArmed
-                    ? 'Click again to delete every logged pick (completed drafts stay archived)'
-                    : 'Delete every logged pick and return to setup'
-                }
-              >
-                {resetArmed ? 'Confirm Reset?' : 'Reset Draft'}
-              </button>
+              {!phoneSheet && (
+                <>
+                  <span className={styles.statusSpacer} />
+                  {isMock && phase === 'drafting' && (
+                    <MockControls sim={sim} isSnake={isSnake} />
+                  )}
+                  {draftControls}
+                </>
+              )}
             </div>
 
             {liveSync.error && (
@@ -736,6 +773,55 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                     {logger}
                     <PickLog room={room} />
                   </>
+                )}
+                {sheetTab === 'settings' && (
+                  <div className={styles.settingsPane}>
+                    <p className={styles.settingsSummary}>{configSummary}</p>
+                    {isMock && (
+                      <div className={styles.settingsGroup}>
+                        <span className={styles.settingsLabel}>Mock pace</span>
+                        <MockControls sim={sim} isSnake={isSnake} />
+                      </div>
+                    )}
+                    {liveSync.available && (
+                      <div className={styles.settingsGroup}>
+                        <span className={styles.settingsLabel}>Live sync</span>
+                        {!liveSync.enabled && (
+                          <input
+                            type="text"
+                            className={watchBad ? styles.watchInputBad : styles.watchInput}
+                            placeholder="Mock draft URL (optional)"
+                            defaultValue={liveSync.watchId ?? ''}
+                            onChange={e => {
+                              setWatchBad(
+                                !liveSync.setWatch(e.target.value) &&
+                                  e.target.value.trim() !== '',
+                              );
+                            }}
+                            title="Paste a sleeper.com draft URL to follow that draft instead of your league's."
+                          />
+                        )}
+                        <button
+                          type="button"
+                          className={liveSync.enabled ? styles.syncBtnOn : styles.syncBtn}
+                          onClick={liveSync.toggle}
+                          disabled={liveSync.enabled && liveSync.status === 'connecting'}
+                        >
+                          {liveSync.enabled
+                            ? liveSync.status === 'syncing'
+                              ? '● LIVE SYNC'
+                              : liveSync.status === 'error'
+                                ? '○ RECONNECTING'
+                                : '○ CONNECTING'
+                            : 'Live Sync'}
+                        </button>
+                      </div>
+                    )}
+                    <div className={styles.settingsGroup}>
+                      <span className={styles.settingsLabel}>Draft</span>
+                      <div className={styles.settingsRow}>{draftControls}</div>
+                    </div>
+                  </div>
                 )}
               </DraftSheet>
             ) : (
