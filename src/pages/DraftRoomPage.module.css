@@ -137,6 +137,11 @@
   background: var(--gold);
   padding: 0.15rem 0.45rem;
   display: inline-block;
+  /* Keep the badge no taller than the plain text items beside it: with the
+     inherited 1.55 line-height its padded box was ~3px taller than the row,
+     so the whole bar (and the board below) shifted every time a run badge
+     came or went - which is exactly the on-the-clock handoff moment. */
+  line-height: 1.2;
   animation: statusAlertPop 0.3s cubic-bezier(.2, .8, .2, 1);
 }
 
