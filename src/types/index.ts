@@ -240,6 +240,11 @@ export interface League {
   // TE-premium bonus points per TE reception (Sleeper bonus_rec_te). Seeds
   // the Draft Room's TE premium toggle.
   tePremiumPerReception?: number;
+  // Points per passing touchdown. 4 is the near-universal default; 6 lifts
+  // every QB and is common enough that pricing them at 4 misreads the whole
+  // position. Seeds the Draft Room's 6pt toggle and the projection columns.
+  // Absent when the platform didn't report it.
+  passTdPoints?: number;
   // League starts individual defensive players (DL/LB/DB slots). Those slots
   // and players are not modeled; surfaces show an honest notice instead.
   hasIDP?: boolean;

@@ -24,6 +24,10 @@ interface DraftTableProps {
   // them. Absent, we fall back to PPR and the most common roster shape.
   scoringType?: ScoringType;
   rosterSlots?: RosterSlots;
+  // Scoring the pool's preset projection columns can't express: they are all
+  // built on 4pt passing TDs and no TE bonus.
+  passTdPoints?: number;
+  tePremiumPerReception?: number;
 }
 
 type SortField = 'pick' | 'round' | 'player' | 'position' | 'team' | 'points' | 'posRank' | 'value' | 'grade' | 'cost' | 'proj';
@@ -38,6 +42,8 @@ export function DraftTable({
   draftType = 'snake',
   scoringType = 'ppr',
   rosterSlots = DEFAULT_ROSTER_SLOTS,
+  passTdPoints,
+  tePremiumPerReception,
 }: DraftTableProps) {
   const { playFilter, playSort } = useSounds();
 
@@ -80,8 +86,11 @@ export function DraftTable({
   // the best legal starting lineup that follows from it. Answers "is this
   // roster good", which is a different question from "was this draft cheap".
   const projected = useMemo(
-    () => (hasResults ? new Map<string, number>() : projectedPointsByPick(allPicks, POOL, scoringType)),
-    [hasResults, allPicks, scoringType],
+    () =>
+      hasResults
+        ? new Map<string, number>()
+        : projectedPointsByPick(allPicks, POOL, scoringType, { passTdPoints, tePremiumPerReception }),
+    [hasResults, allPicks, scoringType, passTdPoints, tePremiumPerReception],
   );
 
   // Get unique positions

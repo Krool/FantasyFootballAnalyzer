@@ -777,3 +777,63 @@
     text-decoration: none;
   }
 }
+
+/* ── Draft already run ──
+   Shown above setup when the loaded league finished its draft for the season
+   the pool covers, so the room doesn't open silently offering to run it. */
+.draftDonePanel {
+  margin-bottom: 2rem;
+  padding: 1.25rem 1.4rem;
+  border: 2px solid var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  background: var(--ink);
+}
+
+.draftDoneTitle {
+  font-family: var(--font-headline);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.6rem;
+  color: var(--bone);
+}
+
+.draftDoneCopy {
+  margin: 0 0 1rem;
+  max-width: 60ch;
+  line-height: 1.55;
+  color: var(--bone-dim);
+}
+
+.draftDoneActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.draftDoneCta {
+  display: inline-block;
+  padding: 0.55rem 1.1rem;
+  border: 2px solid var(--volt);
+  background: var(--volt);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.draftDoneCta:hover {
+  background: transparent;
+  color: var(--volt);
+}
+
+.draftDoneAside {
+  margin: 0.9rem 0 0;
+  font-size: 0.85rem;
+  color: var(--bone-dim);
+}

@@ -105,6 +105,10 @@ function configFromLeague(league: League): DraftRoomConfig {
     // Auto-detected TE premium (Sleeper bonus_rec_te); the setup toggle
     // remains the override.
     tePremium: (league.tePremiumPerReception ?? 0) > 0 ? true : undefined,
+    // Same for 6pt passing TDs. Left to the toggle alone this was almost never
+    // set, so a 6pt league priced its QBs as if they scored 4, which underrates
+    // the whole position rather than one player.
+    sixPtPassTd: (league.passTdPoints ?? 4) >= 6 ? true : undefined,
     keepersPerTeam: 1,
     keeperEscalation: 1,
     // The platform's real auction budget when it exposes one (Sleeper/ESPN);

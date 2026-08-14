@@ -135,3 +135,33 @@ describe('projectedLineup', () => {
     expect(DEFAULT_ROSTER_SLOTS.QB + DEFAULT_ROSTER_SLOTS.RB + DEFAULT_ROSTER_SLOTS.WR).toBe(5);
   });
 });
+
+describe('6pt passing touchdowns', () => {
+  it('lifts quarterbacks above the pool\u2019s 4pt projection column', () => {
+    const picks = [pick('qb-a', 'QB')];
+    const base = projectedPointsByPick(picks, POOL, 'ppr').get(pickKey(picks[0]))!;
+    const six = projectedPointsByPick(picks, POOL, 'ppr', { passTdPoints: 6 }).get(pickKey(picks[0]))!;
+    expect(six).toBeGreaterThan(base);
+  });
+
+  it('leaves every other position alone', () => {
+    const picks = [pick('rb-a', 'RB'), pick('wr-a', 'WR')];
+    const six = projectedPointsByPick(picks, POOL, 'ppr', { passTdPoints: 6 });
+    expect(six.get(pickKey(picks[0]))).toBe(250);
+    expect(six.get(pickKey(picks[1]))).toBe(240);
+  });
+
+  it('treats an unreported or 4pt league as the default', () => {
+    const picks = [pick('qb-a', 'QB')];
+    const base = projectedPointsByPick(picks, POOL, 'ppr').get(pickKey(picks[0]));
+    expect(projectedPointsByPick(picks, POOL, 'ppr', { passTdPoints: 4 }).get(pickKey(picks[0]))).toBe(base);
+    expect(projectedPointsByPick(picks, POOL, 'ppr', {}).get(pickKey(picks[0]))).toBe(base);
+  });
+
+  it('applies a TE bonus to tight ends only', () => {
+    const picks = [pick('te-a', 'TE'), pick('wr-a', 'WR')];
+    const prem = projectedPointsByPick(picks, POOL, 'ppr', { tePremiumPerReception: 0.5 });
+    expect(prem.get(pickKey(picks[0]))!).toBeGreaterThan(180);
+    expect(prem.get(pickKey(picks[1]))).toBe(240);
+  });
+});

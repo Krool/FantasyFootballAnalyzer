@@ -1360,6 +1360,7 @@ export async function loadLeague(
   let scoringType: League['scoringType'] = 'custom';
   const scoringItems = leagueData.settings.scoringSettings?.scoringItems || [];
   const receptionPoints = scoringItems.find(s => s.statId === 53)?.points || 0; // statId 53 = receptions
+  const passTdPoints = scoringItems.find(s => s.statId === 4)?.points; // statId 4 = passing TD
   if (receptionPoints === 1) {
     scoringType = 'ppr';
   } else if (receptionPoints === 0.5) {
@@ -1453,6 +1454,7 @@ export async function loadLeague(
     status,
     loadedAt: Date.now(),
     hasMedianMatchup: hasMedianMatchup || undefined,
+    passTdPoints,
     auctionBudget,
     playoffStartWeek,
     playoffTeams: scheduleSettings?.playoffTeamCount,

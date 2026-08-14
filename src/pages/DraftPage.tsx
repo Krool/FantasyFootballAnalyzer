@@ -78,6 +78,8 @@ export function DraftPage({ league }: DraftPageProps) {
               draftType={liveData.draftType}
               scoringType={league.scoringType}
               rosterSlots={league.rosterSlots}
+              passTdPoints={league.passTdPoints}
+              tePremiumPerReception={league.tePremiumPerReception}
             />
           ) : (
             <DraftTable
@@ -86,6 +88,8 @@ export function DraftPage({ league }: DraftPageProps) {
               draftType={league.draftType}
               scoringType={league.scoringType}
               rosterSlots={league.rosterSlots}
+              passTdPoints={league.passTdPoints}
+              tePremiumPerReception={league.tePremiumPerReception}
             />
           )
         ) : (

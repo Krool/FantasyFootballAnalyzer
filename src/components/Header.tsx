@@ -5,6 +5,7 @@ import { exportLeagueReport } from '@/utils/exportPdf';
 import { useSounds } from '@/hooks/useSounds';
 import { logger } from '@/utils/logger';
 import { Analytics } from '@/utils/analytics';
+import { hasDraftedPoolSeason } from '@/utils/draftSeasonState';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -69,6 +70,9 @@ export function Header({
   // anywhere. Keyed on the league rather than another pathname list so the
   // next public route cannot reintroduce this.
   const showLeagueNav = !!league && !isGuest && !isDraftPrep;
+  // This league already drafted for the season the pool covers, so the Draft
+  // Room has nothing left to run for it.
+  const alreadyDrafted = hasDraftedPoolSeason(league);
 
   const handleExportPdf = () => {
     if (league) {
@@ -227,10 +231,12 @@ export function Header({
             >
               Draft
             </Link>
-            {/* Draft prep is for the upcoming season; on a completed season
-                the tab is noise. The year dropdown's "draft prep" entry stays
-                as the path into the Draft Room. */}
-            {league?.status !== 'final' && (
+            {/* Draft prep is for the upcoming season; on a completed season,
+                or once this league's own draft for the pool season has already
+                run, the tab is noise that opens a setup screen for a draft
+                that is over. The year dropdown's "draft prep" entry stays as
+                the path into the Draft Room for mocks. */}
+            {league?.status !== 'final' && !alreadyDrafted && (
               <Link
                 to="/draft-room"
                 className={`${styles.navLink} ${location.pathname === '/draft-room' ? styles.active : ''}`}

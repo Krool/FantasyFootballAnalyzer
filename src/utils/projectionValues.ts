@@ -157,7 +157,7 @@ export function replacementRanks(
 
 // Apply the position scoring proxies (TE premium, 6pt pass TD) to a player's
 // raw projected points before VOR. Multiplicative so it widens the spread.
-function adjustedPoints(player: PoolPlayer, pts: number, cfg: VorConfig): number {
+export function adjustedPoints(player: PoolPlayer, pts: number, cfg: VorConfig): number {
   if (player.pos === 'TE') return pts * cfg.tePremiumMult;
   if (player.pos === 'QB') return pts * cfg.passTdMult;
   return pts;

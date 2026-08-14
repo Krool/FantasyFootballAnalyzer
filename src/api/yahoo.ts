@@ -491,6 +491,10 @@ export async function loadLeague(leagueKey: string): Promise<League> {
   const statData = leagueInfo.settings?.stat_modifiers?.stat || [];
   const scoringSettings = Array.isArray(statData) ? statData : [statData];
   const receptionStat = scoringSettings.find((s: any) => s.stat_id === '21'); // Receptions
+  // stat_id 4 = Passing Touchdowns. Yahoo serves stat ids and values as
+  // strings, so parse before it reaches the 6pt comparison.
+  const passTdStat = scoringSettings.find((s: any) => s.stat_id === '4');
+  const passTdPoints = passTdStat ? parseFloat(passTdStat.value) : undefined;
   if (receptionStat) {
     const recValue = parseFloat(receptionStat.value);
     if (recValue >= 1) scoringType = 'ppr';
@@ -606,6 +610,7 @@ export async function loadLeague(leagueKey: string): Promise<League> {
         }
       : {}),
     hasIDP: rosterSlots.hasIDP || undefined,
+    passTdPoints: Number.isFinite(passTdPoints) ? passTdPoints : undefined,
     scoringIsApproximate: scoringType === 'custom' || undefined,
   };
 }

@@ -826,6 +826,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
     isBestBall: leagueData.settings?.best_ball === 1 || undefined,
     tePremiumPerReception:
       (scoringSettings?.bonus_rec_te ?? 0) > 0 ? scoringSettings.bonus_rec_te : undefined,
+    passTdPoints: scoringSettings?.pass_td,
     auctionBudget,
     playoffStartWeek: playoffStart,
     playoffTeams: leagueData.settings?.playoff_teams,

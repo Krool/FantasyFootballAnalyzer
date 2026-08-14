@@ -30,7 +30,9 @@ import { QueuePanel } from '@/components/draftRoom/QueuePanel';
 import { TeamBoard } from '@/components/draftRoom/TeamBoard';
 import { TeamsTab } from '@/components/draftRoom/TeamsTab';
 import { TierBoard } from '@/components/draftRoom/TierBoard';
+import { POOL } from '@/data/draftPool';
 import { detectRun } from '@/utils/draftAlerts';
+import { hasDraftedPoolSeason } from '@/utils/draftSeasonState';
 import { allKeepers, fullPositions, lineupRows, reservedKeepersFor } from '@/utils/draftEngine';
 import { vibrate } from '@/utils/haptics';
 import { picksUntilMine } from '@/utils/pickPreview';
@@ -476,6 +478,9 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
 
   const phoneSheet = draftFocus;
 
+  // The league's real draft for the season this room targets is already done.
+  const alreadyDrafted = hasDraftedPoolSeason(league);
+
   const configSummary = `${league.name} · ${config.season} ${isAuction ? 'Auction' : 'Snake'} · ${
     SCORING_LABEL[config.scoring]
   }${config.rosterSlots.SUPERFLEX > 0 ? ' · Superflex' : ''}${
@@ -557,7 +562,30 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
         </div>
 
         {phase === 'setup' ? (
-          <DraftSetup room={room} league={league} />
+          <>
+            {/* Reachable by URL or the year dropdown even after the header
+                stops advertising it. Say the draft is over and point at the
+                analysis rather than opening straight onto a setup screen for
+                a draft that already happened; mocks stay available below. */}
+            {alreadyDrafted && (
+              <div className={styles.draftDonePanel}>
+                <h2 className={styles.draftDoneTitle}>This league already drafted</h2>
+                <p className={styles.draftDoneCopy}>
+                  {league.name} finished its {POOL.season} draft, so there is nothing left to run
+                  here. The picks, grades, and projections are on the Draft Analysis page.
+                </p>
+                <div className={styles.draftDoneActions}>
+                  <Link to="/draft" className={styles.draftDoneCta}>
+                    See the draft analysis
+                  </Link>
+                </div>
+                <p className={styles.draftDoneAside}>
+                  Setting up below still runs a mock against the {POOL.season} board.
+                </p>
+              </div>
+            )}
+            <DraftSetup room={room} league={league} />
+          </>
         ) : (
           <>
             {phase === 'complete' && <DraftRecap room={room} />}
