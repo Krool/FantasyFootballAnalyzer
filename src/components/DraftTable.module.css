@@ -267,3 +267,18 @@
   color: var(--blood-text);
   white-space: nowrap;
 }
+
+/* Grade cell for a kept player: same gold as the row's keeper tag, so the
+   two read as one fact, and visibly not one of the four grade badges. */
+.keeperGrade {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  padding: 0.15rem 0.45rem;
+  white-space: nowrap;
+}

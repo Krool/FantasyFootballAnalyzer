@@ -118,6 +118,17 @@ export function DraftTable({
     return [...filtered].sort((a, b) => {
       let comparison = 0;
 
+      // A keeper was never a decision at the table: he comes off the board at
+      // whatever round he costs, so "he fell 30 spots past consensus" measures
+      // the keeper rule, not the pick. Graded, they top the steal list as fakes
+      // (this league's biggest apparent steal was a round-13 keeper). The
+      // summary counts and the standings already hold them out; sorting by the
+      // judgment columns holds them out too, parking them after real picks in
+      // either direction rather than leading the list.
+      if (sortField === 'value' || sortField === 'grade' || sortField === 'posRank') {
+        if (a.isKeeper !== b.isKeeper) return a.isKeeper ? 1 : -1;
+      }
+
       switch (sortField) {
         case 'pick':
           comparison = a.pickNumber - b.pickNumber;
@@ -462,15 +473,31 @@ export function DraftTable({
                 <td className="font-mono text-center">
                   {pick.positionRank < 999 ? `${pick.player.position}${pick.positionRank}` : '-'}
                 </td>
+                {/* Keepers keep their row — they are on the roster and their
+                    rank and projection are real — but carry no verdict, since
+                    the round they cost was set by the keeper rule, not by
+                    anyone reading the board. */}
                 {!isAuction && (
-                  <td className={`font-mono text-center ${pick.valueOverExpected >= 0 ? 'grade-great' : 'grade-terrible'}`}>
-                    {formatValueOverExpected(pick.valueOverExpected)}
+                  <td
+                    className={
+                      pick.isKeeper
+                        ? 'font-mono text-center'
+                        : `font-mono text-center ${pick.valueOverExpected >= 0 ? 'grade-great' : 'grade-terrible'}`
+                    }
+                  >
+                    {pick.isKeeper ? '—' : formatValueOverExpected(pick.valueOverExpected)}
                   </td>
                 )}
                 <td>
-                  <span className={`grade-badge ${pick.grade}`}>
-                    {getGradeDisplayText(pick.grade)}
-                  </span>
+                  {pick.isKeeper ? (
+                    <span className={styles.keeperGrade} title="Kept, not drafted: no reach or steal to judge">
+                      Keeper
+                    </span>
+                  ) : (
+                    <span className={`grade-badge ${pick.grade}`}>
+                      {getGradeDisplayText(pick.grade)}
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}
