@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-08-14T02:18:53.751Z",
+ "fetchedAt": "2026-08-14T11:41:27.229Z",
  "data": {
   "players": [
    {
@@ -5677,9 +5677,9 @@
     "pos": "RB",
     "team": "TEN",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
-    "injuryNotes": "Soreness",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
     "depthChartOrder": 2
@@ -9382,8 +9382,8 @@
     "pos": "QB",
     "team": "HOU",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Knee",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -10799,8 +10799,8 @@
     "pos": "RB",
     "team": "ARI",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Ankle",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -11826,8 +11826,8 @@
     "pos": "TE",
     "team": "TEN",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Pectoral",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
