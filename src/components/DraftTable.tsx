@@ -1,7 +1,13 @@
 import { useState, useMemo } from 'react';
-import type { Team } from '@/types';
+import type { RosterSlots, ScoringType, Team } from '@/types';
 import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected } from '@/utils/grading';
 import { consensusPositionRanks, hasSeasonResults } from '@/utils/consensusGrade';
+import {
+  DEFAULT_ROSTER_SLOTS,
+  pickKey,
+  projectedLineup,
+  projectedPointsByPick,
+} from '@/utils/projectedRoster';
 import { POOL } from '@/data/draftPool';
 import { useSounds } from '@/hooks/useSounds';
 import { NflTeamLabel } from './NflTeamLabel';
@@ -14,15 +20,25 @@ interface DraftTableProps {
   teams: Team[];
   totalTeams: number;
   draftType?: 'snake' | 'auction' | 'linear';
+  // Drive the pre-season projections off the league's real rules when we have
+  // them. Absent, we fall back to PPR and the most common roster shape.
+  scoringType?: ScoringType;
+  rosterSlots?: RosterSlots;
 }
 
-type SortField = 'pick' | 'round' | 'player' | 'position' | 'team' | 'points' | 'posRank' | 'value' | 'grade' | 'cost';
+type SortField = 'pick' | 'round' | 'player' | 'position' | 'team' | 'points' | 'posRank' | 'value' | 'grade' | 'cost' | 'proj';
 type SortDirection = 'asc' | 'desc';
 
 // FLEX positions (RB/WR/TE)
 const FLEX_POSITIONS = ['RB', 'WR', 'TE'];
 
-export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTableProps) {
+export function DraftTable({
+  teams,
+  totalTeams,
+  draftType = 'snake',
+  scoringType = 'ppr',
+  rosterSlots = DEFAULT_ROSTER_SLOTS,
+}: DraftTableProps) {
   const { playFilter, playSort } = useSounds();
 
   // Detect if auction draft
@@ -59,6 +75,14 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
     const override = hasResults ? undefined : consensusPositionRanks(allPicks, POOL);
     return gradeAllPicks(mockLeague, override).filter(pick => !isPlaceholderPlayer(pick.player.name));
   }, [teams, totalTeams, isAuction, hasResults, allPicks]);
+
+  // Pre-season only: what the pool projects each drafted player to score, and
+  // the best legal starting lineup that follows from it. Answers "is this
+  // roster good", which is a different question from "was this draft cheap".
+  const projected = useMemo(
+    () => (hasResults ? new Map<string, number>() : projectedPointsByPick(allPicks, POOL, scoringType)),
+    [hasResults, allPicks, scoringType],
+  );
 
   // Get unique positions
   const positions = useMemo(() => {
@@ -104,6 +128,9 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
         case 'points':
           comparison = (a.seasonPoints || 0) - (b.seasonPoints || 0);
           break;
+        case 'proj':
+          comparison = (projected.get(pickKey(a)) ?? 0) - (projected.get(pickKey(b)) ?? 0);
+          break;
         case 'posRank':
           comparison = a.positionRank - b.positionRank;
           break;
@@ -122,7 +149,7 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [gradedPicks, selectedTeam, selectedPosition, sortField, sortDirection]);
+  }, [gradedPicks, selectedTeam, selectedPosition, sortField, sortDirection, projected]);
 
   const handleSort = (field: SortField) => {
     playSort();
@@ -198,9 +225,12 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
         const points = picks.reduce((sum, p) => sum + (p.seasonPoints ?? 0), 0);
         const spent = picks.reduce((sum, p) => sum + (p.auctionValue ?? 0), 0);
         const regret = live.reduce((sum, p) => sum + leftOnBoard(p), 0);
-        // Before Week 1 there are no points to rank on; the standings are how
-        // far each team beat the consensus board, summed over its live picks.
+        // Before Week 1 there are no points to rank on. Two different numbers
+        // stand in, and they are worth showing together because they disagree:
+        // consensusValue is how cheaply the team bought, projStarters is how
+        // good the resulting starting lineup actually projects.
         const consensusValue = live.reduce((sum, p) => sum + p.valueOverExpected, 0);
+        const projStarters = hasResults ? 0 : projectedLineup(picks, rosterSlots, projected).startingPoints;
         return {
           teamId,
           teamName: picks[0]?.teamName ?? teamId,
@@ -210,10 +240,11 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
           costPerPoint: points > 0 && spent > 0 ? spent / points : null,
           regret,
           consensusValue,
+          projStarters,
         };
       })
-      .sort((a, b) => (hasResults ? b.points - a.points : b.consensusValue - a.consensusValue));
-  }, [gradedPicks, hasResults]);
+      .sort((a, b) => (hasResults ? b.points - a.points : b.projStarters - a.projStarters));
+  }, [gradedPicks, hasResults, projected, rosterSlots]);
 
   return (
     <div className={styles.container}>
@@ -267,16 +298,18 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
 
       {!hasResults && (
         <p className={styles.gradeBasis}>
-          The season hasn&apos;t started, so nothing here is graded on results. Every pick is
-          measured against the FantasyPros consensus rank: did the player go earlier or later at his
-          position than the market said he should?
+          Nothing has been played yet, so none of this is a result. Grades measure each pick against
+          the FantasyPros consensus rank (did the player go earlier or later at his position than the
+          market said he should), and the points are projections for the season under your league&apos;s
+          scoring. The standings rank on projected starting lineup, so a team can buy well and still
+          sit low with a lopsided roster.
         </p>
       )}
 
       {leaderboard.length > 1 && (
         <div className={styles.leaderboard}>
           <h3 className={styles.leaderboardTitle}>
-            {hasResults ? 'Whose draft won?' : 'Who beat the consensus?'}
+            {hasResults ? 'Whose draft won?' : 'Whose roster projects best?'}
           </h3>
           <div className={styles.leaderboardGrid}>
             {leaderboard.map((row, i) => (
@@ -294,12 +327,20 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
                     {row.points.toFixed(0)} pts
                   </span>
                 ) : (
-                  <span
-                    className={styles.lbStat}
-                    title="Positions gained on the FantasyPros consensus, summed over this team's live picks. Positive means it kept taking players later than the market ranked them."
-                  >
-                    {formatValueOverExpected(row.consensusValue)} vs consensus
-                  </span>
+                  <>
+                    <span
+                      className={styles.lbStat}
+                      title="Projected points from this team's best legal starting lineup. A projection, not a result."
+                    >
+                      {row.projStarters.toFixed(0)} proj
+                    </span>
+                    <span
+                      className={styles.lbStat}
+                      title="Positions gained on the FantasyPros consensus, summed over this team's live picks. Positive means it kept taking players later than the market ranked them. High value with a low projection means the team bought well but built a lopsided roster."
+                    >
+                      {formatValueOverExpected(row.consensusValue)} vs consensus
+                    </span>
+                  </>
                 )}
                 <span className={styles.lbStat} title="Share of live picks graded great or good">
                   {Math.round(row.hitRate * 100)}% hits
@@ -350,9 +391,13 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
               <th onClick={() => handleSort('team')} onKeyDown={handleSortKeyDown('team')} tabIndex={0} aria-sort={ariaSortFor('team')} className={styles.sortable} role="button" aria-label="Sort by Team">
                 Fantasy Team{getSortIndicator('team')}
               </th>
-              {hasResults && (
+              {hasResults ? (
                 <th onClick={() => handleSort('points')} onKeyDown={handleSortKeyDown('points')} tabIndex={0} aria-sort={ariaSortFor('points')} className={styles.sortable} role="button" aria-label="Sort by Points">
                   Season Pts{getSortIndicator('points')}
+                </th>
+              ) : (
+                <th onClick={() => handleSort('proj')} onKeyDown={handleSortKeyDown('proj')} tabIndex={0} aria-sort={ariaSortFor('proj')} className={styles.sortable} role="button" aria-label="Sort by Projected Points" title="Projected points for the season under this league's scoring. A projection, not a result.">
+                  Proj Pts{getSortIndicator('proj')}
                 </th>
               )}
               <th onClick={() => handleSort('posRank')} onKeyDown={handleSortKeyDown('posRank')} tabIndex={0} aria-sort={ariaSortFor('posRank')} className={styles.sortable} role="button" aria-label={hasResults ? 'Sort by Position Rank' : 'Sort by Consensus Rank'} title={hasResults ? 'Where he finished at his position among drafted players' : 'Where the FantasyPros consensus ranked him at his position among drafted players'}>
@@ -398,11 +443,13 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
                 <td className={styles.fantasyTeam}>
                   <TeamLink teamId={pick.teamId} name={pick.teamName} />
                 </td>
-                {hasResults && (
-                  <td className="font-mono text-right">
-                    {pick.seasonPoints !== undefined ? pick.seasonPoints.toFixed(1) : '-'}
-                  </td>
-                )}
+                <td className="font-mono text-right">
+                  {hasResults
+                    ? pick.seasonPoints !== undefined
+                      ? pick.seasonPoints.toFixed(1)
+                      : '-'
+                    : (projected.get(pickKey(pick))?.toFixed(0) ?? '-')}
+                </td>
                 <td className="font-mono text-center">
                   {pick.positionRank < 999 ? `${pick.player.position}${pick.positionRank}` : '-'}
                 </td>

@@ -72,9 +72,21 @@ export function DraftPage({ league }: DraftPageProps) {
 
         {hasData ? (
           active === 'live' && liveData ? (
-            <DraftTable teams={liveData.teams} totalTeams={liveData.totalTeams} draftType={liveData.draftType} />
+            <DraftTable
+              teams={liveData.teams}
+              totalTeams={liveData.totalTeams}
+              draftType={liveData.draftType}
+              scoringType={league.scoringType}
+              rosterSlots={league.rosterSlots}
+            />
           ) : (
-            <DraftTable teams={league.teams} totalTeams={league.totalTeams} draftType={league.draftType} />
+            <DraftTable
+              teams={league.teams}
+              totalTeams={league.totalTeams}
+              draftType={league.draftType}
+              scoringType={league.scoringType}
+              rosterSlots={league.rosterSlots}
+            />
           )
         ) : (
           <div className={styles.empty}>
