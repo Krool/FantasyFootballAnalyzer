@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-08-13T21:01:03.640Z",
+ "fetchedAt": "2026-08-14T02:18:53.751Z",
  "data": {
   "players": [
    {
@@ -8263,7 +8263,7 @@
     "name": "Terrell Jennings",
     "pos": "RB",
     "team": "NE",
-    "status": "Active",
+    "status": "Inactive",
     "injuryStatus": "IR",
     "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
@@ -8446,8 +8446,8 @@
     "pos": "QB",
     "team": "SF",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Ribs",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -11904,7 +11904,7 @@
     "pos": "TE",
     "team": "GB",
     "status": "Inactive",
-    "injuryStatus": "IR",
+    "injuryStatus": "Questionable",
     "injuryBodyPart": "Hamstring",
     "injuryNotes": null,
     "injuryStartDate": null,
