@@ -63,8 +63,20 @@ function renderTable() {
   );
 }
 
+// The keeper-value panel renders its own table above the board, so a kept
+// player's name is on the page twice. Everything here is about the draft
+// board, which is the last table rendered.
+function board(): HTMLElement {
+  const tables = screen.getAllByRole('table');
+  return tables[tables.length - 1];
+}
+
+function boardRows(): HTMLElement[] {
+  return within(board()).getAllByRole('row').slice(1);
+}
+
 function rowFor(name: string): HTMLElement {
-  return screen.getByText(name).closest('tr')!;
+  return within(board()).getByText(name).closest('tr')!;
 }
 
 describe('DraftTable keeper handling', () => {
@@ -98,19 +110,13 @@ describe('DraftTable keeper handling', () => {
     renderTable();
     fireEvent.click(screen.getByRole('button', { name: /Sort by Value/i }));
 
-    const names = screen
-      .getAllByRole('row')
-      .slice(1)
-      .map(r => r.textContent ?? '');
+    const names = boardRows().map(r => r.textContent ?? '');
     // Whichever direction the sort runs, the kept player parks behind the
     // real picks instead of leading the steal list.
     expect(names[names.length - 1]).toContain(KEPT_LATE.name);
 
     fireEvent.click(screen.getByRole('button', { name: /Sort by Value/i }));
-    const flipped = screen
-      .getAllByRole('row')
-      .slice(1)
-      .map(r => r.textContent ?? '');
+    const flipped = boardRows().map(r => r.textContent ?? '');
     expect(flipped[flipped.length - 1]).toContain(KEPT_LATE.name);
   });
 

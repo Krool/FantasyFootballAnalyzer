@@ -1,0 +1,59 @@
+/* Keeper value: the verdict keepers get instead of a reach/steal grade.
+   Gold-keyed to match the row's keeper tag in DraftTable. */
+.panel {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.1rem 1.1rem;
+  border: 2px solid var(--gold);
+  box-shadow: 4px 4px 0 var(--gold);
+  background: var(--ink);
+}
+
+.title {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 0.5rem;
+}
+
+.blurb {
+  margin: 0 0 1rem;
+  max-width: 72ch;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--bone-dim);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+}
+
+.team,
+.player {
+  white-space: nowrap;
+}
+
+.player {
+  font-weight: 600;
+}
+
+.good {
+  color: var(--lime);
+}
+
+.bad {
+  color: var(--blood-text);
+}
+
+.footnote {
+  margin: 0.9rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--bone-dim);
+}

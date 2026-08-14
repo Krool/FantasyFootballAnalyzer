@@ -816,8 +816,8 @@
 .draftDoneCta {
   display: inline-block;
   padding: 0.55rem 1.1rem;
-  border: 2px solid var(--volt);
-  background: var(--volt);
+  border: 2px solid var(--lime);
+  background: var(--lime);
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -829,7 +829,7 @@
 
 .draftDoneCta:hover {
   background: transparent;
-  color: var(--volt);
+  color: var(--lime);
 }
 
 .draftDoneAside {

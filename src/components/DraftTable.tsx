@@ -8,6 +8,10 @@ import {
   projectedLineup,
   projectedPointsByPick,
 } from '@/utils/projectedRoster';
+import { buildPickValueCurve } from '@/utils/pickValueCurve';
+import { keeperValues } from '@/utils/keeperValue';
+import { vorConfigFor } from '@/utils/projectionValues';
+import { KeeperValuePanel } from './KeeperValuePanel';
 import { POOL } from '@/data/draftPool';
 import { useSounds } from '@/hooks/useSounds';
 import { NflTeamLabel } from './NflTeamLabel';
@@ -85,6 +89,27 @@ export function DraftTable({
   // Pre-season only: what the pool projects each drafted player to score, and
   // the best legal starting lineup that follows from it. Answers "is this
   // roster good", which is a different question from "was this draft cheap".
+  // Keepers show no reach-or-steal grade, so this is the verdict they get:
+  // the player's curve value against the pick his cost round consumed.
+  const keeperRows = useMemo(() => {
+    if (!allPicks.some(p => p.isKeeper)) return [];
+    const curve = buildPickValueCurve(
+      POOL,
+      {
+        budget: 200,
+        teams: totalTeams || 12,
+        rounds: Math.max(1, Math.round(allPicks.length / Math.max(1, totalTeams || 12))),
+        rosterSlots,
+        scoring: scoringType,
+      },
+      vorConfigFor({
+        sixPtPassTd: (passTdPoints ?? 4) >= 6,
+        tePremium: (tePremiumPerReception ?? 0) > 0,
+      }),
+    );
+    return keeperValues(allPicks, POOL, curve, totalTeams || 12);
+  }, [allPicks, totalTeams, rosterSlots, scoringType, passTdPoints, tePremiumPerReception]);
+
   const projected = useMemo(
     () =>
       hasResults
@@ -383,6 +408,8 @@ export function DraftTable({
           </div>
         </div>
       )}
+
+      <KeeperValuePanel rows={keeperRows} />
 
       <div className={`${styles.tableWrapper} scroll-x-hint`}>
         <table className={`table ${styles.table}`}>
