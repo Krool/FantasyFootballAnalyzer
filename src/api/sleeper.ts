@@ -483,7 +483,14 @@ export async function loadLeague(leagueId: string): Promise<League> {
       isKeeper: pick.is_keeper === true,
       // Auction sale price rides in pick metadata as a string.
       auctionValue: pick.metadata?.amount ? parseInt(pick.metadata.amount, 10) || undefined : undefined,
-      seasonPoints: pointsForScoring(seasonStats[pick.player_id]) ?? 0,
+      // Left undefined, not 0, when the player has no fantasy points on record.
+      // Sleeper publishes a full stats payload for the upcoming season before
+      // Week 1 with rank fields but no pts_*, so coercing to 0 made a drafted-
+      // but-unplayed season look like a played one where everybody scored
+      // nothing — which collapses every position rank into array order and
+      // grades the 1.01 "terrible". Downstream uses undefined as the "no
+      // results yet" signal and grades against consensus instead.
+      seasonPoints: pointsForScoring(seasonStats[pick.player_id]),
     };
 
     const picks = teamDraftPicks.get(pick.roster_id) || [];

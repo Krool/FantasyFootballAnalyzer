@@ -42,6 +42,18 @@
   flex-wrap: wrap;
 }
 
+/* Says which yardstick the grades came off: consensus before Week 1, real
+   season points after. */
+.gradeBasis {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  border-left: 3px solid var(--bone-dim);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--bone-dim);
+  max-width: 68ch;
+}
+
 /* ── Table ── */
 .tableWrapper {
   overflow-x: auto;

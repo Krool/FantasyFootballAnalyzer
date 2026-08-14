@@ -177,6 +177,22 @@ export function gradePick(
   }
 }
 
+// Grade a pick against the FantasyPros consensus (pre-season, no results yet).
+//
+// gradePick's thresholds are tuned for season outcomes, where a player can
+// finish 20 spots off where he was drafted and "beat expectation by 2" is a
+// real result. Consensus deltas are far tighter — across a full 12-team draft
+// the median is 0 and the middle half lands between -2 and +1 — so reusing
+// those bands calls every on-market pick "bad". These bands are cut from that
+// distribution: meeting the market is fine, beating it by a tier is the win,
+// and only a genuine reach grades out badly.
+export function gradeConsensusPick(valueOverExpected: number): DraftGrade {
+  if (valueOverExpected >= 4) return 'great'; // he fell a full tier past the market
+  if (valueOverExpected >= -1) return 'good'; // at market, give or take a spot
+  if (valueOverExpected >= -5) return 'bad'; // a reach, but a survivable one
+  return 'terrible'; // nobody else had him within five spots at his position
+}
+
 // Grade a pick for auction drafts based on cost vs performance
 export function gradeAuctionPick(
   pick: DraftPick,
@@ -248,8 +264,17 @@ export function gradeAuctionPick(
   }
 }
 
-// Grade all picks in a league
-export function gradeAllPicks(league: League): GradedPick[] {
+// Grade all picks in a league.
+//
+// `positionRanksOverride` swaps the "how good did he turn out" input. Left off,
+// that's season points, which needs a season. Before Week 1 the caller passes
+// FantasyPros consensus ranks (utils/consensusGrade.ts) so a finished draft is
+// gradeable at the table instead of scoring every pick against a zeroed stat
+// line.
+export function gradeAllPicks(
+  league: League,
+  positionRanksOverride?: Map<string, number>
+): GradedPick[] {
   // Collect all draft picks from all teams
   const allPicks = league.teams.flatMap(team => team.draftPicks || []);
 
@@ -258,7 +283,7 @@ export function gradeAllPicks(league: League): GradedPick[] {
   }
 
   // Calculate position ranks
-  const positionRanks = calculatePositionRanks(allPicks, allPicks);
+  const positionRanks = positionRanksOverride ?? calculatePositionRanks(allPicks, allPicks);
 
   // Detect if this is an auction draft
   const isAuction = league.draftType === 'auction' || allPicks.some(p => p.auctionValue !== undefined && p.auctionValue > 0);
@@ -293,7 +318,11 @@ export function gradeAllPicks(league: League): GradedPick[] {
       };
     }
 
-    const grade = gradePick(pick, positionRank, expectedRank);
+    // Consensus mode ranks by market opinion, not by what happened, so it gets
+    // its own bands (see gradeConsensusPick).
+    const grade = positionRanksOverride
+      ? gradeConsensusPick(valueOverExpected)
+      : gradePick(pick, positionRank, expectedRank);
 
     return {
       ...pick,

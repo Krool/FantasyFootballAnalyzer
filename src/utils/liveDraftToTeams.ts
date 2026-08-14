@@ -5,8 +5,9 @@
 // the picks are built in memory; nothing is uploaded.
 //
 // A live-logged draft is for the UPCOMING season, so its players have no season
-// stats yet. DraftTable detects that (no seasonPoints) and hides the
-// results-only columns; here we just carry player, team, and cost.
+// stats yet. DraftTable detects that (no seasonPoints) and grades against the
+// FantasyPros consensus rank instead of results; here we just carry player,
+// team, and cost.
 
 import type { DraftPick, Player, Team } from '@/types';
 import type { DraftPoolFile } from '@/types/draft';

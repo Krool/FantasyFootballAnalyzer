@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import type { Team } from '@/types';
 import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected } from '@/utils/grading';
+import { consensusPositionRanks, hasSeasonResults } from '@/utils/consensusGrade';
+import { POOL } from '@/data/draftPool';
 import { useSounds } from '@/hooks/useSounds';
 import { NflTeamLabel } from './NflTeamLabel';
 import { PosBadge } from './PosBadge';
@@ -28,14 +30,12 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
     t.draftPicks?.some(p => p.auctionValue !== undefined && p.auctionValue > 0)
   );
 
-  // A freshly-logged live draft (upcoming season) has no season stats yet, so
-  // grades, position ranks, and "whose draft won" would all be meaningless
-  // (every pick defaults to rank 999 = terrible). Show only the draft facts
-  // (player, team, cost) until results exist.
-  const hasResults = useMemo(
-    () => teams.some(t => t.draftPicks?.some(p => p.seasonPoints !== undefined)),
-    [teams],
-  );
+  // A draft for the upcoming season has no results yet. Rather than blank the
+  // analysis out (or grade every pick against a zeroed stat line, which buries
+  // the 1.01 at "terrible"), we swap the yardstick: before Week 1 each pick is
+  // judged against the FantasyPros consensus rank, after it against real points.
+  const allPicks = useMemo(() => teams.flatMap(t => t.draftPicks ?? []), [teams]);
+  const hasResults = useMemo(() => hasSeasonResults(allPicks), [allPicks]);
 
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
   const [selectedPosition, setSelectedPosition] = useState<string>('all');
@@ -56,8 +56,9 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
       isLoaded: true,
     };
     // Filter out unknown players (those with names like "Player 12345")
-    return gradeAllPicks(mockLeague).filter(pick => !isPlaceholderPlayer(pick.player.name));
-  }, [teams, totalTeams, isAuction]);
+    const override = hasResults ? undefined : consensusPositionRanks(allPicks, POOL);
+    return gradeAllPicks(mockLeague, override).filter(pick => !isPlaceholderPlayer(pick.player.name));
+  }, [teams, totalTeams, isAuction, hasResults, allPicks]);
 
   // Get unique positions
   const positions = useMemo(() => {
@@ -197,6 +198,9 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
         const points = picks.reduce((sum, p) => sum + (p.seasonPoints ?? 0), 0);
         const spent = picks.reduce((sum, p) => sum + (p.auctionValue ?? 0), 0);
         const regret = live.reduce((sum, p) => sum + leftOnBoard(p), 0);
+        // Before Week 1 there are no points to rank on; the standings are how
+        // far each team beat the consensus board, summed over its live picks.
+        const consensusValue = live.reduce((sum, p) => sum + p.valueOverExpected, 0);
         return {
           teamId,
           teamName: picks[0]?.teamName ?? teamId,
@@ -205,10 +209,11 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
           spent,
           costPerPoint: points > 0 && spent > 0 ? spent / points : null,
           regret,
+          consensusValue,
         };
       })
-      .sort((a, b) => b.points - a.points);
-  }, [gradedPicks]);
+      .sort((a, b) => (hasResults ? b.points - a.points : b.consensusValue - a.consensusValue));
+  }, [gradedPicks, hasResults]);
 
   return (
     <div className={styles.container}>
@@ -252,19 +257,27 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
           </select>
         </div>
 
-        {hasResults && (
-          <div className={styles.summary}>
-            <span className={`grade-badge great`}>{summary.great} Great</span>
-            <span className={`grade-badge good`}>{summary.good} Good</span>
-            <span className={`grade-badge bad`}>{summary.bad} Bad</span>
-            <span className={`grade-badge terrible`}>{summary.terrible} Terrible</span>
-          </div>
-        )}
+        <div className={styles.summary}>
+          <span className={`grade-badge great`}>{summary.great} Great</span>
+          <span className={`grade-badge good`}>{summary.good} Good</span>
+          <span className={`grade-badge bad`}>{summary.bad} Bad</span>
+          <span className={`grade-badge terrible`}>{summary.terrible} Terrible</span>
+        </div>
       </div>
 
-      {hasResults && leaderboard.length > 1 && (
+      {!hasResults && (
+        <p className={styles.gradeBasis}>
+          The season hasn&apos;t started, so nothing here is graded on results. Every pick is
+          measured against the FantasyPros consensus rank: did the player go earlier or later at his
+          position than the market said he should?
+        </p>
+      )}
+
+      {leaderboard.length > 1 && (
         <div className={styles.leaderboard}>
-          <h3 className={styles.leaderboardTitle}>Whose draft won?</h3>
+          <h3 className={styles.leaderboardTitle}>
+            {hasResults ? 'Whose draft won?' : 'Who beat the consensus?'}
+          </h3>
           <div className={styles.leaderboardGrid}>
             {leaderboard.map((row, i) => (
               <button
@@ -276,23 +289,34 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
               >
                 <span className={styles.lbRank}>{i + 1}</span>
                 <span className={styles.lbName}>{row.teamName}</span>
-                <span className={styles.lbStat} title="Points scored by drafted players">
-                  {row.points.toFixed(0)} pts
-                </span>
+                {hasResults ? (
+                  <span className={styles.lbStat} title="Points scored by drafted players">
+                    {row.points.toFixed(0)} pts
+                  </span>
+                ) : (
+                  <span
+                    className={styles.lbStat}
+                    title="Positions gained on the FantasyPros consensus, summed over this team's live picks. Positive means it kept taking players later than the market ranked them."
+                  >
+                    {formatValueOverExpected(row.consensusValue)} vs consensus
+                  </span>
+                )}
                 <span className={styles.lbStat} title="Share of live picks graded great or good">
                   {Math.round(row.hitRate * 100)}% hits
                 </span>
-                {row.costPerPoint !== null && (
+                {hasResults && row.costPerPoint !== null && (
                   <span className={styles.lbStat} title="Auction dollars paid per point scored">
                     ${row.costPerPoint.toFixed(2)}/pt
                   </span>
                 )}
-                <span
-                  className={styles.lbRegret}
-                  title="Points left on the board: how much better the best same-position player drafted later turned out, summed over this team's picks"
-                >
-                  −{row.regret.toFixed(0)} left
-                </span>
+                {hasResults && (
+                  <span
+                    className={styles.lbRegret}
+                    title="Points left on the board: how much better the best same-position player drafted later turned out, summed over this team's picks"
+                  >
+                    −{row.regret.toFixed(0)} left
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -327,23 +351,21 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
                 Fantasy Team{getSortIndicator('team')}
               </th>
               {hasResults && (
-                <>
-                  <th onClick={() => handleSort('points')} onKeyDown={handleSortKeyDown('points')} tabIndex={0} aria-sort={ariaSortFor('points')} className={styles.sortable} role="button" aria-label="Sort by Points">
-                    Season Pts{getSortIndicator('points')}
-                  </th>
-                  <th onClick={() => handleSort('posRank')} onKeyDown={handleSortKeyDown('posRank')} tabIndex={0} aria-sort={ariaSortFor('posRank')} className={styles.sortable} role="button" aria-label="Sort by Position Rank">
-                    Pos Rank{getSortIndicator('posRank')}
-                  </th>
-                  {!isAuction && (
-                    <th onClick={() => handleSort('value')} onKeyDown={handleSortKeyDown('value')} tabIndex={0} aria-sort={ariaSortFor('value')} className={styles.sortable} role="button" aria-label="Sort by Value">
-                      Value{getSortIndicator('value')}
-                    </th>
-                  )}
-                  <th onClick={() => handleSort('grade')} onKeyDown={handleSortKeyDown('grade')} tabIndex={0} aria-sort={ariaSortFor('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade">
-                    Grade{getSortIndicator('grade')}
-                  </th>
-                </>
+                <th onClick={() => handleSort('points')} onKeyDown={handleSortKeyDown('points')} tabIndex={0} aria-sort={ariaSortFor('points')} className={styles.sortable} role="button" aria-label="Sort by Points">
+                  Season Pts{getSortIndicator('points')}
+                </th>
               )}
+              <th onClick={() => handleSort('posRank')} onKeyDown={handleSortKeyDown('posRank')} tabIndex={0} aria-sort={ariaSortFor('posRank')} className={styles.sortable} role="button" aria-label={hasResults ? 'Sort by Position Rank' : 'Sort by Consensus Rank'} title={hasResults ? 'Where he finished at his position among drafted players' : 'Where the FantasyPros consensus ranked him at his position among drafted players'}>
+                {hasResults ? 'Pos Rank' : 'Consensus'}{getSortIndicator('posRank')}
+              </th>
+              {!isAuction && (
+                <th onClick={() => handleSort('value')} onKeyDown={handleSortKeyDown('value')} tabIndex={0} aria-sort={ariaSortFor('value')} className={styles.sortable} role="button" aria-label="Sort by Value" title={hasResults ? 'Position rank beaten, versus where he was drafted at his position' : 'Positions gained on the consensus: positive means he fell past where the market ranked him'}>
+                  Value{getSortIndicator('value')}
+                </th>
+              )}
+              <th onClick={() => handleSort('grade')} onKeyDown={handleSortKeyDown('grade')} tabIndex={0} aria-sort={ariaSortFor('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade">
+                Grade{getSortIndicator('grade')}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -377,25 +399,23 @@ export function DraftTable({ teams, totalTeams, draftType = 'snake' }: DraftTabl
                   <TeamLink teamId={pick.teamId} name={pick.teamName} />
                 </td>
                 {hasResults && (
-                  <>
-                    <td className="font-mono text-right">
-                      {pick.seasonPoints !== undefined ? pick.seasonPoints.toFixed(1) : '-'}
-                    </td>
-                    <td className="font-mono text-center">
-                      {pick.positionRank < 999 ? `${pick.player.position}${pick.positionRank}` : '-'}
-                    </td>
-                    {!isAuction && (
-                      <td className={`font-mono text-center ${pick.valueOverExpected >= 0 ? 'grade-great' : 'grade-terrible'}`}>
-                        {formatValueOverExpected(pick.valueOverExpected)}
-                      </td>
-                    )}
-                    <td>
-                      <span className={`grade-badge ${pick.grade}`}>
-                        {getGradeDisplayText(pick.grade)}
-                      </span>
-                    </td>
-                  </>
+                  <td className="font-mono text-right">
+                    {pick.seasonPoints !== undefined ? pick.seasonPoints.toFixed(1) : '-'}
+                  </td>
                 )}
+                <td className="font-mono text-center">
+                  {pick.positionRank < 999 ? `${pick.player.position}${pick.positionRank}` : '-'}
+                </td>
+                {!isAuction && (
+                  <td className={`font-mono text-center ${pick.valueOverExpected >= 0 ? 'grade-great' : 'grade-terrible'}`}>
+                    {formatValueOverExpected(pick.valueOverExpected)}
+                  </td>
+                )}
+                <td>
+                  <span className={`grade-badge ${pick.grade}`}>
+                    {getGradeDisplayText(pick.grade)}
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>
