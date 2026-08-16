@@ -49,6 +49,28 @@ describe('resolvePoolPlayer', () => {
   it('returns undefined for a player the pool does not carry', () => {
     expect(resolvePoolPlayer(player('99999', 'WR'), index)).toBeUndefined();
   });
+
+  it('falls back to name+position when the platform id is unknown (ESPN/Yahoo)', () => {
+    const yahooPick: Player = {
+      id: '461.p.100',
+      platformId: '461.p.100',
+      name: 'Jahmyr Gibbs',
+      position: 'RB',
+      team: 'DET',
+    };
+    expect(resolvePoolPlayer(yahooPick, index)?.id).toBe('jahmyr-gibbs-rb');
+  });
+
+  it('never name-matches an unenriched placeholder name', () => {
+    const placeholder: Player = {
+      id: '461.p.100',
+      platformId: '461.p.100',
+      name: 'Player 461.p.100',
+      position: 'RB',
+      team: 'FA',
+    };
+    expect(resolvePoolPlayer(placeholder, index)).toBeUndefined();
+  });
 });
 
 describe('hasSeasonResults', () => {

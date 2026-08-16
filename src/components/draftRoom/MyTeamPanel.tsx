@@ -10,7 +10,7 @@ interface MyTeamPanelProps {
 }
 
 export function MyTeamPanel({ room }: MyTeamPanelProps) {
-  const { config, derived, scaledValues } = room;
+  const { config, derived, scaledValues, inflation } = room;
   const me = derived.teams.get(config.myTeamId);
   const isAuction = config.draftType === 'auction';
 
@@ -18,8 +18,8 @@ export function MyTeamPanel({ room }: MyTeamPanelProps) {
   // player there, at current expected prices. Compared against remaining
   // budget to show how much is free for upgrades and bench.
   const planCost = useMemo(
-    () => (me && isAuction ? starterPlanCost(me, derived.available, scaledValues) : 0),
-    [me, isAuction, derived.available, scaledValues],
+    () => (me && isAuction ? starterPlanCost(me, derived.available, scaledValues, inflation.rate) : 0),
+    [me, isAuction, derived.available, scaledValues, inflation.rate],
   );
 
   // My not-yet-logged keepers, shown as filled slots from pick one.

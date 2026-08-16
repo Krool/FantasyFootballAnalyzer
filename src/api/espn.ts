@@ -480,7 +480,7 @@ export async function loadLeague(
         teamId: String(pick.teamId),
         teamName: '', // Will be set later
         isKeeper: pick.keeper === true,
-        auctionValue: pick.bidAmount,
+        auctionValue: pick.bidAmount || undefined,
         seasonPoints,
       };
 

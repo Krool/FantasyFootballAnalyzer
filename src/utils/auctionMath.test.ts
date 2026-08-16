@@ -51,7 +51,35 @@ describe('starterPlanCost', () => {
   });
 });
 
+describe('starterPlanCost under inflation', () => {
+  it('prices the remaining plan in inflated dollars, not sheet dollars', () => {
+    const rb1 = player({ pos: 'RB' });
+    const rb2 = player({ pos: 'RB' });
+    const qb1 = player({ pos: 'QB' });
+    const t = team({ starterNeeds: { QB: 1, RB: 2, WR: 0, TE: 0, K: 0, DST: 0 } });
+    const v = values([[rb1, 30], [rb2, 20], [qb1, 10]]);
+    // inflateValue at rate 2: 30→59, 20→39, 10→19.
+    expect(starterPlanCost(t, [rb1, rb2, qb1], v, 2)).toBe(117);
+  });
+});
+
 describe('comfortBid', () => {
+  it('shrinks when the room runs hot, since the remaining plan costs more', () => {
+    const rb1 = player({ pos: 'RB' });
+    const rb2 = player({ pos: 'RB' });
+    const qb1 = player({ pos: 'QB' });
+    const t = team({
+      remaining: 100,
+      openSlots: 5,
+      maxBid: 96,
+      starterNeeds: { QB: 1, RB: 1, WR: 0, TE: 0, K: 0, DST: 0 },
+    });
+    const v = values([[rb1, 30], [rb2, 20], [qb1, 10]]);
+    const flat = comfortBid(rb1, t, [rb1, rb2, qb1], v);
+    const hot = comfortBid(rb1, t, [rb1, rb2, qb1], v, 1.5);
+    expect(hot).toBeLessThan(flat);
+  });
+
   it('lets you pay up for a starter while reserving the rest of the plan', () => {
     const rb1 = player({ pos: 'RB' });
     const rb2 = player({ pos: 'RB' });

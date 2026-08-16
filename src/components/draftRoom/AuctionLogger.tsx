@@ -39,7 +39,7 @@ export function AuctionLogger({ room, selected, onLogged }: AuctionLoggerProps) 
   // number you actually need mid-bidding-war.
   const myComfort =
     selected && me && me.openSlots > 0
-      ? comfortBid(selected, me, derived.available, scaledValues)
+      ? comfortBid(selected, me, derived.available, scaledValues, inflation.rate)
       : null;
 
   // Keyboard flow for a fast room: picking a player (Enter in search or a

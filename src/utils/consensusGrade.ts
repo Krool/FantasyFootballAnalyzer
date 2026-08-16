@@ -15,32 +15,44 @@
 
 import type { DraftPick, Player } from '@/types';
 import type { DraftPoolFile, PoolPlayer } from '@/types/draft';
+import { matchKey } from './playerNames';
+import { isPlaceholderPlayer } from './placeholders';
 
 export interface PoolIndex {
   bySleeperId: Map<string, PoolPlayer>;
   byId: Map<string, PoolPlayer>;
+  // Normalized name+position, for platforms whose ids the pool doesn't carry
+  // (ESPN numeric ids, Yahoo `461.p.x` keys). Ambiguous keys are dropped.
+  byNameKey: Map<string, PoolPlayer | null>;
 }
 
 export function indexPool(pool: DraftPoolFile): PoolIndex {
   const bySleeperId = new Map<string, PoolPlayer>();
   const byId = new Map<string, PoolPlayer>();
+  const byNameKey = new Map<string, PoolPlayer | null>();
   for (const p of pool.players) {
     if (p.sleeperId) bySleeperId.set(String(p.sleeperId), p);
     byId.set(p.id, p);
+    const key = matchKey(p.name, p.pos);
+    byNameKey.set(key, byNameKey.has(key) ? null : p);
   }
-  return { bySleeperId, byId };
+  return { bySleeperId, byId, byNameKey };
 }
 
 // A Sleeper pick carries the platform player id (defenses ride as the team
 // abbreviation, e.g. "HOU", which the pool stores as that DST's sleeperId).
 // A draft logged in the Draft Room carries the pool's own slug as `id` and the
-// sleeperId as `platformId`. Try every id we might have been handed.
+// sleeperId as `platformId`. Try every id we might have been handed, then fall
+// back to the player's name — ESPN and Yahoo ids never appear in the pool, so
+// without this their drafts would grade against nothing.
 export function resolvePoolPlayer(player: Player, index: PoolIndex): PoolPlayer | undefined {
-  return (
+  const byId =
     index.byId.get(player.id) ??
     index.bySleeperId.get(player.id) ??
-    (player.platformId ? index.bySleeperId.get(player.platformId) : undefined)
-  );
+    (player.platformId ? index.bySleeperId.get(player.platformId) : undefined);
+  if (byId) return byId;
+  if (!player.name || !player.position || isPlaceholderPlayer(player.name)) return undefined;
+  return index.byNameKey.get(matchKey(player.name, player.position)) ?? undefined;
 }
 
 // Rank drafted players within their position by FantasyPros consensus.

@@ -33,7 +33,7 @@ import { TierBoard } from '@/components/draftRoom/TierBoard';
 import { POOL } from '@/data/draftPool';
 import { detectRun } from '@/utils/draftAlerts';
 import { hasDraftedPoolSeason } from '@/utils/draftSeasonState';
-import { allKeepers, fullPositions, lineupRows, reservedKeepersFor } from '@/utils/draftEngine';
+import { allKeepers, draftableSlotCount, fullPositions, lineupRows, reservedKeepersFor } from '@/utils/draftEngine';
 import { vibrate } from '@/utils/haptics';
 import { picksUntilMine } from '@/utils/pickPreview';
 import { nextPickFor } from '@/utils/snakeOrder';
@@ -263,9 +263,10 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
       if (row.pick) c.filled += 1;
       counts.set(key, c);
     }
+    // IR is not draftable, so it never counts toward the ALL chip.
     const rosterSize = config.draftType === 'snake'
       ? config.rounds
-      : Object.values(config.rosterSlots).reduce((sum, n) => sum + n, 0);
+      : draftableSlotCount(config.rosterSlots);
     counts.set('ALL', { filled: entries.length, total: rosterSize });
     return counts;
   }, [phase, config, derived.teams, derived.reservedPlayerIds, playerById]);

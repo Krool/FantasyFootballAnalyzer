@@ -17,6 +17,7 @@ export interface LiveDraftData {
   teams: Team[];
   totalTeams: number;
   draftType: 'snake' | 'auction';
+  auctionBudget?: number;
 }
 
 // Map a single logged event to a DraftPick. The pool join supplies the
@@ -61,5 +62,10 @@ export function liveDraftToTeams(session: DraftRoomSession, pool: DraftPoolFile)
     draftPicks: picksByTeam.get(t.id) ?? [],
   }));
 
-  return { teams, totalTeams: n, draftType: session.config.draftType };
+  return {
+    teams,
+    totalTeams: n,
+    draftType: session.config.draftType,
+    auctionBudget: session.config.draftType === 'auction' ? session.config.budget : undefined,
+  };
 }

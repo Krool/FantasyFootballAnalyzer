@@ -34,7 +34,11 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
         <h2 className={styles.title}>Your Nomination</h2>
         <SelectedPlayerCard
           player={selected}
-          detail={selected ? `Exp $${scaledValues.get(selected.id) ?? 1}` : undefined}
+          detail={
+            selected
+              ? `Exp $${inflateValue(scaledValues.get(selected.id) ?? 1, inflation.rate)}`
+              : undefined
+          }
         />
         <button
           type="button"
@@ -75,7 +79,7 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
   const expected = inflateValue(scaledValues.get(player.id) ?? 1, inflation.rate);
   const myCap = me?.fullAt[player.pos as keyof typeof me.fullAt] ? 0 : me?.maxBid ?? 0;
   const myComfort =
-    me && myCap > 0 ? comfortBid(player, me, derived.available, scaledValues) : null;
+    me && myCap > 0 ? comfortBid(player, me, derived.available, scaledValues, inflation.rate) : null;
   const submit = (amount: number) => {
     playSuccess();
     sim.resolve(amount);

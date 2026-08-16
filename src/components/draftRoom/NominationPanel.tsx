@@ -3,6 +3,7 @@ import type { PoolPlayer } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
 import { suggestNominations } from '@/utils/nominations';
+import { inflateValue } from '@/utils/inflation';
 import styles from './Panels.module.css';
 
 interface NominationPanelProps {
@@ -14,7 +15,7 @@ interface NominationPanelProps {
 // turn to put a player on the block. Bait early (drain other budgets at
 // positions you're done with), grab your guys for $1 in the endgame.
 export function NominationPanel({ room, onSelect }: NominationPanelProps) {
-  const { config, derived, scaledValues } = room;
+  const { config, derived, scaledValues, inflation } = room;
   const { playClick } = useSounds();
   const myTurn = derived.onTheClockId === config.myTeamId;
 
@@ -56,7 +57,9 @@ export function NominationPanel({ room, onSelect }: NominationPanelProps) {
                   {player.posRank}
                 </span>
                 <span className={styles.rowName}>{player.name}</span>
-                <span className={styles.rowValueDim}>${scaledValues.get(player.id) ?? 1}</span>
+                <span className={styles.rowValueDim}>
+                  ${inflateValue(scaledValues.get(player.id) ?? 1, inflation.rate)}
+                </span>
               </span>
               <span className={styles.suggestReasons}>{reasons.join(' · ')}</span>
             </button>

@@ -53,12 +53,14 @@ const threeTeamConfig: DraftRoomConfig = {
 
 describe('liveDraftToTeams', () => {
   it('maps sales to per-team draft picks with cost and pool player data', () => {
-    const { teams, totalTeams, draftType } = liveDraftToTeams(
+    const { teams, totalTeams, draftType, auctionBudget } = liveDraftToTeams(
       session([sale('cmc-rb', 'B', 74), sale('jj-wr', 'A', 56)]),
       pool,
     );
 
     expect(draftType).toBe('auction');
+    // The session's budget rides along so auction grades scale to the league.
+    expect(auctionBudget).toBe(200);
     expect(totalTeams).toBe(2);
 
     const sam = teams.find(t => t.id === 'A')!;
@@ -94,9 +96,10 @@ describe('liveDraftToTeams', () => {
       snakePick('cmc-rb', 'B', true),
       snakePick('jj-wr', 'A'),
     ];
-    const { teams, totalTeams, draftType } = liveDraftToTeams(session(events, snakeConfig), pool);
+    const { teams, totalTeams, draftType, auctionBudget } = liveDraftToTeams(session(events, snakeConfig), pool);
 
     expect(draftType).toBe('snake');
+    expect(auctionBudget).toBeUndefined();
     expect(totalTeams).toBe(2);
 
     const sam = teams.find(t => t.id === 'A')!;

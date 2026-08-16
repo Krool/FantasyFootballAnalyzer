@@ -5,20 +5,24 @@
 import type { PoolPlayer } from '@/types/draft';
 import type { TeamDraftState, StarterPos } from './draftEngine';
 import { STARTER_POSITIONS } from './draftEngine';
+import { inflateValue } from './inflation';
 
 // Cost of filling every remaining starter slot with the best available
-// player there, at current expected prices.
+// player there, at current expected prices. "Expected" means the room's
+// prices, not the sheet's: a hot room makes the remaining plan cost more,
+// so the plan is priced in inflation-adjusted dollars.
 export function starterPlanCost(
   team: TeamDraftState,
   available: PoolPlayer[],
   scaledValues: Map<string, number>,
+  inflationRate = 1,
 ): number {
   let total = 0;
   for (const pos of STARTER_POSITIONS) {
     const need = team.starterNeeds[pos];
     if (need === 0) continue;
     const best = available.filter(p => p.pos === pos).slice(0, need);
-    for (const p of best) total += scaledValues.get(p.id) ?? 1;
+    for (const p of best) total += inflateValue(scaledValues.get(p.id) ?? 1, inflationRate);
   }
   return total;
 }
@@ -32,10 +36,11 @@ export function comfortBid(
   team: TeamDraftState,
   available: PoolPlayer[],
   scaledValues: Map<string, number>,
+  inflationRate = 1,
 ): number {
   const pos = player.pos as StarterPos;
   const fillsStarter = STARTER_POSITIONS.includes(pos) && team.starterNeeds[pos] > 0;
-  const plan = starterPlanCost(team, available, scaledValues);
+  const plan = starterPlanCost(team, available, scaledValues, inflationRate);
 
   // Buying him releases the cheapest slot his position had budgeted (you
   // still want the better remaining players for the other slots).
@@ -43,7 +48,7 @@ export function comfortBid(
   if (fillsStarter) {
     const budgeted = available.filter(p => p.pos === pos).slice(0, team.starterNeeds[pos]);
     releasedSlotCost = budgeted.length
-      ? Math.min(...budgeted.map(p => scaledValues.get(p.id) ?? 1))
+      ? Math.min(...budgeted.map(p => inflateValue(scaledValues.get(p.id) ?? 1, inflationRate)))
       : 1;
   }
 

@@ -542,6 +542,21 @@ export async function loadLeague(leagueKey: string): Promise<League> {
     team.draftPicks = draftPicks.filter(p => p.teamId === team.id);
   }
 
+  // Yahoo never exposes the auction budget in settings; the best available
+  // read is the biggest per-team spend in a completed auction (teams almost
+  // always spend to the cap). Stays undefined predraft or for snake.
+  let auctionBudget: number | undefined;
+  if (draftType === 'auction') {
+    const spentByTeam = new Map<string, number>();
+    for (const p of draftPicks) {
+      if (p.auctionValue) {
+        spentByTeam.set(p.teamId, (spentByTeam.get(p.teamId) ?? 0) + p.auctionValue);
+      }
+    }
+    const maxSpend = Math.max(0, ...spentByTeam.values());
+    auctionBudget = maxSpend > 0 ? maxSpend : undefined;
+  }
+
   // Get transactions
   const transactionsData = await yahooFetch<any>(`/league/${leagueKey}/transactions`);
   const { transactions, trades } = parseTransactions(transactionsData, teams);
@@ -573,6 +588,7 @@ export async function loadLeague(leagueKey: string): Promise<League> {
     name: leagueInfo.name,
     season,
     draftType,
+    auctionBudget,
     teams,
     trades,
     scoringType,
@@ -638,7 +654,7 @@ function parseDraftResults(data: any, teams: Team[]): DraftPick[] {
         },
         teamId: teamKey,
         teamName: team?.name || 'Unknown',
-        auctionValue: result.cost ? parseInt(result.cost) : undefined
+        auctionValue: Number(result.cost) > 0 ? Number(result.cost) : undefined
       });
     }
   } catch (e) {
