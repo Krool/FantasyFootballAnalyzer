@@ -189,7 +189,9 @@ const draftResultsBody = {
           { pick: '1', round: '1', team_key: TEAM_1, player_key: '461.p.100', cost: '55' },
           { pick: '2', round: '1', team_key: TEAM_2, player_key: '461.p.101', cost: '48' },
           { pick: '3', round: '2', team_key: TEAM_2, player_key: '461.p.102', cost: '30' },
-          { pick: '4', round: '2', team_key: TEAM_1, player_key: '461.p.103' },
+          // cost 0 arrives as a NUMBER through the real proxy (it parses tag
+          // values); a zero cost is never an auction price.
+          { pick: '4', round: '2', team_key: TEAM_1, player_key: '461.p.103', cost: 0 },
         ],
       },
     },
@@ -348,9 +350,14 @@ describe('yahoo loadLeague', () => {
     expect(first.auctionValue).toBe(55);
     expect(first.player.id).toBe('461.p.100');
     expect(first.teamName).toBe('Krool Runnings');
-    // No cost on pick 4: auctionValue stays undefined
+    // Numeric cost 0 on pick 4: auctionValue stays undefined
     const noCost = team1.draftPicks!.find(p => p.pickNumber === 4)!;
     expect(noCost.auctionValue).toBeUndefined();
+  });
+
+  it('infers the auction budget from the biggest per-team draft spend', () => {
+    // TEAM_2 spent 48 + 30 = 78, more than TEAM_1's 55.
+    expect(league.auctionBudget).toBe(78);
   });
 
   it('converts the FAAB add/drop into a waiver transaction', () => {
@@ -650,8 +657,8 @@ describe('yahoo loadLeague settings edge cases', () => {
     expect(league.leagueType).toBeUndefined();
   });
 
-  it('leaves auctionBudget unset (Yahoo does not expose it)', async () => {
-    const league = await loadWithSettings({});
+  it('leaves auctionBudget unset for a snake draft', async () => {
+    const league = await loadWithSettings({ is_auction_draft: '0' });
     expect(league.auctionBudget).toBeUndefined();
   });
 
@@ -745,6 +752,26 @@ describe('yahoo loadLeague scoring detection', () => {
   ] as const)('%s', async (_label, mods, expected) => {
     const league = await loadWithModifiers(mods);
     expect(league.scoringType).toBe(expected);
+  });
+
+  // Regression: the adapters used to ignore points-per-passing-TD, so a 6pt
+  // league priced and projected every QB off the pool's 4pt columns. Yahoo
+  // quotes stat values as strings, so this also pins the parseFloat.
+  it('reads points-per-passing-TD from stat_id 4', async () => {
+    const sixPt = await loadWithModifiers({
+      stat: [{ stat_id: '21', value: '0.5' }, { stat_id: '4', value: '6' }],
+    });
+    expect(sixPt.passTdPoints).toBe(6);
+
+    const fourPt = await loadWithModifiers({
+      stat: [{ stat_id: '21', value: '0.5' }, { stat_id: '4', value: '4' }],
+    });
+    expect(fourPt.passTdPoints).toBe(4);
+  });
+
+  it('leaves passTdPoints undefined when Yahoo sends no passing-TD modifier', async () => {
+    const league = await loadWithModifiers({ stat: [{ stat_id: '21', value: '0.5' }] });
+    expect(league.passTdPoints).toBeUndefined();
   });
 });
 

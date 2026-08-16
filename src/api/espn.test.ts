@@ -499,6 +499,41 @@ describe('espn loadLeague scoring detection', () => {
     const league = await loadWithReception(points);
     expect(league.scoringType).toBe(expected);
   });
+
+  // Regression: the adapters used to ignore points-per-passing-TD entirely, so
+  // a 6pt league priced and projected every QB off the pool's 4pt columns. The
+  // downstream math is covered in projectedRoster.test.ts; this pins that the
+  // value actually gets read out of ESPN's payload in the first place.
+  async function loadWithPassTd(points: number | null): Promise<League> {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('view=mTeam')) {
+        return jsonResponse({
+          ...mainLeagueBody,
+          settings: {
+            ...mainLeagueBody.settings,
+            scoringSettings: {
+              scoringItems: [
+                { statId: 53, points: 1 },
+                ...(points === null ? [] : [{ statId: 4, points }]),
+              ],
+            },
+          },
+        });
+      }
+      return jsonResponse(routeESPN(url));
+    }));
+    return loadLeague(LEAGUE_ID, SEASON);
+  }
+
+  it('reads points-per-passing-TD from statId 4', async () => {
+    expect((await loadWithPassTd(6)).passTdPoints).toBe(6);
+    expect((await loadWithPassTd(4)).passTdPoints).toBe(4);
+  });
+
+  it('leaves passTdPoints undefined when ESPN reports no passing-TD item', async () => {
+    expect((await loadWithPassTd(null)).passTdPoints).toBeUndefined();
+  });
 });
 
 describe('espn loadLeague settings edge cases', () => {
@@ -549,6 +584,21 @@ describe('espn loadLeague settings edge cases', () => {
     }));
     expect(league.draftType).toBe('snake');
     expect(league.auctionBudget).toBeUndefined();
+  });
+
+  it('never stamps auctionValue from the zero bidAmount ESPN puts on snake picks', async () => {
+    const body = {
+      ...withSettings({ draftSettings: { type: 'SNAKE' } }),
+      draftDetail: {
+        drafted: true,
+        picks: [
+          { overallPickNumber: 1, roundId: 1, roundPickNumber: 1, playerId: 201, teamId: 1, bidAmount: 0 },
+        ],
+      },
+    };
+    const league = await loadWithBody(body);
+    const pick = league.teams.find(t => t.id === '1')!.draftPicks![0];
+    expect(pick.auctionValue).toBeUndefined();
   });
 
   it('derives playoff shape from scheduleSettings', async () => {
