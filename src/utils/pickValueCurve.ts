@@ -47,12 +47,25 @@ export function buildPickValueCurve(
     .sort((a, b) => a.overallRank! - b.overallRank!);
 
   const raw = board.map(p => values.get(p.id) ?? 0);
+  // Shrink the window symmetrically at the edges rather than truncating it.
+  // Clipping to [0, n-1] leaves slot 1 as the one-sided mean of slots 1..8,
+  // which prices the board's most expensive asset BELOW the slots beneath it
+  // and re-creates at the top of the curve exactly the flattening the smoothing
+  // exists to remove. Measured on the 2026 pool, truncation reads slot 1 at $54
+  // against a $73 raw value; shrinking reads $73, $64, $56 for slots 1-3, and
+  // all variants agree from slot 8 down, so this only touches the head.
+  //
+  // Reflecting the window instead (mirroring slots 2..8 back over the edge) is
+  // worse than the bug: it double-counts the cheaper neighbours and reads slot
+  // 1 at $52. The head samples are few, but they are not noise — there is no
+  // uncertainty about which player the 1.01 buys, which is precisely where the
+  // averaging rationale stops applying.
+  const last = raw.length - 1;
   const smoothed = raw.map((_, i) => {
-    const lo = Math.max(0, i - SMOOTHING_WINDOW);
-    const hi = Math.min(raw.length - 1, i + SMOOTHING_WINDOW);
+    const w = Math.min(SMOOTHING_WINDOW, i, last - i);
     let sum = 0;
-    for (let j = lo; j <= hi; j++) sum += raw[j];
-    return sum / (hi - lo + 1);
+    for (let j = i - w; j <= i + w; j++) sum += raw[j];
+    return sum / (w * 2 + 1);
   });
   // A later pick is never worth more than an earlier one.
   for (let i = 1; i < smoothed.length; i++) {
@@ -63,6 +76,9 @@ export function buildPickValueCurve(
     size: smoothed.length,
     at(n: number) {
       if (smoothed.length === 0) return 0;
+      // A caller with no usable slot (an adapter that never set a pick number)
+      // gets the top of the curve rather than `undefined` through a NaN index.
+      if (!Number.isFinite(n)) return smoothed[0];
       const idx = Math.min(Math.max(Math.round(n), 1), smoothed.length) - 1;
       return smoothed[idx];
     },

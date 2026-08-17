@@ -5,6 +5,7 @@ import {
   projectedPoints,
   replacementRanks,
   projectionValues,
+  draftValues,
   type ValueLeague,
 } from './projectionValues';
 
@@ -176,6 +177,24 @@ describe('projectionValues', () => {
     expect(() => projectionValues([], league())).not.toThrow();
     const v = projectionValues([], league());
     expect(v.size).toBe(0);
+  });
+
+  it('blends the model toward the market sheet in draftValues', () => {
+    // Fresh pool so the mutation can't leak into the shared fixture.
+    const blendPool = makePool();
+    // The sheet prices the top RB below the model, and prices a K the model
+    // floors to $1. League shape matches the baseline, so the scaled sheet
+    // equals baseValue exactly.
+    blendPool.find(p => p.id === 'RB1')!.baseValue = 40;
+    blendPool.find(p => p.id === 'K1')!.baseValue = 5;
+    const baseline = { budget: 200, teams: 12, rounds: 14 };
+    const model = projectionValues(blendPool, league());
+    const blended = draftValues(blendPool, baseline, league());
+    const rb1Model = model.get('RB1')!;
+    expect(rb1Model).toBeGreaterThan(40);
+    expect(blended.get('RB1')).toBe(Math.round((rb1Model + 40) / 2));
+    // K1: model $1, sheet $5 -> $3. The flat-$1 K/DST tail gets a real price.
+    expect(blended.get('K1')).toBe(3);
   });
 
   it('prices everyone at $1 when the whole pool sits at replacement level (sumVor <= 0)', () => {

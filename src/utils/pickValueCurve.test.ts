@@ -35,6 +35,32 @@ describe('buildPickValueCurve', () => {
     expect(Number.isFinite(curve.at(1))).toBe(true);
   });
 
+  it('returns a real number for a non-finite slot', () => {
+    // ESPN takes pickNumber straight from overallPickNumber with no default,
+    // so a missing value reaches here as NaN. Math.round(NaN) indexes the array
+    // at NaN, which used to hand back undefined and print "$NaN" in the panel.
+    expect(curve.at(NaN)).toBe(curve.at(1));
+    expect(Number.isFinite(curve.at(Infinity))).toBe(true);
+  });
+
+  it('does not flatten the top of the board', () => {
+    // The smoothing window is centred, so at the array's head it has to be
+    // reflected rather than truncated. Truncating averages slot 1 against the
+    // seven slots BELOW it and nothing above, which prices the board's most
+    // expensive asset under the slots beneath it — re-creating at the top of
+    // the curve exactly the flattening the smoothing exists to remove, and
+    // mispricing the elite-keeper-at-a-mid-round-cost case this feature is for.
+    // Slot 1 must clear the middle of the first round by a wide margin.
+    expect(curve.at(1)).toBeGreaterThan(curve.at(6) * 1.15);
+    // Measured on the market-blended values: shrinking reads $65 here, a
+    // truncated window would read the mid-fifties. Anything under 60 means
+    // the boundary window regressed to a one-sided average. (Pre-blend the
+    // same pair was $73 vs $54.)
+    expect(curve.at(1)).toBeGreaterThan(60);
+    // The head is where the curve should be steepest, not flattest.
+    expect(curve.at(1) - curve.at(3)).toBeGreaterThan(curve.at(3) - curve.at(5));
+  });
+
   it('covers the whole ranked board', () => {
     expect(curve.size).toBe(POOL.players.filter(p => p.overallRank != null).length);
   });
@@ -100,6 +126,17 @@ describe('keeperValues', () => {
       teamId: 't1', teamName: 't1', isKeeper: true,
     };
     expect(keeperValues([unknown], POOL, curve, 12)).toEqual([]);
+  });
+
+  it('drops a keeper whose cost pick never arrived, rather than charging him the 1.01', () => {
+    // Yahoo builds pickNumber with parseInt (NaN when absent) and ESPN copies
+    // overallPickNumber with no default. Pricing an unknown slot off the top of
+    // the curve would invent a ~$70 overpay and a "paid over the odds" callout.
+    const noPick = { ...keeperPick(14, 62, 't1'), pickNumber: NaN };
+    expect(keeperValues([noPick], POOL, curve, 12)).toEqual([]);
+
+    const undef = { ...keeperPick(14, 62, 't1'), pickNumber: undefined as unknown as number };
+    expect(keeperValues([undef], POOL, curve, 12)).toEqual([]);
   });
 
   it('returns best surplus first', () => {

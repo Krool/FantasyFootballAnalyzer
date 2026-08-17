@@ -82,6 +82,25 @@ describe('computeInflation', () => {
     expect(computeInflation([{ remaining: 4, openSlots: 2 }], pool, values).rate).toBe(1);
   });
 
+  it('ignores broke teams\' $1-fill slots when pricing the surplus', () => {
+    // 10 teams are down to $1-per-slot money; 2 still have real budgets.
+    // The broke teams' 40 slots absorb the $5 tail, so the remaining money
+    // chases only the top 8 players — the rate must not read as if $112 of
+    // surplus were spread across the whole board.
+    const pool = poolOf(48);
+    const top8 = [40, 35, 30, 28, 25, 22, 20, 18];
+    const values = valuesFor(pool, [...top8, ...Array(40).fill(5)]);
+    const teams = [
+      ...Array.from({ length: 10 }, () => ({ remaining: 4, openSlots: 4 })),
+      { remaining: 60, openSlots: 4 },
+      { remaining: 60, openSlots: 4 },
+    ];
+    // surplus money = 160 - 48 = 112; funded slots = 8 (the rich teams');
+    // surplus value = sum(top8) - 8 = 210 -> rate 112/210.
+    const state = computeInflation(teams, pool, values);
+    expect(state.rate).toBeCloseTo(112 / 210);
+  });
+
   it('clamps a degenerate late-auction blowup to MAX_INFLATION_RATE', () => {
     const pool = poolOf(1);
     const values = valuesFor(pool, [2]);

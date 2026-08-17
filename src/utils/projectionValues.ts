@@ -258,10 +258,21 @@ export function projectionValues(
   return out;
 }
 
+// How far the final price leans toward the FantasyPros market sheet vs the
+// pure projection model. The raw model concentrates the whole discretionary
+// pool on the ~100 players with positive VOR: elites quote 20-30% above what
+// rooms actually pay, and everyone past ~#100 flattens to $1 even though the
+// sheet prices ~175 players. Averaging the two anchors the top to the market
+// and restores a priced tail, while keeping half of the model's league-shape
+// adjustments (superflex, scoring format) that the static sheet can't see.
+// 0 = pure model, 1 = pure sheet.
+export const MARKET_BLEND = 0.5;
+
 // Convenience used by both the Draft Room and the Rankings page so the two
-// surfaces never diverge: builds the scaled salary-sheet fallback, then layers
-// the projection values on top (or returns the fallback when the kill-switch
-// is off).
+// surfaces never diverge: builds the scaled salary-sheet fallback, then blends
+// the projection values against it (or returns the fallback when the
+// kill-switch is off). Both inputs sum to roughly the league's money, so the
+// blend does too.
 export function draftValues(
   players: PoolPlayer[],
   baseline: LeagueShape,
@@ -271,5 +282,12 @@ export function draftValues(
   const shape: LeagueShape = { budget: league.budget, teams: league.teams, rounds: league.rounds };
   const fallback = scaleValues(players, baseline, shape, league.scoring);
   if (!USE_PROJECTION_VALUES) return fallback;
-  return projectionValues(players, league, fallback, cfg);
+  const model = projectionValues(players, league, fallback, cfg);
+  const out = new Map<string, number>();
+  for (const p of players) {
+    const mv = model.get(p.id) ?? 1;
+    const sv = fallback.get(p.id) ?? 1;
+    out.set(p.id, Math.max(1, Math.round(mv + (sv - mv) * MARKET_BLEND)));
+  }
+  return out;
 }

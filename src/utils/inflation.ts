@@ -44,23 +44,35 @@ export function computeInflation(
 ): InflationState {
   let remainingBudget = 0;
   let openSlots = 0;
+  // Slots that can actually pay above the $1 floor. A team down to $1-per-slot
+  // money still consumes open slots, but its slots absorb tail players, not
+  // the expensive ones — counting them in the surplus base makes the endgame
+  // read deflated exactly when the still-funded teams are about to bid the
+  // top names up. A team's surplus dollars cap how many of its slots can carry
+  // any surplus at all. Early in a draft every slot is funded and this reduces
+  // to the plain open-slot count.
+  let fundedSlots = 0;
   for (const team of teams) {
     remainingBudget += team.remaining;
     openSlots += team.openSlots;
+    fundedSlots += Math.min(team.openSlots, Math.max(0, team.remaining - team.openSlots));
   }
   if (openSlots === 0) return { ...NEUTRAL_INFLATION, remainingBudget };
 
   // The players still to be drafted: the best remaining value for each open
   // slot. Slots beyond the pool's depth are $1 fills.
-  const values = available
-    .map(p => scaledValues.get(p.id) ?? 1)
-    .sort((a, b) => b - a)
-    .slice(0, openSlots);
+  const sorted = available.map(p => scaledValues.get(p.id) ?? 1).sort((a, b) => b - a);
+  const values = sorted.slice(0, openSlots);
   const remainingValue =
     values.reduce((sum, v) => sum + v, 0) + Math.max(0, openSlots - values.length);
 
   const surplusMoney = Math.max(0, remainingBudget - openSlots);
-  const surplusValue = remainingValue - openSlots;
+  // Surplus dollars land only on funded slots, so they chase only the best
+  // fundedSlots players' surplus value.
+  const fundedValues = sorted.slice(0, fundedSlots);
+  const surplusValue = fundedValues.reduce((sum, v) => sum + v, 0)
+    + Math.max(0, fundedSlots - fundedValues.length)
+    - fundedSlots;
   // Clamp the rate: near the end of an auction surplusValue can shrink to a
   // dollar or two while money is still in the room, which sends the raw ratio
   // to absurd multiples (a $5 player "expected" at $300). Real-room inflation
