@@ -613,6 +613,28 @@ describe('sleeper loadLeague scoring detection', () => {
     expect(league.scoringType).toBe(expected);
   });
 
+  // Regression: the adapters used to ignore points-per-passing-TD, so a 6pt
+  // league priced and projected every QB off the pool's 4pt columns.
+  it('reads points-per-passing-TD from scoring_settings.pass_td', async () => {
+    async function loadWithPassTd(passTd: number | undefined): Promise<League> {
+      vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.replace('https://api.sleeper.app/v1', '') === `/league/${LEAGUE_ID}`) {
+          return jsonResponse({
+            ...leagueFixture,
+            scoring_settings: { rec: 0.5, ...(passTd === undefined ? {} : { pass_td: passTd }) },
+          });
+        }
+        return jsonResponse(routeSleeper(url));
+      }));
+      return loadLeague(LEAGUE_ID);
+    }
+
+    expect((await loadWithPassTd(6)).passTdPoints).toBe(6);
+    expect((await loadWithPassTd(4)).passTdPoints).toBe(4);
+    expect((await loadWithPassTd(undefined)).passTdPoints).toBeUndefined();
+  });
+
   it('normalizes the previous_league_id "0" terminator off the League object', async () => {
     // The season walks already treat "0" as terminal; the surfaced field must
     // agree, or a future consumer keying off truthiness re-fetches league 0.

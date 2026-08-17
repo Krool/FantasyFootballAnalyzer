@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DraftTable } from '@/components';
+import { DraftTable } from '@/components/DraftTable';
 import type { League } from '@/types';
 import { POOL } from '@/data/draftPool';
 import { leagueKeyFor } from '@/hooks/useDraftRoom';
@@ -22,7 +22,17 @@ export function DraftPage({ league }: DraftPageProps) {
   // platform's draft data, targeting the upcoming season the pool covers.
   const liveData = useMemo(() => {
     const session = loadCompletedLiveDraft(leagueKeyFor(league));
-    return session ? { ...liveDraftToTeams(session, POOL), season: session.config.season } : null;
+    if (!session) return null;
+    // Carry the session's own roster shape and scoring, not the platform
+    // league's: a Draft Room session is configured independently (often for a
+    // different shape than the loaded league, which may be last season's), and
+    // pricing its keepers and grades against the wrong shape mis-prices both.
+    return {
+      ...liveDraftToTeams(session, POOL),
+      season: session.config.season,
+      rosterSlots: session.config.rosterSlots,
+      scoringType: session.config.scoring,
+    };
   }, [league]);
 
   // Both sources can exist (last season's real draft + this year's live log).
@@ -75,9 +85,11 @@ export function DraftPage({ league }: DraftPageProps) {
             <DraftTable
               teams={liveData.teams}
               totalTeams={liveData.totalTeams}
+              season={liveData.season}
               draftType={liveData.draftType}
-              scoringType={league.scoringType}
-              rosterSlots={league.rosterSlots}
+              auctionBudget={liveData.auctionBudget}
+              scoringType={liveData.scoringType}
+              rosterSlots={liveData.rosterSlots}
               passTdPoints={league.passTdPoints}
               tePremiumPerReception={league.tePremiumPerReception}
             />
@@ -85,7 +97,9 @@ export function DraftPage({ league }: DraftPageProps) {
             <DraftTable
               teams={league.teams}
               totalTeams={league.totalTeams}
+              season={league.season}
               draftType={league.draftType}
+              auctionBudget={league.auctionBudget}
               scoringType={league.scoringType}
               rosterSlots={league.rosterSlots}
               passTdPoints={league.passTdPoints}

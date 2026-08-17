@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { POOL } from '@/data/draftPool';
-import type { League, RosterSlots } from '@/types';
+import { DEFAULT_BUDGET, DEFAULT_ROSTER_SLOTS } from '@/utils/draftDefaults';
+import type { League } from '@/types';
 import type {
   DraftEvent,
   DraftEventInput,
@@ -24,13 +25,10 @@ import { loadLastConnection } from '@/utils/lastConnection';
 import type { ScoringType } from '@/utils/valueScaling';
 import { draftValues, vorConfigFor } from '@/utils/projectionValues';
 
-// Used when the platform didn't expose roster settings (Yahoo default shape).
-// Shared with the Rankings page so both surfaces price the pool identically.
-export const DEFAULT_ROSTER_SLOTS: RosterSlots = {
-  QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 0, K: 1, DST: 1, BENCH: 6, IR: 1,
-};
-
-export const DEFAULT_BUDGET = 200;
+// Defined in utils/draftDefaults so callers that need only the roster shape
+// don't drag this module's pool import along; re-exported here because this is
+// where every existing consumer expects to find them.
+export { DEFAULT_BUDGET, DEFAULT_ROSTER_SLOTS };
 
 export type DraftRoomPhase = 'setup' | 'drafting' | 'complete';
 
@@ -425,20 +423,27 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
     // after keepers were assigned): the sale would fail validation, no event
     // would land, and this effect's deps would never change - stalling every
     // remaining keeper behind the broken one.
-    const next = keepers.find(
+    const pending = keepers.filter(
       k => !derived.draftedPlayerIds.has(k.playerId) && derived.teams.has(k.teamId),
     );
-    if (!next) return;
-    const maxBid = derived.teams.get(next.teamId)?.maxBid ?? 1;
-    const price = Math.min(Math.max(1, next.keeperPrice ?? 1), Math.max(1, maxBid));
-    logEvent({
-      kind: 'auction_sale',
-      playerId: next.playerId,
-      nominatedById: next.teamId,
-      wonById: next.teamId,
-      price,
-      isKeeper: true,
-    });
+    // Walk past keepers whose sale the validator rejects for any other reason
+    // (roster shape full, no open slots): stopping at the first would stall
+    // every keeper behind it, since a rejected sale changes no dependency of
+    // this effect. A keeper skipped here stays reserved but uncharged, which
+    // is the same deal the removed-team case above gets.
+    for (const next of pending) {
+      const maxBid = derived.teams.get(next.teamId)?.maxBid ?? 1;
+      const price = Math.min(Math.max(1, next.keeperPrice ?? 1), Math.max(1, maxBid));
+      const error = logEvent({
+        kind: 'auction_sale',
+        playerId: next.playerId,
+        nominatedById: next.teamId,
+        wonById: next.teamId,
+        price,
+        isKeeper: true,
+      });
+      if (!error) return;
+    }
   }, [state.phase, state.config, derived, logEvent]);
 
   const reset = useCallback(() => {

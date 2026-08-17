@@ -45,9 +45,38 @@ export function useSuggestedPicks(room: UseDraftRoomReturn, enabled: boolean): U
     [scoring, superflex],
   );
 
+  // The user's next pick, as a 0-based index into the draft order.
+  const nextMine = useMemo(
+    () =>
+      nextPickFor(
+        config.myTeamId,
+        config.teams.map(t => t.id),
+        derived.pickCount + 1,
+        derived.totalPicks,
+        config.snakeFormat,
+      ),
+    [config.myTeamId, config.teams, config.snakeFormat, derived.pickCount, derived.totalPicks],
+  );
+
   // Simulated odds each board player is gone before the user's next pick.
+  //
+  // Only worth running when the user is actually near the clock. `derived` is a
+  // fresh object on every logged event, so without this gate the full
+  // Monte-Carlo replay re-runs after every AI pick in the draft — including the
+  // long auto-pick stretches where nothing renders the result.
   const takenOdds = useMemo(() => {
     if (!enabled || !me) return null;
+    if (nextMine === null) return null;
+    // On the clock ALWAYS runs, whatever the wait. `nextMine` is the pick after
+    // this one, so at the turn of a snake it is up to 2*(teams-1) away —
+    // gating on distance alone would kill the odds exactly when the user is
+    // deciding and the wait is longest, which is when they matter most.
+    const onTheClock = derived.onTheClockId === config.myTeamId;
+    const picksAway = nextMine - derived.pickCount;
+    // 2*(teams-1) is the longest legitimate snake wait (the turn), so gate at
+    // 2*teams: a tighter gate (one round) made the odds vanish right after an
+    // edge slot's own pick and flip back mid-wait, which reads as a bug.
+    if (!onTheClock && picksAway > config.teams.length * 2) return null;
     return simulateTakenOdds({
       myTeamId: config.myTeamId,
       orderedTeamIds: config.teams.map(t => t.id),
@@ -64,18 +93,11 @@ export function useSuggestedPicks(room: UseDraftRoomReturn, enabled: boolean): U
       draftedPlayerIds: derived.draftedPlayerIds,
       seed: config.simSeed,
     });
-  }, [enabled, me, config, derived, scaledValues, adpOf]);
+  }, [enabled, me, nextMine, config, derived, scaledValues, adpOf]);
 
   return useMemo(() => {
     if (!enabled || !me) return EMPTY;
-    const orderedIds = config.teams.map(t => t.id);
-    const next = nextPickFor(
-      config.myTeamId,
-      orderedIds,
-      derived.pickCount + 1,
-      derived.totalPicks,
-      config.snakeFormat,
-    );
+    const next = nextMine;
     const picks = suggestPicks(derived.available, me, config.rosterSlots, scaledValues, {
       pickCount: derived.pickCount,
       teamCount: config.teams.length,
@@ -96,5 +118,5 @@ export function useSuggestedPicks(room: UseDraftRoomReturn, enabled: boolean): U
         .map(({ starter, handcuff }) => [handcuff.id, starter.name]),
     );
     return { suggested, handcuffFor };
-  }, [enabled, me, derived, config.rosterSlots, config.teams, config.myTeamId, config.snakeFormat, scaledValues, scoring, takenOdds, starred, avoided, keeperPlayers]);
+  }, [enabled, me, nextMine, derived, config.rosterSlots, config.teams, scaledValues, scoring, takenOdds, starred, avoided, keeperPlayers]);
 }

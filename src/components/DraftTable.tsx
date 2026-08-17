@@ -9,6 +9,8 @@ import {
   projectedPointsByPick,
 } from '@/utils/projectedRoster';
 import { buildPickValueCurve } from '@/utils/pickValueCurve';
+import { draftableSlotCount } from '@/utils/draftEngine';
+import { DEFAULT_BUDGET } from '@/utils/draftDefaults';
 import { keeperValues } from '@/utils/keeperValue';
 import { vorConfigFor } from '@/utils/projectionValues';
 import { KeeperValuePanel } from './KeeperValuePanel';
@@ -23,7 +25,17 @@ import styles from './DraftTable.module.css';
 interface DraftTableProps {
   teams: Team[];
   totalTeams: number;
+  /**
+   * The season this draft was actually held for. Surfaces priced off the
+   * bundled pool are only meaningful when it matches the pool's season — during
+   * draft prep a loaded league still reports LAST season, whose picks the
+   * upcoming board cannot judge.
+   */
+  season?: number;
   draftType?: 'snake' | 'auction' | 'linear';
+  // Auction grade bands scale with the league's budget; without it every
+  // dollar is judged against the $200 default.
+  auctionBudget?: number;
   // Drive the pre-season projections off the league's real rules when we have
   // them. Absent, we fall back to PPR and the most common roster shape.
   scoringType?: ScoringType;
@@ -43,7 +55,9 @@ const FLEX_POSITIONS = ['RB', 'WR', 'TE'];
 export function DraftTable({
   teams,
   totalTeams,
+  season,
   draftType = 'snake',
+  auctionBudget,
   scoringType = 'ppr',
   rosterSlots = DEFAULT_ROSTER_SLOTS,
   passTdPoints,
@@ -76,6 +90,7 @@ export function DraftTable({
       name: '',
       season: 2024,
       draftType: isAuction ? 'auction' as const : 'snake' as const,
+      auctionBudget,
       teams,
       scoringType: 'ppr' as const,
       totalTeams,
@@ -84,7 +99,7 @@ export function DraftTable({
     // Filter out unknown players (those with names like "Player 12345")
     const override = hasResults ? undefined : consensusPositionRanks(allPicks, POOL);
     return gradeAllPicks(mockLeague, override).filter(pick => !isPlaceholderPlayer(pick.player.name));
-  }, [teams, totalTeams, isAuction, hasResults, allPicks]);
+  }, [teams, totalTeams, isAuction, auctionBudget, hasResults, allPicks]);
 
   // Pre-season only: what the pool projects each drafted player to score, and
   // the best legal starting lineup that follows from it. Answers "is this
@@ -93,12 +108,34 @@ export function DraftTable({
   // the player's curve value against the pick his cost round consumed.
   const keeperRows = useMemo(() => {
     if (!allPicks.some(p => p.isKeeper)) return [];
+    // Both sides of the surplus come off the bundled pool, so this only says
+    // anything true about a draft held for the pool's own season. A league
+    // loaded during draft prep reports last season, and pricing last year's
+    // keeper decisions against next year's consensus is a wrong answer, not a
+    // rough one.
+    if (season != null && season !== POOL.season) return [];
+    // An auction keeper surrenders dollars, not a pick slot, so `pickNumber`
+    // here is a nomination index — reading it off the curve would charge every
+    // keeper a first-round pick in a draft that never had rounds.
+    if (isAuction) return [];
+    const teamCount = Math.max(1, totalTeams || 12);
+    // A partial pick list (an in-progress draft, or a platform that returned
+    // only some rounds) collapses the derived count toward 1, which shrinks the
+    // priced board to a handful of inflated slots and a flat $1 tail. Below a
+    // plausible floor, trust the league's roster shape instead.
+    const derivedRounds = Math.max(1, Math.round(allPicks.length / teamCount));
+    // draftableSlotCount, not an inline sum: it coerces each slot to 0, so a
+    // rosterSlots object cached before a slot (e.g. SUPERFLEX) existed in the
+    // schema can't turn the round count — and the whole curve — into NaN.
+    const rosterRounds = draftableSlotCount(rosterSlots);
+    const rounds =
+      derivedRounds >= 8 ? derivedRounds : Math.max(rosterRounds, POOL.baseline.rounds);
     const curve = buildPickValueCurve(
       POOL,
       {
-        budget: 200,
-        teams: totalTeams || 12,
-        rounds: Math.max(1, Math.round(allPicks.length / Math.max(1, totalTeams || 12))),
+        budget: DEFAULT_BUDGET,
+        teams: teamCount,
+        rounds,
         rosterSlots,
         scoring: scoringType,
       },
@@ -107,8 +144,17 @@ export function DraftTable({
         tePremium: (tePremiumPerReception ?? 0) > 0,
       }),
     );
-    return keeperValues(allPicks, POOL, curve, totalTeams || 12);
-  }, [allPicks, totalTeams, rosterSlots, scoringType, passTdPoints, tePremiumPerReception]);
+    return keeperValues(allPicks, POOL, curve, teamCount);
+  }, [
+    allPicks,
+    totalTeams,
+    season,
+    isAuction,
+    rosterSlots,
+    scoringType,
+    passTdPoints,
+    tePremiumPerReception,
+  ]);
 
   const projected = useMemo(
     () =>

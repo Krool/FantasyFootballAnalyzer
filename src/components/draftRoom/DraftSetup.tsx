@@ -193,13 +193,28 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
 
   // Rebuild one team's keepers from a list of chosen player ids, re-resolving
   // snake cost-round collisions and carrying each keeper's auction price.
+  // A price the user already typed for a player who stays selected survives
+  // the rebuild — otherwise fixing slot 2's dropdown silently reverts slot 1's
+  // hand-corrected price to the guess. In auction mode every keeper gets an
+  // explicit price (defaulting $1), so the input never shows a number the
+  // charge wouldn't match.
   const rebuildTeamKeepers = (teamId: string, playerIds: string[]) => {
     const others = (config.keepers ?? []).filter(k => k.teamId !== teamId);
+    const prior = new Map(
+      (config.keepers ?? []).filter(k => k.teamId === teamId).map(k => [k.playerId, k]),
+    );
     const cands = playerIds
       .filter(Boolean)
       .map(pid => candidatesByTeam.get(teamId)?.find(c => c.player.id === pid))
       .filter((c): c is NonNullable<typeof c> => !!c);
-    updateConfig({ keepers: [...others, ...resolveKeeperRounds(cands)] });
+    const rebuilt = resolveKeeperRounds(cands).map(k => {
+      const keeperPrice =
+        prior.get(k.playerId)?.keeperPrice ??
+        k.keeperPrice ??
+        (config.draftType === 'auction' ? 1 : undefined);
+      return keeperPrice != null ? { ...k, keeperPrice } : k;
+    });
+    updateConfig({ keepers: [...others, ...rebuilt] });
   };
 
   const setTeamKeeperAt = (teamId: string, index: number, playerId: string) => {
@@ -376,7 +391,21 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
             <button type="button" className={styles.btnPrimary} onClick={resume}>
               Resume Draft
             </button>
-            <button type="button" className={styles.btn} onClick={reset}>
+            {/* Sits right next to Resume at the same weight, and clearing the
+                saved session cannot be undone. Confirm before binning it. */}
+            <button
+              type="button"
+              className={styles.btn}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `Discard this saved draft? ${resumable.events.length} logged picks will be lost, and this cannot be undone.`,
+                  )
+                ) {
+                  reset();
+                }
+              }}
+            >
               Discard
             </button>
           </div>

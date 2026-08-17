@@ -80,10 +80,27 @@ export function KeeperValuePanel({ rows }: KeeperValuePanelProps) {
 
       {rows.length > 1 && (
         <p className={styles.footnote}>
-          {best.teamName} got the most out of the keeper rule: {best.playerName}, a round{' '}
-          {best.assetRound} asset for a round {best.costRound} pick.
+          {/* A keeper rule that charges a round or two of interest can price
+              every keeper above market. Topping that table is not a win, so
+              only call it one when the surplus is actually positive — and
+              exactly zero is a break-even, not "the cheapest overpay" (the
+              table styles +$0.0 green). */}
+          {best.surplus > 0
+            ? `${best.teamName} got the most out of the keeper rule: ${best.playerName}, a round ${best.assetRound} asset for a round ${best.costRound} pick.`
+            : best.surplus === 0
+              ? `Nobody beat the keeper rule this year. The closest was ${best.teamName}'s ${best.playerName}, a round ${best.assetRound} asset for a round ${best.costRound} pick — dead even.`
+              : `Nobody beat the keeper rule this year. The cheapest overpay was ${best.teamName}'s ${best.playerName}, a round ${best.assetRound} asset for a round ${best.costRound} pick.`}
+          {/* Negative surplus can happen inside a single round (rank 60 kept at
+              pick 55), where "later than" would contradict the numbers shown.
+              Renders in the all-negative league too — the biggest overpay is
+              the line a commissioner quotes (rows.length > 1 above guarantees
+              this is a different row than best). */}
           {worst.surplus < 0 &&
-            ` ${worst.teamName} paid over the odds for ${worst.playerName}, whose market round (${worst.assetRound}) is later than the round he cost (${worst.costRound}).`}
+            ` ${worst.teamName} paid over the odds for ${worst.playerName}, ${
+              worst.assetRound > worst.costRound
+                ? `whose market round (${worst.assetRound}) is later than the round he cost (${worst.costRound})`
+                : `worth less on the board than the round ${worst.costRound} pick he consumed`
+            }.`}
         </p>
       )}
     </section>

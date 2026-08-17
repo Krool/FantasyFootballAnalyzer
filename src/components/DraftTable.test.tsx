@@ -126,3 +126,50 @@ describe('DraftTable keeper handling', () => {
     expect(within(row).getByText('RB1')).toBeInTheDocument();
   });
 });
+
+// The panel prices both sides of the keeper surplus off the bundled pool, so it
+// only says anything true about a draft held for the pool's own season and run
+// with pick slots to surrender. These guard the two cases where it does not.
+describe('DraftTable keeper-value panel gating', () => {
+  const panel = () => screen.queryByRole('heading', { name: /keeper/i });
+
+  it('prices keepers for a draft held for the bundled pool season', () => {
+    render(
+      <MemoryRouter>
+        <DraftTable teams={teams} totalTeams={2} season={POOL.season} draftType="snake" scoringType="ppr" />
+      </MemoryRouter>,
+    );
+    expect(panel()).toBeInTheDocument();
+  });
+
+  it('hides the panel for a draft held for a different season', () => {
+    // The documented trap: during draft prep a loaded league still reports LAST
+    // season. Ranking those keeper decisions against next season's consensus is
+    // a wrong answer, not a rough one.
+    render(
+      <MemoryRouter>
+        <DraftTable teams={teams} totalTeams={2} season={POOL.season - 1} draftType="snake" scoringType="ppr" />
+      </MemoryRouter>,
+    );
+    expect(panel()).not.toBeInTheDocument();
+  });
+
+  it('hides the panel for an auction', () => {
+    // An auction keeper surrenders dollars, not a pick slot, so pickNumber is a
+    // nomination index. Reading it off the curve charged every keeper a
+    // first-round pick in a draft that never had rounds.
+    render(
+      <MemoryRouter>
+        <DraftTable teams={teams} totalTeams={2} season={POOL.season} draftType="auction" scoringType="ppr" />
+      </MemoryRouter>,
+    );
+    expect(panel()).not.toBeInTheDocument();
+  });
+
+  it('still prices keepers when no season is supplied', () => {
+    // Unknown season is not the same as a mismatched one; the panel is the
+    // Draft Room's own live log surface too.
+    renderTable();
+    expect(panel()).toBeInTheDocument();
+  });
+});
