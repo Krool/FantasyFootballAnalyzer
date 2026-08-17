@@ -278,12 +278,17 @@
   .filter  { min-width: 100%; }
   .stats   { margin-left: 0; justify-content: space-between; }
 
-  /* Leaderboard rows are a single flex line of rank + name + badges + PAR.
-     Unlike the pickups table above (which scrolls in its wrapper), the
-     leaderboard card has no overflow escape, so on a phone long team names
-     plus the FAAB badge ran out of the card. Let rows wrap and let the name
-     shrink instead. */
+  /* Leaderboard rows are a single flex line of rank + name + badges + PAR,
+     and the card has no overflow escape (unlike the pickups table above,
+     which scrolls in its wrapper), so on a phone the row overran the card.
+     Two rows instead: rank + name own the first line (the flex-basis eats
+     the rest of it, forcing everything after to wrap), badges + PAR sit on
+     the second with PAR pushed right. The name keeps normal word wrapping —
+     a bare `min-width: 0` + `overflow-wrap: anywhere` here once shrank the
+     name column to nothing and broke names letter-by-letter. */
   .leaderboardItem { flex-wrap: wrap; gap: 0.4rem 0.75rem; }
-  .teamName        { min-width: 0; overflow-wrap: anywhere; }
+  /* 64px ≈ the rank cell at its widest ("#12" at 1.5rem headline) plus the
+     column gap; flex-shrink absorbs the difference on narrower ranks. */
+  .teamName        { flex: 1 1 calc(100% - 64px); min-width: 0; overflow-wrap: break-word; }
   .pointsTotal     { margin-left: auto; }
 }
