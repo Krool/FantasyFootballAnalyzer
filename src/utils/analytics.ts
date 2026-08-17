@@ -46,45 +46,10 @@ export const Analytics = {
     });
   },
 
-  // Track draft analysis viewed
-  draftAnalyzed: (teamCount: number) => {
-    trackEvent("draft_analyzed", {
-      team_count: teamCount,
-    });
-  },
-
-  // Track trade analysis
-  tradeAnalyzed: (tradeCount: number) => {
-    trackEvent("trade_analyzed", {
-      trade_count: tradeCount,
-    });
-  },
-
-  // Track waiver analysis
-  waiversAnalyzed: (playerCount: number) => {
-    trackEvent("waivers_analyzed", {
-      player_count: playerCount,
-    });
-  },
-
-  // Track team card viewed
-  teamViewed: (teamId: string) => {
-    trackEvent("team_viewed", {
-      team_id: teamId,
-    });
-  },
-
   // Track PDF export
   pdfExported: (reportType: string) => {
     trackEvent("pdf_exported", {
       report_type: reportType,
-    });
-  },
-
-  // Track page navigation
-  pageViewed: (pageName: string) => {
-    trackEvent("page_view", {
-      page_name: pageName,
     });
   },
 

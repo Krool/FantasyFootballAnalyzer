@@ -48,8 +48,9 @@ Draft data lives in `src/data/draftPool.<season>.json`, built by
 `npm run update:rankings` (see CLAUDE.md for pipeline details). The Yahoo
 OAuth and ESPN proxy serverless functions in `api/` deploy to Vercel;
 everything else is a static site on GitHub Pages at the custom domain. The
-Vercel functions read `FRONTEND_URL`, the Yahoo client id/secret, and an
-optional `VITE_SENTRY_DSN` from env; see CLAUDE.md for the full list.
+Vercel functions read `FRONTEND_URL` and the Yahoo client id/secret from env
+(`VITE_SENTRY_DSN` is frontend-only, consumed at build time); see CLAUDE.md for
+the full list.
 
 ## Docs
 

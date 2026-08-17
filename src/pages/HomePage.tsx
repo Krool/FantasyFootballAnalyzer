@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LeagueForm } from '@/components';
+import { LeagueForm } from '@/components/LeagueForm';
 import { HomeHero } from './HomeHero';
 import { HomeManifesto } from './HomeManifesto';
 import { HomeFeatures } from './HomeFeatures';

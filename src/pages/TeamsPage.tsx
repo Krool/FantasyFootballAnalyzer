@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { TeamCard } from '@/components';
+import { TeamCard } from '@/components/TeamCard';
 import type { League } from '@/types';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
 import { managerScores } from '@/utils/managerScore';

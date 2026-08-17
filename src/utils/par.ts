@@ -224,20 +224,6 @@ export function calculatePlayerPAR(
 }
 
 /**
- * Calculate PAR per game for use in waiver/trade valuation
- * This gives a per-game value that can be multiplied by games started
- */
-export function calculatePARPerGame(
-  position: string,
-  replacementPoints: Map<string, number>,
-  seasonGames: number = 17
-): number {
-  const normalizedPos = normalizePosition(position);
-  const replacementPts = replacementPoints.get(normalizedPos) || 0;
-  return replacementPts / seasonGames;
-}
-
-/**
  * Build a map of player ID -> season PAR for quick lookups
  */
 export function buildPlayerPARMap(

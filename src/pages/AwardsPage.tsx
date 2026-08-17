@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { League } from '@/types';
 import { calculateAllAwards, groupAwardsByCategory, getCategoryDisplayName, type Award } from '@/utils/awards';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
@@ -224,21 +224,32 @@ export function AwardsPage({ league }: AwardsPageProps) {
 
 function AwardCard({ award, league }: { award: Award; league: League }) {
   const iconSrc = awardIconSrc(award.id);
+  // Drawing the card takes a beat; without a pending state the arrow gives no
+  // sign the click landed.
+  const [isSaving, setIsSaving] = useState(false);
   return (
     <div className={styles.awardCard}>
       <button
         type="button"
         className={styles.awardShareBtn}
+        disabled={isSaving}
+        aria-busy={isSaving}
         onClick={async () => {
-          const ok = await exportAwardCard(award, league.name, league.season);
-          if (!ok) {
-            window.alert("Couldn't generate the award image. Your browser may have blocked it; try a different browser.");
+          if (isSaving) return;
+          setIsSaving(true);
+          try {
+            const ok = await exportAwardCard(award, league.name, league.season);
+            if (!ok) {
+              window.alert("Couldn't generate the award image. Your browser may have blocked it; try a different browser.");
+            }
+          } finally {
+            setIsSaving(false);
           }
         }}
         title="Download this award as a shareable image"
         aria-label={`Download ${award.name} as an image`}
       >
-        ↓
+        {isSaving ? '…' : '↓'}
       </button>
       <div className={styles.awardIcon}>
         {iconSrc

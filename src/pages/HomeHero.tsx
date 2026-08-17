@@ -1,4 +1,4 @@
-import { POOL } from '@/data/draftPool';
+import { POOL_BASELINE, POOL_GENERATED_AT, POOL_SEASON, TOP_OF_BOARD } from '@/data/draftPoolMeta';
 import { nflLogoUrl } from '@/data/nflTeams';
 import styles from './HomePage.module.css';
 
@@ -8,18 +8,14 @@ import styles from './HomePage.module.css';
 // in HomeManifesto so the page can render it below the form. Single source of
 // truth: HomePage and the prerender both render this.
 //
-// POOL is safe to use here: it's a static JSON import (no runtime fetch), and
-// it's already in the homepage's eager bundle via GuestEntry -> guestLeague,
-// so the board card below costs no extra bytes.
-
-// Top of the bundled consensus board, refreshed daily by the rankings Action.
-const TOP_OF_BOARD = [...POOL.players]
-  .sort((a, b) => a.overallRank - b.overallRank)
-  .slice(0, 5);
+// Reads draftPoolMeta, not the pool itself: the board card needs five players
+// and a build stamp, and pulling the whole ~450KB pool JSON in for that would
+// park it in the eager entry chunk that every route pays for. The generator
+// pre-slices TOP_OF_BOARD, refreshed daily by the rankings Action.
 
 // Explicit locale + UTC so the prerendered HTML doesn't depend on the build
 // machine's locale or timezone.
-const UPDATED = new Date(POOL.generatedAt).toLocaleDateString('en-US', {
+const UPDATED = new Date(POOL_GENERATED_AT).toLocaleDateString('en-US', {
   month: 'short',
   day: 'numeric',
   timeZone: 'UTC',
@@ -53,10 +49,10 @@ export function HomeHero() {
 
         <aside
           className={styles.board}
-          aria-label={`Top of the ${POOL.season} draft board`}
+          aria-label={`Top of the ${POOL_SEASON} draft board`}
         >
           <span className={styles.boardKicker}>
-            ▌ Top of the {POOL.season} board
+            ▌ Top of the {POOL_SEASON} board
           </span>
           <ol className={styles.boardList}>
             {TOP_OF_BOARD.map(p => {
@@ -81,14 +77,14 @@ export function HomeHero() {
                       <> · {p.team}</>
                     )}
                   </span>
-                  <span className={styles.boardValue}>${p.baseValue ?? 1}</span>
+                  <span className={styles.boardValue}>${p.baseValue}</span>
                 </li>
               );
             })}
           </ol>
           <div className={styles.boardFoot}>
             <span>
-              Updated {UPDATED} · ${POOL.baseline.budget} auction
+              Updated {UPDATED} · ${POOL_BASELINE.budget} auction
             </span>
             <a href={`${base}rankings`}>Full board →</a>
           </div>

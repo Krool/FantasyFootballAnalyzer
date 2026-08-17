@@ -16,6 +16,14 @@ Production: https://fantasyfootballanalyzer.app/
   `https://fantasy-football-analyzer-mu.vercel.app`.
 - **Data pipeline**: a daily GitHub Action fetches rankings and rebuilds the
   bundled draft pool committed into `src/data/`.
+- **`extension/`**: a small MV3 browser extension (see `extension/README.md`)
+  that reads the ESPN `espn_s2`/SWID cookies so private-league import can
+  auto-fill instead of sending people into DevTools. Consumed by
+  `src/components/LeagueForm.tsx`, gated by the optional `VITE_ESPN_EXTENSION_ID`
+  (unset = the feature stays dormant). Published to the extension stores by
+  hand; it is not part of either deploy pipeline. Its `externally_connectable`
+  allowlist hardcodes the frontend domain, so a domain change means editing
+  `manifest.json`, `background.js`, and `popup.js` too.
 - **No database, no server-side storage.** Credentials live in the browser and
   pass straight through to the platform APIs (or through the stateless proxy).
 
@@ -86,12 +94,22 @@ the SPA deep-link shim. The catch-all route redirects unknown paths to `/`.
 **Guest mode**: these routes work with no login, backed by a synthetic guest
 league (`src/utils/guestLeague.ts`):
 
-- `/` (home), `/draft-room`, `/rankings`, `/rankings/:variant`, `/values`,
-  `/trade-analyzer`, `/draft-grades`.
+- `/` (home), `/draft-room`, `/rankings`, `/rankings/:variant`, `/values`.
+
+`/trade-analyzer` and `/draft-grades` are also public but are NOT guest-mode
+features: they render `src/pages/ToolLanding.tsx`, hook-free static SEO pages
+whose CTAs point at the guest routes above or at league connect. Nothing there
+touches `guestLeague.ts`.
 
 The league-analysis routes require a real loaded league and redirect guests to
 `/rankings`: `/draft`, `/trades`, `/waivers`, `/teams`, `/history`, `/awards`,
 `/players`. `/yahoo-success` and `/yahoo-error` handle the OAuth round trip.
+
+**Share links**: `?league=sleeper:<id>` on any URL loads that Sleeper league
+for whoever opens it (App.tsx keeps the param on the URL while a Sleeper
+league is loaded, and route guards hold with a spinner while the load is in
+flight). Sleeper only — its API is public and CORS-open; ESPN-private/Yahoo
+need credentials and fall back to the connect form.
 
 **Prerender**: `scripts/prerender.tsx` runs as the final build step and bakes
 real static HTML for the indexable public routes (home, `/rankings`, the
@@ -144,7 +162,12 @@ The client points at the proxy via `VITE_ESPN_PROXY_URL` / `VITE_YAHOO_API_URL`
 `data/salary_cap_values.csv`) into `src/data/draftPool.<season>.json` and
 regenerates `src/data/draftPool.ts`, the indirection module the app imports.
 Never import a seasoned pool JSON directly from app code; never edit
-`src/data/draftPool.ts` by hand. The season auto-derives from the calendar
+`src/data/draftPool.ts` by hand. The build also emits
+`src/data/draftPoolMeta.ts` (also generated, also never hand-edited): season,
+build stamp, baseline, and a pre-sliced top-of-board list, with NO player array.
+Anything that loads on every route — `App.tsx`, `guestLeague.ts`, the homepage
+hero — must import that and not `POOL`, or the ~450KB pool JSON lands back in
+the eager entry chunk that every route pays for. The season auto-derives from the calendar
 (January still belongs to last season; February onward is the new one) via
 `scripts/season.ts`, overridable with `--season=`. Player ids are stable
 slugs (name+pos, `dst-<team>`); saved Draft Room sessions depend on that.

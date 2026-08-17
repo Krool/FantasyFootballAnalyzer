@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense, lazy, type ReactNode } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams, useParams } from 'react-router-dom';
-import { Header, YearSelector, SeasonLoadingOverlay } from '@/components';
+// Direct imports, not the '@/components' barrel: App is the always-mounted
+// shell, and a barrel import here would pull every component it re-exports
+// (and their data) into the eager entry chunk.
+import { Header } from '@/components/Header';
+import { YearSelector } from '@/components/YearSelector';
+import { SeasonLoadingOverlay } from '@/components/SeasonLoadingOverlay';
 import { DraftPrepBanner } from '@/components/DraftPrepBanner';
 import { GuestBanner } from '@/components/GuestBanner';
 import { SeasonFallbackNotice } from '@/components/SeasonFallbackNotice';
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
-import { HomePage } from '@/pages';
+// Direct import for the same reason as the components above: the '@/pages'
+// barrel re-exports every lazy()-split page (DraftPage, TeamsPage, AwardsPage
+// all reach the full draft pool), so importing HomePage through it would drag
+// them — and the pool — back into the eager entry chunk.
+import { HomePage } from '@/pages/HomePage';
 import { ToolLanding } from '@/pages/ToolLanding';
 import { TOOL_LANDINGS } from '@/pages/toolLandings';
 import { posForSlug, labelForPos } from '@/data/rankingsVariants';
@@ -43,7 +52,7 @@ import { logger } from '@/utils/logger';
 import { rememberConnection } from '@/utils/lastConnection';
 import { loadSeasons } from '@/utils/seasonsCache';
 import { isEmptyPreseason } from '@/utils/leaguePhase';
-import { POOL } from '@/data/draftPool';
+import { POOL_SEASON } from '@/data/draftPoolMeta';
 
 // Public draft-prep entry: a no-league visit to /rankings or /draft-room
 // (direct link, refresh, or crawler) drops into guest mode with default
@@ -372,7 +381,7 @@ function App() {
       try {
         const seasons = await loadSeasons(credentials, league);
         const target = seasons
-          .filter(s => s.year >= POOL.season && s.year !== league.season)
+          .filter(s => s.year >= POOL_SEASON && s.year !== league.season)
           .sort((a, b) => a.year - b.year)[0];
         if (target) {
           handledYearRef.current = target.year;
@@ -512,10 +521,10 @@ function App() {
       {/* Old season on screen, new draft pool bundled: the one-click bridge
           to mock drafts. Hidden in the Draft Room itself (already there) and
           while a season switch is in flight. */}
-      {league && !league.isGuest && !isLoading && league.season < POOL.season &&
+      {league && !league.isGuest && !isLoading && league.season < POOL_SEASON &&
         location.pathname !== '/draft-room' && (
           <DraftPrepBanner
-            draftSeason={POOL.season}
+            draftSeason={POOL_SEASON}
             leagueSeason={league.season}
             onOpen={handleOpenDraftPrep}
           />
@@ -573,7 +582,7 @@ function App() {
               // with fresh config. useDraftRoom derives config only on mount, so
               // without this the board keeps the previous league's teams /
               // scoring / roster slots. (league.season covers ESPN/Yahoo year
-              // switches that keep the same id; leagueKeyFor uses POOL.season.)
+              // switches that keep the same id; leagueKeyFor uses POOL_SEASON.)
               <DraftRoomPage
                 key={`${league.platform}:${league.id}:${league.season}:${league.totalTeams}:${league.scoringType}:${league.rosterSlots?.SUPERFLEX ?? 0}`}
                 league={league}

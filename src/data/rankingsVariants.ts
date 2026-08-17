@@ -25,9 +25,6 @@ export const RANKINGS_VARIANTS: RankingsVariant[] = [
   { slug: 'flex', pos: 'FLEX', label: 'Flex' },
 ];
 
-/** Slug list for the sitemap and route generation. */
-export const RANKINGS_SLUGS = RANKINGS_VARIANTS.map(v => v.slug);
-
 // Map lookups (not plain-object indexing) so prototype-chain slugs like
 // 'constructor' or '__proto__' resolve to undefined, not an inherited member.
 const POS_BY_SLUG = new Map(RANKINGS_VARIANTS.map(v => [v.slug, v.pos]));

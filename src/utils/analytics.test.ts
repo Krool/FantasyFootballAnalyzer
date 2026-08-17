@@ -65,20 +65,6 @@ describe('Analytics named helpers', () => {
     });
   });
 
-  it('draftAnalyzed emits team_count', () => {
-    const gtag = vi.fn();
-    window.gtag = gtag;
-    Analytics.draftAnalyzed(12);
-    expect(gtag).toHaveBeenCalledWith('event', 'draft_analyzed', { team_count: 12 });
-  });
-
-  it('tradeAnalyzed emits trade_count', () => {
-    const gtag = vi.fn();
-    window.gtag = gtag;
-    Analytics.tradeAnalyzed(5);
-    expect(gtag).toHaveBeenCalledWith('event', 'trade_analyzed', { trade_count: 5 });
-  });
-
   it('pdfExported emits report_type', () => {
     const gtag = vi.fn();
     window.gtag = gtag;
@@ -123,12 +109,8 @@ describe('Analytics named helpers', () => {
       Analytics.leagueConnected('espn', 'L1');
       Analytics.connectAttempt('sleeper');
       Analytics.connectError('sleeper', 'network');
-      Analytics.draftAnalyzed(10);
-      Analytics.tradeAnalyzed(3);
-      Analytics.waiversAnalyzed(100);
-      Analytics.teamViewed('t1');
       Analytics.pdfExported('teams');
-      Analytics.pageViewed('home');
+      Analytics.pageView('/rankings');
     }).not.toThrow();
   });
 });

@@ -12,12 +12,12 @@
 // loaded league is usually LAST season, which has picks but says nothing about
 // whether the upcoming draft has run.
 
-import { POOL } from '@/data/draftPool';
+import { POOL_SEASON } from '@/data/draftPoolMeta';
 import type { League } from '@/types';
 
 export function hasDraftedPoolSeason(league: League | null | undefined): boolean {
   if (!league || league.isGuest) return false;
-  if (league.season !== POOL.season) return false;
+  if (league.season !== POOL_SEASON) return false;
   // The adapters only populate draftPicks for a draft the platform reports as
   // complete; an unrun board arrives as league.upcomingDraft instead.
   return league.teams.some(team => (team.draftPicks?.length ?? 0) > 0);

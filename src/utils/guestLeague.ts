@@ -1,6 +1,6 @@
-import { POOL } from '@/data/draftPool';
+import { POOL_SEASON } from '@/data/draftPoolMeta';
 import type { League, Platform, DraftType, RosterSlots } from '@/types';
-import { DEFAULT_ROSTER_SLOTS } from '@/hooks/useDraftRoom';
+import { DEFAULT_ROSTER_SLOTS } from '@/utils/draftDefaults';
 
 // Guest mode: build a synthetic League from user-picked draft settings so
 // Rankings and the Draft Room work with no login. Everything downstream
@@ -54,7 +54,7 @@ export function buildGuestLeague(
     name: 'Guest draft prep',
     // Draft prep targets the upcoming season (the bundled pool's season),
     // never a real league's last season. See docs/FANTASY_FOOTBALL.md.
-    season: POOL.season,
+    season: POOL_SEASON,
     draftType: settings.draftType,
     teams: [],
     scoringType: settings.scoringType,

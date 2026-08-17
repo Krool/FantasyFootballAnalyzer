@@ -45,7 +45,11 @@ jobs:
       - name: Detect real changes (ignore fetch timestamps)
         id: diff
         run: |
-          if git diff --quiet -I '"(generatedAt|fetchedAt)"' -- data/raw src/data; then
+          # Unquoted alternation so it also matches the generated meta module's
+          # `export const POOL_GENERATED_AT = "..."`. With the quotes required,
+          # that line never matched, so the stamp alone made this job commit,
+          # push, and deploy an empty "Update draft rankings data" every day.
+          if git diff --quiet -I '(generatedAt|fetchedAt|POOL_GENERATED_AT)' -- data/raw src/data; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             git checkout -- .
             echo "No ranking changes since last run."

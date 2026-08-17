@@ -26,6 +26,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonicalTeam, matchPlayer, normalizeName } from '../src/utils/playerNames';
+import { disambiguateIds, parseCsv, playerId } from './poolBuild';
 import { currentDraftSeason } from './season';
 
 const seasonArg = process.argv.find(a => a.startsWith('--season='));
@@ -43,6 +44,9 @@ const rankingsPath = join(root, 'data', `FantasyPros_${SEASON}_Draft_ALL_Ranking
 const salaryPath = join(root, 'data', 'salary_cap_values.csv');
 const outPath = join(root, 'src', 'data', `draftPool.${SEASON}.json`);
 const indirectionPath = join(root, 'src', 'data', 'draftPool.ts');
+const metaPath = join(root, 'src', 'data', 'draftPoolMeta.ts');
+// How many board leaders the homepage hero shows.
+const TOP_OF_BOARD_SIZE = 5;
 const missesPath = join(root, 'data', 'raw', `misses.${SEASON}.json`);
 
 interface PoolPlayer {
@@ -88,37 +92,6 @@ interface PoolPlayer {
   depthChartOrder?: number;
 }
 
-function parseCsv(text: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = '';
-  let inQuotes = false;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (inQuotes) {
-      if (ch === '"' && text[i + 1] === '"') { field += '"'; i++; }
-      else if (ch === '"') inQuotes = false;
-      else field += ch;
-    } else if (ch === '"') {
-      inQuotes = true;
-    } else if (ch === ',') {
-      row.push(field); field = '';
-    } else if (ch === '\n' || ch === '\r') {
-      if (ch === '\r' && text[i + 1] === '\n') i++;
-      row.push(field); field = '';
-      if (row.some(f => f.trim() !== '')) rows.push(row);
-      row = [];
-    } else {
-      field += ch;
-    }
-  }
-  if (field !== '' || row.length > 0) {
-    row.push(field);
-    if (row.some(f => f.trim() !== '')) rows.push(row);
-  }
-  return rows;
-}
-
 function readRows(path: string): string[][] {
   // Strip a UTF-8 byte order mark if present.
   const raw = readFileSync(path, 'utf8');
@@ -130,16 +103,6 @@ function loadRawSnapshot<T>(name: string): T | null {
   const path = join(root, 'data', 'raw', name);
   if (!existsSync(path)) return null;
   return (JSON.parse(readFileSync(path, 'utf8')) as { data: T }).data;
-}
-
-// Stable player ids: rebuilding the pool after rankings move must not change
-// a player's id, because saved Draft Room sessions persist these ids (the
-// old `fp-<rank>` scheme silently remapped every logged pick after a daily
-// refresh). Slug of name+pos; DSTs key on the franchise.
-function playerId(name: string, pos: string, team: string): string {
-  if (pos === 'DST') return `dst-${canonicalTeam(team).toLowerCase()}`;
-  const slug = normalizeName(name).replace(/\s+/g, '-');
-  return `${slug}-${pos.toLowerCase()}`;
 }
 
 // --- Rankings: fetched FantasyPros snapshot preferred, CSV export fallback ---
@@ -230,28 +193,10 @@ console.log(
 // Group by base id, suffix EVERY member of a colliding group with its franchise,
 // then assert the final id set is unique - so a true duplicate (same name+pos+
 // team) bails loudly instead of silently shipping a duplicate/unstable id.
-{
-  const byBase = new Map<string, PoolPlayer[]>();
-  for (const player of players) {
-    const group = byBase.get(player.id);
-    if (group) group.push(player);
-    else byBase.set(player.id, [player]);
-  }
-  for (const group of byBase.values()) {
-    if (group.length < 2) continue;
-    for (const player of group) {
-      player.id = `${player.id}-${canonicalTeam(player.team).toLowerCase()}`;
-    }
-  }
-  const finalIds = new Map<string, PoolPlayer>();
-  for (const player of players) {
-    const clash = finalIds.get(player.id);
-    if (clash) {
-      console.error(`FAILED: id collision ${player.id} (${clash.name} vs ${player.name})`);
-      process.exit(1);
-    }
-    finalIds.set(player.id, player);
-  }
+for (const duplicateId of disambiguateIds(players)) {
+  const clashing = players.filter(p => p.id === duplicateId).map(p => `${p.name} (${p.team})`);
+  console.error(`FAILED: id collision ${duplicateId} — ${clashing.join(' vs ')}`);
+  process.exit(1);
 }
 
 // When a hand-maintained salary row fails to match, point at the likely fix:
@@ -525,11 +470,53 @@ writeFileSync(
   ].join('\n'),
 );
 
+// Regenerate the metadata module. This exists so the always-loaded parts of
+// the app (App.tsx, guestLeague, the homepage hero) can read the season, the
+// build stamp, and the top of the board WITHOUT importing the full pool JSON,
+// which is ~450KB and would otherwise sit in the eager entry chunk on every
+// route — including the ones that never render a player.
+// Number.isFinite, not != null: the CSV fallback path builds overallRank with
+// a bare Number() and a blank/'NR' rank cell yields NaN, which passes a null
+// check, breaks the sort, and serializes as `"overallRank":null` in the meta.
+const topOfBoard = [...players]
+  .filter(p => Number.isFinite(p.overallRank))
+  .sort((a, b) => a.overallRank - b.overallRank)
+  .slice(0, TOP_OF_BOARD_SIZE)
+  .map(p => ({
+    id: p.id,
+    name: p.name,
+    pos: p.pos,
+    team: p.team,
+    overallRank: p.overallRank,
+    baseValue: p.baseValue ?? 1,
+  }));
+
+writeFileSync(
+  metaPath,
+  [
+    '// GENERATED by scripts/buildDraftPool.ts — do not edit by hand.',
+    '// Pool metadata WITHOUT the player array. Import this (not draftPool.ts)',
+    '// from anything that loads on every route, so the full pool JSON stays out',
+    '// of the eager entry chunk. See buildDraftPool.ts for why.',
+    '',
+    `export const POOL_SEASON = ${SEASON};`,
+    `export const POOL_GENERATED_AT = ${JSON.stringify(out.generatedAt)};`,
+    `export const POOL_BASELINE = ${JSON.stringify(BASELINE)};`,
+    '',
+    `/** Top ${TOP_OF_BOARD_SIZE} of the consensus board, for the homepage hero. */`,
+    'export const TOP_OF_BOARD = [',
+    ...topOfBoard.map(p => `  ${JSON.stringify(p)},`),
+    '] as const;',
+    '',
+  ].join('\n'),
+);
+
 const byPos = players.reduce<Record<string, number>>((acc, p) => {
   acc[p.pos] = (acc[p.pos] ?? 0) + 1;
   return acc;
 }, {});
 console.log(`Wrote ${outPath}`);
 console.log(`Wrote ${indirectionPath} (season ${SEASON})`);
+console.log(`Wrote ${metaPath}`);
 console.log(`  ${players.length} players (${Object.entries(byPos).map(([p, n]) => `${p}:${n}`).join(' ')})`);
 console.log(`  ${matched}/${salaryRows.length} salary values matched`);

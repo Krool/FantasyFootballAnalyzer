@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { League } from '@/types';
-import { exportLeagueReport } from '@/utils/exportPdf';
 import { useSounds } from '@/hooks/useSounds';
 import { logger } from '@/utils/logger';
 import { Analytics } from '@/utils/analytics';
@@ -74,17 +74,30 @@ export function Header({
   // Room has nothing left to run for it.
   const alreadyDrafted = hasDraftedPoolSeason(league);
 
+  // jspdf is dynamic-imported and the report takes a moment to build, so the
+  // button has to say something is happening — otherwise the first click looks
+  // like a dead one and gets repeated.
+  const [isExporting, setIsExporting] = useState(false);
+
   const handleExportPdf = () => {
-    if (league) {
+    if (league && !isExporting) {
       playExport();
-      // The exporter dynamic-imports jspdf; a failed chunk load (offline, or
-      // a stale deploy hash) would otherwise be a silent unhandled rejection.
+      setIsExporting(true);
+      // Dynamic import: Header is part of the always-mounted shell, and
+      // exportPdf statically reaches the full draft pool (via awards +
+      // grading), so a static import here would park the ~450KB pool JSON in
+      // the eager entry chunk on every route. The catch also covers a failed
+      // chunk load (offline, or a stale deploy hash), which would otherwise be
+      // a silent unhandled rejection.
       Analytics.pdfExported('league_report');
-      exportLeagueReport(league).catch(err => {
-        logger.error('PDF export failed:', err);
-        playError();
-        window.alert("Couldn't build the PDF report. Check your connection and try again.");
-      });
+      import('@/utils/exportPdf')
+        .then(({ exportLeagueReport }) => exportLeagueReport(league))
+        .catch(err => {
+          logger.error('PDF export failed:', err);
+          playError();
+          window.alert("Couldn't build the PDF report. Check your connection and try again.");
+        })
+        .finally(() => setIsExporting(false));
     }
   };
 
@@ -300,6 +313,8 @@ export function Header({
             </Link>
             <button
               onClick={handleExportPdf}
+              disabled={isExporting}
+              aria-busy={isExporting}
               className={styles.exportButton}
               title="Export PDF Report"
               aria-label="Export PDF Report"
@@ -311,7 +326,7 @@ export function Header({
                 <line x1="9" y1="15" x2="12" y2="18" />
                 <line x1="15" y1="15" x2="12" y2="18" />
               </svg>
-              PDF
+              {isExporting ? 'Building…' : 'PDF'}
             </button>
               </>
             )}
