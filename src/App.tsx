@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, Suspense, lazy, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense, lazy, type ReactNode } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams, useParams } from 'react-router-dom';
 import { Header, YearSelector, SeasonLoadingOverlay } from '@/components';
 import { DraftPrepBanner } from '@/components/DraftPrepBanner';
@@ -114,6 +114,19 @@ function App() {
   // effect from re-firing on the same value (e.g. after a manual load completes
   // and updates league.season, which would otherwise look like a "change").
   const handledYearRef = useRef<number | null>(null);
+  // ?league=sleeper:<id> makes any URL a shareable league link: Sleeper's API
+  // is public and CORS-open, so the league loads for whoever opens the link
+  // with no cookies or OAuth, and the id is already visible on sleeper.com.
+  // ESPN private leagues and Yahoo can't work this way (cookies / OAuth), so
+  // the param is Sleeper-only by design. The ref remembers ids this session
+  // already tried so a failed load — or a deliberate "change league" with the
+  // param still in the URL — doesn't re-load in a loop.
+  const shareLeagueId = useMemo(() => {
+    const param = searchParams.get('league');
+    const match = param ? /^sleeper:(\d+)$/.exec(param) : null;
+    return match ? match[1] : null;
+  }, [searchParams]);
+  const attemptedShareRef = useRef<string | null>(null);
   // OAuth callback runs once per browser navigation. StrictMode would otherwise
   // double-invoke the effect and the second pass would see no stored state
   // (validateOAuthState consumes it) and report a bogus CSRF failure.
@@ -413,13 +426,60 @@ function App() {
     })();
   }, [searchParams, league, credentials, load]);
 
+  // Load the share-link league (also what makes a reload of a deep link like
+  // /awards?league=sleeper:… come back up with the league instead of bouncing
+  // to the connect form).
+  useEffect(() => {
+    if (!shareLeagueId) return;
+    if (attemptedShareRef.current === shareLeagueId) return;
+    if (league && !league.isGuest && league.platform === 'sleeper' && league.id === shareLeagueId) {
+      // Already showing the linked league; just don't try again later.
+      attemptedShareRef.current = shareLeagueId;
+      return;
+    }
+    if (isLoading) return;
+    attemptedShareRef.current = shareLeagueId;
+    load({ platform: 'sleeper', leagueId: shareLeagueId }).then(loaded => {
+      // Prefill the connect form for next visit, same as a manual connect.
+      if (loaded) rememberConnection(loaded.platform, loaded.id, loaded.season);
+    });
+  }, [shareLeagueId, league, isLoading, load]);
+
+  // Keep the share param on the URL while a Sleeper league is loaded, so the
+  // address bar is always a copyable share link. In-app navigations (NavLink)
+  // drop the query string; re-add it with a replace so history stays clean.
+  useEffect(() => {
+    if (!league || league.isGuest || league.platform !== 'sleeper') return;
+    const path = location.pathname;
+    if (path === '/yahoo-success' || path === '/yahoo-error') return;
+    const params = new URLSearchParams(location.search);
+    if (params.get('league') === `sleeper:${league.id}`) return;
+    params.set('league', `sleeper:${league.id}`);
+    navigate(`${path}?${params.toString()}`, { replace: true });
+  }, [league, location.pathname, location.search, navigate]);
+
+  // A share-link load that hasn't resolved yet. While true, route guards show
+  // a spinner instead of redirecting, so /awards?league=… lands on /awards
+  // once the league arrives rather than bouncing home first.
+  const shareLoadPending =
+    !!shareLeagueId &&
+    (attemptedShareRef.current !== shareLeagueId || isLoading) &&
+    !(league && !league.isGuest && league.platform === 'sleeper' && league.id === shareLeagueId);
+
   // Data pages require a real (non-guest) league. Guests get redirected to
   // Rankings; no league at all goes home. The render callback receives the
   // narrowed, non-null league.
-  const dataRoute = (render: (league: League) => ReactNode): ReactNode =>
-    league && !league.isGuest
-      ? render(league)
-      : <Navigate to={league?.isGuest ? '/rankings' : '/'} replace />;
+  const dataRoute = (render: (league: League) => ReactNode): ReactNode => {
+    if (league && !league.isGuest) return render(league);
+    if (shareLoadPending) {
+      return (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+          <div className="spinner" />
+        </div>
+      );
+    }
+    return <Navigate to={league?.isGuest ? '/rankings' : '/'} replace />;
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>

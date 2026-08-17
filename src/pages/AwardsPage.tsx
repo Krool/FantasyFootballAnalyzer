@@ -60,6 +60,13 @@ export function AwardsPage({ league }: AwardsPageProps) {
   const records = useMemo(() => seasonRecords(league), [league]);
   const timeline = useMemo(() => seasonTimeline(league), [league]);
 
+  // Drafted but nothing played yet: only draft awards exist (awards.ts gates
+  // the rest), so say why the case is half-empty instead of looking broken.
+  const hasPlayedGames = useMemo(
+    () => league.teams.some(t => (t.wins ?? 0) + (t.losses ?? 0) + (t.ties ?? 0) > 0),
+    [league.teams],
+  );
+
   return (
     <div className={styles.awardsPage}>
       <div className="container">
@@ -73,6 +80,14 @@ export function AwardsPage({ league }: AwardsPageProps) {
         {awards.length === 0 && (
           <p className={styles.empty}>
             No awards data available. Make sure your league has completed at least one week of play.
+          </p>
+        )}
+
+        {!hasPlayedGames && awards.length > 0 && (
+          <p className={styles.categoryNote}>
+            Nothing has been played yet, so these are draft-day awards, graded
+            against the FantasyPros consensus like the Draft board. Performance,
+            waiver, trade, and activity awards unlock after Week 1.
           </p>
         )}
 
