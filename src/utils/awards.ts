@@ -7,7 +7,14 @@
 
 import type { League, Team, Trade } from '@/types';
 import type { LuckMetrics } from './luck';
-import { gradeAllPicks, type GradedPick } from './grading';
+import type { GradedPick } from './grading';
+import { gradeLeaguePicks } from './consensusGrade';
+import { POOL } from '@/data/draftPool';
+
+// Signed display for value deltas: "+3.1" / "-2.4". A bare `+${n}` template
+// renders "+-2.4" when the winning value is itself negative (a league whose
+// BEST draft still graded under water showed "Best Draft +-970.0").
+const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}`;
 
 export interface Award {
   id: string;
@@ -143,7 +150,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Luckiest Team',
         category: 'luck',
         winner: { teamId: luckiest.teamId, teamName: luckiest.teamName },
-        value: `+${luckiest.luckScore.toFixed(1)}`,
+        value: signed(luckiest.luckScore),
         description: 'Most wins above expected',
         // Median leagues: luck is scored on the h2h record, so the detail
         // must show the same basis or the numbers won't add up.
@@ -183,7 +190,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Biggest Blowout',
         category: 'luck',
         winner: { teamId: biggestBlowout.teamId, teamName: biggestBlowout.teamName },
-        value: `+${biggestBlowout.biggestWin.toFixed(1)}`,
+        value: signed(biggestBlowout.biggestWin),
         description: 'Largest margin of victory',
         icon: '💪',
       });
@@ -206,7 +213,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Narrowest Escape',
         category: 'luck',
         winner: { teamId: narrowestVictory.team.teamId, teamName: narrowestVictory.team.teamName },
-        value: `+${narrowestVictory.margin.toFixed(1)}`,
+        value: signed(narrowestVictory.margin),
         description: 'Smallest winning margin',
         detail: `Week ${narrowestVictory.week}`,
         icon: '😅',
@@ -453,7 +460,9 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   // loader pre-populated grading fields on team.draftPicks (it doesn't).
   // For auctions, gradeAllPicks already overrides round and expectedRank
   // based on cost, so the round-based filters below stay meaningful.
-  const gradedPicks = gradeAllPicks(league);
+  // gradeLeaguePicks swaps in consensus ranks before Week 1 so a finished
+  // pre-season draft grades against the market instead of zeroed stats.
+  const gradedPicks = gradeLeaguePicks(league, POOL);
   const teamMap = new Map(league.teams.map(t => [t.id, t]));
 
   // Best Draft
@@ -464,7 +473,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Best Draft',
       category: 'draft',
       winner: { teamId: bestDraft.team.id, teamName: bestDraft.team.name, ownerName: bestDraft.team.ownerName },
-      value: `+${bestDraft.avgValue.toFixed(1)}`,
+      value: signed(bestDraft.avgValue),
       description: 'Highest average draft value',
       detail: `${bestDraft.greatPicks} great picks`,
       icon: '🎯',
@@ -494,7 +503,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Draft Steal',
       category: 'draft',
       winner: { teamId: draftSteal.teamId, teamName: draftSteal.teamName },
-      value: `+${draftSteal.value.toFixed(1)}`,
+      value: signed(draftSteal.value),
       description: 'Best single draft pick',
       detail: `${draftSteal.playerName} (Rd ${draftSteal.round})`,
       icon: '💎',
@@ -524,7 +533,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Late Round Hero',
       category: 'draft',
       winner: { teamId: lateRoundHero.teamId, teamName: lateRoundHero.teamName },
-      value: `+${lateRoundHero.value.toFixed(1)}`,
+      value: signed(lateRoundHero.value),
       description: 'Best pick from round 8+',
       detail: `${lateRoundHero.playerName} (Rd ${lateRoundHero.round})`,
       icon: '🦸',
@@ -532,10 +541,14 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   }
 
   // ============ WAIVER AWARDS ============
+  // All four are PAR-based, so like the performance awards they need at least
+  // one played game. Offseason FA adds are real transactions, which is why the
+  // activity gates below aren't enough: before Week 1 they'd crown a "best"
+  // and "worst" pickup that both sit at 0.0.
 
   // Best Waiver Pickup
   const bestWaiver = getBestWaiverPickup(league.teams);
-  if (bestWaiver) {
+  if (hasPlayedGames && bestWaiver) {
     awards.push({
       id: 'best_waiver',
       name: 'Best Waiver Pickup',
@@ -550,7 +563,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
 
   // Worst Waiver Pickup (min 2 games started)
   const worstWaiver = getWorstWaiverPickup(league.teams);
-  if (worstWaiver) {
+  if (hasPlayedGames && worstWaiver) {
     awards.push({
       id: 'worst_waiver',
       name: 'Worst Waiver Pickup',
@@ -577,7 +590,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   // Waiver Wire King (most total PAR from waivers). A king with zero pickups
   // is nonsense copy, so the winner himself must have picked someone up.
   const waiverKing = getWaiverWireKing(league.teams);
-  if (waiverKing && waiverKing.pickupCount > 0) {
+  if (hasPlayedGames && waiverKing && waiverKing.pickupCount > 0) {
     awards.push({
       id: 'waiver_king',
       name: 'Waiver Wire King',
@@ -594,7 +607,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   // had any waiver activity at all; a slacker with 0 pickups while rivals
   // worked the wire is the award's whole point, so gate on the league.
   const waiverSlacker = getWaiverWireSlacker(league.teams);
-  if (waiverSlacker && leagueHadPickups) {
+  if (hasPlayedGames && waiverSlacker && leagueHadPickups) {
     awards.push({
       id: 'waiver_slacker',
       name: 'Waiver Wire Slacker',
@@ -609,9 +622,11 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
 
   // ============ ACTIVITY AWARDS ============
 
-  // Most Active. Skip a league with no transactions or trades at all.
+  // Most Active. Skip a league with no transactions or trades at all, and
+  // (like the waiver awards) an unplayed one: pre-season "Most Active: 1 /
+  // Least Active: 0" over a couple of offseason adds is noise, not a trophy.
   const mostActive = getMostActive(league.teams);
-  if (mostActive && leagueHadMoves) {
+  if (hasPlayedGames && mostActive && leagueHadMoves) {
     awards.push({
       id: 'most_active',
       name: 'Most Active',
@@ -626,7 +641,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   // Least Active. Only meaningful when the league had activity (a real couch
   // potato at 0 is fine, but not when literally nobody made a move).
   const leastActive = getLeastActive(league.teams);
-  if (leastActive && leagueHadMoves) {
+  if (hasPlayedGames && leastActive && leagueHadMoves) {
     awards.push({
       id: 'least_active',
       name: 'Least Active',
@@ -639,7 +654,9 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   }
 
   // ============ TRADE AWARDS ============
-  if (league.trades && league.trades.length > 0) {
+  // Also gated on a played game: post-draft trades are real, but their PAR
+  // verdicts are all 0.0 until someone scores.
+  if (hasPlayedGames && league.trades && league.trades.length > 0) {
     // Trade Shark (best net PAR from trades)
     const tradeShark = getTradeShark(league.teams, league.trades);
     if (tradeShark && tradeShark.netPAR > 0) {
@@ -648,7 +665,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Trade Shark',
         category: 'trades',
         winner: { teamId: tradeShark.team.id, teamName: tradeShark.team.name, ownerName: tradeShark.team.ownerName },
-        value: `+${tradeShark.netPAR.toFixed(1)}`,
+        value: signed(tradeShark.netPAR),
         description: 'Best net PAR from trades',
         detail: `${tradeShark.wins}W-${tradeShark.losses}L`,
         icon: '🦈',
@@ -678,7 +695,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Best Trade',
         category: 'trades',
         winner: { teamId: bestTrade.teamId, teamName: bestTrade.teamName },
-        value: `+${bestTrade.netPAR.toFixed(1)}`,
+        value: signed(bestTrade.netPAR),
         description: 'Highest PAR gain from single trade',
         detail: `Week ${bestTrade.week}`,
         icon: '🤝',

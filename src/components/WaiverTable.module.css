@@ -277,4 +277,13 @@
   .filters { flex-direction: column; align-items: stretch; }
   .filter  { min-width: 100%; }
   .stats   { margin-left: 0; justify-content: space-between; }
+
+  /* Leaderboard rows are a single flex line of rank + name + badges + PAR.
+     Unlike the pickups table above (which scrolls in its wrapper), the
+     leaderboard card has no overflow escape, so on a phone long team names
+     plus the FAAB badge ran out of the card. Let rows wrap and let the name
+     shrink instead. */
+  .leaderboardItem { flex-wrap: wrap; gap: 0.4rem 0.75rem; }
+  .teamName        { min-width: 0; overflow-wrap: anywhere; }
+  .pointsTotal     { margin-left: auto; }
 }

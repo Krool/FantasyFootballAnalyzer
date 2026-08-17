@@ -4,7 +4,8 @@
 // the league so the score is relative to this room, not an absolute.
 
 import type { League } from '@/types';
-import { gradeAllPicks } from './grading';
+import { POOL } from '@/data/draftPool';
+import { gradeLeaguePicks } from './consensusGrade';
 import { calculateLuckMetrics } from './luck';
 import { isPlaceholderPlayer } from './placeholders';
 
@@ -34,7 +35,7 @@ function normalize(values: number[]): number[] {
 export function managerScores(league: League): ManagerScore[] {
   if (league.teams.length === 0) return [];
 
-  const graded = gradeAllPicks(league).filter(p => !isPlaceholderPlayer(p.player.name));
+  const graded = gradeLeaguePicks(league, POOL).filter(p => !isPlaceholderPlayer(p.player.name));
   const luck = calculateLuckMetrics(
     (league.matchups ?? []).map(m => ({
       week: m.week,

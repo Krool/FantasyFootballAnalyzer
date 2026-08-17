@@ -1,37 +1,29 @@
-import type { Team } from '@/types';
+import type { League, Team } from '@/types';
 import type { LuckMetrics } from '@/utils/luck';
 import { useMemo } from 'react';
-import { gradeAllPicks, calculateDraftSummary } from '@/utils/grading';
+import { calculateDraftSummary } from '@/utils/grading';
+import { gradeLeaguePicks } from '@/utils/consensusGrade';
+import { POOL } from '@/data/draftPool';
 import { isPlaceholderPlayer } from '@/utils/placeholders';
 import { LuckIcon } from './LuckIcon';
 import styles from './TeamCard.module.css';
 
 interface TeamCardProps {
+  league: League;
   team: Team;
-  allTeams: Team[];
-  totalTeams: number;
   onClick?: () => void;
   luckMetrics?: LuckMetrics;
 }
 
-export function TeamCard({ team, allTeams, totalTeams, onClick, luckMetrics }: TeamCardProps) {
-  // Grade this team's picks
+export function TeamCard({ league, team, onClick, luckMetrics }: TeamCardProps) {
+  // Grade this team's picks against the real league (a hand-built stand-in
+  // here once forced snake/PPR onto auction leagues and graded every pick
+  // wrong). gradeLeaguePicks also swaps in consensus ranks pre-season.
   const gradedPicks = useMemo(() => {
-    const mockLeague = {
-      id: '',
-      platform: 'sleeper' as const,
-      name: '',
-      season: 2024,
-      draftType: 'snake' as const,
-      teams: allTeams,
-      scoringType: 'ppr' as const,
-      totalTeams,
-      isLoaded: true,
-    };
-    const allGraded = gradeAllPicks(mockLeague);
+    const allGraded = gradeLeaguePicks(league, POOL);
     // Filter to this team's picks and exclude unknown players (e.g., "Player 12345")
     return allGraded.filter(pick => pick.teamId === team.id && !isPlaceholderPlayer(pick.player.name));
-  }, [team, allTeams, totalTeams]);
+  }, [league, team.id]);
 
   const summary = useMemo(() => calculateDraftSummary(gradedPicks), [gradedPicks]);
 

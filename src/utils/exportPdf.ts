@@ -1,7 +1,9 @@
 // jsPDF and jspdf-autotable are dynamically imported in exportLeagueReport()
 import type { jsPDF as JsPDFType } from 'jspdf';
 import type { League } from '@/types';
-import { gradeAllPicks, calculateDraftSummary, getGradeDisplayText } from './grading';
+import { calculateDraftSummary, getGradeDisplayText } from './grading';
+import { gradeLeaguePicks } from './consensusGrade';
+import { POOL } from '@/data/draftPool';
 import { calculateAllAwards } from './awards';
 import { calculateLuckMetrics } from './luck';
 import { isPlaceholderPlayer } from './placeholders';
@@ -259,7 +261,7 @@ export async function exportLeagueReport(league: League) {
 
   // Placeholder players ("Player 12345") would otherwise show up in the
   // Top/Bottom 10 tables; the on-site tables filter them, so must we.
-  const gradedPicks = gradeAllPicks(league).filter(p => !isPlaceholderPlayer(p.player.name));
+  const gradedPicks = gradeLeaguePicks(league, POOL).filter(p => !isPlaceholderPlayer(p.player.name));
 
   const draftSummaryData = league.teams.map(team => {
     const teamPicks = gradedPicks.filter(p => p.teamId === team.id);

@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 import type { League, Team } from '@/types';
 import { NflTeamLabel, PosBadge } from '@/components';
-import { gradeAllPicks, getGradeDisplayText } from '@/utils/grading';
+import { getGradeDisplayText } from '@/utils/grading';
+import { gradeLeaguePicks } from '@/utils/consensusGrade';
+import { POOL } from '@/data/draftPool';
 import { calculateAllAwards } from '@/utils/awards';
 import { calculateLuckMetrics, type MatchupData } from '@/utils/luck';
 import { isPlaceholderPlayer } from '@/utils/placeholders';
@@ -40,7 +42,7 @@ export function TeamDetail({ league, team, onBack }: TeamDetailProps) {
 
   const gradedPicks = useMemo(
     () =>
-      gradeAllPicks(league).filter(
+      gradeLeaguePicks(league, POOL).filter(
         p => p.teamId === team.id && !isPlaceholderPlayer(p.player.name),
       ),
     [league, team.id],

@@ -13,8 +13,9 @@
 // expected-vs-actual math and "did you reach?" becomes answerable the moment
 // the draft ends.
 
-import type { DraftPick, Player } from '@/types';
+import type { DraftPick, League, Player } from '@/types';
 import type { DraftPoolFile, PoolPlayer } from '@/types/draft';
+import { gradeAllPicks, type GradedPick } from './grading';
 import { matchKey } from './playerNames';
 import { isPlaceholderPlayer } from './placeholders';
 
@@ -94,4 +95,19 @@ export function consensusPositionRanks(picks: DraftPick[], pool: DraftPoolFile):
 // preseason payload is normalized to `undefined` upstream so it reads false.
 export function hasSeasonResults(picks: DraftPick[]): boolean {
   return picks.some(p => p.seasonPoints !== undefined && p.seasonPoints > 0);
+}
+
+// gradeAllPicks with the right yardstick for the calendar: season points once
+// any drafted player has scored, consensus rank before Week 1. Every surface
+// that grades a real league's draft (team cards, awards, manager score, the
+// PDF) should call this instead of gradeAllPicks directly, or a finished
+// pre-season draft grades every pick against a zeroed stat line. The pool is
+// a parameter so this module never drags the ~450KB pool JSON into a chunk
+// that didn't already pay for it.
+export function gradeLeaguePicks(league: League, pool: DraftPoolFile): GradedPick[] {
+  const allPicks = league.teams.flatMap(t => t.draftPicks || []);
+  const override = hasSeasonResults(allPicks)
+    ? undefined
+    : consensusPositionRanks(allPicks, pool);
+  return gradeAllPicks(league, override);
 }

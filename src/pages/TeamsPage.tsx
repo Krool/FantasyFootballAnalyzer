@@ -163,9 +163,8 @@ export function TeamsPage({ league }: TeamsPageProps) {
           {sortedTeams.map((team) => (
             <TeamCard
               key={team.id}
+              league={league}
               team={team}
-              allTeams={league.teams}
-              totalTeams={league.totalTeams}
               luckMetrics={luckByTeam.get(team.id)}
               onClick={() => openTeam(team.id)}
             />
