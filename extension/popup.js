@@ -1,4 +1,4 @@
-const ANALYZER_URL = 'https://krool.github.io/FantasyFootballAnalyzer/';
+const ANALYZER_URL = 'https://fantasyfootballanalyzer.app/';
 
 const statusEl = document.getElementById('status');
 const openEspnBtn = document.getElementById('open-espn');

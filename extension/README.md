@@ -17,11 +17,11 @@ asks. Replaces the manual DevTools step on the ESPN onboarding flow.
 - No network calls of its own
 - No analytics
 - No cookie storage (cookies stay where they are; we just read them when asked)
-- No access to anything outside `*.espn.com` / `*.go.com` (the host permissions
-  in `manifest.json` are the only origins we can touch)
-- Only responds to messages from `https://krool.github.io/*` (set via
-  `externally_connectable` plus a belt-and-suspenders origin check in
-  `background.js`)
+- No access to anything outside `*.espn.com` (the host permissions in
+  `manifest.json` are the only origins we can touch)
+- Only responds to messages from `https://fantasyfootballanalyzer.app/*` and the
+  two local dev ports (set via `externally_connectable` plus a belt-and-braces
+  origin check in `background.js`)
 
 ## Local development install
 
@@ -70,11 +70,18 @@ Firefox uses the WebExtensions API which is compatible. Load via
 
 - `manifest_version: 3` — required by Chrome Web Store as of 2024.
 - `permissions: ["cookies"]` is the only permission. Combined with
-  `host_permissions` for `espn.com` / `go.com`, this lets us call
+  `host_permissions` for `espn.com`, this lets us call
   `chrome.cookies.get({url: "https://www.espn.com", name: "espn_s2"})`.
   We cannot read cookies for any other site.
 - `externally_connectable.matches` is the security boundary. Only listed
-  origins can `chrome.runtime.sendMessage(EXT_ID, ...)`.
+  origins can `chrome.runtime.sendMessage(EXT_ID, ...)`. It is pinned to the
+  live frontend domain (`fantasyfootballanalyzer.app`) plus the two Vite dev
+  ports — **if the frontend domain ever changes again, update this, the
+  `ALLOWED_ORIGINS` set in `background.js`, and `ANALYZER_URL` in `popup.js`
+  together, or auto-fill silently stops working against production.** Never
+  widen it to a shared host like `*.github.io`: that origin is account-wide, so
+  every other site published there would inherit the ability to read a user's
+  ESPN session cookies.
 - `background.js` runs as a service worker (no persistent process).
 - `popup.html` is optional UX so users can see whether they're logged into
   espn.com without leaving the extension icon.

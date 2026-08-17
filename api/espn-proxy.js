@@ -95,8 +95,24 @@ export default async function handler(req, res) {
       headers['Cookie'] = `espn_s2=${espnS2}; SWID=${swid}`;
     }
 
-    // Forward x-fantasy-filter header if provided
+    // Forward x-fantasy-filter header if provided. Every other input to this
+    // proxy is allowlisted, so validate this one too rather than passing an
+    // arbitrary caller-supplied string through to ESPN under our IP: real
+    // filters are small JSON objects, and anything else is a 400 here instead
+    // of an opaque 500 from the fetch below.
     if (fantasyFilter) {
+      if (fantasyFilter.length > 2048) {
+        return res.status(400).json({ error: 'x-fantasy-filter too large' });
+      }
+      let parsedFilter;
+      try {
+        parsedFilter = JSON.parse(fantasyFilter);
+      } catch {
+        return res.status(400).json({ error: 'x-fantasy-filter must be JSON' });
+      }
+      if (parsedFilter === null || typeof parsedFilter !== 'object' || Array.isArray(parsedFilter)) {
+        return res.status(400).json({ error: 'x-fantasy-filter must be a JSON object' });
+      }
       headers['x-fantasy-filter'] = fantasyFilter;
     }
 

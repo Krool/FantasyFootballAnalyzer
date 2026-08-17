@@ -104,6 +104,11 @@ export default async function handler(req, res) {
         textNodeName: '#text',
         parseAttributeValue: true,
         trimValues: true,
+        // Entity decoding stays ON. Turning it off does NOT harden anything
+        // here — billion-laughs is DOCTYPE entity expansion, not character
+        // references — and it breaks every league or team name containing
+        // & < > " ', which in fantasy team names is a lot of them: they would
+        // render as "Bob &amp; Weave" through the UI and the PDF.
         isArray: (name) => ALWAYS_ARRAY.has(name)
       });
       const jsonData = parser.parse(responseText);

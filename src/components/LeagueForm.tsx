@@ -102,12 +102,16 @@ function probeExtension(): Promise<ExtensionProbe | null> {
       chrome.runtime.sendMessage(
         ESPN_EXTENSION_ID,
         { type: 'get-espn-cookies' },
-        (response: { espnS2?: string; swid?: string } | undefined) => {
+        (response: { espnS2?: string; swid?: string; error?: string } | undefined) => {
           if (settled) return;
           settled = true;
           clearTimeout(timer);
-          // chrome.runtime.lastError is set when the extension isn't installed
-          if (chrome.runtime?.lastError || !response) {
+          // chrome.runtime.lastError is set when the extension isn't installed.
+          // A response carrying `error` (background.js's origin check refused
+          // us — e.g. a dev server on an unlisted port) is ALSO "can't be
+          // reached": treating it as installed would tell the user to log into
+          // espn.com when the real problem is the origin allowlist.
+          if (chrome.runtime?.lastError || !response || response.error) {
             resolve(null);
           } else {
             resolve({ installed: true, espnS2: response.espnS2, swid: response.swid });

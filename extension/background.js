@@ -23,9 +23,22 @@ async function readEspnCookies() {
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
   // Belt-and-suspenders: even though externally_connectable gates the origin,
   // double-check sender.url is from an allowed origin before answering.
-  const url = sender?.url || '';
-  const allowed = url.startsWith('https://krool.github.io/') || url.startsWith('http://localhost:');
-  if (!allowed) {
+  // Compare parsed origins, not string prefixes: a prefix test accepts
+  // lookalikes ("http://localhost:1234@evil.example/") that an origin equality
+  // check rejects. Must stay in sync with externally_connectable in
+  // manifest.json — and with the live frontend domain.
+  const ALLOWED_ORIGINS = new Set([
+    'https://fantasyfootballanalyzer.app',
+    'http://localhost:5173',
+    'http://localhost:4173',
+  ]);
+  let senderOrigin = '';
+  try {
+    senderOrigin = new URL(sender?.url || '').origin;
+  } catch {
+    senderOrigin = '';
+  }
+  if (!ALLOWED_ORIGINS.has(senderOrigin)) {
     sendResponse({ error: 'origin-not-allowed' });
     return false;
   }

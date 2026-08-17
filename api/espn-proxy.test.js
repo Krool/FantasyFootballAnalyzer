@@ -124,6 +124,44 @@ describe('espn-proxy forwarding', () => {
     expect(opts.headers['x-fantasy-filter']).toBe('{"players":{}}')
   })
 
+  // Every other input to this proxy is allowlisted. The filter header is
+  // forwarded to ESPN under our IP, so it gets validated too rather than
+  // passing an arbitrary caller-supplied string through.
+  it('rejects a filter that is not JSON, before any fetch', async () => {
+    const fetchMock = stubFetch({ ok: true, json: async () => ({}) })
+    const res = mockRes()
+    await handler(mockReq({
+      query: { season: '2025', leagueId: '123' },
+      headers: { 'x-fantasy-filter': 'not json at all' },
+    }), res)
+    expect(res.statusCode).toBe(400)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects a filter that is JSON but not an object', async () => {
+    const fetchMock = stubFetch({ ok: true, json: async () => ({}) })
+    for (const bad of ['[1,2,3]', '"a string"', '42', 'null']) {
+      const res = mockRes()
+      await handler(mockReq({
+        query: { season: '2025', leagueId: '123' },
+        headers: { 'x-fantasy-filter': bad },
+      }), res)
+      expect(res.statusCode).toBe(400)
+    }
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects an oversized filter', async () => {
+    const fetchMock = stubFetch({ ok: true, json: async () => ({}) })
+    const res = mockRes()
+    await handler(mockReq({
+      query: { season: '2025', leagueId: '123' },
+      headers: { 'x-fantasy-filter': `{"players":"${'x'.repeat(4096)}"}` },
+    }), res)
+    expect(res.statusCode).toBe(400)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('sends no Cookie header when only one of the two cookie values is present', async () => {
     const fetchMock = stubFetch({ ok: true, json: async () => ({}) })
     const res = mockRes()
