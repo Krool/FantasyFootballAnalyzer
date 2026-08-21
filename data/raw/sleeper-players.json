@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-08-20T11:22:38.798Z",
+ "fetchedAt": "2026-08-21T11:21:27.836Z",
  "data": {
   "players": [
    {
@@ -456,7 +456,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 11,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "3050",
@@ -495,7 +495,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 10,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "3163",
@@ -763,8 +763,8 @@
     "pos": "QB",
     "team": "TEN",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Biceps",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
@@ -976,7 +976,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
-    "depthChartOrder": 1
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "4217",
@@ -1002,7 +1002,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "4227",
@@ -1018,19 +1018,6 @@
     "depthChartOrder": 1
    },
    {
-    "sleeperId": "4233",
-    "name": "Zane Gonzalez",
-    "pos": "K",
-    "team": "MIA",
-    "status": "Inactive",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 9,
-    "depthChartOrder": null
-   },
-   {
     "sleeperId": "4234",
     "name": "Noah Brown",
     "pos": "WR",
@@ -1041,7 +1028,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
-    "depthChartOrder": 7
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "4263",
@@ -1106,7 +1093,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
-    "depthChartOrder": 6
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "4443",
@@ -1237,19 +1224,6 @@
     "injuryStartDate": null,
     "yearsExp": 1,
     "depthChartOrder": null
-   },
-   {
-    "sleeperId": "4854",
-    "name": "River Cracraft",
-    "pos": "WR",
-    "team": "WAS",
-    "status": "Inactive",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 9,
-    "depthChartOrder": 8
    },
    {
     "sleeperId": "4866",
@@ -1405,7 +1379,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "4972",
@@ -1439,8 +1413,8 @@
     "pos": "WR",
     "team": "BUF",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Lower Body",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
@@ -1470,7 +1444,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
-    "depthChartOrder": 8
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "4993",
@@ -1587,7 +1561,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
-    "depthChartOrder": 7
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "5096",
@@ -1613,7 +1587,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
-    "depthChartOrder": 5
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "5119",
@@ -1639,7 +1613,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
-    "depthChartOrder": 7
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "5127",
@@ -1756,7 +1730,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "5638",
@@ -2003,7 +1977,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 9
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "5927",
@@ -2029,7 +2003,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 7
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "5947",
@@ -2510,7 +2484,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 6
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "6598",
@@ -2575,7 +2549,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 4
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "6699",
@@ -2588,7 +2562,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 8
+    "depthChartOrder": 10
    },
    {
     "sleeperId": "6768",
@@ -2627,7 +2601,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 1
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "6786",
@@ -2692,7 +2666,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 4
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "6801",
@@ -2718,7 +2692,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "6804",
@@ -2822,7 +2796,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 5
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "6849",
@@ -2913,7 +2887,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "6920",
@@ -2926,7 +2900,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 9
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "6927",
@@ -2965,16 +2939,16 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 6
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "6963",
     "name": "Patrick Taylor",
     "pos": "RB",
     "team": "SF",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "status": "Inactive",
+    "injuryStatus": "IR",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
@@ -3056,7 +3030,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 7
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "7042",
@@ -3363,8 +3337,8 @@
     "pos": "RB",
     "team": "NYG",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Achilles",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
@@ -3524,7 +3498,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 6
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "7562",
@@ -3563,7 +3537,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 7
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "7567",
@@ -3727,12 +3701,12 @@
     "pos": "WR",
     "team": "PHI",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Neck",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 7
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "7599",
@@ -3797,7 +3771,20 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 5
+    "depthChartOrder": 3
+   },
+   {
+    "sleeperId": "7608",
+    "name": "Khalil Herbert",
+    "pos": "RB",
+    "team": "SF",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 5,
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "7610",
@@ -4025,13 +4012,13 @@
     "name": "Jack Stoll",
     "pos": "TE",
     "team": "CLE",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "status": "Inactive",
+    "injuryStatus": "IR",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 2
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "8002",
@@ -4200,7 +4187,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 2
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "8119",
@@ -4351,8 +4338,8 @@
     "pos": "WR",
     "team": "BUF",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
@@ -4499,7 +4486,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 7
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "8148",
@@ -4772,7 +4759,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "8200",
@@ -4863,7 +4850,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 5
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "8210",
@@ -4915,7 +4902,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 8
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "8223",
@@ -5006,7 +4993,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 5
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "8250",
@@ -5045,7 +5032,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 6
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "8255",
@@ -5097,7 +5084,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 2
+    "depthChartOrder": 1
    },
    {
     "sleeperId": "8413",
@@ -5123,7 +5110,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 6
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "8423",
@@ -5188,7 +5175,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 8
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "8583",
@@ -5292,7 +5279,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 5
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "8800",
@@ -5331,7 +5318,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 5
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "8861",
@@ -5344,7 +5331,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 8
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "8917",
@@ -5487,7 +5474,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "9479",
@@ -5591,7 +5578,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 2
+    "depthChartOrder": 1
    },
    {
     "sleeperId": "9488",
@@ -5682,7 +5669,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 10
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "9500",
@@ -5721,7 +5708,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "9504",
@@ -5890,7 +5877,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "9999",
@@ -5981,7 +5968,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "10219",
@@ -6072,7 +6059,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 5
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "10226",
@@ -6176,7 +6163,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "10236",
@@ -6223,8 +6210,8 @@
     "pos": "TE",
     "team": "DET",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Hip",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
@@ -6267,7 +6254,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 9
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "10871",
@@ -6319,7 +6306,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 7
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "11056",
@@ -6449,7 +6436,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 5
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "11168",
@@ -6501,7 +6488,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "11210",
@@ -6540,7 +6527,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "11256",
@@ -6605,7 +6592,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "11299",
@@ -6787,7 +6774,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 6
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "11474",
@@ -7281,7 +7268,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "11600",
@@ -7372,7 +7359,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 7
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "11617",
@@ -7528,7 +7515,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 1
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "11632",
@@ -7554,7 +7541,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 8
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "11635",
@@ -7606,7 +7593,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 8
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "11643",
@@ -7775,7 +7762,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "11748",
@@ -7788,7 +7775,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "11762",
@@ -7918,7 +7905,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 9
+    "depthChartOrder": 10
    },
    {
     "sleeperId": "11834",
@@ -7931,7 +7918,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "11851",
@@ -7983,7 +7970,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 8
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "11931",
@@ -8048,7 +8035,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": null
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "11964",
@@ -8198,19 +8185,6 @@
     "name": "Thomas Yassmin",
     "pos": "TE",
     "team": "GB",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 2,
-    "depthChartOrder": null
-   },
-   {
-    "sleeperId": "12151",
-    "name": "Julian Hicks",
-    "pos": "WR",
-    "team": "SEA",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
@@ -8516,7 +8490,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 5
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "12476",
@@ -8581,7 +8555,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "12481",
@@ -8633,7 +8607,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 2
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "12485",
@@ -8880,7 +8854,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "12505",
@@ -8971,7 +8945,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "12512",
@@ -9023,7 +8997,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 7
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "12517",
@@ -9114,7 +9088,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "12524",
@@ -9244,7 +9218,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "12538",
@@ -9270,7 +9244,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 5
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "12540",
@@ -9374,7 +9348,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 9
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "12641",
@@ -9465,7 +9439,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "12705",
@@ -9517,7 +9491,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "12718",
@@ -9569,7 +9543,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 6
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "12738",
@@ -9582,7 +9556,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 5
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "12743",
@@ -9686,7 +9660,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "12776",
@@ -9774,19 +9748,6 @@
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 1,
-    "depthChartOrder": null
-   },
-   {
-    "sleeperId": "12803",
-    "name": "Luke Grimm",
-    "pos": "WR",
-    "team": "LAC",
-    "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -9881,7 +9842,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 8
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "12863",
@@ -10362,7 +10323,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 1
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "13074",
@@ -10414,7 +10375,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 9
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "13110",
@@ -10466,7 +10427,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "13122",
@@ -10869,7 +10830,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "13285",
@@ -10921,7 +10882,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "13289",
@@ -10934,7 +10895,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "13292",
@@ -10986,7 +10947,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 2
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "13296",
@@ -10999,7 +10960,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "13297",
@@ -11012,7 +10973,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "13298",
@@ -11025,7 +10986,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 2
+    "depthChartOrder": 1
    },
    {
     "sleeperId": "13299",
@@ -11116,7 +11077,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 2
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "13308",
@@ -11181,7 +11142,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 6
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "13314",
@@ -11207,7 +11168,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "13316",
@@ -11259,7 +11220,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "13320",
@@ -11321,6 +11282,19 @@
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 0,
+    "depthChartOrder": null
+   },
+   {
+    "sleeperId": "13326",
+    "name": "DT Sheffield",
+    "pos": "WR",
+    "team": "NYJ",
+    "status": "Inactive",
+    "injuryStatus": "IR",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -11402,7 +11376,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "13336",
@@ -11415,7 +11389,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 6
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "13337",
@@ -11441,7 +11415,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 6
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "13339",
@@ -11597,7 +11571,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 5
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "13357",
@@ -11631,9 +11605,9 @@
     "pos": "WR",
     "team": "KC",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Knee",
+    "injuryNotes": "Soreness",
     "injuryStartDate": null,
     "yearsExp": 0,
     "depthChartOrder": null
@@ -11649,7 +11623,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 6
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "13400",
@@ -11670,8 +11644,8 @@
     "pos": "TE",
     "team": "DAL",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Toe",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -11727,7 +11701,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "13407",
@@ -11948,7 +11922,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "13424",
@@ -12052,7 +12026,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "13436",
@@ -12208,7 +12182,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 7
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "13580",
@@ -12819,7 +12793,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 2
+    "depthChartOrder": 1
    },
    {
     "sleeperId": "13834",
@@ -13433,10 +13407,10 @@
     "depthChartOrder": null
    },
    {
-    "sleeperId": "14064",
-    "name": "Roydell Williams",
-    "pos": "RB",
-    "team": "IND",
+    "sleeperId": "14067",
+    "name": "Jeff Weimer",
+    "pos": "WR",
+    "team": "KC",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
@@ -13446,10 +13420,10 @@
     "depthChartOrder": null
    },
    {
-    "sleeperId": "14067",
-    "name": "Jeff Weimer",
-    "pos": "WR",
-    "team": "KC",
+    "sleeperId": "14068",
+    "name": "Drew Biber",
+    "pos": "TE",
+    "team": "CLE",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
