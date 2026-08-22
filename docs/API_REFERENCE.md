@@ -339,9 +339,22 @@ the shared par.ts replacement model instead of a hardcoded classic lineup.)
 **Docs**: moved in 2024-25 - `developer.yahoo.com/fantasysports/guide/` now
 308-redirects to https://sports.yahoo.com/developer. New registrations are
 **gated**: you submit an application describing your use case and Yahoo
-reviews it (no more instant self-serve keys). Existing credentials keep
-working. The docs still don't document weekly stats params, rate limits, or
-CORS. The REST API itself is unchanged and active.
+reviews it (no more instant self-serve keys). The docs still don't document
+weekly stats params, rate limits, or CORS. The REST API itself is unchanged
+and active.
+
+**Access lockdown (diagnosed 2026-08-22)**: the gating now applies to
+*existing* apps too. Our app's OAuth login succeeds and tokens mint fine, but
+every `fantasysports.yahooapis.com` call returns **403 "This application is
+not authorized to perform this action"** - even with `scope=fspt-r` granted
+and the developer-console app showing Fantasy Sports Read. Not a code, scope,
+or account problem: each app must be submitted (with its Client ID) at
+https://sports.yahoo.com/developer/access/ and approved before the Fantasy API
+answers. Until approval, Yahoo league import is broken for all users; ESPN,
+Sleeper, and guest mode are unaffected. Surfaced in Sentry as the post-OAuth
+403 cluster; the client now includes Yahoo's error description in thrown
+messages (`src/api/yahoo.ts` `yahooError`) so this class of failure is
+diagnosable from the issue title.
 
 ## Browser access: a proxy is mandatory, full stop
 

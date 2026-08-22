@@ -153,6 +153,13 @@ Stateless Vercel functions. Each has a `.test.js` next to it.
 - `yahoo-api.js` - authenticated Yahoo proxy. SSRF-guarded by path regex;
   converts XML to JSON (`fast-xml-parser`).
 
+**Yahoo is currently dead in production (2026-08-22)**: Yahoo gated its
+Fantasy API behind per-app approval, so OAuth succeeds but every data call
+403s ("This application is not authorized") until the owner's application at
+sports.yahoo.com/developer/access is approved. Nothing in this repo can fix
+it; don't debug our OAuth for it. Details in `docs/API_REFERENCE.md` (Yahoo
+section).
+
 The client points at the proxy via `VITE_ESPN_PROXY_URL` / `VITE_YAHOO_API_URL`
 (default to the Vercel host above). Sleeper needs no proxy (CORS-open). See
 `docs/API_REFERENCE.md` for per-platform endpoint reality.
@@ -222,6 +229,22 @@ Fonts are self-hosted via `@fontsource` (not Google Fonts), declared in `src/fon
   strings before send. Source maps upload at build when `SENTRY_AUTH_TOKEN` is
   present (wired in `vite.config.ts` and CI). Release is `VITE_BUILD_SHA`.
   Any new logging path must keep payloads scrubbed.
+- **Noise policy** (`beforeSend`): two filters drop events before they burn
+  quota - `isBenignError` (self-healing deploy churn, dropped fetches) and
+  `isExpectedUserError` (situations the UI already explains: ESPN private
+  league / rejected cookies / 4xx lookups, Sleeper 404, Yahoo OAuth cancel,
+  extension messaging). 5xx must always keep reporting; when adding an error
+  message, put the HTTP status in the text so the filters can tell user error
+  from outage. Tests in `sentry.test.ts` pin both filters.
+- **Stale-deploy self-heal** (`src/utils/staleChunk.ts`): both lazy-chunk
+  failure modes (chunk 404s -> `vite:preloadError` in `main.tsx`; chunk loads
+  but the named export is missing -> `lazyPage` in `App.tsx`) share one
+  sessionStorage-stamped reload attempt. New lazy routes must use `lazyPage`,
+  not bare `lazy()`.
+- **Reading production errors**: org `krool-world`, project `javascript-react`.
+  The owner's user env has a read-only personal token (`SENTRY_AUTH_TOKEN`,
+  scopes event:read/org:read/project:read) for the Sentry API; the CI secret
+  of the same name is a separate org:ci token that cannot read events.
 - **Analytics** (`src/utils/analytics.ts`) sends path-only page views plus a
   content group to GA. No PII.
 - `index.html` ships a Content-Security-Policy whose `connect-src` allowlists the
