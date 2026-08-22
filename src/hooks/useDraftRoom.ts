@@ -127,7 +127,15 @@ function configFromLeague(league: League): DraftRoomConfig {
 function normalizeConfig(config: DraftRoomConfig): DraftRoomConfig {
   const rosterSlots = { ...DEFAULT_ROSTER_SLOTS, ...config.rosterSlots };
   const rounds = Number.isFinite(config.rounds) ? config.rounds : draftableSlotCount(rosterSlots);
-  return { ...config, rosterSlots, rounds };
+  return {
+    ...config,
+    rosterSlots,
+    rounds,
+    // Configs persisted before live bidding became the default carry no
+    // value; treat that as the default, not as opted out. An explicit false
+    // (the setup toggle) survives.
+    liveBidding: config.liveBidding ?? true,
+  };
 }
 
 function reducer(state: DraftRoomState, action: Action): DraftRoomState {

@@ -275,13 +275,23 @@ export function useDraftSim(room: UseDraftRoomReturn, options?: UseDraftSimOptio
         // Highest ceiling speaks first; ties break toward the earlier team.
         raisers.sort((a, b) => b[1] - a[1]);
         const [raiserId, ceiling] = raisers[0];
-        // Jump bidding: while the price sits under the expected value, raise
-        // by half the distance to the expected price or to the raiser's own
-        // ceiling, whichever is nearer; that shrinks to $1 raises around the
-        // expected price, where the contest actually gets decided. $1 beats
-        // from zero made every sale a minute-long crawl.
-        const headroom = Math.min(ceiling - liveBid.highBid, expected - minBid);
-        const jump = Math.max(1, Math.floor(headroom / 2));
+        // Jump bidding toward where the contest is actually heading: one
+        // dollar past the strongest rival ceiling (the current high bidder's
+        // or the next raiser's), since that's where a bidding war settles.
+        // Raising half the remaining distance each beat gets there in a
+        // handful of jumps. The old anchor was the expected value, which
+        // decayed to $1 raises the moment the price crossed the sheet number
+        // and turned every top player into a dollar-at-a-time crawl. With no
+        // AI rival the target collapses to the minimum raise, so a lone
+        // interested bot still price-enforces the user with $1 bumps rather
+        // than bidding against itself.
+        const rivalCeiling = Math.max(
+          liveBid.highBid,
+          liveBid.highBidderId ? willingnessRef.current.get(liveBid.highBidderId) ?? 0 : 0,
+          raisers[1]?.[1] ?? 0,
+        );
+        const target = Math.min(ceiling, rivalCeiling + 1);
+        const jump = Math.max(1, Math.floor((target - liveBid.highBid) / 2));
         const budgetCap = derived.teams.get(raiserId)?.maxBid ?? minBid;
         const bid = Math.min(liveBid.highBid + jump, ceiling, budgetCap);
         quietBeatsRef.current = 0;
