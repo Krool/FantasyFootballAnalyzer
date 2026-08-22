@@ -1,7 +1,5 @@
 {
-  "Salary": [
-    "Ricky Pearsall (SF) $5"
-  ],
+  "Salary": [],
   "ESPN": [
     "Jayden Higgins (WR HOU)",
     "Matt Gay (K LV)",
@@ -16,14 +14,14 @@
     "Luke Lachey (TE GB)",
     "Ricky Pearsall (WR SF)",
     "Jude McAtamney (K FA)",
-    "John Samuel Shenker (TE FA)",
     "Russell Wilson (QB FA)",
     "DeWayne McBride (RB FA)",
     "Matt Prater (K FA)",
+    "John Samuel Shenker (TE FA)",
     "Dalvin Cook (RB FA)",
-    "Dustin Hopkins (K FA)",
     "Stetson Bennett IV (QB LAR)",
     "Ja'Corey Brooks (WR FA)",
+    "Austin Seibert (K FA)",
     "Parker Romo (K FA)",
     "Teddy Bridgewater (QB DET)",
     "Jordan Travis (QB FA)",
@@ -31,9 +29,7 @@
     "Michael Pratt (QB FA)",
     "Junior Bergen (WR NYJ)",
     "Jacob Kibodi (RB FA)",
-    "Michael Badgley (K FA)",
-    "Austin Seibert (K FA)",
-    "Jermaine Jackson (WR FA)",
+    "Dustin Hopkins (K FA)",
     "Jimmy Garoppolo (QB LAR)",
     "John Ross (WR FA)",
     "J.J. Taylor (RB FA)",
@@ -41,8 +37,10 @@
     "Devin Leary (QB FA)",
     "D.J. Montgomery (WR IND)",
     "Brayden Narveson (K FA)",
-    "Desmond Ridder (QB FA)",
-    "Clayton Tune (QB FA)"
+    "Michael Badgley (K FA)",
+    "D'Ernest Johnson (RB TEN)",
+    "Mitchell Tinsley (WR CIN)",
+    "D.J. Williams (RB FA)"
   ],
   "Sleeper": [
     "Jayden Higgins (WR HOU)",
@@ -371,9 +369,10 @@
     "Nick Chubb (RB FA)",
     "Dustin Hopkins (K FA)",
     "Younghoe Koo (K FA)",
-    "Riley Nowakowski (TE PIT)",
     "Eric McAlister (WR FA)",
+    "Riley Nowakowski (TE PIT)",
     "Jimmy Garoppolo (QB LAR)",
+    "Joey Aguilar (QB JAC)",
     "Aaron Anderson (WR FA)",
     "Chase Roberts (WR LV)",
     "Brandon Polk (WR FA)",
@@ -625,6 +624,10 @@
     "Clyde Edwards-Helaire (RB FA)",
     "Myles Gaskin (RB FA)",
     "Darrynton Evans (RB FA)",
-    "Tyrion Davis-Price (RB FA)"
+    "Tyrion Davis-Price (RB FA)",
+    "Johnny Wilson (WR FA)"
+  ],
+  "DuplicateRankings": [
+    "Isaiah Williams: kept NYJ, dropped FA"
   ]
 }
