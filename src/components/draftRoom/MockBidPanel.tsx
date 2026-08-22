@@ -121,6 +121,16 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
                     : 'at value'}
               </span>
             )}
+            {/* The walk-away number. The sealed panel always showed it; the
+                live flow needs it more, since you decide bid by bid. */}
+            {myComfort !== null && (
+              <span
+                className={styles.label}
+                title="Your highest bid that still leaves market price for every open starter slot plus $1 per bench spot"
+              >
+                Comfort ${myComfort}
+              </span>
+            )}
           </div>
         </div>
         <div className={styles.priceRow}>

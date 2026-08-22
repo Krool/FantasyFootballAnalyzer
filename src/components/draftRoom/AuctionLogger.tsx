@@ -13,6 +13,12 @@ interface AuctionLoggerProps {
   onLogged: () => void;
 }
 
+// Touch screens get the label without the keyboard cheat. Evaluated once:
+// pointer type doesn't change mid-session, and jsdom/prerender lack
+// matchMedia entirely. (Same pattern as AvailablePlayers.)
+const COARSE_POINTER =
+  typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
+
 export function AuctionLogger({ room, selected, onLogged }: AuctionLoggerProps) {
   const { config, derived, scaledValues, inflation, logEvent } = room;
   // Empty string means "follow the rotation"; a manual choice sticks for one sale.
@@ -126,7 +132,9 @@ export function AuctionLogger({ room, selected, onLogged }: AuctionLoggerProps) 
       </div>
 
       <div className={styles.field}>
-        <span className={styles.label}>Won By (type the team number)</span>
+        <span className={styles.label}>
+          Won By{COARSE_POINTER ? '' : ' (type the team number)'}
+        </span>
         <select
           ref={winnerRef}
           className={styles.select}

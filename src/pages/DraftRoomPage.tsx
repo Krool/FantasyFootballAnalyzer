@@ -884,8 +884,16 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                 {sheetTab === 'players' && playersPane}
                 {sheetTab === 'queue' && (
                   <>
-                    {isAuction && <NominationPanel room={room} onSelect={setSelected} />}
-                    <QueuePanel room={room} queue={queue} onSelect={setSelected} />
+                    {/* On the phone the logger is hidden in the Log tab, so a
+                        plain select is an invisible no-op; route these taps
+                        through the same nominate action as the player rows
+                        (quickNominate no-ops while a mock contest runs). */}
+                    {isAuction && <NominationPanel room={room} onSelect={quickNominate} />}
+                    <QueuePanel
+                      room={room}
+                      queue={queue}
+                      onSelect={isAuction && canNominate ? quickNominate : setSelected}
+                    />
                   </>
                 )}
                 {sheetTab === 'team' && (

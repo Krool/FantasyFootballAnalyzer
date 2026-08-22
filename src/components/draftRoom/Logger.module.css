@@ -237,6 +237,8 @@
   align-items: baseline;
   gap: 0.7rem;
   margin-top: 0.5rem;
+  /* Three items now (Exp, over/under, Comfort); let narrow phones wrap. */
+  flex-wrap: wrap;
 }
 
 /* Selected-player variant: headshot beside the text block. */
