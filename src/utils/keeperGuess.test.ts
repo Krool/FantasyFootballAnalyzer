@@ -262,7 +262,7 @@ describe('auction keeper prices', () => {
     const candidate = byTeam.get('A')![0];
     expect(candidate.lastPrice).toBe(22);
     expect(candidate.keeperPrice).toBe(27); // 22 + $5 bump
-    const keepers = guessKeepers([team], POOL, 2, 6);
+    const keepers = guessKeepers([team], POOL, 2, 6, 1, 1, [], 'auction');
     expect(keepers[0].keeperPrice).toBe(27);
   });
 
@@ -286,7 +286,7 @@ describe('auction keeper prices', () => {
     // keepers cost money, so the candidate must still surface and auto-fill.
     const byTeam = keeperCandidates([team], POOL, 2, 6);
     expect(byTeam.get('A')).toHaveLength(1);
-    const keepers = guessKeepers([team], POOL, 2, 6);
+    const keepers = guessKeepers([team], POOL, 2, 6, 1, 1, [], 'auction');
     expect(keepers).toHaveLength(1);
     expect(keepers[0].keeperPrice).toBe(27);
   });
@@ -317,10 +317,50 @@ describe('auction keeper prices', () => {
         },
       ],
     };
-    const keepers = guessKeepers([team], POOL, 2, 6, 2);
+    const keepers = guessKeepers([team], POOL, 2, 6, 2, 1, [], 'auction');
     expect(keepers).toHaveLength(2);
     const ids = keepers.map(k => k.playerId).sort();
     expect(ids).toEqual(['p1', 'p2']);
     expect(keepers.every(k => k.keeperPrice != null)).toBe(true);
+  });
+
+  it('dedups rounds in a SNAKE room even when candidates carry prior-auction prices', () => {
+    // A league that auctioned last season and snakes this season: every
+    // candidate carries a keeperPrice AND costRound 1 (Sleeper stamps round 1
+    // on auction picks). The price bypass keys on the room's draft type, not
+    // the candidate's price — otherwise both keepers land on round 1, the
+    // auto-log matches only one per (team, round), and the second is reserved
+    // out of the pool for the whole draft without ever being logged.
+    const priced = (round: number): Team => ({
+      id: 'A',
+      name: 'Team A',
+      draftPicks: [
+        {
+          pickNumber: 1,
+          round,
+          player: leaguePlayer('Star Back', 'RB'),
+          teamId: 'A',
+          teamName: 'Team A',
+          auctionValue: 40,
+        },
+        {
+          pickNumber: 2,
+          round,
+          player: leaguePlayer('Great Receiver', 'WR'),
+          teamId: 'A',
+          teamName: 'Team A',
+          auctionValue: 30,
+        },
+      ],
+    });
+    // Colliding cost rounds resolve to distinct rounds despite the prices.
+    const bumped = guessKeepers([priced(5)], POOL, 2, 6, 2, 1, [], 'snake');
+    expect(bumped).toHaveLength(2);
+    expect(new Set(bumped.map(k => k.costRound)).size).toBe(2);
+    // At the round-1 clamp there is no earlier round to bump to: the second
+    // keeper is dropped (his setup slot goes blank) rather than silently
+    // sharing round 1 and never logging.
+    const clamped = guessKeepers([priced(1)], POOL, 2, 6, 2, 1, [], 'snake');
+    expect(clamped).toHaveLength(1);
   });
 });

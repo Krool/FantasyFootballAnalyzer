@@ -333,21 +333,19 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
     if (config.draftType !== 'snake' || phase !== 'drafting' || myTurn || myNextPick === null) {
       return null;
     }
+    // allKeepers, not config.keepers: a synced draft's pre-placed keepers
+    // also hold picks between now and the user's turn.
     return picksUntilMine(
       config.myTeamId,
       config.teams.map(t => t.id),
       derived.pickCount,
       derived.totalPicks,
-      config.keepers,
+      allKeepers(config),
       derived.draftedPlayerIds,
       config.snakeFormat,
     ).filter(p => !p.isMine && !p.keeperPlayerId).length;
   }, [
-    config.draftType,
-    config.snakeFormat,
-    config.myTeamId,
-    config.teams,
-    config.keepers,
+    config,
     phase,
     myTurn,
     myNextPick,

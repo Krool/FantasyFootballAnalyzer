@@ -237,6 +237,47 @@ export function allKeepers(config: DraftRoomConfig): KeeperAssignment[] {
   return [...own, ...live.filter(k => !seen.has(k.playerId))];
 }
 
+// A keeper setup the draft cannot honor, as a human-readable message (null
+// when the config is fine). Mirrored by the reducer's START guard and the
+// setup screen's start-blocked hint: without this, a bad keeper quietly
+// breaks the draft after it starts — a snake keeper whose cost round is out
+// of range (or shared with a teammate's) never auto-logs and strands the
+// player out of the pool for the whole draft, and auction keeper prices a
+// budget can't cover get silently repriced to whatever fits.
+export function keeperSetupProblem(config: DraftRoomConfig): string | null {
+  const keepers = config.keepers ?? [];
+  if (keepers.length === 0) return null;
+  const nameOf = (id: string) => config.teams.find(t => t.id === id)?.name ?? 'A team';
+  if (config.draftType === 'snake') {
+    const used = new Set<string>();
+    for (const k of keepers) {
+      if (!Number.isFinite(k.costRound) || k.costRound < 1 || k.costRound > config.rounds) {
+        return `${nameOf(k.teamId)} has a keeper costing round ${k.costRound}, but this draft is ${config.rounds} rounds. Re-pick keepers to fit.`;
+      }
+      const key = `${k.teamId}|${k.costRound}`;
+      if (used.has(key)) {
+        return `${nameOf(k.teamId)} has two keepers costing round ${k.costRound}; each keeper needs its own round.`;
+      }
+      used.add(key);
+    }
+  } else {
+    const byTeam = new Map<string, { count: number; total: number }>();
+    for (const k of keepers) {
+      const entry = byTeam.get(k.teamId) ?? { count: 0, total: 0 };
+      entry.count += 1;
+      entry.total += Math.max(1, Math.round(k.keeperPrice ?? 1));
+      byTeam.set(k.teamId, entry);
+    }
+    for (const [teamId, { count, total }] of byTeam) {
+      const open = Math.max(0, config.rounds - count);
+      if (total + open > config.budget) {
+        return `${nameOf(teamId)}'s keeper prices total $${total}, but the $${config.budget} budget must also cover $1 for each of its ${open} remaining roster spots.`;
+      }
+    }
+  }
+  return null;
+}
+
 export interface ReservedKeeper {
   player: PoolPlayer;
   costRound?: number;
@@ -451,6 +492,13 @@ export function validateEvent(
   return null;
 }
 
+// Looks the player up on the OPEN board (available excludes reserved
+// keepers), so a keeper event's position comes back null and the fullAt
+// rejection above never applies to it. That is load-bearing, not an
+// oversight: a keeper at a position his team has already filled must still
+// log (the league kept him; validateEvent doesn't get a veto), and in a mock
+// the sim yields that pick to the keeper — rejecting it would deadlock the
+// draft with no event able to advance the clock.
 function poolPosition(state: DerivedDraftState, playerId: string): StarterPos | null {
   const player = state.available.find(p => p.id === playerId);
   const pos = player?.pos as StarterPos | undefined;

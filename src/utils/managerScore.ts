@@ -24,12 +24,17 @@ export interface ManagerScore {
 const WEIGHTS = { draft: 0.3, waivers: 0.2, trades: 0.15, results: 0.35 };
 
 // Normalize an array of raw values to 0-100 within the group (min-max).
-// Flat groups (everyone equal) come back as 50s.
-function normalize(values: number[]): number[] {
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+// Flat groups (everyone equal) come back as 50s. A null is "no measurement"
+// (e.g. a team whose only picks were keepers has no draft to grade): it sits
+// out the min/max and lands on the neutral 50, instead of a raw 0 ranking it
+// best or worst depending on where everyone else's average happens to sit.
+function normalize(values: Array<number | null>): number[] {
+  const present = values.filter((v): v is number => v !== null);
+  if (present.length === 0) return values.map(() => 50);
+  const min = Math.min(...present);
+  const max = Math.max(...present);
   if (max - min < 1e-9) return values.map(() => 50);
-  return values.map(v => ((v - min) / (max - min)) * 100);
+  return values.map(v => (v === null ? 50 : ((v - min) / (max - min)) * 100));
 }
 
 export function managerScores(league: League): ManagerScore[] {
@@ -64,7 +69,7 @@ export function managerScores(league: League): ManagerScore[] {
     const draftValue =
       picks.length > 0
         ? picks.reduce((sum, p) => sum + p.valueOverExpected, 0) / picks.length
-        : 0;
+        : null;
 
     const waiverPAR = (team.transactions ?? [])
       .filter(tx => tx.type === 'waiver' || tx.type === 'free_agent')

@@ -305,4 +305,86 @@ describe('useDraftRoom', () => {
       isKeeper: true,
     });
   });
+
+  it('auto-logs MULTIPLE keepers for one team, each at its own round', () => {
+    // The auto-log matches one keeper per (team, round); two keepers with
+    // distinct rounds must both land as the draft reaches them. This is the
+    // multi-keeper path the single-keeper test above never touches.
+    const league = makeLeague();
+    const { result } = renderHook(() => useDraftRoom(league));
+    const [keeperA, keeperB] = [POOL.players[5], POOL.players[6]];
+    act(() => {
+      result.current.updateConfig({
+        rosterSlots: TINY_SLOTS, // 2 rounds
+        keepers: [
+          { teamId: 't1', playerId: keeperA.id, costRound: 1 },
+          { teamId: 't1', playerId: keeperB.id, costRound: 2 },
+        ],
+      });
+    });
+    act(() => result.current.start());
+
+    // Pick 1 (t1, round 1): keeper A logs itself.
+    expect(result.current.events).toHaveLength(1);
+    // t2 makes picks 2 and 3 (the snake turn)...
+    act(() => {
+      result.current.logEvent({ kind: 'snake_pick', playerId: POOL.players[0].id, teamId: 't2' });
+    });
+    act(() => {
+      result.current.logEvent({ kind: 'snake_pick', playerId: POOL.players[1].id, teamId: 't2' });
+    });
+    // ...and pick 4 (t1, round 2) is keeper B, logged automatically.
+    expect(result.current.phase).toBe('complete');
+    const t1Picks = result.current.derived.teams.get('t1')!.picks;
+    expect(t1Picks.map(p => p.player.id).sort()).toEqual([keeperA.id, keeperB.id].sort());
+    expect(t1Picks.every(p => p.event.isKeeper)).toBe(true);
+    expect(result.current.derived.reservedPlayerIds.size).toBe(0);
+  });
+
+  it('refuses to start with a keeper setup the draft cannot honor', () => {
+    const league = makeLeague();
+    const { result } = renderHook(() => useDraftRoom(league));
+    const [keeperA, keeperB] = [POOL.players[5], POOL.players[6]];
+
+    // Snake: two keepers on one team sharing a cost round would leave the
+    // second reserved forever (the auto-log matches one per team+round).
+    act(() => {
+      result.current.updateConfig({
+        rosterSlots: TINY_SLOTS,
+        keepers: [
+          { teamId: 't1', playerId: keeperA.id, costRound: 1 },
+          { teamId: 't1', playerId: keeperB.id, costRound: 1 },
+        ],
+      });
+    });
+    act(() => result.current.start());
+    expect(result.current.phase).toBe('setup');
+
+    // Auction: keeper prices the budget cannot cover would be silently
+    // repriced by the auto-log clamp.
+    act(() => {
+      result.current.updateConfig({
+        draftType: 'auction',
+        budget: 200,
+        keepers: [
+          { teamId: 't1', playerId: keeperA.id, costRound: 1, keeperPrice: 150 },
+          { teamId: 't1', playerId: keeperB.id, costRound: 1, keeperPrice: 60 },
+        ],
+      });
+    });
+    act(() => result.current.start());
+    expect(result.current.phase).toBe('setup');
+
+    // Prices that fit (150 + 50 = 200 across both roster spots) start fine.
+    act(() => {
+      result.current.updateConfig({
+        keepers: [
+          { teamId: 't1', playerId: keeperA.id, costRound: 1, keeperPrice: 150 },
+          { teamId: 't1', playerId: keeperB.id, costRound: 1, keeperPrice: 50 },
+        ],
+      });
+    });
+    act(() => result.current.start());
+    expect(result.current.phase).toBe('drafting');
+  });
 });

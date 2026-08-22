@@ -169,6 +169,40 @@ describe('managerScores', () => {
     expect(scores[0].teamId).toBe('b');
   });
 
+  it('gives a team with no gradeable (non-keeper) picks the neutral 50, not a raw zero', () => {
+    // c's only pick is a keeper, which draft grading excludes. Before the
+    // null-aware normalize, c's "no measurement" became a raw 0 on the same
+    // axis as everyone's averages — ranking c above both real drafters
+    // whenever the league's averages were negative, and below whenever
+    // positive. No data must mean the middle, not an extreme.
+    const league = baseLeague({
+      teams: [
+        {
+          id: 'a',
+          name: 'Team A',
+          draftPicks: [makePick({ playerId: 'rb-a', teamId: 'a', pickNumber: 2, points: 200 })],
+        },
+        {
+          id: 'b',
+          name: 'Team B',
+          draftPicks: [makePick({ playerId: 'rb-b', teamId: 'b', pickNumber: 1, points: 50 })],
+        },
+        {
+          id: 'c',
+          name: 'Team C',
+          draftPicks: [
+            makePick({ playerId: 'rb-c', teamId: 'c', pickNumber: 3, points: 100, isKeeper: true }),
+          ],
+        },
+      ],
+    });
+
+    const byId = new Map(managerScores(league).map(s => [s.teamId, s]));
+    expect(byId.get('a')?.components.draft).toBe(100);
+    expect(byId.get('b')?.components.draft).toBe(0);
+    expect(byId.get('c')?.components.draft).toBe(50);
+  });
+
   it('sorts the returned scores descending', () => {
     // Draft/waivers/trades flat (all 0, normalizes to 50 for everyone);
     // results is a 3-team round robin so x > y > z on the only varying lever.

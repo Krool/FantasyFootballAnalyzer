@@ -732,6 +732,55 @@ describe('useLiveDraftSync', () => {
       ]);
     });
 
+    it('stops rather than re-rotating when the seat resolves after picks were ingested', async () => {
+      // draft_order unpublished and the user hasn't picked yet: poll 1 can't
+      // detect the seat, so its picks land under offset 0. When the user's
+      // first pick appears on poll 2, the seat resolves to a DIFFERENT
+      // offset — but the earlier picks were never re-seated. Rotating only
+      // the later picks would corrupt the board team by team, so the sync
+      // must stop and say why instead.
+      localStorage.setItem(
+        'ffa:lastconn:v1',
+        JSON.stringify({ platform: 'sleeper', sleeper: { userId: 'me' } }),
+      );
+      const logEvents = vi.fn(() => null);
+      const pool = makePool([
+        makePoolPlayer('pool-1', 'sleeper-1'),
+        makePoolPlayer('pool-2', 'sleeper-2'),
+      ]);
+      const room = makeRoom({ logEvents, pool, config: { myTeamId: '1' } });
+      mockedGetDraft.mockResolvedValue(makeDraftStub({ draft_order: null }));
+      mockedGetLiveDraftPicks.mockResolvedValue([
+        makePick({ pick_no: 1, draft_slot: 1, roster_id: null, picked_by: '', player_id: 'sleeper-1' }),
+      ]);
+
+      const { result } = renderHook(() => useLiveDraftSync(makeLeague(), room));
+      act(() => {
+        result.current.setWatch('1392983398426902528');
+      });
+      await act(async () => {
+        result.current.toggle();
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      // Poll 1 ingested pick 1 under the unresolved offset 0.
+      expect(logEvents).toHaveBeenCalledTimes(1);
+
+      // Poll 2: the user's own pick appears at slot 2 -> the true offset is
+      // -1, disagreeing with what pick 1 was seated under.
+      mockedGetLiveDraftPicks.mockResolvedValue([
+        makePick({ pick_no: 1, draft_slot: 1, roster_id: null, picked_by: '', player_id: 'sleeper-1' }),
+        makePick({ pick_no: 2, draft_slot: 2, roster_id: null, picked_by: 'me', player_id: 'sleeper-2' }),
+      ]);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(POLL_MS);
+      });
+
+      expect(result.current.enabled).toBe(false);
+      expect(result.current.error).toMatch(/seated on the wrong teams/);
+      // Nothing further was ingested under the new offset.
+      expect(logEvents).toHaveBeenCalledTimes(1);
+    });
+
     it('seats in plain slot order when the user cannot be identified', async () => {
       localStorage.removeItem('ffa:lastconn:v1');
       const logEvents = vi.fn(() => null);

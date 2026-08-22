@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
+import { allKeepers } from '@/utils/draftEngine';
 import { teamIndexForPick } from '@/utils/snakeOrder';
 import styles from './DraftBoard.module.css';
 
@@ -65,15 +66,17 @@ export function DraftBoard({ room }: DraftBoardProps) {
   }, [config.rounds, config.snakeFormat, config.teams, teamCount]);
 
   // Keeper-reserved future slots: teamId|round -> keeper player name.
+  // allKeepers, not config.keepers: a synced draft's pre-placed keepers hold
+  // future cells the same way, and without them those cells render empty.
   const keeperAt = useMemo(() => {
     const map = new Map<string, string>();
-    for (const k of config.keepers ?? []) {
+    for (const k of allKeepers(config)) {
       if (derived.draftedPlayerIds.has(k.playerId)) continue;
       const name = playerById.get(k.playerId)?.name;
       if (name && k.costRound) map.set(`${k.teamId}|${k.costRound}`, name);
     }
     return map;
-  }, [config.keepers, derived.draftedPlayerIds, playerById]);
+  }, [config, derived.draftedPlayerIds, playerById]);
 
   // Keep the pick on the clock in view as the draft advances, without
   // yanking the page itself around. Only scroll when the cell has actually

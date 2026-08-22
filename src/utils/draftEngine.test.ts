@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RosterSlots } from '@/types';
 import type { DraftEvent, DraftRoomConfig, PoolPlayer } from '@/types/draft';
-import { allKeepers, deriveDraftState, draftableSlotCount, validateEvent } from './draftEngine';
+import { allKeepers, deriveDraftState, draftableSlotCount, keeperSetupProblem, validateEvent } from './draftEngine';
 
 const SLOTS: RosterSlots = { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 0, K: 1, DST: 1, BENCH: 2, IR: 1 };
 
@@ -280,6 +280,78 @@ describe('keepers', () => {
   });
 });
 
+describe('keeperSetupProblem', () => {
+  it('accepts a clean snake setup and no keepers at all', () => {
+    expect(keeperSetupProblem(makeConfig({ draftType: 'snake' }))).toBeNull();
+    expect(
+      keeperSetupProblem(
+        makeConfig({
+          draftType: 'snake',
+          keepers: [
+            { teamId: 'A', playerId: 'RB1', costRound: 2 },
+            { teamId: 'A', playerId: 'WR1', costRound: 3 },
+            { teamId: 'B', playerId: 'RB2', costRound: 2 },
+          ],
+        }),
+      ),
+    ).toBeNull();
+  });
+
+  it('flags a snake keeper whose cost round no longer fits the draft', () => {
+    // Keepers were generated for a longer draft, then the roster shrank:
+    // costRound 13 in an 11-round draft would never auto-log, stranding the
+    // player out of the pool for the whole draft.
+    const config = makeConfig({
+      draftType: 'snake',
+      keepers: [{ teamId: 'A', playerId: 'RB1', costRound: 13 }],
+    });
+    expect(keeperSetupProblem(config)).toMatch(/round 13.*11 rounds/);
+  });
+
+  it('flags two snake keepers on one team sharing a cost round', () => {
+    // The auto-log matches one keeper per (team, round); the second would be
+    // reserved forever and never logged.
+    const config = makeConfig({
+      draftType: 'snake',
+      keepers: [
+        { teamId: 'A', playerId: 'RB1', costRound: 2 },
+        { teamId: 'A', playerId: 'WR1', costRound: 2 },
+      ],
+    });
+    expect(keeperSetupProblem(config)).toMatch(/two keepers costing round 2/);
+    // Same round on DIFFERENT teams is fine (each team has a pick per round).
+    const okay = makeConfig({
+      draftType: 'snake',
+      keepers: [
+        { teamId: 'A', playerId: 'RB1', costRound: 2 },
+        { teamId: 'B', playerId: 'WR1', costRound: 2 },
+      ],
+    });
+    expect(keeperSetupProblem(okay)).toBeNull();
+  });
+
+  it('flags auction keeper prices the budget cannot cover', () => {
+    // Budget 100, rounds 11. Two $50 keepers leave 9 open slots needing $1
+    // each: 100 + 9 > 100. Without this the auto-log silently reprices the
+    // second keeper to whatever fits.
+    const config = makeConfig({
+      keepers: [
+        { teamId: 'A', playerId: 'RB1', costRound: 1, keeperPrice: 50 },
+        { teamId: 'A', playerId: 'WR1', costRound: 1, keeperPrice: 50 },
+      ],
+    });
+    expect(keeperSetupProblem(config)).toMatch(/\$100.*\$1 for each/);
+    // The same prices fit once they leave room for the open slots.
+    const okay = makeConfig({
+      keepers: [
+        { teamId: 'A', playerId: 'RB1', costRound: 1, keeperPrice: 50 },
+        { teamId: 'A', playerId: 'WR1', costRound: 1, keeperPrice: 41 },
+      ],
+    });
+    expect(keeperSetupProblem(okay)).toBeNull();
+  });
+});
+
 describe('dynasty ordering and rookie pool', () => {
   // overallRank ascending is RB1..RB3; dynasty value flips it, and only RB2/RB3
   // are rookies.
@@ -363,6 +435,27 @@ describe('validateEvent', () => {
     // Live rooms log a real draft, so out-of-order catch-up logging stays legal.
     const live = makeConfig({ draftType: 'snake', mode: 'live' });
     expect(validateEvent(live, deriveDraftState(live, pool, []), pick('RB2', 'B'))).toBeNull();
+  });
+
+  it('lets a keeper log at a position his team is already full at', () => {
+    // Load-bearing quirk: poolPosition looks the player up on the OPEN board,
+    // which excludes reserved keepers, so the fullAt rejection never applies
+    // to a keeper event. It must not: the league kept him, and in a mock the
+    // sim yields that pick to the keeper — rejecting it would deadlock the
+    // draft. This pins the behavior so a future "look him up in the pool
+    // instead" refactor doesn't reintroduce the freeze.
+    const cfg = makeConfig({
+      draftType: 'snake',
+      rosterSlots: { QB: 1, RB: 1, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0, IR: 0 },
+      rounds: 2,
+      keepers: [{ teamId: 'A', playerId: 'QB2', costRound: 2 }],
+    });
+    const state = deriveDraftState(cfg, pool, [pick('QB1', 'A')]);
+    expect(state.teams.get('A')!.fullAt.QB).toBe(true);
+    // A normal pick at the full position is rejected...
+    expect(validateEvent(cfg, state, pick('QB3', 'A'))).toMatch(/cannot roster another QB/);
+    // ...but the reserved keeper still logs.
+    expect(validateEvent(cfg, state, pick('QB2', 'A'))).toBeNull();
   });
 
   it('rejects everything once the draft is complete', () => {

@@ -51,10 +51,11 @@ export function keeperValues(
       if (!pooled || pooled.overallRank == null) return [];
       // Same rule for the other side of the subtraction: Yahoo builds
       // pickNumber with parseInt (NaN when the field is absent) and ESPN copies
-      // overallPickNumber with no default. Without a real cost slot there is no
-      // surplus to report, and pricing him at the top of the curve would invent
-      // a large overpay plus a "paid over the odds" callout to match.
-      if (!Number.isFinite(pick.pickNumber)) return [];
+      // overallPickNumber with no default — and 0 is the same "no real slot"
+      // case (curve.at clamps it to the 1.01). Without a real cost slot there
+      // is no surplus to report, and pricing him at the top of the curve would
+      // invent a large overpay plus a "paid over the odds" callout to match.
+      if (!Number.isFinite(pick.pickNumber) || pick.pickNumber < 1) return [];
       const worth = curve.at(pooled.overallRank);
       const paid = curve.at(pick.pickNumber);
       return [

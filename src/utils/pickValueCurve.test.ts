@@ -137,6 +137,12 @@ describe('keeperValues', () => {
 
     const undef = { ...keeperPick(14, 62, 't1'), pickNumber: undefined as unknown as number };
     expect(keeperValues([undef], POOL, curve, 12)).toEqual([]);
+
+    // 0 is the same no-real-slot case (ESPN keeper rows can carry
+    // overallPickNumber 0): Number.isFinite(0) passes, but curve.at(0) clamps
+    // to the 1.01 and invents the same overpay the NaN guard exists to stop.
+    const zero = { ...keeperPick(14, 62, 't1'), pickNumber: 0 };
+    expect(keeperValues([zero], POOL, curve, 12)).toEqual([]);
   });
 
   it('returns best surplus first', () => {

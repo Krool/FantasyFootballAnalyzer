@@ -89,7 +89,10 @@ export function useSuggestedPicks(room: UseDraftRoomReturn, enabled: boolean): U
       available: derived.available,
       scaledValues,
       adpOf,
-      keepers: config.keepers,
+      // allKeepers, not config.keepers: a synced draft's pre-placed keepers
+      // hold future picks too, and simulating those as live opponent picks
+      // inflates every "gone before your next pick" number.
+      keepers: allKeepers(config),
       draftedPlayerIds: derived.draftedPlayerIds,
       seed: config.simSeed,
     });

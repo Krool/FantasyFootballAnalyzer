@@ -13,6 +13,7 @@ import {
   keeperCandidates,
   resolveKeeperRounds,
 } from '@/utils/keeperGuess';
+import { keeperSetupProblem } from '@/utils/draftEngine';
 import { loadDraftArchive, removeFromDraftArchive } from '@/utils/draftRoomCache';
 import {
   deletePreset,
@@ -179,6 +180,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
         keepersPerTeam,
         escalation,
         commishKeepers,
+        config.draftType,
       ),
     });
   });
@@ -186,9 +188,25 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
   const toggleKeepers = (on: boolean) => {
     updateConfig({
       keepers: on
-        ? guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, escalation, commishKeepers)
+        ? guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, escalation, commishKeepers, config.draftType)
         : undefined,
     });
+  };
+
+  // Keepers are shaped by the draft type (snake keepers consume a unique
+  // round each; auction keepers consume budget), so flipping the type
+  // regenerates them for the new format rather than carrying assignments the
+  // other format resolved. Hand-picked keepers survive a same-type click
+  // (no-op below); a real format switch is a big enough change that a fresh
+  // guess beats keepers the new format can't honor.
+  const setDraftType = (dt: 'snake' | 'auction') => {
+    if (dt === config.draftType) return;
+    updateConfig({ draftType: dt });
+    if (keepersOn) {
+      updateConfig({
+        keepers: guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, escalation, commishKeepers, dt),
+      });
+    }
   };
 
   // Rebuild one team's keepers from a list of chosen player ids, re-resolving
@@ -207,7 +225,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
       .filter(Boolean)
       .map(pid => candidatesByTeam.get(teamId)?.find(c => c.player.id === pid))
       .filter((c): c is NonNullable<typeof c> => !!c);
-    const rebuilt = resolveKeeperRounds(cands).map(k => {
+    const rebuilt = resolveKeeperRounds(cands, config.draftType).map(k => {
       const keeperPrice =
         prior.get(k.playerId)?.keeperPrice ??
         k.keeperPrice ??
@@ -225,9 +243,13 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
   };
 
   const setKeeperPrice = (teamId: string, playerId: string, price: number) => {
+    // Whole dollars only: validateEvent rejects a fractional sale price, and
+    // the auto-log walks past rejections — a $12.50 keeper would silently
+    // never be charged or logged, just held out of the pool.
+    const whole = Math.max(1, Math.round(price));
     updateConfig({
       keepers: (config.keepers ?? []).map(k =>
-        k.teamId === teamId && k.playerId === playerId ? { ...k, keeperPrice: Math.max(1, price) } : k,
+        k.teamId === teamId && k.playerId === playerId ? { ...k, keeperPrice: whole } : k,
       ),
     });
   };
@@ -237,7 +259,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
     updateConfig({ keepersPerTeam: next });
     if (keepersOn) {
       updateConfig({
-        keepers: guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, next, escalation, commishKeepers),
+        keepers: guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, next, escalation, commishKeepers, config.draftType),
       });
     }
   };
@@ -246,7 +268,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
     updateConfig({ keeperEscalation: n });
     if (keepersOn) {
       updateConfig({
-        keepers: guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, n, commishKeepers),
+        keepers: guessKeepers(keeperTeams, room.pool.players, config.teams.length, config.rounds, keepersPerTeam, n, commishKeepers, config.draftType),
       });
     }
   };
@@ -337,7 +359,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
     : config.rounds < 1 ? 'Add at least one roster spot.'
     : config.draftType === 'auction' && config.budget < config.rounds
       ? `Budget must cover $1 per roster spot (at least $${config.rounds}).`
-    : null;
+    : keeperSetupProblem(config);
 
   return (
     <div className={styles.setup}>
@@ -465,7 +487,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                     type="button"
                     className={config.draftType === 'auction' ? styles.toggleOn : styles.toggleOff}
                     aria-pressed={config.draftType === 'auction'}
-                    onClick={() => updateConfig({ draftType: 'auction' })}
+                    onClick={() => setDraftType('auction')}
                   >
                     Auction
                   </button>
@@ -473,7 +495,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                     type="button"
                     className={config.draftType === 'snake' ? styles.toggleOn : styles.toggleOff}
                     aria-pressed={config.draftType === 'snake'}
-                    onClick={() => updateConfig({ draftType: 'snake' })}
+                    onClick={() => setDraftType('snake')}
                   >
                     Snake
                   </button>
@@ -714,6 +736,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                                       className={styles.keeperPrice}
                                       aria-label={`Keeper ${i + 1} price for ${team.name}`}
                                       min={1}
+                                      step={1}
                                       value={kept?.keeperPrice ?? 1}
                                       onChange={e =>
                                         setKeeperPrice(team.id, selectedId, Number(e.target.value) || 1)

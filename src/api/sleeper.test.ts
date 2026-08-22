@@ -486,6 +486,59 @@ describe('sleeper loadLeague with an unrun draft (commish keepers + order)', () 
   });
 });
 
+describe('sleeper loadLeague mid-draft (status: drafting)', () => {
+  let league: League;
+
+  beforeAll(async () => {
+    // Connecting WHILE the draft runs: the picks feed mixes real picks made
+    // so far with pre-placed keeper stubs. Only the is_keeper stubs are
+    // keepers; treating every made pick as one would invent a fake keeper per
+    // pick in a redraft league and reserve those players out of the pool.
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input).replace('https://api.sleeper.app/v1', '');
+      if (path === `/league/${LEAGUE_ID}`) {
+        return jsonResponse({ ...leagueFixture, status: 'drafting' });
+      }
+      if (path === `/draft/${DRAFT_ID}`) {
+        return jsonResponse({
+          draft_id: DRAFT_ID,
+          type: 'snake',
+          status: 'drafting',
+          draft_order: { u1: 3, u2: 1, u3: 4, u4: 2 },
+          slot_to_roster_id: null,
+        });
+      }
+      if (path === `/draft/${DRAFT_ID}/picks`) {
+        return jsonResponse([
+          // Real picks already made (is_keeper null, as Sleeper sends them).
+          { pick_no: 1, round: 1, player_id: '101', roster_id: 2, picked_by: 'u2', draft_slot: 1, is_keeper: null },
+          { pick_no: 2, round: 1, player_id: '104', roster_id: 4, picked_by: 'u4', draft_slot: 2, is_keeper: null },
+          // A pre-placed keeper stub ahead of the board.
+          { pick_no: 25, round: 7, player_id: '102', roster_id: 2, picked_by: 'u2', draft_slot: 1, is_keeper: true },
+        ]);
+      }
+      return jsonResponse(routeSleeper(String(input)));
+    }));
+    league = await loadLeague(LEAGUE_ID);
+  });
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('treats only is_keeper picks as keepers, not the picks made so far', () => {
+    expect(league.upcomingDraft?.keepers).toEqual([
+      { teamId: '2', sleeperPlayerId: '102', round: 7 },
+    ]);
+  });
+
+  it('keeps the in-flight picks out of the teams\' draft history', () => {
+    // They are this season's in-progress results, not last-season history;
+    // feeding them into draftPicks would poison keeper guessing and grades.
+    expect(league.teams.every(t => (t.draftPicks ?? []).length === 0)).toBe(true);
+  });
+});
+
 describe('sleeper loadLeague pre-draft pick-order variants', () => {
   afterEach(() => {
     vi.unstubAllGlobals();

@@ -16,9 +16,10 @@ export function detectRun(
   playerById: Map<string, PoolPlayer>,
   window = 6,
 ): PositionalRun | null {
-  const recent = events
-    .filter(e => !(e.kind === 'snake_pick' && e.isKeeper))
-    .slice(-window);
+  // ALL keeper events, not just snake ones: auction keeper sales are logged
+  // in a burst at draft start, and four kept RBs would open the room with a
+  // false "RB run" before a competitive dollar is spent.
+  const recent = events.filter(e => !e.isKeeper).slice(-window);
   if (recent.length < window) return null;
   const counts = new Map<string, number>();
   for (const event of recent) {

@@ -10,7 +10,7 @@ import type {
   DraftRoomTeam,
   KeeperAssignment,
 } from '@/types/draft';
-import { deriveDraftState, draftableSlotCount, validateEvent } from '@/utils/draftEngine';
+import { deriveDraftState, draftableSlotCount, keeperSetupProblem, validateEvent } from '@/utils/draftEngine';
 import type { DerivedDraftState } from '@/utils/draftEngine';
 import { roundForPick } from '@/utils/snakeOrder';
 import {
@@ -178,6 +178,11 @@ function reducer(state: DraftRoomState, action: Action): DraftRoomState {
       if (state.config.draftType === 'auction' && state.config.budget < state.config.rounds) {
         return state;
       }
+      // A keeper setup the draft can't honor (cost round out of range or
+      // doubled up in a snake, prices the auction budget can't cover) would
+      // strand players out of the pool or silently reprice sales; DraftSetup
+      // mirrors this in its start-blocked hint.
+      if (keeperSetupProblem(state.config)) return state;
       // liveKeepers belongs to whichever draft was last synced; carrying it
       // into a fresh board would hold those players out of a pool nobody kept
       // them in. Sync repopulates it on its first poll.

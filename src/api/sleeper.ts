@@ -327,10 +327,22 @@ export async function loadLeague(leagueId: string): Promise<League> {
         // commissioner placed there, not last-season results. Feeding them
         // into teams[].draftPicks would poison keeper guessing (a team's
         // "draft history" collapses to its one keeper stub) and draft grades.
+        //
+        // "Hasn't run yet" is only literally true for pre_draft. A draft that
+        // is drafting or paused ALSO lands here (its picks are this season's
+        // in-flight results, not history), but its feed mixes real picks made
+        // so far with the pre-placed stubs — treating them all as keepers
+        // would invent a fake keeper per pick in a plain redraft league,
+        // auto-enable the keeper section, and reserve those players out of
+        // the pool. Sleeper flags genuine commish-placed stubs is_keeper, so
+        // mid-draft only those count.
         upcomingDraft = {
           draftId: leagueData.draft_id,
           order: draftOrderTeamIds(draft, rosters),
-          keepers: picks.map(pick => ({
+          keepers: (draft.status === 'pre_draft'
+            ? picks
+            : picks.filter(pick => pick.is_keeper === true)
+          ).map(pick => ({
             teamId: String(pick.roster_id),
             sleeperPlayerId: pick.player_id,
             round: pick.round,

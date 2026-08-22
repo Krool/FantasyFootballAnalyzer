@@ -223,7 +223,18 @@ export function keeperCandidates(
 // can't fit at all. Auction keepers are unaffected (they cost money, not a
 // round) but pass through unchanged. Exported so the setup form can re-resolve
 // rounds when the user hand-picks multiple keepers.
-export function resolveKeeperRounds(picks: KeeperCandidate[]): KeeperAssignment[] {
+//
+// The price bypass keys on the ROOM's draft type, not on whether the
+// candidate carries a price: keeperPrice is set from last season's auction
+// values regardless of this year's format, so a league that auctioned last
+// year and snakes this year would otherwise send several keepers through at
+// the same cost round. The snake auto-log matches one keeper per (team,
+// round), so the extras would never log — reserved out of the pool for the
+// whole draft, invisible on the board.
+export function resolveKeeperRounds(
+  picks: KeeperCandidate[],
+  draftType: 'snake' | 'auction' = 'snake',
+): KeeperAssignment[] {
   const used = new Set<number>();
   const out: KeeperAssignment[] = [];
   // Settle higher cost rounds first so cheaper keepers bump earlier.
@@ -232,7 +243,7 @@ export function resolveKeeperRounds(picks: KeeperCandidate[]): KeeperAssignment[
     // bookkeeping entirely. Sleeper stamps round 1 on every auction pick, so
     // running them through the dedup below would silently drop every auction
     // keeper on a team past the first. costRound stays display-only.
-    if (c.keeperPrice != null) {
+    if (draftType === 'auction' && c.keeperPrice != null) {
       out.push({
         teamId: c.teamId,
         playerId: c.player.id,
@@ -267,6 +278,7 @@ export function guessKeepers(
   perTeam = 1,
   escalation = 1,
   commish: CommishKeeper[] = [],
+  draftType: 'snake' | 'auction' = 'snake',
 ): KeeperAssignment[] {
   const byTeam = keeperCandidates(leagueTeams, pool, teamCount, rounds, escalation, commish);
   const keepers: KeeperAssignment[] = [];
@@ -276,7 +288,7 @@ export function guessKeepers(
       if (best.length >= Math.max(0, perTeam)) break;
       if (c.commishSet || best.length === 0 || c.score > 0) best.push(c);
     }
-    keepers.push(...resolveKeeperRounds(best));
+    keepers.push(...resolveKeeperRounds(best, draftType));
   }
   return keepers;
 }

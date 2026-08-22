@@ -65,6 +65,13 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
   // Seats the watched draft's slot N onto the room's slot N + seatOffset, so
   // the seat detected as yours becomes your team. 0 until a draft resolves.
   const seatOffsetRef = useRef(0);
+  // The offset picks have actually been logged under, or null before any
+  // land. Slot detection can resolve late (picked_by only answers once the
+  // user has picked), and picks already seated aren't re-seated — so an
+  // offset that CHANGES after ingest means the earlier picks sit on the
+  // wrong teams, and the honest move is to stop and say so rather than
+  // rotate every later pick against them.
+  const ingestedOffsetRef = useRef<number | null>(null);
   const watchDraftRef = useRef<SleeperDraftStub | null>(null);
   // Draft slot (1-based) -> room team id, for a watched draft whose picks
   // carry no roster id of ours. config.teams is already in draft-slot order.
@@ -120,6 +127,7 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
       draftIdRef.current = null;
       watchDraftRef.current = null;
       seatOffsetRef.current = 0;
+      ingestedOffsetRef.current = null;
       setWatchSlot(null);
       stop(null);
       if (trimmed === '') {
@@ -237,7 +245,21 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
         if (watchId && watchDraftRef.current) {
           const slot = detectSlot(watchDraftRef.current, picks);
           const mySeat = slotSeats.indexOf(config.myTeamId);
-          if (slot !== null && mySeat >= 0) seatOffsetRef.current = mySeat - (slot - 1);
+          if (slot !== null && mySeat >= 0) {
+            const offset = mySeat - (slot - 1);
+            if (ingestedOffsetRef.current !== null && ingestedOffsetRef.current !== offset) {
+              // The seat resolved (or moved) AFTER picks were already seated
+              // under the old offset. Those picks are on the wrong teams and
+              // nothing re-seats them; continuing would rotate every later
+              // pick against a half-wrong board until a full roster kills the
+              // session with a much worse message.
+              stop(
+                'Worked out your seat after picks were already synced, so earlier picks were seated on the wrong teams. Reset the draft and turn sync back on to seat them correctly.',
+              );
+              return;
+            }
+            seatOffsetRef.current = offset;
+          }
           setWatchSlot(slot);
         }
 
@@ -340,6 +362,11 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
 
         if (batch.length > 0) {
           const rejection = logEvents(batch);
+          if (!rejection || rejection.index > 0) {
+            // At least one pick landed under the current offset; from here a
+            // changed offset can no longer be applied cleanly (see above).
+            if (watchId) ingestedOffsetRef.current = seatOffsetRef.current;
+          }
           if (rejection) {
             // A duplicate can still slip through when a keeper auto-log races
             // this poll (our drafted-set snapshot predates it). The reducer

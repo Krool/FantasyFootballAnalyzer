@@ -57,4 +57,21 @@ describe('detectRun', () => {
     ];
     expect(detectRun(events, byId)).toBeNull();
   });
+
+  it('ignores auction keeper sales too, not just snake keeper picks', () => {
+    // Auction keepers are auto-logged as a burst of sales at draft start;
+    // four kept RBs must not open the room with a false "RB run".
+    const rbs = Array.from({ length: 4 }, () => player({ pos: 'RB' }));
+    const others = [player({ pos: 'WR' }), player({ pos: 'QB' })];
+    const all = [...rbs, ...others];
+    const byId = new Map(all.map(p => [p.id, p]));
+    const keeperSale = (playerId: string, seq: number): DraftEvent => ({
+      kind: 'auction_sale', seq, ts: seq, playerId, nominatedById: 't1', wonById: 't1', price: 10, isKeeper: true,
+    });
+    const events = [
+      ...rbs.map((p, i) => keeperSale(p.id, i)),
+      ...others.map((p, i) => pickEvent(p.id, 4 + i)),
+    ];
+    expect(detectRun(events, byId)).toBeNull();
+  });
 });

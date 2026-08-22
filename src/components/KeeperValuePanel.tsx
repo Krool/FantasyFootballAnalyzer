@@ -54,7 +54,7 @@ export function KeeperValuePanel({ rows }: KeeperValuePanelProps) {
           </thead>
           <tbody>
             {rows.map(row => (
-              <tr key={`${row.teamId}-${row.costPick}`}>
+              <tr key={`${row.teamId}-${row.playerName}`}>
                 <td className={styles.team}>
                   <TeamLink teamId={row.teamId} name={row.teamName} />
                 </td>
