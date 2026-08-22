@@ -233,6 +233,18 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
     wasMyTurnRef.current = myTurn;
   }, [myTurn, playOnTheClock]);
 
+  // Phone mock auction: the bidding panel lives in the Log tab and the sim
+  // waits on the user's bid, so a nomination going up while another tab is
+  // open would stall the draft silently. Jump to the panel each time a
+  // player goes on the block (a new nomination is a new object, so the
+  // effect refires per nomination but won't yank the user back mid-sale).
+  const pendingNomination = isMock && isAuction ? sim.pending : null;
+  useEffect(() => {
+    if (!draftFocus || !pendingNomination) return;
+    setSheetTab('log');
+    setSheetSnap(s => (s === 'peek' ? 'half' : s));
+  }, [draftFocus, pendingNomination]);
+
   const playerById = useMemo(
     () => new Map(room.pool.players.map(p => [p.id, p])),
     [room.pool.players],
@@ -401,6 +413,31 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
     }
   };
 
+  // The auction counterpart of the per-row Draft button. In a mock it
+  // nominates the row's player outright when the rotation is on the user;
+  // in a live room it selects him for the sale logger. On a phone both then
+  // jump to the Log tab, where the bidding panel / logger lives - without
+  // this there was no visible path from the player list to nominating.
+  const canNominate =
+    phase === 'drafting' && isAuction && (!isMock || sim.awaitingMyNomination);
+
+  const quickNominate = (player: PoolPlayer) => {
+    if (isMock) {
+      if (!sim.awaitingMyNomination) return;
+      playSuccess();
+      vibrate(40);
+      sim.nominate(player);
+      setSelected(null);
+    } else {
+      playClick();
+      setSelected(player);
+    }
+    if (isPhone) {
+      setSheetTab('log');
+      setSheetSnap(s => (s === 'peek' ? 'half' : s));
+    }
+  };
+
   // Falling behind on draft day: keep the best available pre-selected so
   // "Drafted" (or the D key) is always one action away. Skip positions the
   // drafting team can't roster (mine in a mock, the clock's in a live room):
@@ -463,10 +500,32 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
       room={room}
       selectedId={selected?.id ?? null}
       onSelect={setSelected}
-      onQuickDraft={phase === 'drafting' && isSnake ? quickDraft : undefined}
-      quickDraftActive={canQuickDraft}
+      onQuickDraft={
+        phase !== 'drafting'
+          ? undefined
+          : isSnake
+            ? quickDraft
+            : // Live-auction desktop already shows the logger beside the
+              // board and a row click selects, so the column would be
+              // redundant there. Mocks (Nominate acts) and phones (the
+              // logger hides in the Log tab) need the button.
+              isMock || isPhone
+              ? quickNominate
+              : undefined
+      }
+      quickDraftActive={isSnake ? canQuickDraft : canNominate}
+      quickDraftLabel={isAuction ? 'Nominate' : undefined}
+      quickDraftTitle={
+        isAuction
+          ? isMock
+            ? 'Put this player up for bidding'
+            : 'Select this player in the sale logger'
+          : undefined
+      }
       excludedPositions={isSnake && isMock ? myFullPositions : undefined}
-      clockFullPositions={clockFullPositions}
+      // Auctions skip the position-full hiding: nominating a position you
+      // are full at is legitimate bait, and a live sale can go to any team.
+      clockFullPositions={isSnake ? clockFullPositions : undefined}
       yahooCosts={yahoo.costs}
       picksUntilMine={openPicksUntilMine}
       suggested={isSnake ? suggested : undefined}

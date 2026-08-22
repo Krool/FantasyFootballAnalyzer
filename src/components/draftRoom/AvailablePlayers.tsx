@@ -26,6 +26,10 @@ interface AvailablePlayersProps {
   // the sim). False renders the reserved column empty instead of unmounting
   // it - no dead buttons, no layout shift.
   quickDraftActive?: boolean;
+  // Button text and tooltip. Defaults to the snake "Draft"; auctions pass
+  // "Nominate", which also widens the reserved column to fit the word.
+  quickDraftLabel?: string;
+  quickDraftTitle?: string;
   // Positions dropped from the board entirely. Mock snake drafts pass the
   // positions the user's roster is full at: nobody else drafts by hand, so
   // those players are dead rows the user can only mis-click.
@@ -74,6 +78,8 @@ export function AvailablePlayers({
   onSelect,
   onQuickDraft,
   quickDraftActive = true,
+  quickDraftLabel = 'Draft',
+  quickDraftTitle = 'Draft to the team on the clock',
   excludedPositions,
   clockFullPositions,
   yahooCosts,
@@ -386,7 +392,13 @@ export function AvailablePlayers({
                   }}
                 >
                   {onQuickDraft && (
-                    <span className={styles.mDraftSlot}>
+                    <span
+                      className={
+                        quickDraftLabel.length > 5
+                          ? `${styles.mDraftSlot} ${styles.mDraftSlotWide}`
+                          : styles.mDraftSlot
+                      }
+                    >
                       {quickDraftActive && !clockFullPositions?.has(p.pos) && (
                         <button
                           type="button"
@@ -395,9 +407,9 @@ export function AvailablePlayers({
                             e.stopPropagation();
                             onQuickDraft(p);
                           }}
-                          title="Draft to the team on the clock"
+                          title={quickDraftTitle}
                         >
-                          Draft
+                          {quickDraftLabel}
                         </button>
                       )}
                     </span>
@@ -621,9 +633,9 @@ export function AvailablePlayers({
                           e.stopPropagation();
                           onQuickDraft(p);
                         }}
-                        title="Draft to the team on the clock"
+                        title={quickDraftTitle}
                       >
-                        Draft
+                        {quickDraftLabel}
                       </button>
                     )}
                   </td>

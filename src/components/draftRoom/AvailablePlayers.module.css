@@ -291,6 +291,11 @@
   justify-content: flex-start;
 }
 
+/* The auction "Nominate" label needs more room than "Draft". */
+.mDraftSlotWide {
+  width: 5.4rem;
+}
+
 .mRank {
   flex: none;
   width: 1.9rem;
