@@ -65,6 +65,16 @@ describe('yahoo-auth handler', () => {
     expect(res.statusCode).toBe(500)
   })
 
+  it('adds prompt=login only when force_login=1 is requested', () => {
+    const plain = mockRes()
+    handler(mockReq({ query: {} }), plain)
+    expect(new URL(plain.body.authUrl).searchParams.get('prompt')).toBeNull()
+
+    const forced = mockRes()
+    handler(mockReq({ query: { force_login: '1' } }), forced)
+    expect(new URL(forced.body.authUrl).searchParams.get('prompt')).toBe('login')
+  })
+
   it('emits a state shaped as a 64-hex nonce plus a base64url payload', () => {
     const res = mockRes()
     handler(mockReq({ query: {} }), res)

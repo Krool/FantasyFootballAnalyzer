@@ -43,6 +43,14 @@ export default function handler(req, res) {
       state: state
     });
 
+    // Without this, Yahoo's own session cookie makes the authorize hop
+    // invisible: "log in" silently re-authorizes whatever account the
+    // browser is signed into, so a user on the wrong account is stuck.
+    // prompt=login forces Yahoo to show its sign-in screen again.
+    if (req.query.force_login === '1') {
+      params.set('prompt', 'login');
+    }
+
     const authUrl = `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`;
 
     return res.status(200).json({

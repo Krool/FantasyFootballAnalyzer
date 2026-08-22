@@ -127,14 +127,18 @@ export function isAuthenticated(): boolean {
   return !!(getAccessToken() || getRefreshToken());
 }
 
-// Get auth URL to start OAuth flow
-export async function getAuthUrl(): Promise<string> {
+// Get auth URL to start OAuth flow. forceLogin makes Yahoo show its sign-in
+// screen even when the browser has a Yahoo session, which is the only way to
+// switch to a different Yahoo account.
+export async function getAuthUrl(forceLogin = false): Promise<string> {
   // Tell the server where to send the browser back after Yahoo: production
   // is the GitHub Pages URL, dev is the vite server. The server allowlists
   // the value, so a bad one just falls back to production.
   const returnBase = `${window.location.origin}${import.meta.env.BASE_URL}`.replace(/\/+$/, '');
   const response = await fetch(
-    `${API_BASE}/api/yahoo-auth?return_base=${encodeURIComponent(returnBase)}`,
+    `${API_BASE}/api/yahoo-auth?return_base=${encodeURIComponent(returnBase)}${
+      forceLogin ? '&force_login=1' : ''
+    }`,
   );
   if (!response.ok) {
     throw new Error('Failed to get auth URL');

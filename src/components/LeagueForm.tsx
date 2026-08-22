@@ -360,12 +360,15 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     }
   };
 
-  const handleYahooLogin = async () => {
+  // forceLogin: Yahoo's session cookie normally makes the OAuth hop silent,
+  // so plain re-login can only ever return the same account. The switch-
+  // account path forces Yahoo's sign-in screen instead.
+  const handleYahooLogin = async (forceLogin = false) => {
     if (yahooLoginBusy) return;
     setYahooLoginBusy(true);
     try {
       Analytics.connectAttempt('yahoo');
-      const authUrl = await getAuthUrl();
+      const authUrl = await getAuthUrl(forceLogin);
       try {
         sessionStorage.setItem(YAHOO_RETURN_FLAG, '1');
       } catch {
@@ -467,11 +470,20 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={handleYahooLogin}
+                onClick={() => handleYahooLogin()}
                 disabled={yahooLoginBusy}
               >
                 <span className={styles.yahooLogo}>Y!</span>
                 {yahooLoginBusy ? 'Opening Yahoo…' : 'Log in with Yahoo'}
+              </button>
+              <button
+                type="button"
+                className={styles.yahooSwitch}
+                onClick={() => handleYahooLogin(true)}
+                disabled={yahooLoginBusy}
+                title="Yahoo will ask you to sign in again instead of reusing the account this browser is already signed into"
+              >
+                Use a different Yahoo account
               </button>
               {yahooError && <p className={styles.error} role="alert">{yahooError}</p>}
             </div>

@@ -337,6 +337,22 @@
 }
 .logoutButton:hover { color: var(--bone); border-bottom-color: var(--bone); }
 
+/* Secondary path under the Yahoo login button, for the wrong-account case. */
+.yahooSwitch {
+  background: none;
+  border: none;
+  color: var(--bone-dim);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--bone-dim);
+  cursor: pointer;
+  padding: 0;
+}
+.yahooSwitch:hover { color: var(--bone); border-bottom-color: var(--bone); }
+.yahooSwitch:disabled { opacity: 0.5; cursor: default; }
+
 .loadingLeagues {
   display: flex;
   align-items: center;
