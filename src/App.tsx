@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, Suspense, lazy, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense, type ReactNode } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams, useParams } from 'react-router-dom';
 // Direct imports, not the '@/components' barrel: App is the always-mounted
 // shell, and a barrel import here would pull every component it re-exports
@@ -21,18 +21,22 @@ import { posForSlug, labelForPos } from '@/data/rankingsVariants';
 import { Analytics } from '@/utils/analytics';
 import type { GuestDest } from '@/pages/GuestEntry';
 import { DEFAULT_GUEST_SETTINGS, loadGuestSettings, type GuestSettings } from '@/utils/guestLeague';
+import { lazyPage } from '@/utils/staleChunk';
 
-// Lazy-load data-heavy pages for smaller initial bundle
-const DraftPage = lazy(() => import('@/pages/DraftPage').then(m => ({ default: m.DraftPage })));
-const DraftRoomPage = lazy(() => import('@/pages/DraftRoomPage').then(m => ({ default: m.DraftRoomPage })));
-const RankingsPage = lazy(() => import('@/pages/RankingsPage').then(m => ({ default: m.RankingsPage })));
-const ValuesPage = lazy(() => import('@/pages/ValuesPage').then(m => ({ default: m.ValuesPage })));
-const TradesPage = lazy(() => import('@/pages/TradesPage').then(m => ({ default: m.TradesPage })));
-const WaiversPage = lazy(() => import('@/pages/WaiversPage').then(m => ({ default: m.WaiversPage })));
-const TeamsPage = lazy(() => import('@/pages/TeamsPage').then(m => ({ default: m.TeamsPage })));
-const HistoryPage = lazy(() => import('@/pages/HistoryPage').then(m => ({ default: m.HistoryPage })));
-const AwardsPage = lazy(() => import('@/pages/AwardsPage').then(m => ({ default: m.AwardsPage })));
-const PlayerJourneyPage = lazy(() => import('@/pages/PlayerJourneyPage').then(m => ({ default: m.PlayerJourneyPage })));
+// Lazy-load data-heavy pages for smaller initial bundle. lazyPage (not bare
+// lazy) so a stale tab whose import resolves against a mixed build — chunk
+// loads, named export missing — self-heals with the one-shot reload instead
+// of dying in the route error boundary.
+const DraftPage = lazyPage(() => import('@/pages/DraftPage'), 'DraftPage');
+const DraftRoomPage = lazyPage(() => import('@/pages/DraftRoomPage'), 'DraftRoomPage');
+const RankingsPage = lazyPage(() => import('@/pages/RankingsPage'), 'RankingsPage');
+const ValuesPage = lazyPage(() => import('@/pages/ValuesPage'), 'ValuesPage');
+const TradesPage = lazyPage(() => import('@/pages/TradesPage'), 'TradesPage');
+const WaiversPage = lazyPage(() => import('@/pages/WaiversPage'), 'WaiversPage');
+const TeamsPage = lazyPage(() => import('@/pages/TeamsPage'), 'TeamsPage');
+const HistoryPage = lazyPage(() => import('@/pages/HistoryPage'), 'HistoryPage');
+const AwardsPage = lazyPage(() => import('@/pages/AwardsPage'), 'AwardsPage');
+const PlayerJourneyPage = lazyPage(() => import('@/pages/PlayerJourneyPage'), 'PlayerJourneyPage');
 import { useLeague } from '@/hooks/useLeague';
 import { useSounds } from '@/hooks/useSounds';
 import {
@@ -457,12 +461,38 @@ function App() {
   // Keep the share param on the URL while a Sleeper league is loaded, so the
   // address bar is always a copyable share link. In-app navigations (NavLink)
   // drop the query string; re-add it with a replace so history stays clean.
+  //
+  // Circuit breaker: Sentry caught this effect oscillating on /awards until
+  // WebKit's SecurityError (100 replaceState calls per 10s) took the page
+  // down. A healthy pass rewrites once and the guard below then sees its own
+  // param; many rewrites in a window means the write isn't sticking (another
+  // URL writer, or a league identity flapping mid-load), so stop rewriting —
+  // the share link is a nicety, never worth crashing the page — and report
+  // one diagnosable event with the wanted-vs-actual param.
+  const shareRewriteRef = useRef({ windowStart: 0, count: 0, tripped: false });
   useEffect(() => {
     if (!league || league.isGuest || league.platform !== 'sleeper') return;
     const path = location.pathname;
     if (path === '/yahoo-success' || path === '/yahoo-error') return;
     const params = new URLSearchParams(location.search);
     if (params.get('league') === `sleeper:${league.id}`) return;
+    const breaker = shareRewriteRef.current;
+    if (breaker.tripped) return;
+    const now = Date.now();
+    if (now - breaker.windowStart > 10_000) {
+      breaker.windowStart = now;
+      breaker.count = 0;
+    }
+    breaker.count += 1;
+    if (breaker.count > 8) {
+      breaker.tripped = true;
+      logger.error('[App] Share-param rewrite loop detected; leaving the URL alone', {
+        pathname: path,
+        wanted: `sleeper:${league.id}`,
+        actual: params.get('league'),
+      });
+      return;
+    }
     params.set('league', `sleeper:${league.id}`);
     navigate(`${path}?${params.toString()}`, { replace: true });
   }, [league, location.pathname, location.search, navigate]);

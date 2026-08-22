@@ -263,6 +263,25 @@ function refreshAccessToken(): Promise<void> {
   return refreshInFlight;
 }
 
+// Build the throw for a failed proxy response. The status alone made Sentry's
+// 403 cluster undiagnosable (a fresh post-OAuth token getting 403 could be a
+// missing scope, a league-access denial, or a Yahoo outage — three different
+// fixes), so pull Yahoo's own error description out of the proxy's `details`
+// relay (Yahoo errors are XML with a <yahoo:description> element). The digits
+// stay first in the message: useLeague classifies errors by status substring.
+async function yahooError(response: Response): Promise<Error> {
+  let detail = '';
+  try {
+    const body = await response.json();
+    const raw = typeof body?.details === 'string' ? body.details : '';
+    const described = /<(?:yahoo:)?description>([^<]{1,200})/i.exec(raw);
+    if (described) detail = ` - ${described[1].trim()}`;
+  } catch {
+    // Body unreadable or not JSON; the status will have to do.
+  }
+  return new Error(`Yahoo API error: ${response.status}${detail}`);
+}
+
 // Make authenticated API request
 async function yahooFetch<T>(endpoint: string): Promise<T> {
   // Check if token needs refresh
@@ -298,13 +317,13 @@ async function yahooFetch<T>(endpoint: string): Promise<T> {
     );
 
     if (!retryResponse.ok) {
-      throw new Error(`Yahoo API error: ${retryResponse.status}`);
+      throw await yahooError(retryResponse);
     }
     return retryResponse.json();
   }
 
   if (!response.ok) {
-    throw new Error(`Yahoo API error: ${response.status}`);
+    throw await yahooError(response);
   }
 
   return response.json();

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scrub, scrubString, isBenignError } from './sentry';
+import { scrub, scrubString, isBenignError, isExpectedUserError } from './sentry';
 import type { ErrorEvent } from '@sentry/react';
 
 // The homepage manifesto promises "anonymized error logs". These tests pin the
@@ -134,5 +134,40 @@ describe('isBenignError', () => {
     // so it must survive the filter.
     expect(isBenignError(exception('Sleeper season stats 2024: 500 Internal Server Error'))).toBe(false);
     expect(isBenignError({} as ErrorEvent)).toBe(false);
+  });
+});
+
+describe('isExpectedUserError', () => {
+  const exception = (value: string): ErrorEvent =>
+    ({ exception: { values: [{ value }] } }) as ErrorEvent;
+
+  it('drops explained connect-form failures', () => {
+    expect(isExpectedUserError(exception('ESPN: this looks like a private league. Provide your espn_s2 and SWID cookies to access it.'))).toBe(true);
+    expect(isExpectedUserError(exception('ESPN: cookies were rejected (401). Your espn_s2 likely expired. Log into espn.com again and re-copy both cookies.'))).toBe(true);
+    expect(isExpectedUserError(exception('ESPN API error: 404 Not Found'))).toBe(true);
+    expect(isExpectedUserError(exception('ESPN API error: 400'))).toBe(true);
+    expect(isExpectedUserError(exception('Sleeper API error: 404'))).toBe(true);
+  });
+
+  it('drops history-probing warnings by their inner cause, and OAuth cancellation', () => {
+    expect(isExpectedUserError({ message: '[ESPN History] Could not load season 2024: ESPN API error: 404' } as ErrorEvent)).toBe(true);
+    expect(isExpectedUserError({ message: '[ESPN History] Could not load season 2024: ESPN: this looks like a private league. Provide your espn_s2 and SWID cookies to access it.' } as ErrorEvent)).toBe(true);
+    expect(isExpectedUserError({ message: '[ESPN H2H] Could not load season 2023: ESPN API error: 404' } as ErrorEvent)).toBe(true);
+    expect(isExpectedUserError({ message: '[ESPN] Proxy error (404):' } as ErrorEvent)).toBe(true);
+    expect(isExpectedUserError({ message: 'Could not load season for league [redacted]: Sleeper API error: 404' } as ErrorEvent)).toBe(true);
+    expect(isExpectedUserError({ message: 'Yahoo OAuth error: access_denied' } as ErrorEvent)).toBe(true);
+    expect(isExpectedUserError(exception('Invalid call to runtime.sendMessage(). Tab not found.'))).toBe(true);
+  });
+
+  it('keeps server failures and the open Yahoo 403 question', () => {
+    // A fresh post-OAuth token being rejected is unexplained — it must report.
+    expect(isExpectedUserError(exception('Yahoo API error: 403 - You are not allowed to view this page.'))).toBe(false);
+    // 5xx means the proxy or the platform actually broke — including during
+    // the history probe, whose wrapper prefix must not blanket-drop it.
+    expect(isExpectedUserError(exception('ESPN API error: 500'))).toBe(false);
+    expect(isExpectedUserError({ message: '[ESPN] Proxy error (502):' } as ErrorEvent)).toBe(false);
+    expect(isExpectedUserError({ message: '[ESPN History] Could not load season 2024: ESPN API error: 500' } as ErrorEvent)).toBe(false);
+    expect(isExpectedUserError({ message: 'Could not load season for league [redacted]: Sleeper API error: 500' } as ErrorEvent)).toBe(false);
+    expect(isExpectedUserError({} as ErrorEvent)).toBe(false);
   });
 });

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { sweepStaleCacheVersions } from './utils/leagueCache'
 import { initSentry } from './utils/sentry'
+import { reloadOnceForStaleChunk } from './utils/staleChunk'
 import App from './App.tsx'
 import './fonts.css'
 import './index.css'
@@ -19,13 +20,12 @@ sweepStaleCacheVersions()
 // error screen. Guard against a loop: if a chunk is genuinely missing (a bad
 // deploy, not just a stale tab), reloading won't help, so after one recent
 // attempt we let the error propagate to RouteErrorBoundary's manual Reload.
+// The guard is shared with lazyPage (utils/staleChunk.ts), which covers the
+// sibling failure where the chunk loads but its named export is missing.
 window.addEventListener('vite:preloadError', (event) => {
-  const RELOAD_KEY = 'chunk-reload-at';
-  const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);
-  if (Date.now() - last < 10_000) return; // already tried; don't loop
-  sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
-  event.preventDefault(); // swallow Vite's rethrow; we're reloading instead
-  window.location.reload();
+  if (reloadOnceForStaleChunk()) {
+    event.preventDefault(); // swallow Vite's rethrow; we're reloading instead
+  }
 });
 
 // GitHub Pages 301-redirects a prerendered directory route to a trailing slash

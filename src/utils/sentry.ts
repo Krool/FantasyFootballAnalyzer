@@ -85,12 +85,52 @@ export function scrub<T>(value: T): T {
 const BENIGN_ERROR =
   /(failed to fetch|error loading) dynamically imported module|importing a module script failed|loading chunk \d+ failed|unable to preload css|load failed|failed to fetch|networkerror when attempting to fetch/i;
 
+// Expected user-situation failures: the UI already explains each of these to
+// the person who caused it, and there is nothing for us to fix, so reporting
+// them just buries real regressions (they were most of the issue feed in
+// 2026-08). Kept separate from BENIGN_ERROR because the shape is different:
+// these are app-thrown errors with real stacks, dropped for what they mean,
+// not for being network noise.
+//   - ESPN private league / rejected cookies: the connect form's own guidance.
+//   - ESPN 4xx: wrong league id or a season that doesn't exist (the History
+//     and H2H loaders deliberately probe past seasons until one 404s; the
+//     probe failing is the loop's exit condition, not a defect). The wrapper
+//     messages ("[ESPN History] Could not load season X: <cause>") are
+//     filtered by their inner cause on purpose, so a 5xx during the probe
+//     still reports as platform breakage.
+//   - Sleeper 404: a mistyped league id on the connect form.
+//   - Yahoo access_denied: the user clicked Cancel on Yahoo's consent page.
+//   - runtime.sendMessage: a browser extension messaging a closed tab.
+// Yahoo 403s deliberately stay reported: a fresh post-OAuth token being
+// rejected is an open question, not an explained user situation.
+const EXPECTED_USER_ERROR = new RegExp(
+  [
+    'this looks like a private league',
+    'cookies were rejected \\(401\\)',
+    'ESPN API error: 4\\d\\d',
+    '\\[ESPN\\] Proxy error \\(4\\d\\d\\)',
+    'Sleeper API error: 404',
+    'Yahoo OAuth error: access_denied',
+    'Invalid call to runtime\\.sendMessage',
+  ].join('|'),
+  'i',
+);
+
 // True when the event's only signal is one of the benign messages above. Checks
 // both the exception value (thrown Errors) and the top-level message (captured
 // strings). Exported for tests.
 export function isBenignError(event: Sentry.ErrorEvent): boolean {
   const fromException = event.exception?.values?.some(v => BENIGN_ERROR.test(v.value ?? '')) ?? false;
   const fromMessage = typeof event.message === 'string' && BENIGN_ERROR.test(event.message);
+  return fromException || fromMessage;
+}
+
+// True when the event is an expected user situation (see EXPECTED_USER_ERROR).
+// Exported for tests.
+export function isExpectedUserError(event: Sentry.ErrorEvent): boolean {
+  const fromException =
+    event.exception?.values?.some(v => EXPECTED_USER_ERROR.test(v.value ?? '')) ?? false;
+  const fromMessage = typeof event.message === 'string' && EXPECTED_USER_ERROR.test(event.message);
   return fromException || fromMessage;
 }
 
@@ -106,9 +146,10 @@ export function initSentry() {
     // Errors only. Performance tracing would burn the free-tier quota.
     tracesSampleRate: 0,
     beforeSend(event) {
-      // Drop self-healing deploy churn and dropped-fetch noise before it counts
-      // against quota. Scrub everything that survives.
-      if (isBenignError(event)) return null;
+      // Drop self-healing deploy churn, dropped-fetch noise, and explained
+      // user situations before they count against quota. Scrub everything
+      // that survives.
+      if (isBenignError(event) || isExpectedUserError(event)) return null;
       return scrub(event);
     },
     beforeBreadcrumb(crumb) {

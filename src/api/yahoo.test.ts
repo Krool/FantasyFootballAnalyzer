@@ -976,6 +976,42 @@ describe('yahoo OAuth refresh flow', () => {
     expect(isAuthenticated()).toBe(false);
   });
 
+  it("surfaces Yahoo's error description when the proxy relays a failure", async () => {
+    // The proxy passes Yahoo's status and XML error body through as
+    // `details`. The thrown message must carry both the status (useLeague
+    // classifies by the digits) and the human description (Sentry's bare
+    // "Yahoo API error: 403" cluster was undiagnosable without it).
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/api/yahoo-api')) {
+        return statusResponse(403, {
+          error: 'Yahoo API error',
+          status: 403,
+          details:
+            '<?xml version="1.0"?><error xml:lang="en-us" yahoo:uri="/fantasy/v2/users" xmlns:yahoo="http://www.yahooapis.com/v1/base.rng">' +
+            '<yahoo:description>You are not allowed to view this page because you are not in this league.</yahoo:description></error>',
+        });
+      }
+      throw new Error(`Unexpected fetch in test: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(getUserLeagues(currentYear)).rejects.toThrow(
+      'Yahoo API error: 403 - You are not allowed to view this page because you are not in this league.',
+    );
+  });
+
+  it('falls back to the bare status when the failure body carries no description', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/api/yahoo-api')) return statusResponse(503);
+      throw new Error(`Unexpected fetch in test: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(getUserLeagues(currentYear)).rejects.toThrow('Yahoo API error: 503');
+  });
+
   it('retries a 5xx refresh once and succeeds on the second attempt', async () => {
     vi.useFakeTimers();
     try {

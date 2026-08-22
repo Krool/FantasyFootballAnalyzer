@@ -98,9 +98,14 @@ async function fetchESPN<T>(
         );
       }
       const errorData = await response.json().catch(() => ({}));
-      logger.error('[ESPN] Proxy error:', errorData);
+      // 4xx here is bad user input (wrong league id, wrong season) the form
+      // already explains — log it as a warning. 5xx is the proxy or ESPN
+      // actually failing, which is ours to notice. The status rides in the
+      // message text so the Sentry noise filter can tell them apart.
+      const proxyLog = response.status >= 500 ? logger.error : logger.warn;
+      proxyLog(`[ESPN] Proxy error (${response.status}):`, errorData);
       throw new ESPNAPIError(
-        errorData.error || `ESPN API error: ${response.status}`,
+        `${errorData.error || 'ESPN API error'}: ${response.status}`,
         response.status,
       );
     }
