@@ -78,6 +78,8 @@ changes do.
   (prerender is part of the build, see below).
 - `npm run test:run` - full vitest suite. Run before every commit.
 - `npm run lint` - eslint.
+- `npm run typecheck` - `tsc --noEmit`; CI runs this as its own gate, separate
+  from `build`.
 - `npm run deploy` - build + push `dist/` to `gh-pages` (manual fallback).
 - `npm run fetch:rankings` - pull fresh ranking snapshots into `data/raw/`.
 - `npm run build:draft-data` - rebuild the bundled pool from `data/raw/`.

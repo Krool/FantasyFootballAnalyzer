@@ -430,8 +430,9 @@ fetches it.
   `draft_type` means live/self/offline, NOT snake-vs-auction),
   `scoring_type`, `uses_faab`, `stat_categories` + `stat_modifiers` (enough to
   compute points yourself), and `roster_positions` as
-  `{position, count}` entries that **include BN and IR counts** - our
-  hardcoded `BENCH: 6, IR: 1` in `yahoo.ts` is unnecessary.
+  `{position, count}` entries that **include BN and IR counts** - `yahoo.ts`
+  parses these, keeping `BENCH: 6, IR: 1` only as a fallback when
+  `roster_positions` doesn't parse.
 - **Auction budget is genuinely not exposed** (confirmed across wrappers).
   Infer by summing `draftresults` costs, or keep the editable $200 default.
 - `/league/{key}/draftresults`: `{pick, round, cost, team_key, player_key}`;
@@ -559,9 +560,9 @@ What the platform API offers vs what our adapter currently delivers.
 | Median-matchup flag | yes (`league_average_match`) | **yes** (2026-08) | yes (`WIN_BONUS_TOP_HALF`) | **yes** (2026-08) | yes (`uses_median_score`) | **yes** (2026-08) |
 | Live draft feed | poll `/draft/{id}` + `/picks`; auction nomination state in draft metadata | **picks only** (10s poll) | none exists | - | none exists | - |
 | League history chain | `previous_league_id` | **yes** (15-hop cap) | same id + `seasonId` | **yes** (7yr probe; 2yr without cookies post-Aug-2025) | `renew`/`renewed` chain | **no - name-matching instead** |
-| Platform ADP / projections | undocumented projections endpoints | **yes** (build pipeline) | `kona_player_info` (+ no-league `leaguedefaults/3`), no auth | **no - unused** | `draft_analysis` | **yes** |
+| Platform ADP / projections | undocumented projections endpoints | **yes** (build pipeline) | `kona_player_info` (+ no-league `leaguedefaults/3`), no auth | **yes** (`espnAdp` + auction values via `leaguedefaults/3`) | `draft_analysis` | **yes** |
 | Ownership / trending | trending + research endpoints | no | `percentOwned/Started` | no | `percent_owned` | no |
-| Bench/IR sizes from settings | yes (`roster_positions`) | yes | yes (`positionLimits` 20/21) | yes (with fallback) | yes (`roster_positions` BN/IR counts) | **no - hardcoded 6/1** |
+| Bench/IR sizes from settings | yes (`roster_positions`) | yes | yes (`positionLimits` 20/21) | yes (with fallback) | yes (`roster_positions` BN/IR counts) | **yes** (parsed, falls back to 6/1) |
 | Write access | none | - | none | - | lineup/waiver PUTs exist for authed user | unused |
 
 ---
@@ -580,15 +581,12 @@ original top items: Yahoo scoreboard/weekly stats/game weeks, ESPN
 2. **ESPN post-trade verdicts** - `playerWeeklyPoints` now exists on ESPN;
    applying the same windowed PAR treatment Yahoo got would retire the last
    full-season verdict basis.
-3. **ESPN ADP/AAV via `leaguedefaults/3?view=kona_player_info`** - live,
-   no-auth, CORS-open; could join FantasyPros/Sleeper in the rankings
-   pipeline as a true ESPN ADP source.
-4. **Sleeper live auction state** - `nominated_player_id` / `highest_offer` on
+3. **Sleeper live auction state** - `nominated_player_id` / `highest_offer` on
    the draft object would enable live auction sync, not just pick sync.
-5. **Yahoo weekly points for drafted-and-kept players** - the moved-player
+4. **Yahoo weekly points for drafted-and-kept players** - the moved-player
    set covers journeys and verdicts; full-pool coverage would multiply call
    volume for marginal gain, but would complete stint scoring parity.
-6. **Sleeper trending/research endpoints** - in-season waiver suggestions.
+5. **Sleeper trending/research endpoints** - in-season waiver suggestions.
 
 Platform gaps that are NOT fixable (don't burn time): ESPN/Yahoo live draft
 feeds, Yahoo auction budget, Yahoo pure-browser access, Sleeper write access,
