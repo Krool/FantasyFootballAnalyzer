@@ -84,6 +84,18 @@ describe('bundled draft pool', () => {
     }
   });
 
+  it('never carries two rows for one Sleeper player', () => {
+    // The build merges FantasyPros duplicate listings by Sleeper id
+    // (duplicateSleeperRows); a dup here means that pass regressed. DSTs are
+    // exempt: their Sleeper "id" is the team code.
+    const seen = new Map<string, string>();
+    for (const p of players) {
+      if (!p.sleeperId || p.pos === 'DST') continue;
+      expect(seen.get(p.sleeperId), `${p.id} vs ${seen.get(p.sleeperId)}`).toBeUndefined();
+      seen.set(p.sleeperId, p.id);
+    }
+  });
+
   it('injury detail fields only appear alongside a status', () => {
     for (const p of players) {
       if (p.injuryStatus) {
