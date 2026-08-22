@@ -206,7 +206,7 @@ describe('DraftRoomPage phone auction nomination', () => {
       logSale('t1', '10');
       fireEvent.click(screen.getByRole('button', { name: 'Players' }));
       fireEvent.click(rowByPos(/WR\d/));
-      fireEvent.click(screen.getByRole('button', { name: 'Log' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Bid' }));
       logSale('t2', '5');
       fireEvent.click(screen.getByRole('button', { name: 'Players' }));
     }
@@ -218,7 +218,7 @@ describe('DraftRoomPage phone auction nomination', () => {
     fireEvent.click(suggestion);
 
     // The tap used to select silently and stay on the Queue tab.
-    expect(activeTab()).toContain('Log');
+    expect(activeTab()).toContain('Bid');
     expect(screen.queryByText('No player selected')).not.toBeInTheDocument();
     expect(screen.getAllByText(name).length).toBeGreaterThan(0);
     expect(screen.getByText(/Won By/)).toBeInTheDocument();
@@ -237,7 +237,7 @@ describe('DraftRoomPage phone auction nomination', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Queue' }));
     fireEvent.click(screen.getByTitle(`Select ${player.name} for the pick logger`));
 
-    expect(activeTab()).toContain('Log');
+    expect(activeTab()).toContain('Bid');
     expect(screen.queryByText('No player selected')).not.toBeInTheDocument();
     expect(screen.getByText(/Won By/)).toBeInTheDocument();
   });

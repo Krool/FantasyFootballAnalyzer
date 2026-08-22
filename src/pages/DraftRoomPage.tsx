@@ -83,13 +83,17 @@ type SheetTabKey = 'players' | 'queue' | 'team' | 'log' | 'settings';
 // Settings is last and wears a glyph: it holds the controls that used to
 // crowd the status bar (pace, sound, live sync, reset). They belong at the
 // bottom of a phone where the thumb already is, not stacked above the board.
-const SHEET_TABS: SheetTab[] = [
-  { key: 'players', label: 'Players' },
-  { key: 'queue', label: 'Queue' },
-  { key: 'team', label: 'Team' },
-  { key: 'log', label: 'Log' },
-  { key: 'settings', label: '⚙', ariaLabel: 'Draft settings', narrow: true },
-];
+// The log tab is where an auction's bidding/sale panel lives, so it wears
+// "Bid" there; snake drafts keep "Log" (you log picks, nobody bids).
+function sheetTabsFor(isAuction: boolean): SheetTab[] {
+  return [
+    { key: 'players', label: 'Players' },
+    { key: 'queue', label: 'Queue' },
+    { key: 'team', label: 'Team' },
+    { key: 'log', label: isAuction ? 'Bid' : 'Log' },
+    { key: 'settings', label: '⚙', ariaLabel: 'Draft settings', narrow: true },
+  ];
+}
 
 interface DraftRoomPageProps {
   league: League;
@@ -872,7 +876,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
 
             {phoneSheet ? (
               <DraftSheet
-                tabs={SHEET_TABS}
+                tabs={sheetTabsFor(isAuction)}
                 active={sheetTab}
                 onTabChange={key => setSheetTab(key as SheetTabKey)}
                 snap={sheetSnap}

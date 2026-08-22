@@ -157,9 +157,6 @@ export function MockBidPanel({ room, sim, selected, onLogged }: MockBidPanelProp
             Bid ${highBid + 5}
           </button>
         </div>
-        <p className={styles.liveHint}>
-          Say nothing and the hammer falls{iAmHigh ? ', he is yours.' : '.'}
-        </p>
       </div>
     );
   }
