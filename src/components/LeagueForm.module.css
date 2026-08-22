@@ -241,6 +241,17 @@
   font-size: 0.75rem;
 }
 
+/* Standing service notice (Yahoo API approval pending), not an error state. */
+.yahooNotice {
+  border-left: 3px solid var(--gold);
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--bone-dim);
+  text-align: left;
+}
+
 /* ── Spinner ── */
 .spinner {
   display: inline-block;

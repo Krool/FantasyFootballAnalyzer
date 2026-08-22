@@ -462,6 +462,15 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
       {/* Yahoo OAuth Flow */}
       {platform === 'yahoo' && (
         <div className={styles.yahooAuth}>
+          {/* Yahoo gated its Fantasy API behind per-app approval in 2025-26;
+              every call 403s until our application is approved. Remove this
+              notice (and the memory note behind it) once access is granted. */}
+          <p className={styles.yahooNotice} role="status">
+            Yahoo import is down right now: Yahoo added an approval step for
+            apps using its Fantasy Sports API, and our developer access is
+            pending review. Logging in works but leagues will not load yet.
+            ESPN and Sleeper are unaffected.
+          </p>
           {!yahooAuthenticated ? (
             <div className={styles.yahooLogin}>
               <p className={styles.yahooDescription}>
