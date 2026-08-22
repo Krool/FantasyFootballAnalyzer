@@ -1,1 +1,0 @@
-import{j as n}from"./index-DCLK065v.js";import{A as l}from"./awardIcons-qICch5eq.js";const s="_luckIcon_ingz3_1",o={luckIcon:s};function k({rating:c}){if(c!=="very_lucky"&&c!=="very_unlucky")return null;const u=c==="very_lucky";return n.jsx("img",{src:u?l.luckiest:l.unluckiest,alt:u?"very lucky":"very unlucky",className:o.luckIcon})}export{k as L};
