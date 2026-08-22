@@ -251,7 +251,21 @@ export function useDraftSim(room: UseDraftRoomReturn, options?: UseDraftSimOptio
       personas,
     );
     quietBeatsRef.current = 0;
-    setLiveBid({ highBid: 0, highBidderId: null, open: true });
+    // Auction rule: nominating IS the opening $1 bid, so the room can't
+    // steal an uncontested nomination at the same price. A nominator who
+    // can't legally roster the player (bait at a full position, no budget)
+    // opens the floor unclaimed instead.
+    const nomTeam = derived.teams.get(pending.nominatorId);
+    const nomCanBuy =
+      !!nomTeam &&
+      nomTeam.openSlots > 0 &&
+      nomTeam.maxBid >= 1 &&
+      !nomTeam.fullAt[pending.player.pos as keyof typeof nomTeam.fullAt];
+    setLiveBid(
+      nomCanBuy
+        ? { highBid: 1, highBidderId: pending.nominatorId, open: true }
+        : { highBid: 0, highBidderId: null, open: true },
+    );
     // Deliberately keyed on the nomination only: willingness must not
     // re-roll while the bidding runs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
