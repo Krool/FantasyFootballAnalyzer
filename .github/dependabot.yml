@@ -5,6 +5,13 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    ignore:
+      # typescript-eslint caps its typescript peer at <6.1.0, so a TS bump
+      # past that makes the whole dev-dependencies group PR fail npm ci with
+      # ERESOLVE (see PR #19, 2026-08-16). Mirror the peer range here;
+      # widen it when typescript-eslint raises its cap.
+      - dependency-name: "typescript"
+        versions: [">=6.1.0"]
     groups:
       dev-dependencies:
         dependency-type: "development"
