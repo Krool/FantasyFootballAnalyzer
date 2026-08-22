@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { disambiguateIds, parseCsv, playerId } from './poolBuild';
+import { disambiguateIds, duplicateSleeperRows, parseCsv, playerId } from './poolBuild';
 
 // The build script that uses these runs daily, unattended, and commits its
 // output straight to master. Nothing downstream asserts on what it produced, so
@@ -83,6 +83,54 @@ describe('disambiguateIds', () => {
       { id: 'dupe-rb', name: 'Dupe', team: 'DET' },
     ];
     expect(disambiguateIds(players)).toEqual(['dupe-rb-det']);
+  });
+});
+
+describe('duplicateSleeperRows', () => {
+  const row = (over: Partial<Parameters<typeof duplicateSleeperRows>[0][number]>) => ({
+    name: 'Isaiah Williams',
+    team: 'FA',
+    pos: 'WR',
+    overallRank: 511,
+    sleeperId: '11608',
+    ...over,
+  });
+
+  it('keeps the row whose franchise agrees with the Sleeper dump', () => {
+    // The real 2026-08 case: FantasyPros carried a lingering FA row next to
+    // the NYJ row for the same player, and both matched Sleeper id 11608.
+    const fa = row({ team: 'FA', overallRank: 511 });
+    const nyj = row({ team: 'NYJ', overallRank: 551 });
+    const groups = duplicateSleeperRows([fa, nyj], new Map([['11608', 'NYJ']]));
+    expect(groups).toEqual([{ keeper: nyj, dropped: [fa] }]);
+  });
+
+  it('falls back to the better rank when no row matches the dump team', () => {
+    const better = row({ team: 'FA', overallRank: 511 });
+    const worse = row({ team: 'PHI', overallRank: 551 });
+    const groups = duplicateSleeperRows([worse, better], new Map([['11608', 'NYJ']]));
+    expect(groups).toEqual([{ keeper: better, dropped: [worse] }]);
+  });
+
+  it('compares franchises canonically, so a Sleeper JAX dump team keeps a JAC row', () => {
+    const jac = row({ team: 'JAC', overallRank: 551 });
+    const fa = row({ team: 'FA', overallRank: 511 });
+    const groups = duplicateSleeperRows([fa, jac], new Map([['11608', 'JAC']]));
+    expect(groups).toEqual([{ keeper: jac, dropped: [fa] }]);
+  });
+
+  it('leaves distinct players, rows without a sleeperId, and DSTs alone', () => {
+    const players = [
+      row({ sleeperId: '1' }),
+      row({ sleeperId: '2', team: 'NYJ' }),
+      row({ sleeperId: undefined }),
+      row({ sleeperId: undefined }),
+      // DST "ids" are team codes; two defenses never legitimately collide, and
+      // the pass must not try to merge them if a source ever mislabels one.
+      row({ pos: 'DST', sleeperId: 'JAX', team: 'JAC' }),
+      row({ pos: 'DST', sleeperId: 'JAX', team: 'JAC' }),
+    ];
+    expect(duplicateSleeperRows(players, new Map())).toEqual([]);
   });
 });
 

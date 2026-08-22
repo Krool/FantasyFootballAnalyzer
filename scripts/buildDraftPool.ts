@@ -26,7 +26,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonicalTeam, matchPlayer, normalizeName } from '../src/utils/playerNames';
-import { disambiguateIds, parseCsv, playerId } from './poolBuild';
+import { disambiguateIds, duplicateSleeperRows, parseCsv, playerId } from './poolBuild';
 import { currentDraftSeason } from './season';
 
 const seasonArg = process.argv.find(a => a.startsWith('--season='));
@@ -442,6 +442,34 @@ if (sleeperPlayers) {
   }
   missReport['SleeperPlayers'] = misses;
   console.log(`Sleeper players: ${hits} enriched${misses.length ? `, ${misses.length} pool players not in dump` : ''}`);
+
+  // Two rankings rows that resolved to the same Sleeper player are one human
+  // that FantasyPros listed twice mid-transaction (see duplicateSleeperRows).
+  // Drop the stale row, then re-derive ids: the collision pass suffixed both
+  // rows with their franchise, and the survivor must get back the stable
+  // unsuffixed slug that saved Draft Room sessions expect.
+  const dumpTeamById = new Map(
+    sleeperPlayers.players.map(row => [row.sleeperId, canonicalTeam(row.team || 'FA')]),
+  );
+  const dupGroups = duplicateSleeperRows(players, dumpTeamById);
+  if (dupGroups.length) {
+    const drop = new Set(dupGroups.flatMap(g => g.dropped));
+    for (let i = players.length - 1; i >= 0; i--) if (drop.has(players[i])) players.splice(i, 1);
+    for (const g of dupGroups) {
+      console.warn(
+        `  duplicate rankings rows for ${g.keeper.name}: kept ${g.keeper.team}, dropped ${g.dropped.map(d => d.team).join(', ')}`,
+      );
+    }
+    missReport['DuplicateRankings'] = dupGroups.map(
+      g => `${g.keeper.name}: kept ${g.keeper.team}, dropped ${g.dropped.map(d => d.team).join(', ')}`,
+    );
+    for (const player of players) player.id = playerId(player.name, player.pos, player.team);
+    for (const duplicateId of disambiguateIds(players)) {
+      const clashing = players.filter(p => p.id === duplicateId).map(p => `${p.name} (${p.team})`);
+      console.error(`FAILED: id collision after Sleeper dedup ${duplicateId} — ${clashing.join(' vs ')}`);
+      process.exit(1);
+    }
+  }
 }
 
 const out = {

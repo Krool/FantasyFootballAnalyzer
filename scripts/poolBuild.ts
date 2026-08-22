@@ -69,6 +69,37 @@ export function playerId(name: string, pos: string, team: string): string {
  * Returns the ids that are STILL duplicated afterwards — a true duplicate
  * (same name+pos+team) the caller must fail on rather than ship an unstable id.
  */
+/**
+ * FantasyPros occasionally lists one player twice while a transaction settles
+ * (a lingering FA row next to the new-team row: Isaiah Williams FA + NYJ,
+ * 2026-08). Name+pos joins cannot see that, but the Sleeper join can: two
+ * rankings rows resolving to one Sleeper player id are one human. Returns one
+ * group per duplicated id — the row to keep (franchise agrees with the Sleeper
+ * dump, else the best rank) and the rows to drop. DSTs are skipped: their
+ * Sleeper "id" is the team code, which never legitimately collides anyway.
+ */
+export function duplicateSleeperRows<
+  T extends { name: string; team: string; pos: string; overallRank: number; sleeperId?: string },
+>(players: T[], dumpTeamById: Map<string, string>): Array<{ keeper: T; dropped: T[] }> {
+  const byId = new Map<string, T[]>();
+  for (const player of players) {
+    if (!player.sleeperId || player.pos === 'DST') continue;
+    const group = byId.get(player.sleeperId);
+    if (group) group.push(player);
+    else byId.set(player.sleeperId, [player]);
+  }
+  const groups: Array<{ keeper: T; dropped: T[] }> = [];
+  for (const group of byId.values()) {
+    if (group.length < 2) continue;
+    const dumpTeam = dumpTeamById.get(group[0].sleeperId!);
+    const keeper =
+      group.find(p => canonicalTeam(p.team) === dumpTeam) ??
+      group.reduce((a, b) => (b.overallRank < a.overallRank ? b : a));
+    groups.push({ keeper, dropped: group.filter(p => p !== keeper) });
+  }
+  return groups;
+}
+
 export function disambiguateIds(players: IdentifiablePlayer[]): string[] {
   const byBase = new Map<string, IdentifiablePlayer[]>();
   for (const player of players) {
