@@ -106,8 +106,6 @@ export interface TradedDraftPick {
   originalOwner?: string;
 }
 
-export type TradeGrade = 'big_win' | 'win' | 'fair' | 'loss' | 'big_loss';
-
 export interface Team {
   id: string;
   name: string;
