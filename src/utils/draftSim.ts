@@ -122,6 +122,24 @@ function aiWillBid(team: TeamDraftState, pos: string, scarce: Set<string>): bool
   return true;
 }
 
+// Whether the nominator's opening $1 bid stands. An AI nominator follows the
+// same need-awareness rules as any other bid — a bait nomination at a
+// position it wouldn't bid on opens the floor unclaimed, so the endgame AI
+// can't buy an off-need K/DST at $1 and strand its last starter slot. The
+// human nominator only needs legality: nominating is their choice to bid.
+export function nominatorOpensBidding(
+  team: TeamDraftState,
+  pos: string,
+  available: PoolPlayer[],
+  teams: TeamDraftState[],
+  isHuman: boolean,
+): boolean {
+  if (isHuman) {
+    return team.openSlots > 0 && team.maxBid >= 1 && !team.fullAt[pos as StarterPos];
+  }
+  return aiWillBid(team, pos, scarcePositions(available, teams));
+}
+
 export function simSnakePick(
   available: PoolPlayer[],
   scaledValues: Map<string, number>,

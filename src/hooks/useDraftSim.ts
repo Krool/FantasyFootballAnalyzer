@@ -7,6 +7,7 @@ import {
   computeWillingnessMap,
   makePersonas,
   mulberry32,
+  nominatorOpensBidding,
   simAuctionResult,
   simNomination,
   simSnakePick,
@@ -253,14 +254,18 @@ export function useDraftSim(room: UseDraftRoomReturn, options?: UseDraftSimOptio
     quietBeatsRef.current = 0;
     // Auction rule: nominating IS the opening $1 bid, so the room can't
     // steal an uncontested nomination at the same price. A nominator who
-    // can't legally roster the player (bait at a full position, no budget)
-    // opens the floor unclaimed instead.
+    // wouldn't actually bid on the player (bait at a full position, no
+    // budget, an AI's off-need K/DST) opens the floor unclaimed instead.
     const nomTeam = derived.teams.get(pending.nominatorId);
     const nomCanBuy =
       !!nomTeam &&
-      nomTeam.openSlots > 0 &&
-      nomTeam.maxBid >= 1 &&
-      !nomTeam.fullAt[pending.player.pos as keyof typeof nomTeam.fullAt];
+      nominatorOpensBidding(
+        nomTeam,
+        pending.player.pos,
+        derived.available,
+        [...derived.teams.values()],
+        pending.nominatorId === config.myTeamId,
+      );
     setLiveBid(
       nomCanBuy
         ? { highBid: 1, highBidderId: pending.nominatorId, open: true }

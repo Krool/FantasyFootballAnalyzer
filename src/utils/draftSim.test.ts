@@ -3,7 +3,7 @@ import type { RosterSlots } from '@/types';
 import type { DraftEvent, DraftRoomConfig, PoolPlayer } from '@/types/draft';
 import { deriveDraftState, draftableSlotCount, validateEvent } from './draftEngine';
 import type { TeamDraftState } from './draftEngine';
-import { aiWillingness, makePersonas, mulberry32, simAuctionResult, simNomination, simSnakePick } from './draftSim';
+import { aiWillingness, makePersonas, mulberry32, nominatorOpensBidding, simAuctionResult, simNomination, simSnakePick } from './draftSim';
 import type { AiPersona } from './draftSim';
 import { roundForPick } from './snakeOrder';
 import { scaleValues } from './valueScaling';
@@ -347,6 +347,45 @@ describe('aiWillingness persona effects', () => {
     const highBid = aiWillingness(star, expectedPrice, team, 0, mulberry32(21), high);
 
     expect(highBid).toBeGreaterThanOrEqual(lowBid);
+  });
+});
+
+describe('nominatorOpensBidding', () => {
+  const pool = makePool();
+
+  it('an AI nominator opens at $1 on a position it needs', () => {
+    const team = makeTeam({ starterNeeds: { QB: 1, RB: 0, WR: 0, TE: 0, K: 0, DST: 0 } });
+    expect(nominatorOpensBidding(team, 'QB', pool, [team], false)).toBe(true);
+  });
+
+  it("an AI's bait nomination of an off-need K/DST opens the floor unclaimed", () => {
+    // Regression for the eab2c6d follow-up: the old legality-only check let
+    // an endgame AI open (and win) a $1 bid on a backup K it would never
+    // otherwise bid on, stranding the slot its last starter needed.
+    const team = makeTeam({
+      openSlots: 2,
+      starterNeeds: { QB: 0, RB: 1, WR: 1, TE: 0, K: 0, DST: 0 },
+      posCounts: { QB: 1, RB: 1, WR: 1, TE: 1, K: 1, DST: 1 },
+    });
+    expect(nominatorOpensBidding(team, 'K', pool, [team], false)).toBe(false);
+    expect(nominatorOpensBidding(team, 'DST', pool, [team], false)).toBe(false);
+    // Off-need skill position with slots down to starter needs: same rule.
+    expect(nominatorOpensBidding(team, 'TE', pool, [team], false)).toBe(false);
+    // A needed position still opens.
+    expect(nominatorOpensBidding(team, 'RB', pool, [team], false)).toBe(true);
+  });
+
+  it('the human nominator only needs legality, not AI need rules', () => {
+    const team = makeTeam({
+      openSlots: 2,
+      starterNeeds: { QB: 0, RB: 1, WR: 1, TE: 0, K: 0, DST: 0 },
+    });
+    // Their nomination, their choice: an off-need K still opens as their bid.
+    expect(nominatorOpensBidding(team, 'K', pool, [team], true)).toBe(true);
+    // But not an illegal one: full position or no budget leaves it unclaimed.
+    expect(nominatorOpensBidding(makeTeam({ fullAt: { QB: false, RB: false, WR: false, TE: false, K: true, DST: false } }), 'K', pool, [team], true)).toBe(false);
+    expect(nominatorOpensBidding(makeTeam({ maxBid: 0 }), 'K', pool, [team], true)).toBe(false);
+    expect(nominatorOpensBidding(makeTeam({ openSlots: 0 }), 'K', pool, [team], true)).toBe(false);
   });
 });
 
