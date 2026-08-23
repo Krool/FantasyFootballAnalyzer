@@ -93,6 +93,12 @@ describe('sleeperAdpFor', () => {
     // Yahoo's board is 1QB-only, so superflex swaps it for the FantasyPros SF
     // rank rather than compare a 1QB number against a superflex consensus.
     expect(platformRankSource('yahoo', 'half_ppr', true).value(qb)).toBe(1);
+    // ESPN's ADP is a 1QB market too and gets the same swap. Without it the
+    // delta would read espnAdp 24 minus SF consensus 2 = +22, a fake "value"
+    // that only measures ESPN not playing superflex.
+    expect(platformRankSource('espn', 'half_ppr', true).value(qb)).toBe(1);
+    expect(platformDelta(qb, platformRankSource('espn', 'half_ppr', true), 'half_ppr', true)).toBe(-1); // 1 - 2
+    expect(platformRankSource('espn', 'half_ppr', false).value(qb)).toBe(24);
     // With no Yahoo entry, the 1QB Yahoo column has nothing to show.
     expect(platformRankSource('yahoo', 'half_ppr', false).value(qb)).toBeUndefined();
     expect(platformRankSource('yahoo', 'half_ppr', false).value(

@@ -82,11 +82,15 @@ export function platformRankSource(
         value: p => sleeperAdpFor(p, scoring, superflex),
       };
     case 'espn':
+      // ESPN's ADP is a 1QB market like Yahoo's, so a superflex league gets no
+      // meaningful ESPN signal; fall back to the FantasyPros superflex rank
+      // there rather than compare a 1QB ADP against a superflex consensus.
       return {
         label: 'ESPN',
-        describe:
-          'ESPN ADP minus the consensus average. Positive: ESPN drafts him later than consensus, so he should fall to you.',
-        value: p => p.espnAdp,
+        describe: superflex
+          ? "ESPN's ADP is a 1QB market, so superflex compares the FantasyPros superflex rank against the consensus instead."
+          : 'ESPN ADP minus the consensus average. Positive: ESPN drafts him later than consensus, so he should fall to you.',
+        value: p => (superflex ? p.overallRankSF ?? p.overallRank : p.espnAdp),
       };
     case 'yahoo':
       // Yahoo's board is 1QB-only, so a superflex league gets no meaningful
