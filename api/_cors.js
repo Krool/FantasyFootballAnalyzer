@@ -24,14 +24,27 @@ function allowedOrigin(req) {
 // the production API defaults to redirecting tokens to PROD_ORIGIN only.
 // (CORS reflection of localhost stays on for data endpoints: those use
 // header-based auth a localhost page can't read, so reflecting them is safe.)
-export function isAllowedFrontend(url) {
+// Returns the canonical base (origin + pathname, trailing slashes stripped)
+// when the URL is allowlisted, else null. Origin-only validation isn't enough
+// here: every caller concatenates the value (`${base}/yahoo-success#tokens=`),
+// so a query or fragment riding on an otherwise-allowed base would reshape
+// the token-bearing redirect URL. Reject those outright and hand back a
+// clean base rather than trusting the caller to re-strip.
+export function allowedFrontendBase(url) {
   try {
-    const origin = new URL(url).origin;
-    if (origin === PROD_ORIGIN) return true;
-    return process.env.ALLOW_DEV_OAUTH === '1' && DEV_ORIGINS.has(origin);
+    const parsed = new URL(url);
+    if (parsed.search !== '' || parsed.hash !== '' || parsed.username || parsed.password) return null;
+    const allowed =
+      parsed.origin === PROD_ORIGIN ||
+      (process.env.ALLOW_DEV_OAUTH === '1' && DEV_ORIGINS.has(parsed.origin));
+    return allowed ? parsed.origin + parsed.pathname.replace(/\/+$/, '') : null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+export function isAllowedFrontend(url) {
+  return allowedFrontendBase(url) !== null;
 }
 
 // Sets the CORS headers and short-circuits preflight. Returns true when the

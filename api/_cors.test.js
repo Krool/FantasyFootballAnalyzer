@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest'
-import { applyCors, isAllowedFrontend } from './_cors.js'
+import { allowedFrontendBase, applyCors, isAllowedFrontend } from './_cors.js'
 
 // isAllowedFrontend gates where the OAuth callback redirects freshly minted
 // access/refresh tokens. It is deliberately stricter than CORS reflection: a
@@ -38,6 +38,33 @@ describe('isAllowedFrontend (OAuth token-redirect allowlist)', () => {
 
   it('rejects a malformed URL instead of throwing', () => {
     expect(isAllowedFrontend('not a url')).toBe(false)
+  })
+})
+
+// allowedFrontendBase is what the OAuth handlers actually consume: they
+// concatenate its return value into `${base}/yahoo-success#tokens=...`, so a
+// query or fragment surviving on an allowed origin would reshape the
+// token-bearing redirect. These lock the canonicalization.
+describe('allowedFrontendBase (canonical OAuth redirect base)', () => {
+  it('returns the base with trailing slashes stripped, path preserved', () => {
+    expect(allowedFrontendBase('https://krool.github.io/FantasyFootballAnalyzer/'))
+      .toBe('https://krool.github.io/FantasyFootballAnalyzer')
+    expect(allowedFrontendBase('https://krool.github.io'))
+      .toBe('https://krool.github.io')
+  })
+
+  it('rejects an allowed origin carrying a query string or fragment', () => {
+    expect(allowedFrontendBase('https://krool.github.io/?q=1')).toBeNull()
+    expect(allowedFrontendBase('https://krool.github.io/#frag')).toBeNull()
+    expect(allowedFrontendBase('https://krool.github.io/path?x=#')).toBeNull()
+  })
+
+  it('rejects embedded credentials on an allowed origin', () => {
+    expect(allowedFrontendBase('https://user:pw@krool.github.io/')).toBeNull()
+  })
+
+  it('returns null for a disallowed origin', () => {
+    expect(allowedFrontendBase('https://evil.example.com/')).toBeNull()
   })
 })
 

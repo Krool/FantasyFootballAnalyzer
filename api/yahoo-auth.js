@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { applyCors, isAllowedFrontend } from './_cors.js';
+import { allowedFrontendBase, applyCors } from './_cors.js';
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://krool.github.io/FantasyFootballAnalyzer';
 
@@ -24,10 +24,11 @@ export default function handler(req, res) {
 
     // Where the browser lands after the round trip: the frontend sends its
     // own base URL (the vite dev server during development). Anything off
-    // the allowlist falls back to production.
+    // the allowlist falls back to production; the allowlist check also
+    // canonicalizes (strips trailing slashes, rejects query/fragment).
     const requested =
-      typeof req.query.return_base === 'string' ? req.query.return_base.replace(/\/+$/, '') : '';
-    const frontendBase = requested && isAllowedFrontend(requested) ? requested : FRONTEND_URL;
+      typeof req.query.return_base === 'string' ? allowedFrontendBase(req.query.return_base) : null;
+    const frontendBase = requested ?? FRONTEND_URL;
 
     // CSRF nonce, with the return destination riding along after it - the
     // callback has no other way to know whether this login started on dev

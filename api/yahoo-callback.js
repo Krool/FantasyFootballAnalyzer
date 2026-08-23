@@ -1,4 +1,4 @@
-import { applyCors, isAllowedFrontend } from './_cors.js';
+import { allowedFrontendBase, applyCors } from './_cors.js';
 
 const YAHOO_TOKEN_URL = 'https://api.login.yahoo.com/oauth2/get_token';
 const FRONTEND_FALLBACK = process.env.FRONTEND_URL || 'https://krool.github.io/FantasyFootballAnalyzer';
@@ -12,7 +12,7 @@ function frontendFromState(state) {
   if (!encoded) return FRONTEND_FALLBACK;
   try {
     const url = Buffer.from(encoded, 'base64url').toString('utf8');
-    return isAllowedFrontend(url) ? url : FRONTEND_FALLBACK;
+    return allowedFrontendBase(url) ?? FRONTEND_FALLBACK;
   } catch {
     return FRONTEND_FALLBACK;
   }

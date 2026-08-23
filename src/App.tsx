@@ -281,8 +281,11 @@ function App() {
     // landing on last year even after the league renews. Follow the renewal
     // so connecting lands on the newest season that exists. Only from last
     // season: pasting a genuinely old id is a deliberate history visit, and
-    // the year dropdown still reaches every season either way.
-    if (loaded.platform === 'sleeper' && loaded.season === new Date().getFullYear() - 1) {
+    // the year dropdown still reaches every season either way. "Last season"
+    // is relative to the draft season (POOL_SEASON), not the calendar year:
+    // in January the calendar has rolled but the season has not, and the
+    // calendar-year check would probe for a renewal that can't exist yet.
+    if (loaded.platform === 'sleeper' && loaded.season === POOL_SEASON - 1) {
       const successor = await findSuccessorLeague(loaded.id, loaded.season);
       if (successor) {
         logger.debug('[App] Sleeper league renewed; following to', successor.season);

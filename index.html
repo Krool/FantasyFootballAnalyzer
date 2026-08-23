@@ -53,12 +53,17 @@
       // send_page_view:false: gtag's automatic pageview reports page_location =
       // the raw URL, which on the /yahoo-success OAuth return carries tokens.
       // The app sends sanitized, path-only page_views itself (src/utils/analytics).
-      gtag('config', 'G-SXG8M67HPV', {
-        cookie_domain: window.location.hostname,
-        content_group: 'Fantasy Football Analyzer',
-        send_page_view: false,
-        page_location: window.location.origin + window.location.pathname,
-      });
+      // Hostname gate: this file ships as-is to dev and preview too (no build
+      // templating), and without config GA4's auto-collection (session_start,
+      // engagement) would report local traffic into the production property.
+      if (window.location.hostname === 'fantasyfootballanalyzer.app') {
+        gtag('config', 'G-SXG8M67HPV', {
+          cookie_domain: window.location.hostname,
+          content_group: 'Fantasy Football Analyzer',
+          send_page_view: false,
+          page_location: window.location.origin + window.location.pathname,
+        });
+      }
     </script>
     <!-- Self-hosted brand fonts (@font-face lives in src/fonts.css). Preload the
          two critical faces so they paint without the swap the old Google Fonts
