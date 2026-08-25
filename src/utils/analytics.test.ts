@@ -87,6 +87,21 @@ describe('Analytics named helpers', () => {
     window.history.replaceState(null, '', '/');
   });
 
+  it('pageView drops the share-link league id but keeps campaign params', () => {
+    const gtag = vi.fn();
+    window.gtag = gtag;
+    window.history.replaceState(null, '', '/rankings?league=sleeper:1234567890&utm_source=reddit');
+
+    Analytics.pageView('/rankings');
+
+    expect(gtag).toHaveBeenCalledWith('event', 'page_view', {
+      page_path: '/rankings?utm_source=reddit',
+      page_location: `${window.location.origin}/rankings?utm_source=reddit`,
+      page_title: document.title,
+    });
+    window.history.replaceState(null, '', '/');
+  });
+
   it('pageView strips the query string on OAuth-return routes', () => {
     const gtag = vi.fn();
     window.gtag = gtag;

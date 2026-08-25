@@ -472,7 +472,7 @@ function App() {
   // URL writer, or a league identity flapping mid-load), so stop rewriting —
   // the share link is a nicety, never worth crashing the page — and report
   // one diagnosable event with the wanted-vs-actual param.
-  const shareRewriteRef = useRef({ windowStart: 0, count: 0, tripped: false });
+  const shareRewriteRef = useRef({ windowStart: 0, count: 0, tripped: false, lastPath: '' });
   useEffect(() => {
     if (!league || league.isGuest || league.platform !== 'sleeper') return;
     const path = location.pathname;
@@ -482,7 +482,13 @@ function App() {
     const breaker = shareRewriteRef.current;
     if (breaker.tripped) return;
     const now = Date.now();
-    if (now - breaker.windowStart > 10_000) {
+    // Ordinary navigation lands here once per click (NavLink drops the query
+    // string), so only same-path rewrites count toward the loop: a genuine
+    // oscillation rewrites one path over and over, while healthy browsing
+    // changes it. Without this, ~9 quick nav clicks tripped the breaker and
+    // filed a false "rewrite loop" event.
+    if (path !== breaker.lastPath || now - breaker.windowStart > 10_000) {
+      breaker.lastPath = path;
       breaker.windowStart = now;
       breaker.count = 0;
     }

@@ -27,10 +27,14 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
   // lookalikes ("http://localhost:1234@evil.example/") that an origin equality
   // check rejects. Must stay in sync with externally_connectable in
   // manifest.json — and with the live frontend domain.
+  //
+  // NEVER ship localhost origins here or in manifest.json: on a store-installed
+  // extension they would let any local server (someone else's `npm run dev`,
+  // anything bound to that port) silently pull the user's ESPN session cookies.
+  // For local testing, add http://localhost:5173 / :4173 to BOTH lists in an
+  // unpacked copy, and strip them before packing a release.
   const ALLOWED_ORIGINS = new Set([
     'https://fantasyfootballanalyzer.app',
-    'http://localhost:5173',
-    'http://localhost:4173',
   ]);
   let senderOrigin = '';
   try {

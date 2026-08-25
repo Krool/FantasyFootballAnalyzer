@@ -97,13 +97,15 @@ function CollapsibleSection({
 }
 
 export function DraftSetup({ room, league }: DraftSetupProps) {
-  const { config, updateConfig, start, resumable, resume, reset, resumeSession } = room;
+  const { config, updateConfig, start, resumable, resume, reset, resumeSession, pool } = room;
   const meGroup = useId();
   const [archive, setArchive] = useState(() => loadDraftArchive(leagueKeyFor(league)));
   const [presets, setPresets] = useState<DraftPreset[]>(() => loadPresets());
   const [presetName, setPresetName] = useState('');
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const sectionOpen = !isMobile;
+  // For the archived-drafts stale check below.
+  const poolPlayerIds = useMemo(() => new Set(pool.players.map(p => p.id)), [pool]);
 
   const keepersPerTeam = config.keepersPerTeam ?? 1;
   const escalation = config.keeperEscalation ?? 1;
@@ -869,7 +871,17 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
             Every completed draft is kept here. Open one to revisit its recap and pick log.
           </p>
           <div className={styles.teamList}>
-            {archive.map(session => (
+            {archive.map(session => {
+              // A daily pool rebuild can drop a player an archived draft
+              // references; deriveDraftState would then silently drop those
+              // picks from the recap and grade over a smaller denominator
+              // (the active-session path clears such saves outright — see
+              // useDraftRoom's stale check). Refuse to open rather than show
+              // a quietly-wrong recap.
+              const stale =
+                session.events.some(e => !poolPlayerIds.has(e.playerId)) ||
+                (session.config.keepers ?? []).some(k => !poolPlayerIds.has(k.playerId));
+              return (
               <div key={session.savedAt} className={styles.teamRow}>
                 <span className={styles.teamIndex}>
                   {session.config.draftType === 'auction' ? '$' : 'S'}
@@ -883,6 +895,12 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                   <button
                     type="button"
                     className={styles.btn}
+                    disabled={stale}
+                    title={
+                      stale
+                        ? 'This draft references players dropped from the current pool, so its recap can no longer be rebuilt faithfully.'
+                        : undefined
+                    }
                     onClick={() => resumeSession(session)}
                   >
                     Open
@@ -900,7 +918,8 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </CollapsibleSection>
       )}

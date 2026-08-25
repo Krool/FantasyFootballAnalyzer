@@ -9,7 +9,7 @@ import { DEFAULT_BUDGET, DEFAULT_ROSTER_SLOTS } from '@/hooks/useDraftRoom';
 import { useSounds } from '@/hooks/useSounds';
 import { useTargets } from '@/hooks/useTargets';
 import { useYahooValues } from '@/hooks/useYahooValues';
-import { consensusAvg, platformDelta, platformRankSource, sleeperAdpFor } from '@/utils/consensus';
+import { consensusAvg, platformRankSource, sleeperAdpFor } from '@/utils/consensus';
 import { FLEX_POSITIONS, labelForPos } from '@/data/rankingsVariants';
 import { draftableSlotCount } from '@/utils/draftEngine';
 import { normalizeName } from '@/utils/playerNames';
@@ -177,8 +177,13 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
       switch (sortBy) {
         case 'avg':
           return avg(p);
-        case 'delta':
-          return platformDelta(p, source, scoring, superflex);
+        case 'delta': {
+          // Same math as platformDelta, but reusing the consensus averages
+          // already memoized in avgById instead of recomputing one per
+          // comparator call.
+          const value = source.value(p);
+          return value == null ? undefined : value - avg(p);
+        }
         case 'rank':
           return superflex ? (p.overallRankSF ?? p.overallRank) : p.overallRank;
         case 'espnAdp':
@@ -467,7 +472,8 @@ export function RankingsPage({ league, onUpdateGuest, initialPos }: RankingsPage
             <tbody>
               {visible.map((p, i) => {
                 const avg = avgById.get(p.id) ?? p.overallRank;
-                const delta = platformDelta(p, source, scoring, superflex);
+                const sourceValue = source.value(p);
+                const delta = sourceValue == null ? undefined : sourceValue - avg;
                 // In superflex the FP RK column tracks the superflex rank so it
                 // matches the delta and consensus (which use overallRankSF).
                 const fpRank = superflex ? (p.overallRankSF ?? p.overallRank) : p.overallRank;

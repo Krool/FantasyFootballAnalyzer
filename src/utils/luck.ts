@@ -142,7 +142,11 @@ export function calculateLuckMetrics(
   scoresByWeek.forEach((weekScores) => {
     // For each team, count wins/losses against all other teams that week
     weekScores.forEach(teamScore => {
-      const record = allPlayRecords.get(teamScore.teamId)!;
+      // A matchup can name a team absent from league.teams (e.g. a franchise
+      // deleted mid-season); skip it like the teamScores lookups above do
+      // rather than throwing and taking down every page that computes luck.
+      const record = allPlayRecords.get(teamScore.teamId);
+      if (!record) return;
       weekScores.forEach(otherScore => {
         if (otherScore.teamId !== teamScore.teamId) {
           if (teamScore.points > otherScore.points) {

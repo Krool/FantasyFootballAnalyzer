@@ -318,14 +318,19 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
             return;
           }
           const amount = Number(pick.metadata?.amount);
+          // An auction pick always becomes a sale: a missing/zero amount
+          // (a kept player is the likely shape) would otherwise fall through
+          // to a snake_pick, which validateEvent rejects in an auction room —
+          // killing the whole sync over one pick. A $1 floor keeps the board
+          // alive instead.
           batch.push(
-            config.draftType === 'auction' && Number.isFinite(amount) && amount > 0
+            config.draftType === 'auction'
               ? {
                   kind: 'auction_sale' as const,
                   playerId,
                   nominatedById: teamId,
                   wonById: teamId,
-                  price: amount,
+                  price: Number.isFinite(amount) && amount > 0 ? amount : 1,
                 }
               : {
                   kind: 'snake_pick' as const,

@@ -362,9 +362,38 @@ export function deriveDraftState(
     }
   }
 
+  // Keepers are held out of the pool until logged: snake keepers at their
+  // cost round, auction keepers as pre-draft sales the moment the draft starts,
+  // and a synced draft's pre-placed keepers when its board reaches their pick.
+  const reservedPlayerIds = new Set(
+    allKeepers(config).filter(k => !draftedPlayerIds.has(k.playerId)).map(k => k.playerId),
+  );
+
+  // Dynasty leagues order by dynasty value, not redraft rank; a rookie draft
+  // narrows the pool to first-year players. Unranked players sink to the
+  // bottom in dynasty mode rather than vanishing.
+  const isDynasty = config.leagueType === 'dynasty';
+  const rookieOnly = isDynasty && config.dynastyMode === 'rookie';
+  const boardRank = (p: PoolPlayer) =>
+    isDynasty ? (p.dynastyRank ?? p.overallRank + 1000) : p.overallRank;
+  const available = pool
+    .filter(
+      p =>
+        !draftedPlayerIds.has(p.id) &&
+        !reservedPlayerIds.has(p.id) &&
+        (!rookieOnly || p.rookie === true),
+    )
+    .sort((a, b) => boardRank(a) - boardRank(b));
+
   const totalPicks = config.teams.length * config.rounds;
   const pickCount = events.length;
-  const isComplete = pickCount >= totalPicks;
+  // The board can empty before every roster fills — a dynasty rookie draft
+  // holds ~160 rookies against teams × rounds slots. With nobody left to
+  // draft (and no keepers still owed a pick) the draft is over; without this
+  // the sim would sit on the clock forever waiting for a pick that can't
+  // happen.
+  const isComplete =
+    pickCount >= totalPicks || (available.length === 0 && reservedPlayerIds.size === 0);
 
   // Pre-draft auction keepers are auto-logged as sales at the very start, so
   // they must not shift the nomination rotation: subtract them out.
@@ -395,29 +424,6 @@ export function deriveDraftState(
       }
     }
   }
-
-  // Keepers are held out of the pool until logged: snake keepers at their
-  // cost round, auction keepers as pre-draft sales the moment the draft starts,
-  // and a synced draft's pre-placed keepers when its board reaches their pick.
-  const reservedPlayerIds = new Set(
-    allKeepers(config).filter(k => !draftedPlayerIds.has(k.playerId)).map(k => k.playerId),
-  );
-
-  // Dynasty leagues order by dynasty value, not redraft rank; a rookie draft
-  // narrows the pool to first-year players. Unranked players sink to the
-  // bottom in dynasty mode rather than vanishing.
-  const isDynasty = config.leagueType === 'dynasty';
-  const rookieOnly = isDynasty && config.dynastyMode === 'rookie';
-  const boardRank = (p: PoolPlayer) =>
-    isDynasty ? (p.dynastyRank ?? p.overallRank + 1000) : p.overallRank;
-  const available = pool
-    .filter(
-      p =>
-        !draftedPlayerIds.has(p.id) &&
-        !reservedPlayerIds.has(p.id) &&
-        (!rookieOnly || p.rookie === true),
-    )
-    .sort((a, b) => boardRank(a) - boardRank(b));
 
   return {
     teams,

@@ -62,11 +62,12 @@ ${positionUrls}
 }
 
 export default defineConfig({
-  // strictPort, both modes: the ESPN helper extension's externally_connectable
-  // allowlist pins exactly http://localhost:5173 and :4173 (manifest.json +
-  // background.js). If a busy port let Vite auto-increment to 5174, the
-  // extension would silently refuse the origin and ESPN auto-fill would look
-  // uninstalled. Fail loudly instead.
+  // strictPort, both modes: a dev-only unpacked copy of the ESPN helper
+  // extension allowlists exactly http://localhost:5173 and :4173 (the shipped
+  // manifest.json + background.js deliberately allow only the production
+  // domain — see the note in background.js). If a busy port let Vite
+  // auto-increment to 5174, the extension would silently refuse the origin
+  // and ESPN auto-fill would look uninstalled. Fail loudly instead.
   server: { port: 5173, strictPort: true },
   preview: { port: 4173, strictPort: true },
   plugins: [

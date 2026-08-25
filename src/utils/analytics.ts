@@ -56,12 +56,22 @@ export const Analytics = {
   // SPA page_view. gtag's automatic page_view is off (send_page_view:false in
   // index.html) because its page_location is the raw URL, which on the
   // /yahoo-success OAuth return carries tokens. We rebuild the location
-  // ourselves: pathname plus - except on the OAuth-return routes - the query
-  // string, so campaign attribution (?utm_*) works while credentials never
-  // reach Google Analytics. The hash is never sent on any route.
+  // ourselves: pathname plus - except on the OAuth-return routes - only the
+  // utm_* campaign params, so attribution works while nothing identifying
+  // reaches Google Analytics. Share links keep ?league=sleeper:<id> on the
+  // URL for the whole session, and the raw id re-identifies which league a
+  // visitor analyzed - the same reason leagueConnected drops it. The hash is
+  // never sent on any route.
   pageView: (path: string) => {
-    const search =
-      typeof window !== "undefined" && !path.startsWith("/yahoo-") ? window.location.search : "";
+    let search = "";
+    if (typeof window !== "undefined" && !path.startsWith("/yahoo-")) {
+      const utm = new URLSearchParams();
+      new URLSearchParams(window.location.search).forEach((value, key) => {
+        if (key.toLowerCase().startsWith("utm_")) utm.append(key, value);
+      });
+      const qs = utm.toString();
+      search = qs ? `?${qs}` : "";
+    }
     trackEvent("page_view", {
       page_path: path + search,
       page_location: (typeof window !== "undefined" ? window.location.origin : "") + path + search,

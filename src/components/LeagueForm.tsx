@@ -19,7 +19,7 @@ const YAHOO_SUPPORTED_SEASONS = Array.from(
 ).sort((a, b) => b - a);
 
 // Companion extension ID (Chrome Web Store / Firefox AMO). Override with VITE_ESPN_EXTENSION_ID
-// once published; defaults to an unpublished placeholder so detection silently fails in dev.
+// once published; defaults to '' (unset) so detection silently no-ops in dev.
 const ESPN_EXTENSION_ID =
   (import.meta.env.VITE_ESPN_EXTENSION_ID as string | undefined) || '';
 
@@ -72,11 +72,13 @@ interface ExtensionProbe {
   swid?: string;
 }
 
-// Probe the companion extension. Resolves null when the extension isn't
-// installed (or can't be reached); resolves installed-with-no-cookies when it
-// responds but the user isn't logged into espn.com. The distinction matters:
-// an installed extension should still show the auto-fill panel.
-function probeExtension(): Promise<ExtensionProbe | null> {
+// Send one message to the companion extension. Resolves null when the
+// extension isn't installed or can't be reached (no response before the
+// timeout, or chrome.runtime.lastError set); otherwise resolves the raw
+// response, which may still carry an `error` field for the caller to read.
+function sendExtensionMessage(
+  message: { type: string },
+): Promise<{ espnS2?: string; swid?: string; error?: string } | null> {
   return new Promise((resolve) => {
     const chrome = (window as unknown as {
       chrome?: {
@@ -84,7 +86,7 @@ function probeExtension(): Promise<ExtensionProbe | null> {
           sendMessage?: (
             id: string,
             message: unknown,
-            callback: (response: { espnS2?: string; swid?: string } | undefined) => void,
+            callback: (response: { espnS2?: string; swid?: string; error?: string } | undefined) => void,
           ) => void;
           lastError?: unknown;
         };
@@ -101,26 +103,37 @@ function probeExtension(): Promise<ExtensionProbe | null> {
     try {
       chrome.runtime.sendMessage(
         ESPN_EXTENSION_ID,
-        { type: 'get-espn-cookies' },
-        (response: { espnS2?: string; swid?: string; error?: string } | undefined) => {
+        message,
+        (response) => {
           if (settled) return;
           settled = true;
           clearTimeout(timer);
           // chrome.runtime.lastError is set when the extension isn't installed.
-          // A response carrying `error` (background.js's origin check refused
-          // us — e.g. a dev server on an unlisted port) is ALSO "can't be
-          // reached": treating it as installed would tell the user to log into
-          // espn.com when the real problem is the origin allowlist.
-          if (chrome.runtime?.lastError || !response || response.error) {
-            resolve(null);
-          } else {
-            resolve({ installed: true, espnS2: response.espnS2, swid: response.swid });
-          }
+          resolve(chrome.runtime?.lastError || !response ? null : response);
         }
       );
     } catch {
       if (!settled) { settled = true; clearTimeout(timer); resolve(null); }
     }
+  });
+}
+
+// Detection only: `ping` touches no cookie data, so merely opening the ESPN
+// tab never pulls live credentials into page memory. A response carrying
+// `error` (background.js's origin check refused us — e.g. a dev server on an
+// unlisted port) counts as unreachable: treating it as installed would tell
+// the user to log into espn.com when the real problem is the allowlist.
+function pingExtension(): Promise<boolean> {
+  return sendExtensionMessage({ type: 'ping' }).then(r => r !== null && !r.error);
+}
+
+// The real cookie read, only ever called from the auto-fill click. An
+// installed extension with no ESPN login responds `no-cookies`, which is
+// still "installed": the panel tells the user to log into espn.com.
+function fetchExtensionCookies(): Promise<ExtensionProbe | null> {
+  return sendExtensionMessage({ type: 'get-espn-cookies' }).then(r => {
+    if (!r || (r.error && r.error !== 'no-cookies')) return null;
+    return { installed: true, espnS2: r.espnS2, swid: r.swid };
   });
 }
 
@@ -294,12 +307,12 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
   useEffect(() => {
     if (platform !== 'espn' || extensionState !== 'unknown') return;
     let cancelled = false;
-    probeExtension().then((probe) => {
+    pingExtension().then((installed) => {
       if (cancelled) return;
-      // Installed counts as detected even with no cookies in the response:
-      // the user may just not be logged into espn.com yet, and the panel
-      // tells them to do exactly that.
-      setExtensionState(probe ? 'detected' : 'missing');
+      // Installed counts as detected even when the user isn't logged into
+      // espn.com yet: the panel tells them to do exactly that. The ping never
+      // reads cookies, so detection alone leaves credentials untouched.
+      setExtensionState(installed ? 'detected' : 'missing');
     });
     return () => { cancelled = true; };
   }, [platform, extensionState]);
@@ -308,7 +321,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     setExtensionBusy(true);
     setExtensionError(null);
     try {
-      const probe = await probeExtension();
+      const probe = await fetchExtensionCookies();
       if (!probe) {
         setExtensionError('Could not reach the extension. Reinstall it or use the manual steps in the help.');
         return;

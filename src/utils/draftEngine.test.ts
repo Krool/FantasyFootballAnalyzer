@@ -497,3 +497,43 @@ describe('deriveDraftState (superflex)', () => {
     expect(four.fullAt.QB).toBe(true);
   });
 });
+
+describe('deriveDraftState (board exhaustion)', () => {
+  // A dynasty rookie draft narrows the board to first-year players while
+  // rounds stay at the full-roster count, so the pool can empty mid-draft.
+  // The room must read complete instead of sitting on the clock forever
+  // waiting for a pick that cannot happen.
+  it('completes a rookie draft when the board empties before rosters fill', () => {
+    const pool = makePool().map((p, i) => ({ ...p, rookie: i < 4 }));
+    const config = makeConfig({
+      draftType: 'snake',
+      snakeFormat: 'linear',
+      leagueType: 'dynasty',
+      dynastyMode: 'rookie',
+    });
+    const rookies = pool.filter(p => p.rookie);
+    const events = rookies.map((p, i) => pick(p.id, ['A', 'B', 'C'][i % 3]));
+    const state = deriveDraftState(config, pool, events);
+    expect(state.available).toHaveLength(0);
+    expect(state.isComplete).toBe(true);
+    expect(state.onTheClockId).toBeNull();
+  });
+
+  it('stays open while an unlogged keeper still reserves a player', () => {
+    const pool = makePool().map((p, i) => ({ ...p, rookie: i < 4 }));
+    const rookies = pool.filter(p => p.rookie);
+    const config = makeConfig({
+      draftType: 'snake',
+      snakeFormat: 'linear',
+      leagueType: 'dynasty',
+      dynastyMode: 'rookie',
+      keepers: [{ teamId: 'B', playerId: rookies[3].id, costRound: 2 }],
+    });
+    const events = rookies.slice(0, 3).map((p, i) => pick(p.id, ['A', 'B', 'C'][i % 3]));
+    const state = deriveDraftState(config, pool, events);
+    // The board shows empty (the keeper is reserved, not available), but his
+    // pick is still owed, so the draft must not close out from under it.
+    expect(state.available).toHaveLength(0);
+    expect(state.isComplete).toBe(false);
+  });
+});
