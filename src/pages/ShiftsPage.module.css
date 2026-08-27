@@ -1,0 +1,282 @@
+/* ADP Shifts: leaderboard cards, no board table, so the standard page rhythm
+   applies (the tighter --page-title-board cap still keys the headline to the
+   other draft-prep pages). */
+.page {
+  padding: 2rem 0 3rem;
+}
+
+.header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid var(--bone);
+}
+
+.title {
+  font-family: var(--font-headline);
+  font-size: var(--page-title-board);
+  font-weight: 400;
+  line-height: 0.82;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  color: var(--bone);
+  margin: 0 0 0.5rem;
+}
+
+.subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin: 0;
+}
+
+.subtitle::before {
+  content: '◆ ';
+}
+
+.lede {
+  max-width: 62ch;
+  margin: 0.9rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--bone-dim);
+}
+
+.settingsBar {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  border: 2px solid var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.75rem;
+  background: var(--ink);
+}
+
+.settingsItem,
+.settingsDim {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+
+.settingsDim {
+  color: var(--bone-dim);
+}
+
+.settingsSpacer {
+  flex: 1;
+}
+
+.window {
+  margin-bottom: 2rem;
+}
+
+.windowTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.9rem;
+  font-family: var(--font-headline);
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: var(--bone);
+}
+
+.windowTag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 860px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  border: 2px solid var(--bone);
+  box-shadow: 4px 4px 0 var(--bone);
+  background: var(--ink);
+  padding: 0.9rem 1rem 1rem;
+}
+
+.cardTitleUp,
+.cardTitleDown {
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--rule);
+  font-family: var(--font-headline);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.cardTitleUp {
+  color: var(--lime);
+}
+
+.cardTitleDown {
+  color: var(--blood-text);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  counter-reset: mover;
+}
+
+/* face | name+meta | delta, with the direction carried by a 3px left bar
+   (lime up, blood down — falling is a negative state, so blood is earning
+   its keep here, not decorating). */
+.rowUp,
+.rowDown {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 0.65rem;
+  padding: 0.3rem 0.5rem 0.3rem 0.65rem;
+  background: var(--ink-2);
+}
+
+.rowUp {
+  box-shadow: inset 3px 0 0 var(--lime);
+}
+
+.rowDown {
+  box-shadow: inset 3px 0 0 var(--blood);
+}
+
+.face,
+.faceFallback {
+  grid-row: 1 / span 2;
+  width: 34px;
+  height: 34px;
+  /* The one sanctioned border-radius exception: faces are circles. */
+  border-radius: 50%;
+  flex: none;
+}
+
+.face {
+  object-fit: cover;
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+}
+
+.faceFallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  border: 2px solid var(--bone-dim);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--bone);
+}
+
+.name {
+  grid-column: 2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--bone);
+}
+
+.meta {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.deltaUp,
+.deltaDown {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.deltaUp {
+  color: var(--lime);
+}
+
+.deltaDown {
+  color: var(--blood-text);
+}
+
+.empty {
+  margin: 0;
+  padding: 1rem 0.25rem;
+  border: 2px dashed var(--rule);
+  text-align: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
+}
+
+.footnote {
+  max-width: 78ch;
+  margin: 0.25rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--bone-dim);
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 1.25rem 0 3rem;
+  }
+  .title {
+    font-size: 40px;
+  }
+  .header {
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+  }
+  .windowTitle {
+    font-size: 1.6rem;
+  }
+}

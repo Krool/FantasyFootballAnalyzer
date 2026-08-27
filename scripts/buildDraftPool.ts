@@ -26,6 +26,10 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonicalTeam, matchPlayer, normalizeName } from '../src/utils/playerNames';
+import {
+  appendSnapshot, consensusOrdinals, detectSources, historyIndirectionSource, serializeHistory,
+} from './adpHistory';
+import type { AdpHistoryFile } from '../src/types/adpHistory';
 import { disambiguateIds, duplicateSleeperRows, parseCsv, playerId } from './poolBuild';
 import { currentDraftSeason } from './season';
 
@@ -482,6 +486,29 @@ const out = {
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, JSON.stringify(out, null, 2) + '\n');
 writeFileSync(missesPath, JSON.stringify(missReport, null, 2) + '\n');
+
+// --- Rolling consensus-rank history (feeds the ADP Shifts page) ---
+// One snapshot per day the board actually moved; unchanged days write nothing,
+// so this never turns a no-op refresh into a commit. Pretty-print at one line
+// per snapshot (not per rank entry) to keep the committed file diffable
+// without tripling its size.
+const historyPath = join(root, 'src', 'data', `adpHistory.${SEASON}.json`);
+const historyIndirectionPath = join(root, 'src', 'data', 'adpHistory.ts');
+const existingHistory: AdpHistoryFile | null = existsSync(historyPath)
+  ? JSON.parse(readFileSync(historyPath, 'utf8'))
+  : null;
+const { file: history, changed: historyChanged } = appendSnapshot(existingHistory, SEASON, {
+  date: out.generatedAt.slice(0, 10),
+  sources: detectSources(players),
+  ranks: consensusOrdinals(players),
+});
+if (historyChanged || !existsSync(historyPath)) {
+  writeFileSync(historyPath, serializeHistory(history));
+  console.log(`Wrote ${historyPath} (${history.snapshots.length} snapshots)`);
+} else {
+  console.log('ADP history unchanged (board did not move)');
+}
+writeFileSync(historyIndirectionPath, historyIndirectionSource(SEASON));
 
 // Regenerate the indirection module so app code never hardcodes the season.
 writeFileSync(

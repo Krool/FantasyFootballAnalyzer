@@ -11,6 +11,7 @@
 //   - index.html              - homepage hero, manifesto, feature grid.
 //   - rankings/               - top-200 half-PPR consensus rankings table.
 //   - rankings/<pos>/         - one per position (qb, rb, wr, te, k, dst, flex).
+//   - shifts/                 - day/week consensus-board risers and fallers.
 //   - trade-analyzer/, draft-grades/ - tool landing pages.
 //   - draft-room/             - mock-draft / live-draft-room landing copy.
 //
@@ -184,6 +185,59 @@ function buildValuesMarkup(
     `players each site prices furthest from the consensus of all of them, so you ` +
     `know where a player falls to you and where he goes early. Half PPR, ` +
     `refreshed daily, no login required.</p>` +
+    sections +
+    `</section>`
+  )
+}
+
+// Crawlable snapshot of the ADP Shifts page: day and week risers/fallers on
+// the consensus board, from the rolling rank history. Real data like the
+// values page, so the route indexes on its own terms.
+function buildShiftsMarkup(
+  pool: { season: number; players: any[] },
+  history: any,
+  computeShifts: (history: any, windowDays: number) => any,
+): string {
+  const byId = new Map(pool.players.map((p: any) => [p.id, p]))
+  const windows: Array<[number, string]> = [
+    [1, 'Last day'],
+    [7, 'Last week'],
+  ]
+  const sections = windows
+    .map(([days, label]) => {
+      const shifts = computeShifts(history, days)
+      if (!shifts) return ''
+      const table = (movers: any[], caption: string) => {
+        const rows = movers
+          .map(m => ({ m, p: byId.get(m.id) }))
+          .filter(r => r.p)
+          .map(
+            ({ m, p }) =>
+              `<tr><td>${esc(p.name)}</td><td>${esc(p.pos)}</td><td>${esc(p.team)}</td>` +
+              `<td>${m.delta > 0 ? '+' : ''}${m.delta}</td><td>${m.from}</td><td>${m.to}</td></tr>`,
+          )
+          .join('')
+        if (!rows) return ''
+        return (
+          `<h3>${esc(caption)}</h3>` +
+          `<table><thead><tr><th>Player</th><th>Pos</th><th>Team</th>` +
+          `<th>Spots moved</th><th>Was</th><th>Now</th></tr></thead><tbody>${rows}</tbody></table>`
+        )
+      }
+      return (
+        `<section><h2>${esc(label)} (since ${esc(shifts.baselineDate)})</h2>` +
+        table(shifts.risers, `${label}'s risers`) +
+        table(shifts.fallers, `${label}'s fallers`) +
+        `</section>`
+      )
+    })
+    .join('')
+  return (
+    `<section><h1>${pool.season} Fantasy Football ADP Risers and Fallers</h1>` +
+    `<p>Who moved on the consensus draft board over the last day and the last ` +
+    `week: the top risers climbing draft boards and the fallers getting cheaper. ` +
+    `Consensus of FantasyPros, ESPN, Sleeper, and Yahoo, half PPR, updated daily. ` +
+    `Free, no login required.</p>` +
     sections +
     `</section>`
   )
@@ -371,6 +425,26 @@ async function prerender() {
         `Where Sleeper, ESPN, and Yahoo ADP disagree with consensus for ${POOL.season}. ` +
         `The players each site drafts late (wait on him) and early (he will be gone), ` +
         `half PPR, updated daily. Free, no login.`,
+    })
+
+    // Day/week movement on the consensus board. The history needs two
+    // snapshots before there is anything to show; the page still writes with
+    // its intro copy so the route returns 200 either way.
+    const { ADP_HISTORY } = await vite.ssrLoadModule('/src/data/adpHistory.ts')
+    const { computeShifts } = await vite.ssrLoadModule('/src/utils/shifts.ts')
+    const shiftsFaq = faqJsonLd([
+      ['What counts as an ADP riser or faller?', 'How many spots a player moved on the consensus draft board, blended from FantasyPros, ESPN, Sleeper, and Yahoo, over the last day and the last week.'],
+      ['How often does it update?', `Daily, alongside the ${POOL.season} consensus rankings refresh.`],
+      ['Is this free?', 'Yes. No account and no signup. The project is open source.'],
+    ])
+    writeRoute({
+      path: 'shifts',
+      markup: buildShiftsMarkup(POOL, ADP_HISTORY, computeShifts) + shiftsFaq,
+      title: `${POOL.season} Fantasy Football ADP Risers & Fallers: Daily and Weekly Shifts`,
+      desc:
+        `Who moved on the ${POOL.season} consensus draft board in the last day and the last ` +
+        `week. Top ten ADP risers and fallers from FantasyPros, ESPN, Sleeper, and Yahoo ` +
+        `data, half PPR, updated daily. Free, no login.`,
     })
 
     // --- Tool landing pages (same component the live routes render) ---

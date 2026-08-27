@@ -99,6 +99,7 @@ vi.mock('@/pages/HomePage', () => ({ HomePage: () => <div data-testid="home-page
 // through the same dynamic import).
 vi.mock('@/pages/AwardsPage', () => ({ AwardsPage: () => <div data-testid="awards-page" /> }));
 vi.mock('@/pages/RankingsPage', () => ({ RankingsPage: () => <div data-testid="rankings-page" /> }));
+vi.mock('@/pages/ShiftsPage', () => ({ ShiftsPage: () => <div data-testid="shifts-page" /> }));
 vi.mock('@/pages/DraftPage', () => ({ DraftPage: () => <div data-testid="draft-page" /> }));
 vi.mock('@/pages/TeamsPage', () => ({ TeamsPage: () => <div data-testid="teams-page" /> }));
 
@@ -208,6 +209,13 @@ describe('route guards', () => {
     expect(await screen.findByTestId('rankings-page')).toBeTruthy();
     expect(h.enterGuestMock).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('loc').textContent).toBe('/rankings');
+  });
+
+  it('auto-enters guest mode on the public /shifts instead of redirecting', async () => {
+    renderApp('/shifts');
+    expect(await screen.findByTestId('shifts-page')).toBeTruthy();
+    expect(h.enterGuestMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('loc').textContent).toBe('/shifts');
   });
 });
 

@@ -31,6 +31,7 @@ const DraftPage = lazyPage(() => import('@/pages/DraftPage'), 'DraftPage');
 const DraftRoomPage = lazyPage(() => import('@/pages/DraftRoomPage'), 'DraftRoomPage');
 const RankingsPage = lazyPage(() => import('@/pages/RankingsPage'), 'RankingsPage');
 const ValuesPage = lazyPage(() => import('@/pages/ValuesPage'), 'ValuesPage');
+const ShiftsPage = lazyPage(() => import('@/pages/ShiftsPage'), 'ShiftsPage');
 const TradesPage = lazyPage(() => import('@/pages/TradesPage'), 'TradesPage');
 const WaiversPage = lazyPage(() => import('@/pages/WaiversPage'), 'WaiversPage');
 const TeamsPage = lazyPage(() => import('@/pages/TeamsPage'), 'TeamsPage');
@@ -103,6 +104,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/draft-room': 'Draft Room',
   '/rankings': 'Rankings',
   '/values': 'Site Values',
+  '/shifts': 'ADP Shifts',
   '/trades': 'Trades',
   '/waivers': 'Waivers',
   '/teams': 'Teams',
@@ -651,6 +653,12 @@ function App() {
           <Route
             path="/values"
             element={league ? <ValuesPage league={league} onUpdateGuest={updateGuest} /> : <GuestAutoEnter onEnter={enterGuest} />}
+          />
+          {/* Day/week movement on the consensus board. Public like /rankings:
+              needs only the bundled pool and its rolling rank history. */}
+          <Route
+            path="/shifts"
+            element={league ? <ShiftsPage league={league} /> : <GuestAutoEnter onEnter={enterGuest} />}
           />
           {/* Per-position landing pages: /rankings/qb, /rb, /wr, /te, /k, /dst,
               /flex. Real prerendered files; unknown slugs fall back to /rankings. */}
