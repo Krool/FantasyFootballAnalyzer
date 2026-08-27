@@ -19,24 +19,32 @@ asks. Replaces the manual DevTools step on the ESPN onboarding flow.
 - No cookie storage (cookies stay where they are; we just read them when asked)
 - No access to anything outside `*.espn.com` (the host permissions in
   `manifest.json` are the only origins we can touch)
-- Only responds to messages from `https://fantasyfootballanalyzer.app/*` and the
-  two local dev ports (set via `externally_connectable` plus a belt-and-braces
-  origin check in `background.js`)
+- Only responds to messages from `https://fantasyfootballanalyzer.app/*` (set
+  via `externally_connectable` plus a belt-and-braces origin check in
+  `background.js`). The shipped build never trusts localhost — see "Local
+  development install" below for how to test without weakening the shipped
+  allowlist.
 
 ## Local development install
 
 ### Chrome / Edge / Brave
 
-1. Visit `chrome://extensions`
-2. Toggle "Developer mode" on (top right)
-3. Click "Load unpacked"
-4. Pick this `extension/` directory
-5. Copy the extension ID shown on the card. Set it in your dev environment:
+1. In your working copy ONLY, add the dev origins the shipped build deliberately
+   omits: `http://localhost:5173/*` and `http://localhost:4173/*` to
+   `externally_connectable.matches` in `manifest.json`, and the same two
+   origins to `ALLOWED_ORIGINS` in `background.js`. Without them the extension
+   ignores the dev server. **Strip them again before packing a release** (see
+   Architecture notes for why shipping them is a cookie-theft hole).
+2. Visit `chrome://extensions`
+3. Toggle "Developer mode" on (top right)
+4. Click "Load unpacked"
+5. Pick this `extension/` directory
+6. Copy the extension ID shown on the card. Set it in your dev environment:
    ```
    VITE_ESPN_EXTENSION_ID=abcdefghijklmnopqrstuvwxyz123456
    ```
    (or hardcode in `src/components/LeagueForm.tsx`)
-6. Reload the Analyzer web app. The "Auto-fill from extension" button should appear.
+7. Reload the Analyzer web app. The "Auto-fill from extension" button should appear.
 
 ### Firefox
 
@@ -75,13 +83,20 @@ Firefox uses the WebExtensions API which is compatible. Load via
   We cannot read cookies for any other site.
 - `externally_connectable.matches` is the security boundary. Only listed
   origins can `chrome.runtime.sendMessage(EXT_ID, ...)`. It is pinned to the
-  live frontend domain (`fantasyfootballanalyzer.app`) plus the two Vite dev
-  ports — **if the frontend domain ever changes again, update this, the
-  `ALLOWED_ORIGINS` set in `background.js`, and `ANALYZER_URL` in `popup.js`
-  together, or auto-fill silently stops working against production.** Never
-  widen it to a shared host like `*.github.io`: that origin is account-wide, so
-  every other site published there would inherit the ability to read a user's
-  ESPN session cookies.
+  live frontend domain (`fantasyfootballanalyzer.app`) ONLY — **the shipped
+  manifest and `background.js` must never include localhost origins**: on a
+  store-installed extension a localhost entry lets any local dev server
+  (someone else's `npm run dev`) silently read a user's ESPN session cookies
+  (found by security review, 2026-08-25). For local testing, add
+  `http://localhost:5173` / `:4173` to both `externally_connectable` in
+  `manifest.json` and `ALLOWED_ORIGINS` in `background.js` in an unpacked
+  copy, and strip them before packing a release. **If the frontend domain
+  ever changes again, update this, the `ALLOWED_ORIGINS` set in
+  `background.js`, and `ANALYZER_URL` in `popup.js` together, or auto-fill
+  silently stops working against production.** Never widen it to a shared
+  host like `*.github.io`: that origin is account-wide, so every other site
+  published there would inherit the ability to read a user's ESPN session
+  cookies.
 - `background.js` runs as a service worker (no persistent process).
 - `popup.html` is optional UX so users can see whether they're logged into
   espn.com without leaving the extension icon.

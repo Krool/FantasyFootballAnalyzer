@@ -461,6 +461,14 @@ function App() {
     });
   }, [shareLeagueId, league, isLoading, load]);
 
+  // A share-link load that hasn't resolved yet. While true, route guards show
+  // a spinner instead of redirecting, so /awards?league=… lands on /awards
+  // once the league arrives rather than bouncing home first.
+  const shareLoadPending =
+    !!shareLeagueId &&
+    (attemptedShareRef.current !== shareLeagueId || isLoading) &&
+    !(league && !league.isGuest && league.platform === 'sleeper' && league.id === shareLeagueId);
+
   // Keep the share param on the URL while a Sleeper league is loaded, so the
   // address bar is always a copyable share link. In-app navigations (NavLink)
   // drop the query string; re-add it with a replace so history stays clean.
@@ -479,6 +487,12 @@ function App() {
     if (path === '/yahoo-success' || path === '/yahoo-error') return;
     const params = new URLSearchParams(location.search);
     if (params.get('league') === `sleeper:${league.id}`) return;
+    // A share link for a DIFFERENT league is still loading: the param on the
+    // URL is the one the user navigated with, not ours to overwrite. Rewriting
+    // here stomps the share id mid-load (and fights the load's own league
+    // flip, one suspected source of the rewrite-loop events on /). Once the
+    // load settles, this effect re-runs and writes the final id.
+    if (shareLoadPending) return;
     const breaker = shareRewriteRef.current;
     if (breaker.tripped) return;
     const now = Date.now();
@@ -499,20 +513,19 @@ function App() {
         pathname: path,
         wanted: `sleeper:${league.id}`,
         actual: params.get('league'),
+        // The ids above get scrubbed before Sentry, so record the relations
+        // that identify the other writer: is the URL's param the share id
+        // this session already tried (a league-identity flap), and was a
+        // league load in flight while the fight happened?
+        actualIsAttemptedShare:
+          params.get('league') === `sleeper:${attemptedShareRef.current}`,
+        loading: isLoading,
       });
       return;
     }
     params.set('league', `sleeper:${league.id}`);
     navigate(`${path}?${params.toString()}`, { replace: true });
-  }, [league, location.pathname, location.search, navigate]);
-
-  // A share-link load that hasn't resolved yet. While true, route guards show
-  // a spinner instead of redirecting, so /awards?league=… lands on /awards
-  // once the league arrives rather than bouncing home first.
-  const shareLoadPending =
-    !!shareLeagueId &&
-    (attemptedShareRef.current !== shareLeagueId || isLoading) &&
-    !(league && !league.isGuest && league.platform === 'sleeper' && league.id === shareLeagueId);
+  }, [league, location.pathname, location.search, navigate, shareLoadPending, isLoading]);
 
   // Data pages require a real (non-guest) league. Guests get redirected to
   // Rankings; no league at all goes home. The render callback receives the

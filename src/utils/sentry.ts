@@ -101,8 +101,12 @@ const BENIGN_ERROR =
 //   - Sleeper 404: a mistyped league id on the connect form.
 //   - Yahoo access_denied: the user clicked Cancel on Yahoo's consent page.
 //   - runtime.sendMessage: a browser extension messaging a closed tab.
-// Yahoo 403s deliberately stay reported: a fresh post-OAuth token being
-// rejected is an open question, not an explained user situation.
+//   - Yahoo "not authorized" 403: the per-app API lockdown (2026-08-22, see
+//     docs/API_REFERENCE.md). Every data call fails this way until Yahoo
+//     approves the app; nothing in this repo can fix it, and it was the top
+//     issue by volume. The filter pins the lockdown's exact wording so any
+//     OTHER Yahoo 403 (a genuinely rejected token) still reports — remove
+//     this line once the app is approved.
 const EXPECTED_USER_ERROR = new RegExp(
   [
     'this looks like a private league',
@@ -112,6 +116,7 @@ const EXPECTED_USER_ERROR = new RegExp(
     'Sleeper API error: 404',
     'Yahoo OAuth error: access_denied',
     'Invalid call to runtime\\.sendMessage',
+    'Yahoo API error: 403 - This application is not authorized',
   ].join('|'),
   'i',
 );
