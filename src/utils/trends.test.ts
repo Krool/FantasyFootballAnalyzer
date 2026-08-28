@@ -2,15 +2,20 @@ import { describe, it, expect } from 'vitest';
 import { TREND_RELEVANCE_CAP, computeTrends, sameWindow } from './trends';
 import type { AdpHistoryFile, AdpSnapshot } from '@/types/adpHistory';
 
-const snap = (date: string, ranks: Record<string, number>): AdpSnapshot => ({
+// Every format gets the same ranks unless a per-format override is given.
+const snap = (
+  date: string,
+  ranks: Record<string, number>,
+  overrides: Partial<AdpSnapshot['boards']> = {},
+): AdpSnapshot => ({
   date,
   sources: ['fantasypros'],
-  ranks,
+  boards: { half_ppr: ranks, ppr: ranks, standard: ranks, superflex: ranks, ...overrides },
 });
 
 const history = (...snapshots: AdpSnapshot[]): AdpHistoryFile => ({
   season: 2026,
-  settings: { scoring: 'half_ppr', superflex: false, depth: 300 },
+  settings: { formats: ['half_ppr', 'ppr', 'standard', 'superflex'], depth: 300 },
   snapshots,
 });
 
@@ -125,8 +130,42 @@ describe('computeTrends', () => {
       before[`r${i}`] = 100 + i;
       after[`r${i}`] = 50 + i;
     }
-    const s = computeTrends(history(snap('2026-08-26', before), snap('2026-08-27', after)), 1, 10)!;
+    const s = computeTrends(
+      history(snap('2026-08-26', before), snap('2026-08-27', after)),
+      1,
+      'half_ppr',
+      10,
+    )!;
     expect(s.risers).toHaveLength(10);
     expect(s.fallers).toHaveLength(0);
+  });
+
+  it('reads the requested format board, not half PPR', () => {
+    const s = computeTrends(
+      history(
+        snap('2026-08-26', { a: 1, qb: 30 }, { superflex: { a: 5, qb: 20 } }),
+        snap('2026-08-27', { a: 1, qb: 30 }, { superflex: { a: 5, qb: 4 } }),
+      ),
+      1,
+      'superflex',
+    )!;
+    // Half PPR is flat; the superflex board has the QB rocketing up.
+    expect(s.risers).toEqual([{ id: 'qb', from: 20, to: 4, delta: 16 }]);
+    expect(
+      computeTrends(
+        history(
+          snap('2026-08-26', { a: 1, qb: 30 }, { superflex: { a: 5, qb: 20 } }),
+          snap('2026-08-27', { a: 1, qb: 30 }, { superflex: { a: 5, qb: 4 } }),
+        ),
+        1,
+        'half_ppr',
+      )!.risers,
+    ).toEqual([]);
+  });
+
+  it('returns null for a format the snapshot does not carry', () => {
+    const legacy = history(snap('2026-08-26', { a: 2 }), snap('2026-08-27', { a: 1 }));
+    delete (legacy.snapshots[0].boards as Record<string, unknown>).ppr;
+    expect(computeTrends(legacy, 1, 'ppr')).toBeNull();
   });
 });

@@ -27,7 +27,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonicalTeam, matchPlayer, normalizeName } from '../src/utils/playerNames';
 import {
-  appendSnapshot, consensusOrdinals, detectSources, historyIndirectionSource, serializeHistory,
+  appendSnapshot, consensusBoards, detectSources, historyIndirectionSource, serializeHistory,
 } from './adpHistory';
 import type { AdpHistoryFile } from '../src/types/adpHistory';
 import { disambiguateIds, duplicateSleeperRows, parseCsv, playerId } from './poolBuild';
@@ -500,7 +500,7 @@ const existingHistory: AdpHistoryFile | null = existsSync(historyPath)
 const { file: history, changed: historyChanged } = appendSnapshot(existingHistory, SEASON, {
   date: out.generatedAt.slice(0, 10),
   sources: detectSources(players),
-  ranks: consensusOrdinals(players),
+  boards: consensusBoards(players),
 });
 if (historyChanged || !existsSync(historyPath)) {
   writeFileSync(historyPath, serializeHistory(history));

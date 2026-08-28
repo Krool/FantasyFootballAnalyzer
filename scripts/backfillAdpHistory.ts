@@ -18,7 +18,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { PoolPlayer } from '../src/types/draft';
 import {
-  MAX_SNAPSHOTS, appendSnapshot, consensusOrdinals, detectSources, emptyHistory,
+  MAX_SNAPSHOTS, appendSnapshot, consensusBoards, detectSources, emptyHistory,
   historyIndirectionSource, serializeHistory,
 } from './adpHistory';
 import { currentDraftSeason } from './season';
@@ -62,7 +62,7 @@ for (const day of days) {
   const { file, changed } = appendSnapshot(history, SEASON, {
     date: day,
     sources: detectSources(pool.players),
-    ranks: consensusOrdinals(pool.players),
+    boards: consensusBoards(pool.players),
   });
   history = file;
   console.log(`  ${day} (${sha.slice(0, 7)}): ${changed ? 'recorded' : 'board unchanged, folded'}`);

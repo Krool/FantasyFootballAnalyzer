@@ -28,22 +28,39 @@ const h = vi.hoisted(() => ({
   },
   history: {
     season: 2026,
-    settings: { scoring: 'half_ppr', superflex: false, depth: 300 },
+    settings: { formats: ['half_ppr', 'ppr', 'standard', 'superflex'], depth: 300 },
     snapshots: [
+      // The superflex board holds still while half PPR moves, so the format
+      // chips have observable behavior.
       {
         date: '2026-08-20',
         sources: ['fantasypros'],
-        ranks: { 'riser-rb': 30, 'faller-wr': 10, 'quiet-qb': 30 },
+        boards: {
+          half_ppr: { 'riser-rb': 30, 'faller-wr': 10, 'quiet-qb': 30 },
+          ppr: { 'riser-rb': 30, 'faller-wr': 10, 'quiet-qb': 30 },
+          standard: { 'riser-rb': 30, 'faller-wr': 10, 'quiet-qb': 30 },
+          superflex: { 'riser-rb': 30, 'faller-wr': 10, 'quiet-qb': 5 },
+        },
       },
       {
         date: '2026-08-26',
         sources: ['fantasypros'],
-        ranks: { 'riser-rb': 22, 'faller-wr': 14, 'quiet-qb': 30 },
+        boards: {
+          half_ppr: { 'riser-rb': 22, 'faller-wr': 14, 'quiet-qb': 30 },
+          ppr: { 'riser-rb': 22, 'faller-wr': 14, 'quiet-qb': 30 },
+          standard: { 'riser-rb': 22, 'faller-wr': 14, 'quiet-qb': 30 },
+          superflex: { 'riser-rb': 30, 'faller-wr': 10, 'quiet-qb': 5 },
+        },
       },
       {
         date: '2026-08-27',
         sources: ['fantasypros'],
-        ranks: { 'riser-rb': 8, 'faller-wr': 18, 'quiet-qb': 30 },
+        boards: {
+          half_ppr: { 'riser-rb': 8, 'faller-wr': 18, 'quiet-qb': 30 },
+          ppr: { 'riser-rb': 8, 'faller-wr': 18, 'quiet-qb': 30 },
+          standard: { 'riser-rb': 8, 'faller-wr': 18, 'quiet-qb': 30 },
+          superflex: { 'riser-rb': 30, 'faller-wr': 10, 'quiet-qb': 5 },
+        },
       },
     ],
   },
@@ -51,6 +68,9 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/data/draftPool', () => ({ POOL: h.pool }));
 vi.mock('@/data/adpHistory', () => ({ ADP_HISTORY: h.history }));
+vi.mock('@/hooks/useSounds', () => ({
+  useSounds: () => ({ playFilter: () => {} }),
+}));
 
 import { TrendsPage } from './TrendsPage';
 
@@ -91,6 +111,19 @@ describe('TrendsPage', () => {
     } finally {
       h.history.snapshots = snapshots;
     }
+  });
+
+  it('switches boards when a format chip is picked', () => {
+    render(<TrendsPage league={guestLeague} />);
+    // Half PPR (the default) shows the movers.
+    expect(screen.getAllByText('Rise Guy').length).toBeGreaterThan(0);
+    // The superflex board held still all week: no movers in either window.
+    fireEvent.click(screen.getByRole('button', { name: 'Superflex' }));
+    expect(screen.queryByText('Rise Guy')).toBeNull();
+    expect(screen.getAllByText(/Nothing rose/).length).toBeGreaterThan(0);
+    // And back.
+    fireEvent.click(screen.getByRole('button', { name: 'Half PPR' }));
+    expect(screen.getAllByText('Rise Guy').length).toBeGreaterThan(0);
   });
 
   it('falls back to an initials chip when there is no headshot', () => {

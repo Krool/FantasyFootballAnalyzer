@@ -24,7 +24,7 @@ function player(id: string, overallRank: number, extra: Partial<PoolPlayer> = {}
 const snap = (date: string, ranks: Record<string, number>): AdpSnapshot => ({
   date,
   sources: ['fantasypros'],
-  ranks,
+  boards: { half_ppr: ranks, ppr: ranks, standard: ranks, superflex: ranks },
 });
 
 describe('consensusOrdinals', () => {
@@ -43,6 +43,16 @@ describe('consensusOrdinals', () => {
     // Identical blends except overallRank; order must not depend on input order.
     expect(consensusOrdinals(players)).toEqual({ early: 1, late: 2 });
     expect(consensusOrdinals([...players].reverse())).toEqual({ early: 1, late: 2 });
+  });
+
+  it('the superflex board reads the SF rank, not the 1QB blend', () => {
+    const players = [
+      player('rb', 1, { overallRankSF: 10 }),
+      // A QB the 1QB board buries but the superflex board loves.
+      player('qb', 20, { overallRankSF: 1 }),
+    ];
+    expect(consensusOrdinals(players, 'half_ppr')).toEqual({ rb: 1, qb: 2 });
+    expect(consensusOrdinals(players, 'superflex')).toEqual({ qb: 1, rb: 2 });
   });
 
   it('caps at the history depth', () => {
@@ -98,7 +108,15 @@ describe('appendSnapshot', () => {
     const { file, changed } = appendSnapshot(base, 2026, snap('2026-08-27', { a: 2, b: 1 }));
     expect(changed).toBe(true);
     expect(file.snapshots).toHaveLength(1);
-    expect(file.snapshots[0].ranks).toEqual({ a: 2, b: 1 });
+    expect(file.snapshots[0].boards.half_ppr).toEqual({ a: 2, b: 1 });
+  });
+
+  it('records a day when only one format board moved', () => {
+    const base = appendSnapshot(null, 2026, snap('2026-08-26', { a: 1, b: 2 })).file;
+    const next = snap('2026-08-27', { a: 1, b: 2 });
+    next.boards.superflex = { a: 2, b: 1 };
+    const { changed } = appendSnapshot(base, 2026, next);
+    expect(changed).toBe(true);
   });
 
   it('trims retention to the newest MAX_SNAPSHOTS', () => {

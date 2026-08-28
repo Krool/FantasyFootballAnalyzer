@@ -3,7 +3,7 @@
 // maintains (src/data/adpHistory.ts). Pure module, no React — the prerender
 // runs it too.
 
-import type { AdpHistoryFile, AdpSnapshot } from '@/types/adpHistory';
+import type { AdpHistoryFile, AdpSnapshot, TrendFormat } from '@/types/adpHistory';
 
 export interface TrendMover {
   id: string;
@@ -60,20 +60,24 @@ function baselineFor(snapshots: AdpSnapshot[], windowDays: number): AdpSnapshot 
 export function computeTrends(
   history: AdpHistoryFile,
   windowDays: number,
+  format: TrendFormat = 'half_ppr',
   topN = 10,
 ): TrendWindow | null {
   const snapshots = history.snapshots;
   const baseline = baselineFor(snapshots, windowDays);
   if (!baseline) return null;
   const current = snapshots[snapshots.length - 1];
+  const currentBoard = current.boards[format];
+  const baselineBoard = baseline.boards[format];
+  if (!currentBoard || !baselineBoard) return null;
 
   // Only players on the board in BOTH snapshots have a defined movement (a
   // new entrant or a dropout would post a fake max-size delta), and only
   // movement touching the draftable range is worth surfacing (see
   // TREND_RELEVANCE_CAP).
   const movers: TrendMover[] = [];
-  for (const [id, to] of Object.entries(current.ranks)) {
-    const from = baseline.ranks[id];
+  for (const [id, to] of Object.entries(currentBoard)) {
+    const from = baselineBoard[id];
     if (from == null || from === to) continue;
     if (Math.min(from, to) > TREND_RELEVANCE_CAP) continue;
     movers.push({ id, from, to, delta: from - to });

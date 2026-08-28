@@ -73,6 +73,38 @@
   flex: 1;
 }
 
+/* The format chips cluster tighter than the bar's own item gap. */
+.chips {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.chip,
+.chipOn {
+  padding: 0.35rem 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 2px solid var(--bone-dim);
+  background: transparent;
+  color: var(--bone-dim);
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--bone);
+  border-color: var(--bone);
+}
+
+.chipOn {
+  background: var(--lime);
+  color: var(--ink);
+  border-color: var(--lime);
+}
+
 .window {
   margin-bottom: 2rem;
 }

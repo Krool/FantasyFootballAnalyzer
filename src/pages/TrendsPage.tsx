@@ -3,8 +3,10 @@ import { POOL } from '@/data/draftPool';
 import { ADP_HISTORY } from '@/data/adpHistory';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { playerHeadshotUrl } from '@/data/nflTeams';
+import { useSounds } from '@/hooks/useSounds';
 import { TREND_RELEVANCE_CAP, computeTrends, sameWindow, type TrendMover } from '@/utils/trends';
 import type { League } from '@/types';
+import type { TrendFormat } from '@/types/adpHistory';
 import type { PoolPlayer } from '@/types/draft';
 import styles from './TrendsPage.module.css';
 
@@ -16,6 +18,22 @@ const WINDOWS: Array<{ days: number; label: string }> = [
   { days: 1, label: 'Last Day' },
   { days: 7, label: 'Last Week' },
 ];
+
+const FORMAT_LABEL: Record<TrendFormat, string> = {
+  half_ppr: 'Half PPR',
+  ppr: 'PPR',
+  standard: 'Standard',
+  superflex: 'Superflex',
+};
+const FORMAT_ORDER: TrendFormat[] = ['half_ppr', 'ppr', 'standard', 'superflex'];
+
+// Open on the loaded league's format; half PPR for guests (the guest league
+// is half PPR) and for any scoring the boards don't carry.
+function defaultFormat(league: League): TrendFormat {
+  if ((league.rosterSlots?.SUPERFLEX ?? 0) > 0) return 'superflex';
+  const scoring = league.scoringType as TrendFormat;
+  return FORMAT_ORDER.includes(scoring) ? scoring : 'half_ppr';
+}
 
 const fmtDate = (iso: string) =>
   new Date(`${iso}T00:00:00Z`).toLocaleDateString(undefined, {
@@ -95,11 +113,16 @@ function MoverRow({
 // risers and fallers from the same blended rank the Rankings board sorts by.
 export function TrendsPage({ league }: TrendsPageProps) {
   const byId = useMemo(() => new Map(POOL.players.map(p => [p.id, p])), []);
+  const { playFilter } = useSounds();
+  const [format, setFormat] = useState<TrendFormat>(() => defaultFormat(league));
   const windows = useMemo(() => {
     // A short history (first week of a season) gives both windows the same
     // baseline; rendering the identical lists twice says nothing, so the
     // week section is dropped until it has its own baseline.
-    const computed = WINDOWS.map(w => ({ ...w, trends: computeTrends(ADP_HISTORY, w.days) }));
+    const computed = WINDOWS.map(w => ({
+      ...w,
+      trends: computeTrends(ADP_HISTORY, w.days, format),
+    }));
     const deduped =
       computed.length === 2 && sameWindow(computed[0].trends, computed[1].trends)
         ? [computed[0]]
@@ -122,7 +145,7 @@ export function TrendsPage({ league }: TrendsPageProps) {
           ],
         };
       });
-  }, [byId]);
+  }, [byId, format]);
 
   // The board's own date, not the build's: on a quiet stretch the pool
   // rebuilds daily while the board (and this page) stays put, and stamping
@@ -147,7 +170,24 @@ export function TrendsPage({ league }: TrendsPageProps) {
         </div>
 
         <div className={styles.settingsBar}>
-          <span className={styles.settingsItem}>Half PPR consensus</span>
+          <div className={styles.chips} role="group" aria-label="Scoring format">
+          {FORMAT_ORDER.map(f => (
+            <button
+              key={f}
+              type="button"
+              className={format === f ? styles.chipOn : styles.chip}
+              aria-pressed={format === f}
+              onClick={() => { playFilter(); setFormat(f); }}
+              title={
+                f === 'superflex'
+                  ? 'Movement on the superflex (2QB) consensus board'
+                  : `Movement on the ${FORMAT_LABEL[f]} consensus board`
+              }
+            >
+              {FORMAT_LABEL[f]}
+            </button>
+          ))}
+          </div>
           <span className={styles.settingsSpacer} />
           <span
             className={styles.settingsDim}
@@ -205,9 +245,9 @@ export function TrendsPage({ league }: TrendsPageProps) {
         )}
 
         <p className={styles.footnote}>
-          Movement is measured in spots on the consensus board (half PPR,
-          one-QB); trends look nearly identical across scoring formats. The
-          board only records days it actually moved, so after a quiet day a
+          Movement is measured in spots on the {FORMAT_LABEL[format]} consensus
+          board{format === 'superflex' && ', where 2QB market data replaces the one-QB ADPs'}.
+          The board only records days it actually moved, so after a quiet day a
           window compares against the last change, and each heading shows the
           exact span. Only movement touching the draftable top{' '}
           {TREND_RELEVANCE_CAP} is listed.
