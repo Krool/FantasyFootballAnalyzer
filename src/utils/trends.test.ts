@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeShifts } from './shifts';
+import { TREND_RELEVANCE_CAP, computeTrends, sameWindow } from './trends';
 import type { AdpHistoryFile, AdpSnapshot } from '@/types/adpHistory';
 
 const snap = (date: string, ranks: Record<string, number>): AdpSnapshot => ({
@@ -14,14 +14,14 @@ const history = (...snapshots: AdpSnapshot[]): AdpHistoryFile => ({
   snapshots,
 });
 
-describe('computeShifts', () => {
+describe('computeTrends', () => {
   it('needs two snapshots', () => {
-    expect(computeShifts(history(), 1)).toBeNull();
-    expect(computeShifts(history(snap('2026-08-27', { a: 1 })), 1)).toBeNull();
+    expect(computeTrends(history(), 1)).toBeNull();
+    expect(computeTrends(history(snap('2026-08-27', { a: 1 })), 1)).toBeNull();
   });
 
   it('signs risers positive and fallers negative, sorted by magnitude', () => {
-    const s = computeShifts(
+    const s = computeTrends(
       history(
         snap('2026-08-26', { a: 10, b: 20, c: 30, d: 40 }),
         snap('2026-08-27', { a: 2, b: 25, c: 29, d: 40 }),
@@ -38,7 +38,7 @@ describe('computeShifts', () => {
   });
 
   it('ignores players missing from either snapshot (no fake deltas)', () => {
-    const s = computeShifts(
+    const s = computeTrends(
       history(snap('2026-08-26', { a: 1, gone: 2 }), snap('2026-08-27', { a: 2, arrived: 1 })),
       1,
     )!;
@@ -47,7 +47,7 @@ describe('computeShifts', () => {
   });
 
   it('day window falls back to the previous change after a quiet gap', () => {
-    const s = computeShifts(
+    const s = computeTrends(
       history(snap('2026-08-20', { a: 5 }), snap('2026-08-27', { a: 1 })),
       1,
     )!;
@@ -55,7 +55,7 @@ describe('computeShifts', () => {
   });
 
   it('week window picks the newest snapshot at least 7 days back', () => {
-    const s = computeShifts(
+    const s = computeTrends(
       history(
         snap('2026-08-18', { a: 9 }),
         snap('2026-08-20', { a: 5 }),
@@ -69,11 +69,53 @@ describe('computeShifts', () => {
   });
 
   it('week window widens to the oldest snapshot when nothing is old enough', () => {
-    const s = computeShifts(
+    const s = computeTrends(
       history(snap('2026-08-25', { a: 5 }), snap('2026-08-27', { a: 1 })),
       7,
     )!;
     expect(s.baselineDate).toBe('2026-08-25');
+  });
+
+  it('ignores movement that never touches the draftable range', () => {
+    const cap = TREND_RELEVANCE_CAP;
+    const s = computeTrends(
+      history(
+        // "deep" moves 40 spots entirely below the cap; "edge" crosses it.
+        snap('2026-08-26', { deep: cap + 90, edge: cap + 20 }),
+        snap('2026-08-27', { deep: cap + 50, edge: cap - 10 }),
+      ),
+      1,
+    )!;
+    expect(s.risers.map(m => m.id)).toEqual(['edge']);
+    expect(s.fallers).toEqual([]);
+  });
+
+  it('flags a source-coverage change between the snapshots', () => {
+    const stable = computeTrends(
+      history(snap('2026-08-26', { a: 2 }), snap('2026-08-27', { a: 1 })),
+      1,
+    )!;
+    expect(stable.sourcesChanged).toBe(false);
+    const changed = computeTrends(
+      history(
+        { ...snap('2026-08-26', { a: 2 }), sources: ['fantasypros', 'yahoo'] },
+        snap('2026-08-27', { a: 1 }),
+      ),
+      1,
+    )!;
+    expect(changed.sourcesChanged).toBe(true);
+  });
+
+  it('sameWindow spots the two windows sharing a baseline', () => {
+    const short = history(snap('2026-08-26', { a: 2 }), snap('2026-08-27', { a: 1 }));
+    expect(sameWindow(computeTrends(short, 1), computeTrends(short, 7))).toBe(true);
+    const long = history(
+      snap('2026-08-18', { a: 3 }),
+      snap('2026-08-26', { a: 2 }),
+      snap('2026-08-27', { a: 1 }),
+    );
+    expect(sameWindow(computeTrends(long, 1), computeTrends(long, 7))).toBe(false);
+    expect(sameWindow(null, computeTrends(short, 7))).toBe(false);
   });
 
   it('caps each direction at topN', () => {
@@ -83,7 +125,7 @@ describe('computeShifts', () => {
       before[`r${i}`] = 100 + i;
       after[`r${i}`] = 50 + i;
     }
-    const s = computeShifts(history(snap('2026-08-26', before), snap('2026-08-27', after)), 1, 10)!;
+    const s = computeTrends(history(snap('2026-08-26', before), snap('2026-08-27', after)), 1, 10)!;
     expect(s.risers).toHaveLength(10);
     expect(s.fallers).toHaveLength(0);
   });

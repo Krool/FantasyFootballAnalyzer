@@ -1,5 +1,5 @@
 // Pure helpers for the rolling consensus-rank history that feeds the ADP
-// Shifts page. buildDraftPool.ts calls these after the pool is joined;
+// Trends page. buildDraftPool.ts calls these after the pool is joined;
 // backfillAdpHistory.ts reuses them against historical pool versions read
 // from git. No filesystem access here so both callers (and the tests) share
 // exactly one implementation of the ordinal and append rules.
@@ -65,7 +65,13 @@ function sameRanks(a: Record<string, number>, b: Record<string, number>): boolea
 //   - Unchanged ranks record nothing: the history only moves when the board
 //     moved, which keeps the daily workflow's "no real change" guard intact
 //     and makes windows compare against the last actual change.
-//   - A second build on the same date replaces that date's snapshot.
+//   - A second build on the same date replaces that date's snapshot — and if
+//     that replacement makes the day a no-op against the day before (the
+//     board reverted), the day is dropped instead of stored, so "Last Day"
+//     never compares two identical snapshots.
+//   - A snapshot dated BEFORE the newest is refused: the windows assume
+//     date-ordered snapshots, and the only way to produce one is a backwards
+//     clock or a stale manual run, neither worth recording.
 //   - Retention trims to the newest MAX_SNAPSHOTS.
 // Returns the (possibly new) file and whether the caller needs to write it.
 export function appendSnapshot(
@@ -77,11 +83,19 @@ export function appendSnapshot(
   const snapshots = [...base.snapshots];
   const newest = snapshots[snapshots.length - 1];
 
+  if (newest && snapshot.date < newest.date) {
+    return { file: base, changed: false };
+  }
   if (newest && newest.date !== snapshot.date && sameRanks(newest.ranks, snapshot.ranks)) {
     return { file: base, changed: false };
   }
   if (newest && newest.date === snapshot.date) {
-    snapshots[snapshots.length - 1] = snapshot;
+    const previous = snapshots[snapshots.length - 2];
+    if (previous && sameRanks(previous.ranks, snapshot.ranks)) {
+      snapshots.pop();
+    } else {
+      snapshots[snapshots.length - 1] = snapshot;
+    }
   } else {
     snapshots.push(snapshot);
   }

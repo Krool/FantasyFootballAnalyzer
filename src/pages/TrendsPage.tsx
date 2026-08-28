@@ -3,12 +3,12 @@ import { POOL } from '@/data/draftPool';
 import { ADP_HISTORY } from '@/data/adpHistory';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { playerHeadshotUrl } from '@/data/nflTeams';
-import { computeShifts, type ShiftMover } from '@/utils/shifts';
+import { TREND_RELEVANCE_CAP, computeTrends, sameWindow, type TrendMover } from '@/utils/trends';
 import type { League } from '@/types';
 import type { PoolPlayer } from '@/types/draft';
-import styles from './ShiftsPage.module.css';
+import styles from './TrendsPage.module.css';
 
-interface ShiftsPageProps {
+interface TrendsPageProps {
   league: League;
 }
 
@@ -41,12 +41,17 @@ function PlayerFace({ player }: { player: PoolPlayer }) {
       />
     );
   }
-  const initials = player.name
-    .split(' ')
-    .map(w => w[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('');
+  // A DST's name initials ("Houston Texans" -> HT) read as nonsense next to
+  // the familiar team code, so the chip shows the code instead.
+  const initials =
+    player.pos === 'DST'
+      ? player.team
+      : player.name
+          .split(' ')
+          .map(w => w[0])
+          .filter(Boolean)
+          .slice(0, 2)
+          .join('');
   return (
     <span
       className={styles.faceFallback}
@@ -64,7 +69,7 @@ function MoverRow({
   rising,
   baselineDate,
 }: {
-  mover: ShiftMover;
+  mover: TrendMover;
   player: PoolPlayer;
   rising: boolean;
   baselineDate: string;
@@ -88,38 +93,48 @@ function MoverRow({
 
 // Who moved on the consensus draft board: the day-over-day and week-over-week
 // risers and fallers from the same blended rank the Rankings board sorts by.
-export function ShiftsPage({ league }: ShiftsPageProps) {
+export function TrendsPage({ league }: TrendsPageProps) {
   const byId = useMemo(() => new Map(POOL.players.map(p => [p.id, p])), []);
-  const windows = useMemo(
-    () =>
-      WINDOWS.map(w => {
-        const shifts = computeShifts(ADP_HISTORY, w.days);
-        if (!shifts) return { ...w, shifts: null, columns: [] };
+  const windows = useMemo(() => {
+    // A short history (first week of a season) gives both windows the same
+    // baseline; rendering the identical lists twice says nothing, so the
+    // week section is dropped until it has its own baseline.
+    const computed = WINDOWS.map(w => ({ ...w, trends: computeTrends(ADP_HISTORY, w.days) }));
+    const deduped =
+      computed.length === 2 && sameWindow(computed[0].trends, computed[1].trends)
+        ? [computed[0]]
+        : computed;
+    return deduped.map(w => {
+        const trends = w.trends;
+        if (!trends) return { ...w, trends: null, columns: [] };
         // A mover whose id left the pool since the snapshot has nothing to
         // render; drop the row rather than fake it.
-        const rows = (movers: ShiftMover[]) =>
+        const rows = (movers: TrendMover[]) =>
           movers
             .map(m => ({ mover: m, player: byId.get(m.id) }))
-            .filter((r): r is { mover: ShiftMover; player: PoolPlayer } => !!r.player);
+            .filter((r): r is { mover: TrendMover; player: PoolPlayer } => !!r.player);
         return {
           ...w,
-          shifts,
+          trends,
           columns: [
-            { key: 'risers', title: 'Risers', rising: true, rows: rows(shifts.risers) },
-            { key: 'fallers', title: 'Fallers', rising: false, rows: rows(shifts.fallers) },
+            { key: 'risers', title: 'Risers', rising: true, rows: rows(trends.risers) },
+            { key: 'fallers', title: 'Fallers', rising: false, rows: rows(trends.fallers) },
           ],
         };
-      }),
-    [byId],
-  );
+      });
+  }, [byId]);
 
-  const updated = new Date(POOL.generatedAt);
+  // The board's own date, not the build's: on a quiet stretch the pool
+  // rebuilds daily while the board (and this page) stays put, and stamping
+  // the build date would dress week-old rows as today's.
+  const newest = ADP_HISTORY.snapshots[ADP_HISTORY.snapshots.length - 1];
+  const sourcesChanged = windows.some(w => w.trends?.sourcesChanged);
 
   return (
     <div className={styles.page}>
       <div className="container">
         <div className={styles.header}>
-          <h1 className={styles.title}>ADP Shifts</h1>
+          <h1 className={styles.title}>ADP Trends</h1>
           <p className={styles.subtitle}>
             {league.isGuest ? 'Guest mode' : league.name} · {POOL.season} Draft Prep
           </p>
@@ -138,12 +153,12 @@ export function ShiftsPage({ league }: ShiftsPageProps) {
             className={styles.settingsDim}
             title="Rankings and ADP refresh daily from FantasyPros, ESPN, Sleeper, and Yahoo"
           >
-            Updated {updated.toLocaleDateString()}
+            {newest ? `Board as of ${fmtDate(newest.date)}` : `Updated ${new Date(POOL.generatedAt).toLocaleDateString()}`}
           </span>
         </div>
 
         {windows.map(w =>
-          !w.shifts ? (
+          !w.trends ? (
             <section key={w.days} className={styles.window}>
               <h2 className={styles.windowTitle}>{w.label}</h2>
               <p className={styles.empty}>
@@ -155,7 +170,7 @@ export function ShiftsPage({ league }: ShiftsPageProps) {
               <h2 className={styles.windowTitle}>
                 {w.label}
                 <span className={styles.windowTag}>
-                  vs {fmtDate(w.shifts.baselineDate)}
+                  {fmtDate(w.trends.baselineDate)} → {fmtDate(w.trends.currentDate)}
                 </span>
               </h2>
               <div className={styles.cards}>
@@ -167,7 +182,7 @@ export function ShiftsPage({ league }: ShiftsPageProps) {
                     {col.rows.length === 0 ? (
                       <p className={styles.empty}>
                         Nothing {col.rising ? 'rose' : 'fell'} since{' '}
-                        {fmtDate(w.shifts!.baselineDate)}.
+                        {fmtDate(w.trends!.baselineDate)}.
                       </p>
                     ) : (
                       <ol className={styles.list}>
@@ -177,7 +192,7 @@ export function ShiftsPage({ league }: ShiftsPageProps) {
                             mover={mover}
                             player={player}
                             rising={col.rising}
-                            baselineDate={w.shifts!.baselineDate}
+                            baselineDate={w.trends!.baselineDate}
                           />
                         ))}
                       </ol>
@@ -191,11 +206,18 @@ export function ShiftsPage({ league }: ShiftsPageProps) {
 
         <p className={styles.footnote}>
           Movement is measured in spots on the consensus board (half PPR,
-          one-QB); shifts look nearly identical across scoring formats. The
-          board only records days it actually moved, so after a quiet day the
-          window compares against the last change, and the date above says
-          which. Players outside the top {ADP_HISTORY.settings.depth} are not
-          tracked.
+          one-QB); trends look nearly identical across scoring formats. The
+          board only records days it actually moved, so after a quiet day a
+          window compares against the last change, and each heading shows the
+          exact span. Only movement touching the draftable top{' '}
+          {TREND_RELEVANCE_CAP} is listed.
+          {sourcesChanged && (
+            <>
+              {' '}The blend's source coverage changed inside one of these
+              windows, so part of that window's movement is the blend
+              recomposing rather than the market moving.
+            </>
+          )}
         </p>
       </div>
     </div>

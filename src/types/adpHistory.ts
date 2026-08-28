@@ -1,4 +1,4 @@
-// The rolling consensus-rank history behind the ADP Shifts page. The daily
+// The rolling consensus-rank history behind the ADP Trends page. The daily
 // pool build appends one snapshot per day the board actually moved (see
 // scripts/adpHistory.ts); the app reads it read-only through
 // src/data/adpHistory.ts. Ranks are 1-based ordinals on the half-PPR 1QB

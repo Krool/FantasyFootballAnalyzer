@@ -1,4 +1,4 @@
-// ShiftsPage rendering against a fixture history: rows join to the pool,
+// TrendsPage rendering against a fixture history: rows join to the pool,
 // direction styling and labels, headshot fallback, and the pre-history empty
 // state. Data files are mocked so the test never depends on the live pool.
 
@@ -52,14 +52,14 @@ const h = vi.hoisted(() => ({
 vi.mock('@/data/draftPool', () => ({ POOL: h.pool }));
 vi.mock('@/data/adpHistory', () => ({ ADP_HISTORY: h.history }));
 
-import { ShiftsPage } from './ShiftsPage';
+import { TrendsPage } from './TrendsPage';
 
 const guestLeague = { name: 'Guest League', isGuest: true } as unknown as League;
 
-describe('ShiftsPage', () => {
+describe('TrendsPage', () => {
   it('renders both windows with movers joined to the pool', () => {
-    render(<ShiftsPage league={guestLeague} />);
-    expect(screen.getByRole('heading', { name: /ADP Shifts/i })).toBeTruthy();
+    render(<TrendsPage league={guestLeague} />);
+    expect(screen.getByRole('heading', { name: /ADP Trends/i })).toBeTruthy();
     // Day window vs 8/26: riser +14, faller -4. Week window vs 8/20: +22 / -8.
     expect(screen.getByRole('heading', { name: /Last Day/i })).toBeTruthy();
     expect(screen.getByRole('heading', { name: /Last Week/i })).toBeTruthy();
@@ -73,14 +73,28 @@ describe('ShiftsPage', () => {
     expect(screen.queryByText('Quiet Guy')).toBeNull();
   });
 
-  it('labels each window with the baseline it actually compared against', () => {
-    render(<ShiftsPage league={guestLeague} />);
-    expect(screen.getByText(/vs Aug 26/)).toBeTruthy();
-    expect(screen.getByText(/vs Aug 20/)).toBeTruthy();
+  it('labels each window with the span it actually compared', () => {
+    render(<TrendsPage league={guestLeague} />);
+    expect(screen.getByText(/Aug 26 → Aug 27/)).toBeTruthy();
+    expect(screen.getByText(/Aug 20 → Aug 27/)).toBeTruthy();
+    // The board's own date, not the pool build stamp.
+    expect(screen.getByText(/Board as of Aug 27/)).toBeTruthy();
+  });
+
+  it('collapses to one window when day and week share a baseline', () => {
+    const snapshots = h.history.snapshots;
+    h.history.snapshots = snapshots.slice(-2); // only 08-26 and 08-27 remain
+    try {
+      render(<TrendsPage league={guestLeague} />);
+      expect(screen.getByRole('heading', { name: /Last Day/i })).toBeTruthy();
+      expect(screen.queryByRole('heading', { name: /Last Week/i })).toBeNull();
+    } finally {
+      h.history.snapshots = snapshots;
+    }
   });
 
   it('falls back to an initials chip when there is no headshot', () => {
-    render(<ShiftsPage league={guestLeague} />);
+    render(<TrendsPage league={guestLeague} />);
     // Fall Guy has no sleeperId: initials chip immediately.
     expect(screen.getAllByText('FG').length).toBeGreaterThan(0);
     // Rise Guy has one; simulate the CDN 404 and the chip takes over.
@@ -94,7 +108,7 @@ describe('ShiftsPage', () => {
     const snapshots = h.history.snapshots;
     h.history.snapshots = snapshots.slice(-1);
     try {
-      render(<ShiftsPage league={guestLeague} />);
+      render(<TrendsPage league={guestLeague} />);
       expect(
         screen.getAllByText(/Movement shows up after the next daily rankings update/i),
       ).toHaveLength(2);

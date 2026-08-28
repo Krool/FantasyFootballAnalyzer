@@ -1,11 +1,11 @@
-// Delta math for the ADP Shifts page: who moved on the consensus board, over
+// Delta math for the ADP Trends page: who moved on the consensus board, over
 // a day and over a week, from the rolling history the daily pool build
 // maintains (src/data/adpHistory.ts). Pure module, no React — the prerender
 // runs it too.
 
 import type { AdpHistoryFile, AdpSnapshot } from '@/types/adpHistory';
 
-export interface ShiftMover {
+export interface TrendMover {
   id: string;
   /** Consensus ordinal at the baseline snapshot. */
   from: number;
@@ -15,14 +15,26 @@ export interface ShiftMover {
   delta: number;
 }
 
-export interface ShiftWindow {
+export interface TrendWindow {
   /** The snapshot the movement is measured against (label the UI honestly). */
   baselineDate: string;
   /** The newest snapshot's date. */
   currentDate: string;
-  risers: ShiftMover[];
-  fallers: ShiftMover[];
+  /**
+   * The blend's source coverage changed between the two snapshots, so some of
+   * the movement is the blend recomposing, not the market moving. Surface it.
+   */
+  sourcesChanged: boolean;
+  risers: TrendMover[];
+  fallers: TrendMover[];
 }
+
+// Movers outside the draftable range are mostly noise amplified by depth: a
+// consensus-#8 player cannot move 40 spots, while a rank-250 depth piece moves
+// 40 when one of four sources wobbles, so an uncapped magnitude sort surfaces
+// almost nothing but kickers and deep benches (review finding, 2026-08-27).
+// Same cap and reasoning as the Values page cards.
+export const TREND_RELEVANCE_CAP = 150;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -45,30 +57,45 @@ function baselineFor(snapshots: AdpSnapshot[], windowDays: number): AdpSnapshot 
   return windowDays <= 1 ? snapshots[snapshots.length - 2] : snapshots[0];
 }
 
-export function computeShifts(
+export function computeTrends(
   history: AdpHistoryFile,
   windowDays: number,
   topN = 10,
-): ShiftWindow | null {
+): TrendWindow | null {
   const snapshots = history.snapshots;
   const baseline = baselineFor(snapshots, windowDays);
   if (!baseline) return null;
   const current = snapshots[snapshots.length - 1];
 
-  // Only players on the board in BOTH snapshots have a defined movement; a
-  // new entrant or a dropout would post a fake max-size delta.
-  const movers: ShiftMover[] = [];
+  // Only players on the board in BOTH snapshots have a defined movement (a
+  // new entrant or a dropout would post a fake max-size delta), and only
+  // movement touching the draftable range is worth surfacing (see
+  // TREND_RELEVANCE_CAP).
+  const movers: TrendMover[] = [];
   for (const [id, to] of Object.entries(current.ranks)) {
     const from = baseline.ranks[id];
     if (from == null || from === to) continue;
+    if (Math.min(from, to) > TREND_RELEVANCE_CAP) continue;
     movers.push({ id, from, to, delta: from - to });
   }
   movers.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta) || a.to - b.to);
 
+  const sameSources =
+    baseline.sources.length === current.sources.length &&
+    baseline.sources.every(s => current.sources.includes(s));
+
   return {
     baselineDate: baseline.date,
     currentDate: current.date,
+    sourcesChanged: !sameSources,
     risers: movers.filter(m => m.delta > 0).slice(0, topN),
     fallers: movers.filter(m => m.delta < 0).slice(0, topN),
   };
+}
+
+// With a short history (the first week after a season rollover) the day and
+// week windows resolve to the same baseline and would render byte-identical
+// lists twice. The page (and prerender) use this to collapse to one window.
+export function sameWindow(a: TrendWindow | null, b: TrendWindow | null): boolean {
+  return !!a && !!b && a.baselineDate === b.baselineDate;
 }

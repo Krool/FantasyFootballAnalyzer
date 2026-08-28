@@ -487,7 +487,7 @@ mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, JSON.stringify(out, null, 2) + '\n');
 writeFileSync(missesPath, JSON.stringify(missReport, null, 2) + '\n');
 
-// --- Rolling consensus-rank history (feeds the ADP Shifts page) ---
+// --- Rolling consensus-rank history (feeds the ADP Trends page) ---
 // One snapshot per day the board actually moved; unchanged days write nothing,
 // so this never turns a no-op refresh into a commit. Pretty-print at one line
 // per snapshot (not per rank entry) to keep the committed file diffable

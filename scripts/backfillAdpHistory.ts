@@ -1,14 +1,16 @@
 // One-time backfill of src/data/adpHistory.<season>.json from the daily bot
-// commits of the pool JSON already in git history, so the Shifts page launches
+// commits of the pool JSON already in git history, so the Trends page launches
 // with a real week window instead of warming up for 7 days.
 //
 // Run with: npx tsx scripts/backfillAdpHistory.ts   (optional --season=YYYY)
 //
 // Read-only against git (git log / git show); writes only the two adpHistory
 // files. Commit those two files ALONE — never let a locally rebuilt pool ride
-// along (see the stale-pool warning in CLAUDE.md). Safe to re-run: it
-// recomputes from scratch with the same ordinal rules the daily build uses,
-// so a later daily append continues seamlessly.
+// along (see the stale-pool warning in CLAUDE.md). Re-running recomputes from
+// scratch with the same ordinal rules the daily build uses, so a later daily
+// append continues seamlessly — but it reads only COMMITTED pool versions, so
+// it discards any snapshot from an uncommitted local build, and folding
+// unchanged days means N days can yield fewer than N snapshots.
 
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';

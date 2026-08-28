@@ -1,4 +1,4 @@
-/* ADP Shifts: leaderboard cards, no board table, so the standard page rhythm
+/* ADP Trends: leaderboard cards, no board table, so the standard page rhythm
    applies (the tighter --page-title-board cap still keys the headline to the
    other draft-prep pages). */
 .page {
@@ -148,7 +148,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  counter-reset: mover;
 }
 
 /* face | name+meta | delta, with the direction carried by a 3px left bar

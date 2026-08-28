@@ -31,7 +31,7 @@ const DraftPage = lazyPage(() => import('@/pages/DraftPage'), 'DraftPage');
 const DraftRoomPage = lazyPage(() => import('@/pages/DraftRoomPage'), 'DraftRoomPage');
 const RankingsPage = lazyPage(() => import('@/pages/RankingsPage'), 'RankingsPage');
 const ValuesPage = lazyPage(() => import('@/pages/ValuesPage'), 'ValuesPage');
-const ShiftsPage = lazyPage(() => import('@/pages/ShiftsPage'), 'ShiftsPage');
+const TrendsPage = lazyPage(() => import('@/pages/TrendsPage'), 'TrendsPage');
 const TradesPage = lazyPage(() => import('@/pages/TradesPage'), 'TradesPage');
 const WaiversPage = lazyPage(() => import('@/pages/WaiversPage'), 'WaiversPage');
 const TeamsPage = lazyPage(() => import('@/pages/TeamsPage'), 'TeamsPage');
@@ -104,7 +104,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/draft-room': 'Draft Room',
   '/rankings': 'Rankings',
   '/values': 'Site Values',
-  '/shifts': 'ADP Shifts',
+  '/trends': 'ADP Trends',
   '/trades': 'Trades',
   '/waivers': 'Waivers',
   '/teams': 'Teams',
@@ -657,9 +657,12 @@ function App() {
           {/* Day/week movement on the consensus board. Public like /rankings:
               needs only the bundled pool and its rolling rank history. */}
           <Route
-            path="/shifts"
-            element={league ? <ShiftsPage league={league} /> : <GuestAutoEnter onEnter={enterGuest} />}
+            path="/trends"
+            element={league ? <TrendsPage league={league} /> : <GuestAutoEnter onEnter={enterGuest} />}
           />
+          {/* The route shipped as /shifts for under a day (2026-08-27) before
+              the rename; keep any shared link working. */}
+          <Route path="/shifts" element={<Navigate to="/trends" replace />} />
           {/* Per-position landing pages: /rankings/qb, /rb, /wr, /te, /k, /dst,
               /flex. Real prerendered files; unknown slugs fall back to /rankings. */}
           <Route

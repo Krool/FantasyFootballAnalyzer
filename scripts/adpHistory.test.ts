@@ -77,6 +77,22 @@ describe('appendSnapshot', () => {
     expect(file.snapshots.map(s => s.date)).toEqual(['2026-08-26']);
   });
 
+  it('refuses a snapshot dated before the newest (windows assume date order)', () => {
+    const base = appendSnapshot(null, 2026, snap('2026-08-27', { a: 1 })).file;
+    const { file, changed } = appendSnapshot(base, 2026, snap('2026-08-25', { a: 9 }));
+    expect(changed).toBe(false);
+    expect(file.snapshots.map(s => s.date)).toEqual(['2026-08-27']);
+  });
+
+  it('drops a same-date rebuild that reverts the board to the prior day', () => {
+    let file = appendSnapshot(null, 2026, snap('2026-08-26', { a: 1, b: 2 })).file;
+    file = appendSnapshot(file, 2026, snap('2026-08-27', { a: 2, b: 1 })).file;
+    // A later run the same day reverts to the 08-26 board: storing it would
+    // leave "Last Day" comparing two identical snapshots.
+    const { file: reverted } = appendSnapshot(file, 2026, snap('2026-08-27', { a: 1, b: 2 }));
+    expect(reverted.snapshots.map(s => s.date)).toEqual(['2026-08-26']);
+  });
+
   it('replaces a same-date rebuild instead of double-recording the day', () => {
     const base = appendSnapshot(null, 2026, snap('2026-08-27', { a: 1, b: 2 })).file;
     const { file, changed } = appendSnapshot(base, 2026, snap('2026-08-27', { a: 2, b: 1 }));

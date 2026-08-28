@@ -50,7 +50,7 @@ function sitemap(): Plugin {
 ${url(SITE_URL, '1.0')}
 ${url(`${SITE_URL}rankings`, '0.9')}
 ${url(`${SITE_URL}values`, '0.8')}
-${url(`${SITE_URL}shifts`, '0.8')}
+${url(`${SITE_URL}trends`, '0.8')}
 ${url(`${SITE_URL}draft-room`, '0.8')}
 ${url(`${SITE_URL}trade-analyzer`, '0.8')}
 ${url(`${SITE_URL}draft-grades`, '0.8')}

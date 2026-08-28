@@ -11,7 +11,7 @@
 //   - index.html              - homepage hero, manifesto, feature grid.
 //   - rankings/               - top-200 half-PPR consensus rankings table.
 //   - rankings/<pos>/         - one per position (qb, rb, wr, te, k, dst, flex).
-//   - shifts/                 - day/week consensus-board risers and fallers.
+//   - trends/                 - day/week consensus-board risers and fallers.
 //   - trade-analyzer/, draft-grades/ - tool landing pages.
 //   - draft-room/             - mock-draft / live-draft-room landing copy.
 //
@@ -190,23 +190,26 @@ function buildValuesMarkup(
   )
 }
 
-// Crawlable snapshot of the ADP Shifts page: day and week risers/fallers on
+// Crawlable snapshot of the ADP Trends page: day and week risers/fallers on
 // the consensus board, from the rolling rank history. Real data like the
 // values page, so the route indexes on its own terms.
-function buildShiftsMarkup(
+function buildTrendsMarkup(
   pool: { season: number; players: any[] },
   history: any,
-  computeShifts: (history: any, windowDays: number) => any,
+  computeTrends: (history: any, windowDays: number) => any,
+  sameWindow: (a: any, b: any) => boolean,
 ): string {
   const byId = new Map(pool.players.map((p: any) => [p.id, p]))
-  const windows: Array<[number, string]> = [
-    [1, 'Last day'],
-    [7, 'Last week'],
+  // Same dedup as the live page: with a short history both windows resolve to
+  // the same baseline, and indexing byte-identical tables twice helps nobody.
+  let windows: Array<[any, string]> = [
+    [computeTrends(history, 1), 'Last day'],
+    [computeTrends(history, 7), 'Last week'],
   ]
+  if (sameWindow(windows[0][0], windows[1][0])) windows = [windows[0]]
   const sections = windows
-    .map(([days, label]) => {
-      const shifts = computeShifts(history, days)
-      if (!shifts) return ''
+    .map(([trends, label]) => {
+      if (!trends) return ''
       const table = (movers: any[], caption: string) => {
         const rows = movers
           .map(m => ({ m, p: byId.get(m.id) }))
@@ -224,10 +227,13 @@ function buildShiftsMarkup(
           `<th>Spots moved</th><th>Was</th><th>Now</th></tr></thead><tbody>${rows}</tbody></table>`
         )
       }
+      const tables = table(trends.risers, `${label}'s risers`) + table(trends.fallers, `${label}'s fallers`)
+      // A window with no renderable movement gets no section: a bare heading
+      // over nothing reads like a broken page to a crawler.
+      if (!tables) return ''
       return (
-        `<section><h2>${esc(label)} (since ${esc(shifts.baselineDate)})</h2>` +
-        table(shifts.risers, `${label}'s risers`) +
-        table(shifts.fallers, `${label}'s fallers`) +
+        `<section><h2>${esc(label)} (${esc(trends.baselineDate)} to ${esc(trends.currentDate)})</h2>` +
+        tables +
         `</section>`
       )
     })
@@ -238,7 +244,9 @@ function buildShiftsMarkup(
     `week: the top risers climbing draft boards and the fallers getting cheaper. ` +
     `Consensus of FantasyPros, ESPN, Sleeper, and Yahoo, half PPR, updated daily. ` +
     `Free, no login required.</p>` +
-    sections +
+    (sections ||
+      `<p>The board has not recorded enough daily snapshots to measure movement ` +
+      `yet. Risers and fallers appear after the next rankings updates.</p>`) +
     `</section>`
   )
 }
@@ -431,20 +439,28 @@ async function prerender() {
     // snapshots before there is anything to show; the page still writes with
     // its intro copy so the route returns 200 either way.
     const { ADP_HISTORY } = await vite.ssrLoadModule('/src/data/adpHistory.ts')
-    const { computeShifts } = await vite.ssrLoadModule('/src/utils/shifts.ts')
-    const shiftsFaq = faqJsonLd([
+    const { computeTrends, sameWindow } = await vite.ssrLoadModule('/src/utils/trends.ts')
+    const trendsFaq = faqJsonLd([
       ['What counts as an ADP riser or faller?', 'How many spots a player moved on the consensus draft board, blended from FantasyPros, ESPN, Sleeper, and Yahoo, over the last day and the last week.'],
       ['How often does it update?', `Daily, alongside the ${POOL.season} consensus rankings refresh.`],
       ['Is this free?', 'Yes. No account and no signup. The project is open source.'],
     ])
+    // With no measurable movement yet (a fresh season's history), the head
+    // must not promise "top ten risers" over an explanatory paragraph.
+    const trendsHaveData = !!computeTrends(ADP_HISTORY, 1)
     writeRoute({
-      path: 'shifts',
-      markup: buildShiftsMarkup(POOL, ADP_HISTORY, computeShifts) + shiftsFaq,
-      title: `${POOL.season} Fantasy Football ADP Risers & Fallers: Daily and Weekly Shifts`,
-      desc:
-        `Who moved on the ${POOL.season} consensus draft board in the last day and the last ` +
-        `week. Top ten ADP risers and fallers from FantasyPros, ESPN, Sleeper, and Yahoo ` +
-        `data, half PPR, updated daily. Free, no login.`,
+      path: 'trends',
+      markup: buildTrendsMarkup(POOL, ADP_HISTORY, computeTrends, sameWindow) + trendsFaq,
+      title: trendsHaveData
+        ? `${POOL.season} Fantasy Football ADP Risers & Fallers: Daily and Weekly Trends`
+        : `${POOL.season} Fantasy Football ADP Trends`,
+      desc: trendsHaveData
+        ? `Who moved on the ${POOL.season} consensus draft board in the last day and the last ` +
+          `week. Top ten ADP risers and fallers from FantasyPros, ESPN, Sleeper, and Yahoo ` +
+          `data, half PPR, updated daily. Free, no login.`
+        : `Daily and weekly ADP movement on the ${POOL.season} consensus draft board, from ` +
+          `FantasyPros, ESPN, Sleeper, and Yahoo data. Updates daily once the season's ` +
+          `rankings start moving. Free, no login.`,
     })
 
     // --- Tool landing pages (same component the live routes render) ---

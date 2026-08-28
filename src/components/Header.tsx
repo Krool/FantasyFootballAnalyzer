@@ -56,13 +56,13 @@ export function Header({
   const location = useLocation();
   const navigate = useNavigate();
   const { playClick, playExport, playPageTransition, playError, isMuted, toggleMute } = useSounds();
-  // Draft prep routes share a focused nav (Draft + Rankings + Values + Shifts). Rankings
+  // Draft prep routes share a focused nav (Draft + Rankings + Values + Trends). Rankings
   // covers the per-position landing routes (/rankings/qb etc.) too, so they get
   // the focused nav instead of the full league nav (whose links bounce guests).
   const isRankings = location.pathname === '/rankings' || location.pathname.startsWith('/rankings/');
   const isValues = location.pathname === '/values';
-  const isShifts = location.pathname === '/shifts';
-  const isDraftPrep = location.pathname === '/draft-room' || isRankings || isValues || isShifts;
+  const isTrends = location.pathname === '/trends';
+  const isDraftPrep = location.pathname === '/draft-room' || isRankings || isValues || isTrends;
   // The league nav is only navigable with a real connected league: every one
   // of its links redirects a guest to /rankings, and the PDF button is a
   // silent no-op without a league to export. It was rendering on the public
@@ -235,12 +235,12 @@ export function Header({
                   Values
                 </Link>
                 <Link
-                  to="/shifts"
-                  className={`${styles.navLink} ${isShifts ? styles.active : ''}`}
+                  to="/trends"
+                  className={`${styles.navLink} ${isTrends ? styles.active : ''}`}
                   onClick={handleNavClick}
-                  aria-current={isShifts ? 'page' : undefined}
+                  aria-current={isTrends ? 'page' : undefined}
                 >
-                  Shifts
+                  Trends
                 </Link>
               </>
             ) : (
