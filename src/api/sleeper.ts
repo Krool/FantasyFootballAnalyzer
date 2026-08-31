@@ -265,11 +265,16 @@ function draftOrderTeamIds(
   rosters: SleeperAPI.Roster[],
 ): string[] | undefined {
   const bySlot: Array<[slot: number, rosterId: number]> = [];
-  if (draft.slot_to_roster_id && Object.keys(draft.slot_to_roster_id).length > 0) {
+  if (draft.slot_to_roster_id) {
     for (const [slot, rosterId] of Object.entries(draft.slot_to_roster_id)) {
       if (rosterId != null) bySlot.push([Number(slot), rosterId]);
     }
-  } else if (draft.draft_order) {
+  }
+  // Branch on whether the map actually FILLED, not on whether it existed: a
+  // pre-draft slot_to_roster_id can be an object of all-null values, and
+  // taking its branch on key count alone starved the draft_order fallback of
+  // exactly the case it exists for.
+  if (bySlot.length === 0 && draft.draft_order) {
     for (const [userId, slot] of Object.entries(draft.draft_order)) {
       const roster = rosters.find(
         r => r.owner_id === userId || (r.co_owners ?? []).includes(userId),
@@ -984,10 +989,14 @@ export async function loadLeagueHistory(leagueId: string, maxSeasons: number = 5
       const isComplete = leagueData.status === 'complete';
 
       // Identify the actual playoff champion (not the regular-season leader).
-      // Prefer the league metadata; fall back to the winners bracket.
+      // Prefer the league metadata; fall back to the winners bracket. BOTH
+      // paths gate on isComplete: "latest_league_winner" reads like "most
+      // recent known winner", which on a renewed league can name LAST
+      // season's champion (and roster ids are not stable across renewals),
+      // so an in-progress season must never crown anyone from it.
       let championTeamId: string | undefined;
       const metaWinner = leagueData.metadata?.latest_league_winner_roster_id;
-      if (metaWinner) {
+      if (isComplete && metaWinner) {
         championTeamId = String(metaWinner);
       } else if (isComplete) {
         try {

@@ -429,8 +429,18 @@ export function parseRosterSettings(settings: any): { QB: number; RB: number; WR
   let parsedAny = false;
 
   for (const pos of posList) {
-    const posType = String(pos.position || pos.position_type || '');
-    const count = parseInt(pos.count || '1');
+    // position only — position_type is NOT a synonym, it is Yahoo's coarse
+    // group ('O'/'K'/'DT'/'DP'). Falling back to it would drop every
+    // offensive row while the kicker still matched, defeating the
+    // !parsedAny guard with a one-kicker lineup. A missing position now
+    // falls through to the honest synthetic fallback instead.
+    const posType = String(pos.position || '');
+    // Respect an explicit count of 0 (the parser yields numbers, and
+    // `0 || '1'` invented a phantom slot); default to 1 only when the
+    // field is absent or junk.
+    const count = Number.isFinite(Number(pos.count)) && pos.count !== '' && pos.count != null
+      ? Number(pos.count)
+      : 1;
 
     switch (posType) {
       case 'QB': slots.QB += count; parsedAny = true; break;
@@ -464,6 +474,10 @@ export function parseRosterSettings(settings: any): { QB: number; RB: number; WR
   // gave us nothing usable, so we never invent a phantom kicker the user has
   // to fill in the Draft Room or see in the depth chart.
   if (!parsedAny) {
+    // Loud on purpose: this fires for "settings absent" AND for "we read
+    // the wrong path", and the two must not look identical (that is how
+    // the ESPN lineup bug survived a year).
+    logger.warn('[Yahoo] roster_positions gave nothing usable; synthesizing a standard lineup:', settings?.roster_positions);
     slots.QB = 1;
     slots.RB = 2;
     slots.WR = 2;
@@ -511,12 +525,23 @@ export async function loadLeague(leagueKey: string): Promise<League> {
   // fast-xml-parser returns a lone object (not an array) when a league defines
   // exactly one stat modifier, so normalize before .find - same guard the teams
   // and standings parsing below already uses.
-  const statData = leagueInfo.settings?.stat_modifiers?.stat || [];
+  //
+  // Two traps found by review (2026-08-31), both of which read every Yahoo
+  // league as a confident 'standard':
+  //   - Yahoo wraps modifier entries in a <stats> collection (stat_modifiers
+  //     > stats > stat), the same shape player_stats uses below; the
+  //     unwrapped path is kept as a fallback in case some responses omit it.
+  //   - The proxy's XML parser coerces numeric tag values, so stat_id
+  //     arrives as the NUMBER 21, and === '21' never matched. Compare via
+  //     String() like is_auction_draft above already does.
+  const statData =
+    leagueInfo.settings?.stat_modifiers?.stats?.stat ??
+    leagueInfo.settings?.stat_modifiers?.stat ??
+    [];
   const scoringSettings = Array.isArray(statData) ? statData : [statData];
-  const receptionStat = scoringSettings.find((s: any) => s.stat_id === '21'); // Receptions
-  // stat_id 4 = Passing Touchdowns. Yahoo serves stat ids and values as
-  // strings, so parse before it reaches the 6pt comparison.
-  const passTdStat = scoringSettings.find((s: any) => s.stat_id === '4');
+  const receptionStat = scoringSettings.find((s: any) => String(s.stat_id) === '21'); // Receptions
+  // stat_id 4 = Passing Touchdowns; parse before the 6pt comparison.
+  const passTdStat = scoringSettings.find((s: any) => String(s.stat_id) === '4');
   const passTdPoints = passTdStat ? parseFloat(passTdStat.value) : undefined;
   if (receptionStat) {
     const recValue = parseFloat(receptionStat.value);
@@ -814,14 +839,16 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
         if (teamId) {
           transactions.push({
             id: tx.transaction_key,
-            type: tx.faab_bid ? 'waiver' : 'free_agent',
+            // != null, not truthiness: a winning $0 FAAB claim arrives as the
+            // number 0 and is still a waiver claim, not a free-agent add.
+            type: tx.faab_bid != null ? 'waiver' : 'free_agent',
             timestamp,
             week,
             teamId,
             teamName,
             adds,
             drops,
-            waiverBudgetSpent: tx.faab_bid ? parseInt(tx.faab_bid) : undefined
+            waiverBudgetSpent: tx.faab_bid != null ? parseInt(tx.faab_bid) : undefined
           });
         }
       }
@@ -1058,8 +1085,10 @@ export async function enrichPlayersWithStats(
         } else if (player.player_stats?.stats?.stat) {
           const stats = player.player_stats.stats.stat;
           const statList = Array.isArray(stats) ? stats : [stats];
+          // String(): the proxy's XML parser coerces numeric tag values, so
+          // stat_id 0 arrives as a number and === '0' never matched.
           const pointsStat = statList.find((s: any) =>
-            s.stat_id === '0' || s.stat_id === 'fpts'
+            String(s.stat_id) === '0' || s.stat_id === 'fpts'
           );
           if (pointsStat) {
             points = parseFloat(pointsStat.value);

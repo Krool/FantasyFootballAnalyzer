@@ -145,11 +145,18 @@ const leagueBody = {
             { position: 'BN', count: '5' },
           ],
         },
+        // Proxy reality (review, 2026-08-31): Yahoo wraps modifiers in a
+        // <stats> collection, and the XML parser coerces numeric tag values,
+        // so stat_id arrives as a NUMBER. An earlier fixture used the
+        // unwrapped, string-id shape — exactly the shape the buggy detection
+        // expected — so the tests confirmed the bug.
         stat_modifiers: {
-          stat: [
-            { stat_id: '21', value: '0.5' }, // receptions: half PPR
-            { stat_id: '4', value: '0.04' },
-          ],
+          stats: {
+            stat: [
+              { stat_id: 21, value: 0.5 }, // receptions: half PPR
+              { stat_id: 4, value: 0.04 },
+            ],
+          },
         },
       },
       teams: {
@@ -741,36 +748,40 @@ describe('yahoo loadLeague scoring detection', () => {
     return loadLeague(LEAGUE_KEY);
   }
 
+  // Fixtures mirror the proxy: <stats>-wrapped, NUMERIC stat ids (the XML
+  // parser coerces tag values). The unwrapped/string shape is kept as its
+  // own case since detection accepts it as a fallback.
   it.each([
-    ['1.0 receptions -> ppr', { stat: [{ stat_id: '21', value: '1' }] }, 'ppr'],
-    ['0.5 receptions -> half_ppr', { stat: [{ stat_id: '21', value: '0.5' }] }, 'half_ppr'],
-    ['0.25 receptions -> custom', { stat: [{ stat_id: '21', value: '0.25' }] }, 'custom'],
-    ['no reception modifier -> standard', { stat: [{ stat_id: '4', value: '0.04' }] }, 'standard'],
+    ['1.0 receptions -> ppr', { stats: { stat: [{ stat_id: 21, value: 1 }] } }, 'ppr'],
+    ['0.5 receptions -> half_ppr', { stats: { stat: [{ stat_id: 21, value: 0.5 }] } }, 'half_ppr'],
+    ['0.25 receptions -> custom', { stats: { stat: [{ stat_id: 21, value: 0.25 }] } }, 'custom'],
+    ['no reception modifier -> standard', { stats: { stat: [{ stat_id: 4, value: 0.04 }] } }, 'standard'],
     // fast-xml-parser returns a bare object, not an array, when a league
     // defines exactly one stat modifier. Detection must handle that shape.
-    ['lone stat_modifier object (not array) -> ppr', { stat: { stat_id: '21', value: '1' } }, 'ppr'],
+    ['lone stat_modifier object (not array) -> ppr', { stats: { stat: { stat_id: 21, value: 1 } } }, 'ppr'],
+    // Legacy/unwrapped shape with string ids still detects.
+    ['unwrapped string-id shape -> ppr', { stat: [{ stat_id: '21', value: '1' }] }, 'ppr'],
   ] as const)('%s', async (_label, mods, expected) => {
     const league = await loadWithModifiers(mods);
     expect(league.scoringType).toBe(expected);
   });
 
   // Regression: the adapters used to ignore points-per-passing-TD, so a 6pt
-  // league priced and projected every QB off the pool's 4pt columns. Yahoo
-  // quotes stat values as strings, so this also pins the parseFloat.
+  // league priced and projected every QB off the pool's 4pt columns.
   it('reads points-per-passing-TD from stat_id 4', async () => {
     const sixPt = await loadWithModifiers({
-      stat: [{ stat_id: '21', value: '0.5' }, { stat_id: '4', value: '6' }],
+      stats: { stat: [{ stat_id: 21, value: 0.5 }, { stat_id: 4, value: 6 }] },
     });
     expect(sixPt.passTdPoints).toBe(6);
 
     const fourPt = await loadWithModifiers({
-      stat: [{ stat_id: '21', value: '0.5' }, { stat_id: '4', value: '4' }],
+      stats: { stat: [{ stat_id: 21, value: 0.5 }, { stat_id: 4, value: 4 }] },
     });
     expect(fourPt.passTdPoints).toBe(4);
   });
 
   it('leaves passTdPoints undefined when Yahoo sends no passing-TD modifier', async () => {
-    const league = await loadWithModifiers({ stat: [{ stat_id: '21', value: '0.5' }] });
+    const league = await loadWithModifiers({ stats: { stat: [{ stat_id: 21, value: 0.5 }] } });
     expect(league.passTdPoints).toBeUndefined();
   });
 });
