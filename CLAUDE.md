@@ -14,7 +14,7 @@ Production: https://fantasyfootballanalyzer.app/
 - **Serverless `api/`**: Vercel functions (Yahoo OAuth + proxy, ESPN proxy).
   Deployed separately from the frontend and reached at
   `https://fantasy-football-analyzer-mu.vercel.app`.
-- **Data pipeline**: a daily GitHub Action fetches rankings and rebuilds the
+- **Data pipeline**: a twice-daily GitHub Action fetches rankings and rebuilds the
   bundled draft pool committed into `src/data/`.
 - **`extension/`**: a small MV3 browser extension that auto-fills the ESPN
   cookies for private-league import. Store-published by hand, outside both
@@ -35,7 +35,9 @@ Two deploy paths that do not overlap:
 1. **`.github/workflows/ci.yml`** (human pushes): lints, tests, and builds every
    push and PR; on a push to `master` it publishes `dist/` to `gh-pages` after
    those pass. So the live site always equals a pushed, green commit.
-2. **`.github/workflows/update-rankings.yml`** (the data commit): runs daily,
+2. **`.github/workflows/update-rankings.yml`** (the data commit): runs twice
+   daily (11:00 and 23:00 UTC; the evening slot puts same-day news on the
+   board before US-evening drafts),
    fetches fresh rankings, rebuilds the pool, builds as a gate, commits to
    `master`, and deploys its own commit. It cannot rely on ci.yml: its push uses
    the default `GITHUB_TOKEN`, and GitHub does not trigger workflows from
@@ -196,7 +198,7 @@ is a dense rank, not a true ADP — mechanics in `scripts/CLAUDE.md`.
 Do not change the id scheme without a session migration.
 
 `src/data/draftPool.<season>.json`, `src/data/draftPool.ts`, and everything in
-`data/raw/` are bot-owned generated data: the daily Update rankings Action
+`data/raw/` are bot-owned generated data: the twice-daily Update rankings Action
 rebuilds and commits them. Do not hand-commit a locally-built pool, and never
 let one ride along in an unrelated commit — a stale local pool once clobbered
 6 days of bot data (af2bb49); ci.yml now fails a push that moves generatedAt

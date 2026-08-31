@@ -476,8 +476,14 @@ game keys, which drops renamed leagues and ambiguous duplicates. Walking
 
 ## Settings and response edge cases (audited 2026-08 via yfpy/yahoo_fantasy_api source)
 
-- **Every scalar is a string** (`"is_auction_draft": "1"`, `"uses_faab":
-  "0"`) — `"0"` is truthy; always `String(x) === '1'` or parse explicitly.
+- **Scalars are NOT reliably strings through our proxy** — Yahoo's JSON
+  format quotes everything, but our pipeline parses Yahoo's XML with
+  fast-xml-parser's default numeric coercion, so `<stat_id>21</stat_id>` or
+  `<is_auction_draft>1</is_auction_draft>` can arrive as the NUMBER 21/1
+  and `=== '21'` silently never matches (this read every league's scoring
+  as standard until 2026-08-31). Always compare via `String(x) === '1'` or
+  parse explicitly — and remember string `"0"` is truthy where a real
+  string does arrive.
 - **Median leagues**: `settings.uses_median_score === "1"` — extra weekly
   W/L vs the league median; records sum to more games than weeks. Adapter
   flags `hasMedianMatchup`.
@@ -640,14 +646,15 @@ reception detection in our adapter keys on stat id 21.)
 
 | ID | Slot | | ID | Slot |
 |----|------|-|----|------|
-| 0 | QB | | 17 | K |
-| 2 | RB | | 20 | Bench |
+| 0 | QB | | 16 | D/ST |
+| 2 | RB | | 17 | K |
+| 3 | FLEX (RB/WR) | | 20 | Bench |
 | 4 | WR | | 21 | IR |
-| 6 | TE | | 23 | FLEX |
+| 5 | FLEX (WR/TE) | | 23 | FLEX (RB/WR/TE) |
+| 6 | TE | | | |
 | 7 | OP (superflex) | | | |
-| 16 | D/ST | | | |
 
-Starter set used for "games started" tracking: `{0, 2, 4, 6, 16, 17, 23}`.
+Starter set used for "games started" tracking: `{0, 2, 3, 4, 5, 6, 7, 16, 17, 23}`.
 
 ## ESPN pro team IDs
 
