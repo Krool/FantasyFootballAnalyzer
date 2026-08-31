@@ -201,10 +201,29 @@ type ProgressCallback = (progress: { stage: string; current: number; total: numb
 // it here read a "max 8 RBs on the roster" league as an 8-RB starting lineup
 // with 0 QBs (owner-reported, 2026-08-31). Leagues without caps returned {}
 // and fell back to a plausible default lineup, which hid the bug.
+// Pre-~2019 seasons have no `name`; the team name is location + nickname.
+// Module-scoped because the history and H2H walkers are exactly the code
+// that meets those legacy payloads — they were falling straight to
+// "Team <id>" while the main load rendered the real name.
+export function espnTeamName(t: ESPNAPI.Team): string {
+  return t.name || [t.location, t.nickname].filter(Boolean).join(' ') || `Team ${t.id}`;
+}
+
 export function parseEspnRosterSlots(
   lineupSlotCounts: Record<string, number> | undefined
 ): RosterSlots {
   const posLimits = lineupSlotCounts || {};
+  // The whole bug class this function has bred (positionLimits-as-lineup,
+  // FLEX id 3/5 dropped) is invisible because every wrong input degrades
+  // into a plausible lineup. A real lineupSlotCounts always carries QB(0),
+  // RB(2), or WR(4); an input with none of them is not a lineup — say so
+  // before falling back, so the failure is observable in Sentry.
+  if (
+    Object.keys(posLimits).length > 0 &&
+    ![0, 2, 4].some(id => typeof posLimits[id] === 'number')
+  ) {
+    logger.warn('[ESPN] lineupSlotCounts does not look like a lineup; using default slots:', posLimits);
+  }
   const slotLimit = (id: number, fallback: number): number => {
     const v = posLimits[id];
     return typeof v === 'number' && v >= 0 ? v : fallback;
@@ -214,7 +233,14 @@ export function parseEspnRosterSlots(
     RB: slotLimit(2, 2),
     WR: slotLimit(4, 2),
     TE: slotLimit(6, 1),
-    FLEX: slotLimit(23, 1),
+    // ESPN has THREE offensive flex slots: 23 (RB/WR/TE), 3 (RB/WR), and
+    // 5 (WR/TE). A league can run any mix, so they sum. Reading only 23
+    // loaded a slot-3 flex league as FLEX 0 — silently, because a real
+    // lineupSlotCounts carries an explicit 0 for every unused slot, so the
+    // fallback never fired (review finding, 2026-08-31; same species as
+    // the positionLimits bug). The 40/40/20 flex split in par.ts is only
+    // exact for slot 23, but a wrongly-weighted flex beats a vanished one.
+    FLEX: slotLimit(23, 1) + slotLimit(3, 0) + slotLimit(5, 0),
     SUPERFLEX: slotLimit(7, 0),
     K: slotLimit(17, 1),
     DST: slotLimit(16, 1),
@@ -333,8 +359,11 @@ export async function loadLeague(
           allPlayersFromWeeklyRosters.set(playerId, entry.playerPoolEntry.player);
         }
 
+        // seasonId filter matches getSeasonPoints: ESPN stats arrays can
+        // carry more than one season for a player, and an unfiltered .find
+        // takes whichever entry comes first.
         const weekStat = entry.playerPoolEntry?.player?.stats?.find(
-          s => s.scoringPeriodId === week && s.statSourceId === 0
+          s => s.seasonId === season && s.scoringPeriodId === week && s.statSourceId === 0
         );
         const weekPoints = weekStat?.appliedTotal || 0;
         // Record played weeks by entry presence, not by points: a played
@@ -502,10 +531,6 @@ export async function loadLeague(
   }
   logger.debug('[ESPN] Draft picks processed, missing player data:', missingDraftPlayers);
 
-  // Build team name map. Pre-~2019 seasons have no `name`; the team name is
-  // location + nickname.
-  const espnTeamName = (t: ESPNAPI.Team): string =>
-    t.name || [t.location, t.nickname].filter(Boolean).join(' ') || `Team ${t.id}`;
   const teamNameMap = new Map<number, string>();
   leagueData.teams.forEach(t => teamNameMap.set(t.id, espnTeamName(t)));
 
@@ -642,15 +667,15 @@ export async function loadLeague(
         const messages = topic.messages as Array<{ messageTypeId: number; targetId: string | number; for?: number; from?: number; to?: number }>;
         const teamsInvolved = new Set<number>();
         messages.forEach(msg => {
-          // 'for' is the receiving team, 'from' is the team that sent the player
+          // 'for' is the receiving TEAM id. 'from'/'to' are LINEUP SLOT ids
+          // (0-23), NOT team ids — see docs/API_REFERENCE.md's espn-api/
+          // ffscrapr note. The old "from <= 20 means team" guard could not
+          // tell the two apart (slot ids are also 0-23) and polluted the set
+          // with slot ids, which the exactly-two-teams check below then
+          // rejected, silently dropping real trades. Every message in a
+          // 2-team trade carries a 'for', so it alone identifies both sides.
           if (msg.for !== undefined && msg.for > 0) {
             teamsInvolved.add(msg.for);
-          }
-          // 'from' can also indicate a team (when it's a team ID, not a roster slot)
-          // In trades, from is typically the other team involved
-          if (msg.from !== undefined && msg.from > 0 && msg.from <= 20) {
-            // Team IDs are typically 1-20, roster slots are higher numbers
-            teamsInvolved.add(msg.from);
           }
         });
         if (teamsInvolved.size >= 2) {
@@ -1372,7 +1397,15 @@ export async function loadLeague(
   const scoringItems = leagueData.settings.scoringSettings?.scoringItems || [];
   const receptionPoints = scoringItems.find(s => s.statId === 53)?.points || 0; // statId 53 = receptions
   const passTdPoints = scoringItems.find(s => s.statId === 4)?.points; // statId 4 = passing TD
-  if (receptionPoints === 1) {
+  if (scoringItems.length === 0) {
+    // No scoring items at all is a missing/misread field, not a real
+    // standard-scoring league — a genuine standard league still sends its
+    // item list (with receptions at 0). Confidently reporting 'standard'
+    // here would make a misparse indistinguishable from a real setting,
+    // the failure mode behind the lineupSlotCounts bug. 'custom' keeps the
+    // scoringIsApproximate notice honest.
+    scoringType = 'custom';
+  } else if (receptionPoints === 1) {
     scoringType = 'ppr';
   } else if (receptionPoints === 0.5) {
     scoringType = 'half_ppr';
@@ -1439,7 +1472,14 @@ export async function loadLeague(
     status = 'final';
   } else if (allTeamsRanked) {
     status = 'final';
-  } else if ((leagueData.status?.currentMatchupPeriod || 0) === 0) {
+  } else if (
+    // currentMatchupPeriod may already read 1 before week 1 (matchup periods
+    // are 1-indexed), so the ===0 check alone can miss preseason entirely.
+    // draftDetail.drafted is unambiguous: an undrafted current-season league
+    // IS in draft prep, whatever the matchup pointer says.
+    (leagueData.status?.currentMatchupPeriod || 0) === 0 ||
+    leagueData.draftDetail?.drafted === false
+  ) {
     status = 'preseason';
   } else {
     status = 'live';
@@ -1489,14 +1529,20 @@ export async function getAvailableSeasons(
   const probes = await Promise.all(years.map(async (year) => {
     try {
       const data = await fetchESPN<ESPNAPI.League>(
-        year, leagueId, ['mTeam', 'mSettings'], options,
+        // mDraftDetail rides along for the same preseason signal loadLeague
+        // uses: currentMatchupPeriod can read 1 before week 1, so drafted:
+        // false is the reliable draft-prep marker.
+        year, leagueId, ['mTeam', 'mSettings', 'mDraftDetail'], options,
       );
       if (!data.teams || data.teams.length === 0) return null;
       const allTeamsRanked = data.teams.every(t => (t.rankCalculatedFinal || 0) > 0);
       let status: LeagueStatus;
       if (year < currentYear) status = 'final';
       else if (allTeamsRanked) status = 'final';
-      else if ((data.status?.currentMatchupPeriod || 0) === 0) status = 'preseason';
+      else if (
+        (data.status?.currentMatchupPeriod || 0) === 0 ||
+        data.draftDetail?.drafted === false
+      ) status = 'preseason';
       else status = 'live';
       return { year, leagueId, status, leagueName: data.settings?.name } as SeasonOption;
     } catch (err) {
@@ -1551,7 +1597,7 @@ export async function loadLeagueHistory(
           // `owners[0]` is stable across seasons, so we use it for all-time
           // aggregation in the History page.
           ownerId: team.owners && team.owners.length > 0 ? team.owners[0] : undefined,
-          name: team.name || `Team ${team.id}`,
+          name: espnTeamName(team),
           wins: team.record?.overall.wins || 0,
           losses: team.record?.overall.losses || 0,
           ties: team.record?.overall.ties || 0,
@@ -1644,7 +1690,7 @@ export async function loadHeadToHeadRecords(
       const teamNameMap = new Map<number, string>();
       const teamOwnerMap = new Map<number, string | undefined>();
       leagueData.teams.forEach(t => {
-        teamNameMap.set(t.id, t.name || `Team ${t.id}`);
+        teamNameMap.set(t.id, espnTeamName(t));
         teamOwnerMap.set(t.id, t.owners && t.owners.length > 0 ? t.owners[0] : undefined);
       });
 
@@ -1657,7 +1703,7 @@ export async function loadHeadToHeadRecords(
 
       if (i === 0) {
         if (selectedTeamData) {
-          teamName = selectedTeamData.name || `Team ${selectedTeamId}`;
+          teamName = espnTeamName(selectedTeamData);
           ourOwnerId = teamOwnerMap.get(selectedTeamId);
         }
       } else {

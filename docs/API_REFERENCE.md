@@ -228,7 +228,7 @@ GET /seasons/{year}/segments/0/leaguedefaults/3?view=kona_player_info
 |------|--------|-------|
 | `mTeam` | works no-auth | teams, owners, records |
 | `mRoster` | works no-auth | rosters; combine with `scoringPeriodId={week}` for weekly lineups |
-| `mSettings` | works no-auth | scoring, roster `positionLimits`, `draftSettings` (`type` SNAKE/AUCTION, `auctionBudget`, `pickOrder`, `keeperCount`) |
+| `mSettings` | works no-auth | scoring, roster `lineupSlotCounts` (the LINEUP, keyed by lineup-slot id; the sibling `positionLimits` is per-position roster CAPS in a different id space — reading it as the lineup rendered a max-8-RB cap as an 8-RB/0-QB lineup, fixed 2026-08-31), `draftSettings` (`type` SNAKE/AUCTION, `auctionBudget`, `pickOrder`, `keeperCount`) |
 | `mDraftDetail` | works no-auth | picks with `bidAmount`, `nominatingTeamId`, `keeper`, `reservedForKeeper`, `overallPickNumber` (all **verified** present) |
 | `mMatchup` / `mMatchupScore` | works no-auth | season `schedule[]` with per-week scores (~800KB for a season) |
 | `mBoxscore` + `scoringPeriodId=N` | works no-auth | **weekly per-player points**: `rosterForCurrentScoringPeriod`, `appliedStatTotal`, `pointsByScoringPeriod` |
@@ -328,8 +328,9 @@ Known adapter gaps: trade verdicts still use full-season totals even though
 weekly points now exist (post-trade verdicts would need the same windowed PAR
 treatment Yahoo got); season probe drops rate-limited/401 years silently -
 which post-Aug-2025 means cookie-less public leagues silently lose all but ~2
-years. (Fixed 2026-08: PAR now uses the league's real `positionLimits` via
-the shared par.ts replacement model instead of a hardcoded classic lineup.)
+years. (Fixed 2026-08: PAR now uses the league's real `lineupSlotCounts` via
+the shared par.ts replacement model instead of a hardcoded classic lineup.
+ESPN flex is three slot ids — 23 RB/WR/TE, 3 RB/WR, 5 WR/TE — summed.)
 
 ---
 
@@ -575,7 +576,7 @@ What the platform API offers vs what our adapter currently delivers.
 | League history chain | `previous_league_id` | **yes** (15-hop cap) | same id + `seasonId` | **yes** (7yr probe; 2yr without cookies post-Aug-2025) | `renew`/`renewed` chain | **no - name-matching instead** |
 | Platform ADP / projections | undocumented projections endpoints | **yes** (build pipeline) | `kona_player_info` (+ no-league `leaguedefaults/3`), no auth | **yes** (`espnAdp` + auction values via `leaguedefaults/3`) | `draft_analysis` | **yes** |
 | Ownership / trending | trending + research endpoints | no | `percentOwned/Started` | no | `percent_owned` | no |
-| Bench/IR sizes from settings | yes (`roster_positions`) | yes | yes (`positionLimits` 20/21) | yes (with fallback) | yes (`roster_positions` BN/IR counts) | **yes** (parsed, falls back to 6/1) |
+| Bench/IR sizes from settings | yes (`roster_positions`) | yes | yes (`lineupSlotCounts` 20/21) | yes (with fallback) | yes (`roster_positions` BN/IR counts) | **yes** (parsed, falls back to 6/1) |
 | Write access | none | - | none | - | lineup/waiver PUTs exist for authed user | unused |
 
 ---

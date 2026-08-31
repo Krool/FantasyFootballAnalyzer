@@ -231,6 +231,16 @@ describe('parseEspnRosterSlots', () => {
     expect(slots.SUPERFLEX).toBe(1);
   });
 
+  it('sums all three flex slot ids (23 RB/WR/TE, 3 RB/WR, 5 WR/TE)', () => {
+    // A real lineupSlotCounts carries an explicit 0 for every unused slot,
+    // so a league whose only flex is slot 3 sends {3: 1, 23: 0} — reading
+    // only 23 made that league's flex vanish without any fallback firing.
+    const slots = parseEspnRosterSlots({ 0: 1, 2: 2, 4: 2, 6: 1, 3: 1, 5: 0, 23: 0, 16: 1, 17: 1, 20: 5 });
+    expect(slots.FLEX).toBe(1);
+    const both = parseEspnRosterSlots({ 0: 1, 2: 2, 4: 2, 6: 1, 3: 1, 5: 1, 23: 1, 16: 1, 17: 1, 20: 5 });
+    expect(both.FLEX).toBe(3);
+  });
+
   it('falls back to a standard lineup when lineupSlotCounts is missing', () => {
     expect(parseEspnRosterSlots(undefined)).toMatchObject({
       QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 0, K: 1, DST: 1, BENCH: 6, IR: 1,
@@ -497,7 +507,11 @@ describe('espn loadLeague scoring detection', () => {
     [1, 'ppr'],
     [0.5, 'half_ppr'],
     [0, 'standard'],
-    [null, 'standard'], // no reception scoring item at all -> standard
+    // No scoring items AT ALL is a missing/misread payload, not a real
+    // standard league (those still send their item list) — report custom,
+    // which carries the approximate-scoring notice, instead of a confident
+    // wrong answer.
+    [null, 'custom'],
     [0.25, 'custom'],   // an unusual reception value falls through to custom
   ] as const)('maps statId-53 reception points %s to %s', async (points, expected) => {
     const league = await loadWithReception(points);
@@ -930,8 +944,13 @@ describe('espn loadLeague trade detection Priority 2 (communication endpoint)', 
         type: 'ACTIVITY_TRANSACTIONS',
         date: TOPIC_DATE,
         messages: [
+          // 'for' is the receiving TEAM id; 'from' is a LINEUP SLOT id
+          // (2=RB, 4=WR here), per the espn-api/ffscrapr audit in
+          // docs/API_REFERENCE.md. An earlier fixture set 'from' to the
+          // other team's id, which is the one arrangement that let code
+          // misreading 'from' as a team id pass its own test.
           { messageTypeId: 178, targetId: '701', for: 1, from: 2 },
-          { messageTypeId: 178, targetId: '702', for: 2, from: 1 },
+          { messageTypeId: 178, targetId: '702', for: 2, from: 4 },
         ],
       },
     ],
