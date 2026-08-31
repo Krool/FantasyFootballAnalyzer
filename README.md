@@ -20,8 +20,13 @@ platform APIs.
 - Rankings: FantasyPros, ESPN, and Sleeper side by side, refreshed daily by
   a GitHub Action, with a target/avoid list that follows you into the draft,
   plus per-position views (`/rankings/qb` .. `/rankings/flex`)
+- Site Values: where each site's draft market disagrees with the consensus
+  of all of them, values and reaches in both directions (`/values`)
+- ADP Trends: day-over-day and week-over-week risers and fallers on the
+  consensus board, by scoring format including superflex (`/trends`)
 
-The Rankings board and the Draft Room work with no login at all (guest mode).
+The draft-prep pages (Draft Room, Rankings, Values, Trends) work with no
+login at all (guest mode).
 A loaded league is only needed for the league-analysis tools below.
 
 **League analysis (any loaded season)**

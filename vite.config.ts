@@ -32,7 +32,8 @@ const RANKINGS_SLUGS = ['qb', 'rb', 'wr', 'te', 'k', 'dst', 'flex']
 // Emit sitemap.xml at build time so <lastmod> reflects the deploy date
 // automatically (manual `npm run deploy` and the daily rankings Action both
 // run a build). Indexable URLs are the homepage, /rankings (+ per-position
-// pages), /values, and /draft-room, each a real prerendered file written by
+// pages), /values, /trends, /draft-room, /trade-analyzer, and
+// /draft-grades, each a real prerendered file written by
 // scripts/prerender.tsx (so GitHub Pages returns 200, not the 404 shim). Gated
 // data routes stay on the shim and aren't meant to be indexed.
 function sitemap(): Plugin {
