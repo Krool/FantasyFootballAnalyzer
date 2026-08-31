@@ -491,6 +491,12 @@ export namespace ESPNAPI {
         keeperCount?: number;
       };
       rosterSettings: {
+        // The starting lineup, keyed by LINEUP SLOT id (0=QB, 2=RB, 4=WR,
+        // 6=TE, 7=OP, 16=D/ST, 17=K, 20=BE, 21=IR, 23=FLEX, 8-15 IDP).
+        lineupSlotCounts: Record<string, number>;
+        // Max players per POSITION on the whole roster (keyed by position id,
+        // a different id space). NOT the lineup: a "max 8 RBs" cap here once
+        // rendered as an 8-RB starting lineup.
         positionLimits: Record<string, number>;
       };
       scoringSettings: {

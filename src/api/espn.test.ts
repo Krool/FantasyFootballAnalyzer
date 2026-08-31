@@ -102,7 +102,11 @@ const mainLeagueBody = {
     draftSettings: { type: 'AUCTION' },
     rosterSettings: {
       // 0=QB 2=RB 4=WR 6=TE 7=OP(superflex) 16=D/ST 17=K 20=Bench 21=IR 23=FLEX
-      positionLimits: { 0: 1, 2: 2, 4: 2, 6: 1, 7: 1, 16: 1, 17: 1, 20: 5, 21: 1, 23: 1 },
+      lineupSlotCounts: { 0: 1, 2: 2, 4: 2, 6: 1, 7: 1, 16: 1, 17: 1, 20: 5, 21: 1, 23: 1 },
+      // Per-position roster caps in ESPN's OTHER id space (2=RB position).
+      // The adapter must never read this as the lineup: doing so once turned
+      // a "max 8 RBs" cap into an 8-RB, 0-QB starting lineup.
+      positionLimits: { 0: 0, 2: 8 },
     },
     scoringSettings: { scoringItems: [{ statId: 53, points: 1 }] },
   },
@@ -227,7 +231,7 @@ describe('parseEspnRosterSlots', () => {
     expect(slots.SUPERFLEX).toBe(1);
   });
 
-  it('falls back to a standard lineup when positionLimits is missing', () => {
+  it('falls back to a standard lineup when lineupSlotCounts is missing', () => {
     expect(parseEspnRosterSlots(undefined)).toMatchObject({
       QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 0, K: 1, DST: 1, BENCH: 6, IR: 1,
     });
@@ -612,7 +616,7 @@ describe('espn loadLeague settings edge cases', () => {
   it('flags IDP leagues from defensive slot ids', async () => {
     const league = await loadWithBody(withSettings({
       rosterSettings: {
-        positionLimits: { ...mainLeagueBody.settings.rosterSettings.positionLimits, 10: 2, 11: 1 },
+        lineupSlotCounts: { ...mainLeagueBody.settings.rosterSettings.lineupSlotCounts, 10: 2, 11: 1 },
       },
     }));
     expect(league.hasIDP).toBe(true);
@@ -621,6 +625,14 @@ describe('espn loadLeague settings edge cases', () => {
   it('leaves hasIDP unset for offense-only leagues', async () => {
     const league = await loadWithBody(mainLeagueBody);
     expect(league.hasIDP).toBeUndefined();
+  });
+
+  it('reads the lineup from lineupSlotCounts, never the positionLimits roster caps', async () => {
+    // The shared fixture carries both fields: a real lineup and a
+    // "max 8 RBs, position id 0 unused" cap set. Reading the caps as the
+    // lineup produced a 0-QB / 8-RB Draft Room (owner-reported, 2026-08-31).
+    const league = await loadWithBody(mainLeagueBody);
+    expect(league.rosterSlots).toMatchObject({ QB: 1, RB: 2, WR: 2, TE: 1 });
   });
 
   it('marks custom scoring as approximate', async () => {
@@ -832,7 +844,7 @@ describe('espn loadLeague PAR replacement baseline', () => {
     // FLEX 1, SUPERFLEX 1, 4 teams -> effective WR 2 + 0.4 + 0.1 = 2.5;
     // level = ceil(4 * 2.5 * 1.25) = 13 -> 13th WR = 60 season points.
     const wrLevel = calculateReplacementLevels(
-      parseEspnRosterSlots(mainLeagueBody.settings.rosterSettings.positionLimits),
+      parseEspnRosterSlots(mainLeagueBody.settings.rosterSettings.lineupSlotCounts),
       4,
     ).WR;
     expect(wrLevel).toBe(13);
@@ -866,7 +878,7 @@ describe('espn loadLeague trade detection Priority 2 (communication endpoint)', 
       name: 'Comm Trade League',
       draftSettings: { type: 'SNAKE' },
       rosterSettings: {
-        positionLimits: { 0: 1, 2: 2, 4: 2, 6: 1, 16: 1, 17: 1, 20: 5, 21: 1, 23: 1 },
+        lineupSlotCounts: { 0: 1, 2: 2, 4: 2, 6: 1, 16: 1, 17: 1, 20: 5, 21: 1, 23: 1 },
       },
       scoringSettings: { scoringItems: [{ statId: 53, points: 1 }] },
     },

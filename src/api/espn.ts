@@ -187,18 +187,24 @@ function buildPlayerMap(leagueData: ESPNAPI.League, season: number): Map<string,
 // Progress callback type
 type ProgressCallback = (progress: { stage: string; current: number; total: number; detail?: string }) => void;
 
-// Map ESPN's rosterSettings.positionLimits into our RosterSlots.
+// Map ESPN's rosterSettings.lineupSlotCounts into our RosterSlots.
 // ESPN lineup slot IDs: 0=QB, 2=RB, 4=WR, 6=TE, 7=OP (superflex), 16=D/ST,
-// 17=K, 20=Bench, 21=IR, 23=FLEX. positionLimits carries an explicit 0 for
+// 17=K, 20=Bench, 21=IR, 23=FLEX. lineupSlotCounts carries an explicit 0 for
 // slots the league does not use. Respect that 0 (modern no-kicker / no-DST /
 // non-superflex leagues) instead of `value || fallback`, which masked a real
 // 0 as a phantom slot the user then had to fill in the Draft Room. Fall back
 // to a standard count only when the key is absent, and tolerate ESPN's
 // occasional junk negatives by treating them as "absent".
+//
+// NOT rosterSettings.positionLimits: that is the max-players-per-POSITION
+// roster cap, keyed by position id — a different id space entirely. Feeding
+// it here read a "max 8 RBs on the roster" league as an 8-RB starting lineup
+// with 0 QBs (owner-reported, 2026-08-31). Leagues without caps returned {}
+// and fell back to a plausible default lineup, which hid the bug.
 export function parseEspnRosterSlots(
-  positionLimits: Record<string, number> | undefined
+  lineupSlotCounts: Record<string, number> | undefined
 ): RosterSlots {
-  const posLimits = positionLimits || {};
+  const posLimits = lineupSlotCounts || {};
   const slotLimit = (id: number, fallback: number): number => {
     const v = posLimits[id];
     return typeof v === 'number' && v >= 0 ? v : fallback;
@@ -1092,14 +1098,14 @@ export async function loadLeague(
   const totalTeamsCount = leagueData.teams.length;
 
   // The league's REAL parsed lineup. This block used to compute replacement
-  // levels from a hardcoded classic lineup; now it parses positionLimits
+  // levels from a hardcoded classic lineup; now it parses lineupSlotCounts
   // (hoisted from below - the returned League reuses this) and runs the
   // shared par.ts model (FLEX 40/40/20, SUPERFLEX QB-dominant, x1.25 bench
   // buffer), the same math as the Sleeper and Yahoo adapters. ESPN rosters
   // spell team defense 'D/ST', so par.ts's DEF key is remapped.
-  logger.debug('[ESPN] Raw position limits:', leagueData.settings.rosterSettings?.positionLimits);
+  logger.debug('[ESPN] Raw lineup slots:', leagueData.settings.rosterSettings?.lineupSlotCounts);
   const rosterSlots: RosterSlots = parseEspnRosterSlots(
-    leagueData.settings.rosterSettings?.positionLimits
+    leagueData.settings.rosterSettings?.lineupSlotCounts
   );
   const levels = calculateReplacementLevels(rosterSlots, totalTeamsCount);
   const replacementRank: Record<string, number> = {
@@ -1374,14 +1380,14 @@ export async function loadLeague(
     scoringType = 'standard';
   }
 
-  // rosterSlots was parsed above (PAR block) from positionLimits.
+  // rosterSlots was parsed above (PAR block) from lineupSlotCounts.
   const hasSuperflex = rosterSlots.SUPERFLEX > 0;
   logger.debug('[ESPN] Roster slots:', rosterSlots, hasSuperflex ? '(superflex)' : '');
 
   // IDP slot ids (DT 8, DE 9, LB 10, DL 11, CB 12, S 13, DB 14, DP 15). Not
   // modeled in RosterSlots; presence flags the league for honest notices.
-  const posLimits = leagueData.settings.rosterSettings?.positionLimits || {};
-  const hasIDP = [8, 9, 10, 11, 12, 13, 14, 15].some(id => (posLimits[id] || 0) > 0);
+  const lineupSlots = leagueData.settings.rosterSettings?.lineupSlotCounts || {};
+  const hasIDP = [8, 9, 10, 11, 12, 13, 14, 15].some(id => (lineupSlots[id] || 0) > 0);
 
   // Median league: ESPN awards the top half of weekly scores a bonus win.
   const hasMedianMatchup =
