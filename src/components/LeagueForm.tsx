@@ -417,7 +417,18 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     }
 
     const trimmedId = leagueId.trim();
-    if (!trimmedId) return;
+    if (!trimmedId) {
+      // Owner-reported (2026-08-31): cookies pasted, League ID overlooked,
+      // Load League silently did nothing. Say what's missing and point at it
+      // instead of a disabled button with no explanation.
+      setLeagueIdError(
+        platform === 'espn'
+          ? 'Enter your League ID too — cookies alone are not enough. It is the leagueId=… number in your ESPN league URL.'
+          : 'Enter your League ID first. Paste the league URL and we pull the number out.',
+      );
+      document.getElementById('leagueId')?.focus();
+      return;
+    }
 
     if (!/^\d+$/.test(trimmedId)) {
       setLeagueIdError('League IDs are numbers only. Paste the league URL or the numeric ID.');
@@ -595,8 +606,11 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
               }}
               placeholder={platform === 'sleeper' ? 'e.g., 123456789012345678' : 'e.g., 12345678'}
               aria-describedby={leagueIdError ? 'leagueId-error leagueId-hint' : 'leagueId-hint'}
-              required
+              aria-required="true"
             />
+            {/* aria-required, not `required`: the browser's native bubble
+                would intercept the submit before handleSubmit's styled,
+                focused error runs. */}
             {leagueIdError && (
               <span id="leagueId-error" className={styles.fieldError} role="alert">
                 {leagueIdError}
@@ -855,10 +869,11 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
           type="submit"
           className="btn btn-primary"
           disabled={
+            // Not gated on the League ID being filled: a disabled button with
+            // no explanation reads as a dead click. Submitting without an ID
+            // surfaces the field error and focuses the field instead.
             isLoading ||
-            (platform === 'yahoo'
-              ? !selectedYahooLeague || loadingYahooLeagues
-              : !leagueId.trim())
+            (platform === 'yahoo' && (!selectedYahooLeague || loadingYahooLeagues))
           }
         >
           {isLoading ? (
