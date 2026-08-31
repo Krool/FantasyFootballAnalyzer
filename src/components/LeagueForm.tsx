@@ -773,7 +773,10 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                   <span className={styles.stepNumber}>3</span>
                   <div className={styles.stepContent}>
                     <strong>Find Cookies</strong>
-                    <span>Application tab {'>'} Cookies {'>'} espn.com</span>
+                    <span>
+                      Application tab (Chrome/Edge) or Storage tab
+                      (Firefox/Safari) {'>'} Cookies {'>'} espn.com
+                    </span>
                   </div>
                 </div>
                 <div className={styles.helpStep}>
