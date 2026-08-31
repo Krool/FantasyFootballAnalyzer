@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-08-31T17:50:30.417Z",
+ "fetchedAt": "2026-08-31T23:13:38.741Z",
  "data": {
   "players": [
    {
@@ -1699,7 +1699,7 @@
     "pos": "RB",
     "team": "GB",
     "status": "Active",
-    "injuryStatus": "DNR",
+    "injuryStatus": "NA",
     "injuryBodyPart": "Groin",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -2055,7 +2055,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 7
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "6167",
@@ -2166,7 +2166,7 @@
     "name": "D.J. Montgomery",
     "pos": "WR",
     "team": "IND",
-    "status": "Active",
+    "status": "Inactive",
     "injuryStatus": "IR",
     "injuryBodyPart": "Abdomen",
     "injuryNotes": null,
@@ -2276,7 +2276,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 6
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "6768",
@@ -3363,8 +3363,8 @@
     "pos": "WR",
     "team": "PIT",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Concussion",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
@@ -3428,8 +3428,8 @@
     "pos": "WR",
     "team": "PIT",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
@@ -3654,7 +3654,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 7
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "8126",
@@ -4038,7 +4038,7 @@
     "name": "Grant Calcaterra",
     "pos": "TE",
     "team": "PHI",
-    "status": "Active",
+    "status": "Inactive",
     "injuryStatus": "IR",
     "injuryBodyPart": "Back",
     "injuryNotes": null,
@@ -4135,7 +4135,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 4
+    "depthChartOrder": null
    },
    {
     "sleeperId": "8202",
@@ -4226,7 +4226,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "8219",
@@ -4402,7 +4402,7 @@
     "name": "Brittain Brown",
     "pos": "RB",
     "team": "CHI",
-    "status": "Active",
+    "status": "Inactive",
     "injuryStatus": "IR",
     "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
@@ -5084,7 +5084,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": null
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "10212",
@@ -5461,7 +5461,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 3
+    "depthChartOrder": null
    },
    {
     "sleeperId": "11092",
@@ -5708,7 +5708,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "11377",
@@ -6891,7 +6891,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 6
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "12015",
@@ -6951,7 +6951,7 @@
     "pos": "TE",
     "team": "GB",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "IR",
     "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -6977,7 +6977,7 @@
     "pos": "TE",
     "team": "GB",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "IR",
     "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -7223,7 +7223,7 @@
     "name": "Devin Neal",
     "pos": "RB",
     "team": "NO",
-    "status": "Active",
+    "status": "Inactive",
     "injuryStatus": "IR",
     "injuryBodyPart": "Hamstring",
     "injuryNotes": null,
@@ -7255,7 +7255,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "12480",
@@ -7549,8 +7549,8 @@
     "pos": "WR",
     "team": "CLE",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Concussion",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -7736,7 +7736,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 6
+    "depthChartOrder": null
    },
    {
     "sleeperId": "12521",
@@ -7918,7 +7918,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": null
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "12539",
@@ -8217,7 +8217,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 5
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "12743",
@@ -8328,7 +8328,7 @@
     "name": "Coleman Owen",
     "pos": "WR",
     "team": "IND",
-    "status": "Active",
+    "status": "Inactive",
     "injuryStatus": "IR",
     "injuryBodyPart": "Concussion",
     "injuryNotes": null,
@@ -8914,8 +8914,8 @@
     "pos": "QB",
     "team": "ARI",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Ribs",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -9642,7 +9642,7 @@
     "pos": "TE",
     "team": "DAL",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "IR",
     "injuryBodyPart": "Knee",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -9985,7 +9985,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "13430",
@@ -10057,7 +10057,7 @@
     "name": "DeaMonte Trayanum",
     "pos": "RB",
     "team": "NYJ",
-    "status": "Active",
+    "status": "Inactive",
     "injuryStatus": null,
     "injuryBodyPart": null,
     "injuryNotes": null,
