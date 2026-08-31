@@ -103,6 +103,9 @@ export function useLeague(): UseLeagueReturn {
     options?: LoadOptions,
   ): Promise<League | null> {
     logger.debug('[useLeague] load() called with credentials:', credentials, options);
+    // Remembered so a failed load of a NEW target can point Refresh back at
+    // the league that stays on screen (see the error path below).
+    const priorCredentials = lastCredentialsRef.current;
     lastCredentialsRef.current = credentials;
     setCredentials(credentials);
 
@@ -239,7 +242,19 @@ export function useLeague(): UseLeagueReturn {
         }
 
         setError(message);
-        setLeague(null);
+        // A failed load must not destroy a REAL league already on screen
+        // (a season switch that 404s, a share link that errors): stale data
+        // beats no data, same reasoning as the background-refresh path. A
+        // first connect (or a guest session, whose routes would hide the
+        // form's error banner) still clears, and Refresh is pointed back at
+        // the league that stayed visible.
+        setLeague(prev => {
+          if (prev && !prev.isGuest) {
+            lastCredentialsRef.current = priorCredentials ?? lastCredentialsRef.current;
+            return prev;
+          }
+          return null;
+        });
       }
       return null;
     } finally {
@@ -270,10 +285,16 @@ export function useLeague(): UseLeagueReturn {
   }, [load, league]);
 
   const clear = useCallback(() => {
+    // Cancel any in-flight load, same as enterGuest: without the bump, a
+    // "Change league" click during a refresh gets clobbered a second later
+    // when the abandoned load resolves and re-sets the league.
+    ++currentRequestRef.current;
     setLeague(null);
     setError(null);
     setCredentials(null);
     setSeasonFallbackNotice(null);
+    setIsLoading(false);
+    setProgress(null);
     lastCredentialsRef.current = null;
     clearGuestSettings();
   }, []);

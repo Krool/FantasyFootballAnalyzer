@@ -360,6 +360,19 @@ html {
 .btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--bone); }
 .btn:active { transform: translate(0,0); box-shadow: 2px 2px 0 var(--bone); }
 
+/* A disabled button must read as disabled at rest, not only via the cursor:
+   otherwise it's a dead click waiting to happen (the League ID silent no-op
+   was this pattern). Flatten the shadow so it doesn't invite the press. */
+.btn:disabled,
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 2px 2px 0 var(--bone);
+}
+.btn-primary:disabled { box-shadow: 2px 2px 0 var(--ink); }
+
 .btn-primary {
   background: var(--lime);
   color: var(--ink);

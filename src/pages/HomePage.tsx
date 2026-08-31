@@ -65,7 +65,9 @@ export function HomePage({ onLoadLeague, onGuest, isLoading, error, progress }: 
           />
 
           {isLoading && progress && (
-            <div className={styles.progressContainer}>
+            // role/aria-live so screen readers hear the load advancing
+            // instead of a frozen page (same pattern as SeasonLoadingOverlay).
+            <div className={styles.progressContainer} role="status" aria-live="polite">
               <div className={styles.progressHeader}>
                 <span className={styles.progressStage}>{progress.stage}</span>
                 <span className={styles.progressCount}>

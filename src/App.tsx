@@ -21,6 +21,7 @@ import { posForSlug, labelForPos } from '@/data/rankingsVariants';
 import { Analytics } from '@/utils/analytics';
 import type { GuestDest } from '@/pages/GuestEntry';
 import { DEFAULT_GUEST_SETTINGS, loadGuestSettings, type GuestSettings } from '@/utils/guestLeague';
+import { loadESPNCredentials } from '@/utils/espnCredentials';
 import { lazyPage } from '@/utils/staleChunk';
 
 // Lazy-load data-heavy pages for smaller initial bundle. lazyPage (not bare
@@ -247,6 +248,13 @@ function App() {
       // league (instant on a cache hit) and put them back on the same page.
       const ret = takeOAuthReturn();
       if (ret?.credentials) {
+        // The stash deliberately carries no ESPN cookies (see
+        // handleYahooConnect); a private ESPN league re-hydrates them from
+        // the same-tab sessionStorage copy persisted at connect time.
+        if (ret.credentials.platform === 'espn' && !ret.credentials.espnS2) {
+          const stored = loadESPNCredentials(ret.credentials.leagueId);
+          if (stored) ret.credentials = { ...ret.credentials, ...stored };
+        }
         load(ret.credentials)
           .then(loaded => navigate(
             ret.path || (isEmptyPreseason(loaded) ? '/draft-room' : '/draft'),
@@ -335,9 +343,17 @@ function App() {
     try {
       Analytics.connectAttempt('yahoo');
       const authUrl = await getAuthUrl();
+      // Strip the ESPN session cookies before stashing: the stash lives in
+      // localStorage across the redirect, and an abandoned login would leave
+      // espn_s2/SWID on disk — breaking the session-only promise. The return
+      // handler re-hydrates them from the per-league sessionStorage copy,
+      // which survives a same-tab redirect (security review, 2026-08-31).
+      const stashableCredentials = credentials
+        ? { ...credentials, espnS2: undefined, swid: undefined }
+        : undefined;
       saveOAuthReturn({
         path: location.pathname + location.search,
-        credentials: credentials ?? undefined,
+        credentials: stashableCredentials,
       });
       window.location.href = authUrl;
     } catch (err) {
@@ -393,10 +409,17 @@ function App() {
           .filter(s => s.year >= POOL_SEASON && s.year !== league.season)
           .sort((a, b) => a.year - b.year)[0];
         if (target) {
-          handledYearRef.current = target.year;
-          await load(credentialsForSeason(credentials, target));
-          navigate(`/draft-room?year=${target.year}`);
-          return;
+          // Mark the year handled only when its load actually landed: a
+          // failed load with ?year= already claimed would leave the URL
+          // asserting a season that never loaded, with the watch effect
+          // muted. On failure, fall through to the plain jump — the room
+          // targets the pool's season either way.
+          const loaded = await load(credentialsForSeason(credentials, target));
+          if (loaded) {
+            handledYearRef.current = target.year;
+            navigate(`/draft-room?year=${target.year}`);
+            return;
+          }
         }
       } catch (err) {
         // The room still works against the loaded league; don't block the jump.
@@ -637,8 +660,13 @@ function App() {
               // without this the board keeps the previous league's teams /
               // scoring / roster slots. (league.season covers ESPN/Yahoo year
               // switches that keep the same id; leagueKeyFor uses POOL_SEASON.)
+              // The key digests ALL of rosterSlots (not just SUPERFLEX) plus
+              // the draft type: a background refresh that corrects the slots
+              // (e.g. after the 2026-08-31 ESPN lineup fix) must reach an
+              // open setup screen, and QB/RB/FLEX changes were invisible to
+              // the old key.
               <DraftRoomPage
-                key={`${league.platform}:${league.id}:${league.season}:${league.totalTeams}:${league.scoringType}:${league.rosterSlots?.SUPERFLEX ?? 0}`}
+                key={`${league.platform}:${league.id}:${league.season}:${league.totalTeams}:${league.scoringType}:${league.draftType ?? ''}:${Object.entries(league.rosterSlots ?? {}).map(([k, v]) => `${k}${v}`).join('.')}`}
                 league={league}
                 justConnected={!!(location.state as { justConnected?: boolean } | null)?.justConnected}
               />

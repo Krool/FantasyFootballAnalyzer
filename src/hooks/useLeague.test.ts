@@ -555,4 +555,53 @@ describe('useLeague concurrent loads', () => {
       expect(result.current.league?.name).toBe('Fast');
     });
   });
+
+  it('clear() cancels an in-flight load instead of being clobbered by it', async () => {
+    mockedLoadCachedLeague.mockReturnValue(null);
+
+    let resolveLoad!: (l: League) => void;
+    mockedLoadLeague.mockReturnValueOnce(new Promise<League>(r => { resolveLoad = r; }));
+
+    const { result } = renderHook(() => useLeague());
+
+    let loadDone!: Promise<void>;
+    act(() => {
+      loadDone = result.current.load(sleeperCreds);
+    });
+    // The user hits "Change league" while the load is still in flight.
+    act(() => {
+      result.current.clear();
+    });
+    expect(result.current.league).toBeNull();
+    expect(result.current.isLoading).toBe(false);
+
+    // The abandoned load resolves late; it must not re-set the league.
+    await act(async () => {
+      resolveLoad(makeLeague({ name: 'Abandoned' }));
+      await loadDone;
+    });
+    expect(result.current.league).toBeNull();
+  });
+
+  it('a failed load of a new target keeps the league already on screen', async () => {
+    mockedLoadCachedLeague.mockReturnValue(null);
+
+    mockedLoadLeague
+      .mockResolvedValueOnce(makeLeague({ name: 'Loaded' }))
+      .mockRejectedValueOnce(new Error('Sleeper API error: 500'));
+
+    const { result } = renderHook(() => useLeague());
+    await act(async () => {
+      await result.current.load(sleeperCreds);
+    });
+    expect(result.current.league?.name).toBe('Loaded');
+
+    // A season switch (or share link) that errors must not blank the
+    // working league for an error banner.
+    await act(async () => {
+      await result.current.load({ ...sleeperCreds, leagueId: 'other' });
+    });
+    expect(result.current.league?.name).toBe('Loaded');
+    expect(result.current.error).toBeTruthy();
+  });
 });

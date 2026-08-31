@@ -12,7 +12,12 @@ import { logger } from '@/utils/logger';
 //     playoff*, isBestBall, tePremiumPerReception, hasIDP,
 //     scoringIsApproximate): all optional, absent = "unknown", and every
 //     consumer treats them that way, so old snapshots stay valid.
-const CACHE_VERSION = 3;
+// v4: the 2026-08-31 adapter fixes (74cb02d/fccab61/580a2db) changed the
+//     VALUE of existing fields — ESPN rosterSlots (positionLimits misread,
+//     missing flex ids), ESPN status, Yahoo rosterSlots/scoringType, Sleeper
+//     champion — so every pre-fix snapshot is wrong data, and final-season
+//     snapshots would have served it for up to 30 more days.
+const CACHE_VERSION = 4;
 const KEY_PREFIX = 'ffa:league:v' + CACHE_VERSION + ':';
 
 interface CacheEntry {

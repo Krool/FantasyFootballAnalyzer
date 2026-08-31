@@ -246,11 +246,17 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
   // the real (empty) answer instead of being snapped back again.
   const autoFallbackTriedRef = useRef(false);
 
+  // Monotonic id so two quick season changes can't race: the slower, older
+  // fetch must not overwrite the newer season's league list (same pattern as
+  // useLeague's request counter).
+  const yahooLeaguesRequestRef = useRef(0);
   const loadYahooLeagues = useCallback(async () => {
+    const requestId = ++yahooLeaguesRequestRef.current;
     setLoadingYahooLeagues(true);
     setYahooError(null);
     try {
       let leagues = await getUserLeagues(season);
+      if (requestId !== yahooLeaguesRequestRef.current) return;
       // Offseason gap: Yahoo may not have the user's current-year league yet
       // (renewal pending), which would strand the form on "No leagues
       // found". Fall back one season so the default lands on data; the
@@ -258,6 +264,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
       if (leagues.length === 0 && season === currentYear && !autoFallbackTriedRef.current) {
         autoFallbackTriedRef.current = true;
         const prior = await getUserLeagues(season - 1);
+        if (requestId !== yahooLeaguesRequestRef.current) return;
         if (prior.length > 0) {
           leagues = prior;
           autoFellBackRef.current = season - 1;
@@ -279,6 +286,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
         setSelectedYahooLeague('');
       }
     } catch (err) {
+      if (requestId !== yahooLeaguesRequestRef.current) return;
       logger.error('Failed to load Yahoo leagues:', err);
       setYahooError('Could not load your leagues. Log in with Yahoo again.');
       if (String(err).includes('re-authenticate')) {
@@ -286,7 +294,9 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
         setYahooAuthenticated(false);
       }
     } finally {
-      setLoadingYahooLeagues(false);
+      if (requestId === yahooLeaguesRequestRef.current) {
+        setLoadingYahooLeagues(false);
+      }
     }
   }, [season, saved]);
 
@@ -435,6 +445,26 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
       return;
     }
 
+    // Cookies that can't possibly work should not reach ESPN: the 401 that
+    // comes back says "add your cookies", which the user just did — a
+    // contradiction that reads as a broken app. The classic mistake is the
+    // two values swapped into each other's fields; name it specifically.
+    if (platform === 'espn' && (espnS2 || swid)) {
+      const swapped = isSwidValid(espnS2) && !isSwidValid(swid);
+      if (swapped) {
+        setLeagueIdError(
+          'The two cookies look swapped: the braces-wrapped SWID is in the espn_s2 field. Switch them and try again.',
+        );
+        return;
+      }
+      if (!isEspnS2Valid(espnS2) || !isSwidValid(swid)) {
+        setLeagueIdError(
+          'One of the ESPN cookies does not look right (see the notes under the fields). Re-copy both values, or clear them for a public league.',
+        );
+        return;
+      }
+    }
+
     Analytics.connectAttempt(platform);
 
     const credentials: LeagueCredentials = {
@@ -516,7 +546,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                 disabled={yahooLoginBusy}
                 title="Yahoo will ask you to sign in again instead of reusing the account this browser is already signed into"
               >
-                Use a different Yahoo account
+                {yahooLoginBusy ? 'Opening Yahoo…' : 'Use a different Yahoo account'}
               </button>
               {yahooError && <p className={styles.error} role="alert">{yahooError}</p>}
             </div>
@@ -678,6 +708,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
               className="btn"
               onClick={handleSleeperLookup}
               disabled={sleeperLookupBusy || !sleeperUsername.trim()}
+              title={!sleeperUsername.trim() ? 'Enter your Sleeper username first' : undefined}
             >
               {sleeperLookupBusy ? 'Searching...' : 'Find leagues'}
             </button>

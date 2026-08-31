@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+﻿import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   cacheLeague,
   clearAllCachedLeagues,
@@ -45,7 +45,7 @@ describe('cacheLeague + loadCachedLeague', () => {
 
   it('returns null when the cached entry is for a different platform', () => {
     // Manually plant a poisoned entry under the right key with wrong platform.
-    const key = 'ffa:league:v3:sleeper:L1:2024';
+    const key = 'ffa:league:v4:sleeper:L1:2024';
     localStorage.setItem(
       key,
       JSON.stringify({ league: makeLeague({ platform: 'espn' }), savedAt: 0 }),
@@ -54,7 +54,7 @@ describe('cacheLeague + loadCachedLeague', () => {
   });
 
   it('returns null when the cached JSON is corrupted', () => {
-    localStorage.setItem('ffa:league:v3:sleeper:L1:2024', '{not json');
+    localStorage.setItem('ffa:league:v4:sleeper:L1:2024', '{not json');
     expect(loadCachedLeague('sleeper', 'L1', 2024)).toBeNull();
   });
 
@@ -130,7 +130,7 @@ describe('cacheLeague quota eviction', () => {
   // "oldest" is deterministic (cacheLeague itself stamps Date.now()).
   function plant(id: string, season: number, savedAt: number) {
     localStorage.setItem(
-      `ffa:league:v3:sleeper:${id}:${season}`,
+      `ffa:league:v4:sleeper:${id}:${season}`,
       JSON.stringify({ league: makeLeague({ id, season }), savedAt }),
     );
   }
@@ -146,20 +146,20 @@ describe('cacheLeague quota eviction', () => {
     // Retry after eviction persisted the new league...
     expect(loadCachedLeague('sleeper', 'L1', 2024)).not.toBeNull();
     // ...the oldest entry was evicted...
-    expect(localStorage.getItem('ffa:league:v3:sleeper:OLD:2020')).toBeNull();
+    expect(localStorage.getItem('ffa:league:v4:sleeper:OLD:2020')).toBeNull();
     // ...and the newer sibling survived.
     expect(loadCachedLeague('sleeper', 'NEW', 2024)).not.toBeNull();
   });
 
   it('evicts an unparseable entry first (it is the best eviction candidate)', () => {
     plant('GOOD', 2024, 5000);
-    localStorage.setItem('ffa:league:v3:sleeper:BAD:2024', '{corrupt');
+    localStorage.setItem('ffa:league:v4:sleeper:BAD:2024', '{corrupt');
 
     const spy = failFirstSetItem();
     cacheLeague(makeLeague({ id: 'L1', season: 2024 }));
     spy.mockRestore();
 
-    expect(localStorage.getItem('ffa:league:v3:sleeper:BAD:2024')).toBeNull();
+    expect(localStorage.getItem('ffa:league:v4:sleeper:BAD:2024')).toBeNull();
     expect(loadCachedLeague('sleeper', 'L1', 2024)).not.toBeNull();
   });
 
@@ -204,7 +204,7 @@ describe('sweepStaleCacheVersions', () => {
 describe('keyForCredentials', () => {
   it('returns a deterministic key when season is provided', () => {
     const creds: LeagueCredentials = { platform: 'sleeper', leagueId: 'L1', season: 2024 };
-    expect(keyForCredentials(creds)).toBe('ffa:league:v3:sleeper:L1:2024');
+    expect(keyForCredentials(creds)).toBe('ffa:league:v4:sleeper:L1:2024');
   });
 
   it('returns null when season is missing', () => {
