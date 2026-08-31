@@ -10,6 +10,11 @@ on:
     # Daily at 11:00 UTC (early morning US). Rankings move most July-September;
     # the fetch is three cheap requests, so daily year-round is fine.
     - cron: '0 11 * * *'
+    # And 23:00 UTC (late afternoon US): most drafts run in the US evening, and
+    # GitHub's scheduler drifts cron fires by hours, so the afternoon slot is
+    # what puts same-day news (roster cuts, exempt-list moves) on the board
+    # before draft time. The no-change guard makes a quiet second run free.
+    - cron: '0 23 * * *'
   workflow_dispatch:
 
 permissions:
