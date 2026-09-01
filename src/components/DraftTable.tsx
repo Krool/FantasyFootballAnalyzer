@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import type { RosterSlots, ScoringType, Team } from '@/types';
 import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected } from '@/utils/grading';
 import { consensusPositionRanks, hasSeasonResults } from '@/utils/consensusGrade';
-import { exportDraftBoard } from '@/utils/exportDraftBoard';
+import { exportDraftBoard, exportDraftOrder } from '@/utils/exportDraftBoard';
 import {
   DEFAULT_ROSTER_SLOTS,
   pickKey,
@@ -83,7 +83,10 @@ export function DraftTable({
   const hasResults = useMemo(() => hasSeasonResults(allPicks), [allPicks]);
 
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
-  const [shareState, setShareState] = useState<'idle' | 'busy' | 'copied' | 'saved' | 'failed'>('idle');
+  const [shareState, setShareState] = useState<{
+    which: 'teams' | 'order';
+    state: 'busy' | 'copied' | 'saved' | 'failed';
+  } | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<string>('all');
   const [sortField, setSortField] = useState<SortField>(isAuction ? 'cost' : 'pick');
   const [sortDirection, setSortDirection] = useState<SortDirection>(isAuction ? 'desc' : 'asc');
@@ -392,33 +395,51 @@ export function DraftTable({
           <span className={`grade-badge terrible`}>{summary.terrible} Terrible</span>
         </div>
 
-        <button
-          type="button"
-          className={styles.shareBoard}
-          disabled={shareState === 'busy'}
-          aria-busy={shareState === 'busy'}
-          title="Copy the full draft board as an image for the group chat"
-          onClick={async () => {
-            if (shareState === 'busy') return;
-            playSort();
-            setShareState('busy');
-            const result = await exportDraftBoard({
-              leagueName: leagueName ?? 'Draft Board',
-              season,
-              isAuction,
-              totalTeams,
-              picks: gradedPicks,
-            });
-            setShareState(result === false ? 'failed' : result);
-            setTimeout(() => setShareState(current => (current === 'busy' ? current : 'idle')), 2500);
-          }}
-        >
-          {shareState === 'busy' && '…'}
-          {shareState === 'copied' && 'Copied!'}
-          {shareState === 'saved' && 'Saved PNG'}
-          {shareState === 'failed' && "Couldn't export"}
-          {shareState === 'idle' && 'Copy board as image'}
-        </button>
+        {(
+          [
+            { which: 'teams', label: 'Copy rosters image', run: exportDraftBoard,
+              hint: 'Every team’s haul as one image for the group chat' },
+            { which: 'order', label: 'Copy order image', run: exportDraftOrder,
+              hint: isAuction
+                ? 'Every pick in price order, sectioned into rounds like a snake board'
+                : 'Every pick in draft order, sectioned by round' },
+          ] as const
+        ).map(({ which, label, run, hint }) => {
+          const state = shareState?.which === which ? shareState.state : null;
+          return (
+            <button
+              key={which}
+              type="button"
+              className={styles.shareBoard}
+              disabled={shareState?.state === 'busy'}
+              aria-busy={state === 'busy'}
+              title={hint}
+              onClick={async () => {
+                if (shareState?.state === 'busy') return;
+                playSort();
+                setShareState({ which, state: 'busy' });
+                const result = await run({
+                  leagueName: leagueName ?? 'Draft Board',
+                  season,
+                  isAuction,
+                  totalTeams,
+                  picks: gradedPicks,
+                });
+                setShareState({ which, state: result === false ? 'failed' : result });
+                setTimeout(
+                  () => setShareState(current => (current?.state === 'busy' ? current : null)),
+                  2500,
+                );
+              }}
+            >
+              {state === 'busy' && '…'}
+              {state === 'copied' && 'Copied!'}
+              {state === 'saved' && 'Saved PNG'}
+              {state === 'failed' && "Couldn't export"}
+              {state === null && label}
+            </button>
+          );
+        })}
       </div>
 
       {!hasResults && (
