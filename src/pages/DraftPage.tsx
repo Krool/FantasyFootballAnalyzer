@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DraftTable } from '@/components/DraftTable';
+import { SeasonLoadingOverlay } from '@/components/SeasonLoadingOverlay';
 import type { League } from '@/types';
 import { POOL } from '@/data/draftPool';
 import { leagueKeyFor } from '@/hooks/useDraftRoom';
@@ -46,6 +47,16 @@ export function DraftPage({ league }: DraftPageProps) {
   const season = active === 'live' && liveData ? liveData.season : league.season;
   const hasData = active === 'live' ? liveData !== null : hasPlatformData;
 
+  // Grading a full draft (pool indexing, consensus ranks, projections) runs
+  // synchronously inside DraftTable's first render - long enough on a big
+  // auction that clicking the tab reads as a dead click. Paint one frame of
+  // the familiar loading veil first, then mount the table.
+  const [boardReady, setBoardReady] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setBoardReady(true), 30);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className={styles.page}>
       <div className="container">
@@ -80,7 +91,9 @@ export function DraftPage({ league }: DraftPageProps) {
           </div>
         )}
 
-        {hasData ? (
+        {hasData && !boardReady ? (
+          <SeasonLoadingOverlay title="Grading the draft" progress={null} />
+        ) : hasData ? (
           active === 'live' && liveData ? (
             <DraftTable
               teams={liveData.teams}

@@ -5,20 +5,23 @@ interface SeasonLoadingOverlayProps {
   // The season being switched to; omitted for a same-season refresh.
   season?: number;
   progress: LoadingProgress | null;
+  // Overrides the default season/refresh wording so pages can reuse the
+  // veil for their own slow work (e.g. grading a full draft).
+  title?: string;
 }
 
 // Veil over the page while a different season (or a forced refresh) loads on
 // top of an already-visible league. Without it the only signal is the header
 // refresh icon, which reads as "nothing happened" on slow platforms like
 // Yahoo, where the player-stats enrichment takes a while.
-export function SeasonLoadingOverlay({ season, progress }: SeasonLoadingOverlayProps) {
+export function SeasonLoadingOverlay({ season, progress, title }: SeasonLoadingOverlayProps) {
   return (
     <div className={styles.veil} role="status" aria-live="polite">
       <div className={styles.panel}>
         <div className="spinner" />
         <div className={styles.text}>
           <span className={styles.title}>
-            {season ? `Loading the ${season} season` : 'Refreshing league data'}
+            {title ?? (season ? `Loading the ${season} season` : 'Refreshing league data')}
           </span>
           {progress && (
             <>
