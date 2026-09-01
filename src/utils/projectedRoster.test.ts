@@ -5,6 +5,7 @@ import {
   pickKey,
   projectedLineup,
   projectedPointsByPick,
+  projectedSeasonPoints,
 } from './projectedRoster';
 import type { DraftPick, RosterSlots } from '@/types';
 import type { DraftPoolFile } from '@/types/draft';
@@ -163,5 +164,60 @@ describe('6pt passing touchdowns', () => {
     const prem = projectedPointsByPick(picks, POOL, 'ppr', { tePremiumPerReception: 0.5 });
     expect(prem.get(pickKey(picks[0]))!).toBeGreaterThan(180);
     expect(prem.get(pickKey(picks[1]))).toBe(240);
+  });
+});
+
+describe('projectedSeasonPoints (weekly, byes, replacement floor)', () => {
+  // QB-only lineups against a 5-QB pool, 2 teams. Replacement rank for
+  // 2 teams x 1 QB x 1.25 buffer = 3, so the 3rd QB (170 ppr, 10/game) is
+  // the waiver wire. qb1: 340 (20/game), bye 5. qb2: 204 (12/game), bye 7.
+  const QB_POOL = {
+    season: 2026,
+    generatedAt: '',
+    baseline: {},
+    players: [
+      { ...poolPlayer('qb1', 'QB', 340, 'qb1'), bye: 5 },
+      { ...poolPlayer('qb2', 'QB', 204, 'qb2'), bye: 7 },
+      { ...poolPlayer('qb3', 'QB', 170, 'qb3'), bye: 9 },
+      { ...poolPlayer('qb4', 'QB', 136, 'qb4'), bye: 10 },
+      { ...poolPlayer('qb5', 'QB', 102, 'qb5'), bye: 11 },
+    ],
+  } as unknown as DraftPoolFile;
+
+  const QB_ONLY: RosterSlots = {
+    ...DEFAULT_ROSTER_SLOTS,
+    QB: 1, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0,
+  };
+
+  const season = (ids: string[]) => {
+    const picks = ids.map(id => pick(id, 'QB'));
+    const pts = projectedPointsByPick(picks, QB_POOL, 'ppr');
+    return projectedSeasonPoints(picks, QB_POOL, QB_ONLY, 2, pts, 'ppr').startingPoints;
+  };
+
+  it('covers the starter bye with the backup, worth only its edge over the wire', () => {
+    const withBackup = season(['qb1', 'qb2']);
+    const without = season(['qb1']);
+    // 16 weeks of qb1 either way. Bye week: backup 12/game vs replacement
+    // 10/game. Rostering the second QB is worth exactly 2 points, not a
+    // full QB week.
+    expect(withBackup).toBeCloseTo(16 * 20 + 12, 5);
+    expect(without).toBeCloseTo(16 * 20 + 10, 5);
+    expect(withBackup - without).toBeCloseTo(2, 5);
+  });
+
+  it('scores an empty slot at replacement level, not zero', () => {
+    expect(season([])).toBeCloseTo(17 * 10, 5);
+  });
+
+  it('streams over a rostered player who projects below the wire', () => {
+    // qb5 projects 6/game against a 10/game wire: a real manager benches him.
+    expect(season(['qb5'])).toBeCloseTo(17 * 10, 5);
+  });
+
+  it('gives no credit for depth that cannot beat the wire', () => {
+    // qb4 (8/game) as backup: bye week still streams the 10/game wire.
+    expect(season(['qb1', 'qb4'])).toBeCloseTo(16 * 20 + 10, 5);
+    expect(season(['qb1', 'qb4'])).toBeCloseTo(season(['qb1']), 5);
   });
 });

@@ -12,7 +12,13 @@
 
 import type { DraftPick, RosterSlots, ScoringType } from '@/types';
 import type { DraftPoolFile } from '@/types/draft';
-import { adjustedPoints, projectedPoints, vorConfigFor } from './projectionValues';
+import {
+  adjustedPoints,
+  projectedPoints,
+  replacementPoints,
+  replacementRanks,
+  vorConfigFor,
+} from './projectionValues';
 import { indexPool, resolvePoolPlayer } from './consensusGrade';
 
 // Sleeper calls a defense DEF, the pool and RosterSlots call it DST.
@@ -118,4 +124,106 @@ export function projectedLineup(
     startingPoints: starters.reduce((sum, p) => sum + pts(p), 0),
     unfilled,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Weekly projection: byes and replacement level.
+//
+// projectedLineup above sums SEASON totals for one static lineup, which gets
+// two things wrong at once: a starter's bye week hides inside his own total
+// (so bench coverage earns nothing), and a roster missing a position scores
+// zero from that slot forever (no real league leaves a slot empty - you
+// stream a pickup). This walks the fantasy season week by week instead:
+//
+//  - Weeks 1-17. The fantasy season runs weeks 1-14 plus 15-17 playoffs;
+//    week 18 is avoided league-wide (starters rest). Projections are 17-game
+//    season totals, so a player's per-game rate is total/17 and every player
+//    donates his week-18 game equally - comparative, which is all this is.
+//  - A player on bye is unavailable that week; his backup (or a replacement)
+//    covers the slot.
+//  - Every slot has a REPLACEMENT FLOOR: the per-game points of the player
+//    at the position's replacement rank (same VOR machinery as the draft
+//    values, so scoring rules, superflex demand, TE premium, and 6pt pass
+//    TDs all flow through). An unfilled or under-replacement slot scores
+//    replacement, because that manager would stream the waiver wire - which
+//    is also why a 2-QB roster only beats a 1-QB roster by (backup minus
+//    replacement) for one bye week, not by a full QB week.
+// ---------------------------------------------------------------------------
+
+// Weeks 1-17 of the 18-week NFL season (see docs/FANTASY_FOOTBALL.md).
+const FANTASY_WEEKS = 17;
+// Season projections cover a 17-game schedule.
+const PROJECTED_GAMES = 17;
+
+export interface ProjectedSeason {
+  // Sum of the best legal weekly lineups across the fantasy season,
+  // replacement-floored. Season-total scale, comparable across teams.
+  startingPoints: number;
+}
+
+export function projectedSeasonPoints(
+  picks: DraftPick[],
+  pool: DraftPoolFile,
+  slots: RosterSlots,
+  teamCount: number,
+  seasonPoints: Map<string, number>,
+  scoring: ScoringType,
+  extras: ScoringExtras = {},
+): ProjectedSeason {
+  const cfg = vorConfigFor({
+    sixPtPassTd: (extras.passTdPoints ?? 4) >= 6,
+    tePremium: (extras.tePremiumPerReception ?? 0) > 0,
+  });
+  const teams = Math.max(1, teamCount);
+  const ranks = replacementRanks(slots, teams, cfg);
+  // budget/rounds ride along for the ValueLeague shape; replacementPoints
+  // only reads rosterSlots, teams, and scoring.
+  const replSeason = replacementPoints(
+    pool.players,
+    { rosterSlots: slots, teams, scoring, budget: 200, rounds: 15 },
+    ranks,
+    cfg,
+  );
+  const replPerGame = (pos: string): number => (replSeason[pos] ?? 0) / PROJECTED_GAMES;
+  const flexRepl = Math.max(replPerGame('RB'), replPerGame('WR'), replPerGame('TE'));
+  const superflexRepl = Math.max(flexRepl, replPerGame('QB'));
+
+  // Per-game rate and bye week per pick, resolved once.
+  const index = indexPool(pool);
+  const rated = picks.map(pick => ({
+    pos: normalizePos(pick.player.position),
+    perGame: (seasonPoints.get(pickKey(pick)) ?? 0) / PROJECTED_GAMES,
+    bye: resolvePoolPlayer(pick.player, index)?.bye ?? null,
+  }));
+
+  let total = 0;
+  for (let week = 1; week <= FANTASY_WEEKS; week++) {
+    const available = rated
+      .filter(r => r.bye !== week && r.perGame > 0)
+      .sort((a, b) => b.perGame - a.perGame);
+    const used = new Set<(typeof rated)[number]>();
+
+    const fill = (n: number, eligible: (pos: string) => boolean, floor: number) => {
+      for (let i = 0; i < n; i++) {
+        const found = available.find(r => !used.has(r) && eligible(r.pos));
+        if (found && found.perGame >= floor) {
+          used.add(found);
+          total += found.perGame;
+        } else {
+          // Nobody rostered (or nobody better than the wire): stream the
+          // replacement. The rostered player stays available in name only -
+          // he can't beat the floor anywhere else either.
+          total += floor;
+        }
+      }
+    };
+
+    for (const pos of ['QB', 'RB', 'WR', 'TE', 'K', 'DST'] as const) {
+      fill(slots[pos], p => p === pos, replPerGame(pos));
+    }
+    fill(slots.FLEX, p => FLEX_ELIGIBLE.has(p), flexRepl);
+    fill(slots.SUPERFLEX, p => SUPERFLEX_ELIGIBLE.has(p), superflexRepl);
+  }
+
+  return { startingPoints: total };
 }

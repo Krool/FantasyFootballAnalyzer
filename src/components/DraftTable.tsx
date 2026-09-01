@@ -8,8 +8,8 @@ import { nominationStats } from '@/utils/nominationAnalysis';
 import {
   DEFAULT_ROSTER_SLOTS,
   pickKey,
-  projectedLineup,
   projectedPointsByPick,
+  projectedSeasonPoints,
 } from '@/utils/projectedRoster';
 import { buildPickValueCurve } from '@/utils/pickValueCurve';
 import { draftableSlotCount } from '@/utils/draftEngine';
@@ -349,7 +349,19 @@ export function DraftTable({
         // consensusValue is how cheaply the team bought, projStarters is how
         // good the resulting starting lineup actually projects.
         const consensusValue = live.reduce((sum, p) => sum + p.valueOverExpected, 0);
-        const projStarters = hasResults ? 0 : projectedLineup(picks, rosterSlots, projected).startingPoints;
+        // Week-by-week: byes covered by the bench or a replacement-level
+        // stream, so depth is worth exactly what it beats the wire by.
+        const projStarters = hasResults
+          ? 0
+          : projectedSeasonPoints(
+              picks,
+              POOL,
+              rosterSlots,
+              totalTeams || teams.length || 12,
+              projected,
+              scoringType,
+              { passTdPoints, tePremiumPerReception },
+            ).startingPoints;
         return {
           teamId,
           teamName: picks[0]?.teamName ?? teamId,
@@ -363,7 +375,17 @@ export function DraftTable({
         };
       })
       .sort((a, b) => (hasResults ? b.points - a.points : b.projStarters - a.projStarters));
-  }, [gradedPicks, hasResults, projected, rosterSlots]);
+  }, [
+    gradedPicks,
+    hasResults,
+    projected,
+    rosterSlots,
+    totalTeams,
+    teams.length,
+    scoringType,
+    passTdPoints,
+    tePremiumPerReception,
+  ]);
 
   return (
     <div className={styles.container}>
@@ -491,8 +513,9 @@ export function DraftTable({
             </>
           )}{' '}
           The points are projections for the season under your league&apos;s scoring. The standings
-          rank on projected starting lineup, so a team can buy well and still sit low with a
-          lopsided roster.
+          rank on each week&apos;s best legal lineup across the fantasy season, byes covered by the
+          bench or a waiver-level pickup, so a team can buy well and still sit low with a lopsided
+          roster.
         </p>
       )}
 
@@ -520,7 +543,7 @@ export function DraftTable({
                   <>
                     <span
                       className={styles.lbStat}
-                      title="Projected points from this team's best legal starting lineup. A projection, not a result."
+                      title="Projected points from this team's best legal lineup each week of the fantasy season (weeks 1-17), under this league's scoring. Byes are covered by the bench or a replacement-level pickup, so depth counts for what it beats the waiver wire by. A projection, not a result."
                     >
                       {row.projStarters.toFixed(0)} proj
                     </span>
