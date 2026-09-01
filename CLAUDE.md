@@ -105,11 +105,15 @@ The league-analysis routes require a real loaded league and redirect guests to
 `/rankings`: `/draft`, `/trades`, `/waivers`, `/teams`, `/history`, `/awards`,
 `/players`. `/yahoo-success` and `/yahoo-error` handle the OAuth round trip.
 
-**Share links**: `?league=sleeper:<id>` on any URL loads that Sleeper league
-for whoever opens it (App.tsx keeps the param on the URL while a Sleeper
-league is loaded, and route guards hold with a spinner while the load is in
-flight). Sleeper only — its API is public and CORS-open; ESPN-private/Yahoo
-need credentials and fall back to the connect form.
+**Share links**: `?league=sleeper:<id>` or `?league=espn:<id>` on any URL
+loads that league for whoever opens it (App.tsx keeps the param on the URL
+while a sleeper/espn league is loaded, and route guards hold with a spinner
+while the load is in flight). A private ESPN league can't load cookie-less;
+its link degrades to the connect form with the league prefilled, and the
+recipient adds their own cookies. Credentials NEVER ride in the URL — that
+was asked for and deliberately declined (2026-09-01): espn_s2/SWID are the
+user's whole ESPN session, and URLs leak through history, chat previews, and
+forwards. Yahoo needs OAuth, so no share param.
 
 **Prerender**: `scripts/prerender.tsx` runs as the final build step and bakes
 real static HTML for the indexable public routes (home, `/rankings`, the

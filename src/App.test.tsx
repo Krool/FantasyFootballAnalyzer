@@ -188,6 +188,41 @@ describe('share links (?league=sleeper:<id>)', () => {
       ),
     );
   });
+
+  it('loads a public ESPN league from ?league=espn:<id> and holds the deep link', async () => {
+    h.loadMock.mockImplementation(async ({ leagueId }: { leagueId: string }) => {
+      const league = sleeperLeague(leagueId, { platform: 'espn' } as Partial<League>);
+      h.store.set({ league });
+      return league;
+    });
+    renderApp('/awards?league=espn:347749457');
+    expect(await screen.findByTestId('awards-page')).toBeTruthy();
+    expect(h.loadMock).toHaveBeenCalledWith(
+      expect.objectContaining({ platform: 'espn', leagueId: '347749457' }),
+    );
+    expect(decodeURIComponent(screen.getByTestId('loc').textContent ?? '')).toBe(
+      '/awards?league=espn:347749457',
+    );
+  });
+
+  it('degrades a private ESPN share link to the prefilled connect form', async () => {
+    // A cookie-less load of a private league fails; the link should land on
+    // the connect form (home), tried exactly once, not loop or strand the
+    // visitor on a guarded route.
+    h.loadMock.mockImplementation(async () => {
+      h.store.set({ isLoading: true });
+      h.store.set({ isLoading: false });
+      return null;
+    });
+    renderApp('/awards?league=espn:347749457');
+    expect(await screen.findByTestId('home-page')).toBeTruthy();
+    expect(h.loadMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('loc').textContent).toMatch(/^\//);
+    // The prefill for the connect form persists like a manual attempt would.
+    expect(JSON.parse(localStorage.getItem('ffa:lastconn:v1') ?? 'null')).toMatchObject({
+      platform: 'espn',
+    });
+  });
 });
 
 describe('route guards', () => {

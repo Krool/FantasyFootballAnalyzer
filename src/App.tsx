@@ -130,17 +130,20 @@ function App() {
   // effect from re-firing on the same value (e.g. after a manual load completes
   // and updates league.season, which would otherwise look like a "change").
   const handledYearRef = useRef<number | null>(null);
-  // ?league=sleeper:<id> makes any URL a shareable league link: Sleeper's API
-  // is public and CORS-open, so the league loads for whoever opens the link
-  // with no cookies or OAuth, and the id is already visible on sleeper.com.
-  // ESPN private leagues and Yahoo can't work this way (cookies / OAuth), so
-  // the param is Sleeper-only by design. The ref remembers ids this session
-  // already tried so a failed load — or a deliberate "change league" with the
-  // param still in the URL — doesn't re-load in a loop.
-  const shareLeagueId = useMemo(() => {
+  // ?league=sleeper:<id> / ?league=espn:<id> makes any URL a shareable league
+  // link. Sleeper's API is public and CORS-open, so its leagues load for
+  // whoever opens the link. ESPN public leagues load the same way through the
+  // proxy; a PRIVATE ESPN league can't (cookies never ride in a URL), so its
+  // link degrades to the connect form with the league prefilled — the
+  // recipient adds their own cookies and is in. Yahoo needs OAuth, so no
+  // param. The ref remembers targets this session already tried so a failed
+  // load — or a deliberate "change league" with the param still in the URL —
+  // doesn't re-load in a loop.
+  const shareTarget = useMemo(() => {
     const param = searchParams.get('league');
-    const match = param ? /^sleeper:(\d+)$/.exec(param) : null;
-    return match ? match[1] : null;
+    const match = param ? /^(sleeper|espn):(\d+)$/.exec(param) : null;
+    if (!match) return null;
+    return { platform: match[1] as 'sleeper' | 'espn', id: match[2], key: match[0] };
   }, [searchParams]);
   const attemptedShareRef = useRef<string | null>(null);
   // OAuth callback runs once per browser navigation. StrictMode would otherwise
@@ -471,28 +474,48 @@ function App() {
   // /awards?league=sleeper:… come back up with the league instead of bouncing
   // to the connect form).
   useEffect(() => {
-    if (!shareLeagueId) return;
-    if (attemptedShareRef.current === shareLeagueId) return;
-    if (league && !league.isGuest && league.platform === 'sleeper' && league.id === shareLeagueId) {
+    if (!shareTarget) return;
+    if (attemptedShareRef.current === shareTarget.key) return;
+    if (
+      league && !league.isGuest &&
+      league.platform === shareTarget.platform && league.id === shareTarget.id
+    ) {
       // Already showing the linked league; just don't try again later.
-      attemptedShareRef.current = shareLeagueId;
+      attemptedShareRef.current = shareTarget.key;
       return;
     }
     if (isLoading) return;
-    attemptedShareRef.current = shareLeagueId;
-    load({ platform: 'sleeper', leagueId: shareLeagueId }).then(loaded => {
+    attemptedShareRef.current = shareTarget.key;
+    load({
+      platform: shareTarget.platform,
+      leagueId: shareTarget.id,
+      ...(shareTarget.platform === 'espn' ? { season: new Date().getFullYear() } : {}),
+    }).then(loaded => {
       // Prefill the connect form for next visit, same as a manual connect.
-      if (loaded) rememberConnection(loaded.platform, loaded.id, loaded.season);
+      if (loaded) {
+        rememberConnection(loaded.platform, loaded.id, loaded.season);
+      } else if (shareTarget.platform === 'espn') {
+        // A cookie-less load of a private ESPN league fails by design. The
+        // link still earns its keep: land on the connect form with the
+        // platform and league id prefilled (the same remembered-connection
+        // path a manual connect uses), where useLeague's error explains the
+        // cookies. The recipient adds their own two values and is in.
+        rememberConnection('espn', shareTarget.id, new Date().getFullYear());
+        navigate('/', { replace: true });
+      }
     });
-  }, [shareLeagueId, league, isLoading, load]);
+  }, [shareTarget, league, isLoading, load, navigate]);
 
   // A share-link load that hasn't resolved yet. While true, route guards show
   // a spinner instead of redirecting, so /awards?league=… lands on /awards
   // once the league arrives rather than bouncing home first.
   const shareLoadPending =
-    !!shareLeagueId &&
-    (attemptedShareRef.current !== shareLeagueId || isLoading) &&
-    !(league && !league.isGuest && league.platform === 'sleeper' && league.id === shareLeagueId);
+    !!shareTarget &&
+    (attemptedShareRef.current !== shareTarget.key || isLoading) &&
+    !(
+      league && !league.isGuest &&
+      league.platform === shareTarget.platform && league.id === shareTarget.id
+    );
 
   // Keep the share param on the URL while a Sleeper league is loaded, so the
   // address bar is always a copyable share link. In-app navigations (NavLink)
@@ -507,11 +530,15 @@ function App() {
   // one diagnosable event with the wanted-vs-actual param.
   const shareRewriteRef = useRef({ windowStart: 0, count: 0, tripped: false, lastPath: '' });
   useEffect(() => {
-    if (!league || league.isGuest || league.platform !== 'sleeper') return;
+    // sleeper and espn both keep the param (espn links degrade to a
+    // prefilled connect form for private leagues — still worth copying).
+    // The param NEVER carries credentials, only the public league id.
+    if (!league || league.isGuest || (league.platform !== 'sleeper' && league.platform !== 'espn')) return;
+    const wanted = `${league.platform}:${league.id}`;
     const path = location.pathname;
     if (path === '/yahoo-success' || path === '/yahoo-error') return;
     const params = new URLSearchParams(location.search);
-    if (params.get('league') === `sleeper:${league.id}`) return;
+    if (params.get('league') === wanted) return;
     // A share link for a DIFFERENT league is still loading: the param on the
     // URL is the one the user navigated with, not ours to overwrite. Rewriting
     // here stomps the share id mid-load (and fights the load's own league
@@ -536,19 +563,18 @@ function App() {
       breaker.tripped = true;
       logger.error('[App] Share-param rewrite loop detected; leaving the URL alone', {
         pathname: path,
-        wanted: `sleeper:${league.id}`,
+        wanted,
         actual: params.get('league'),
         // The ids above get scrubbed before Sentry, so record the relations
         // that identify the other writer: is the URL's param the share id
         // this session already tried (a league-identity flap), and was a
         // league load in flight while the fight happened?
-        actualIsAttemptedShare:
-          params.get('league') === `sleeper:${attemptedShareRef.current}`,
+        actualIsAttemptedShare: params.get('league') === attemptedShareRef.current,
         loading: isLoading,
       });
       return;
     }
-    params.set('league', `sleeper:${league.id}`);
+    params.set('league', wanted);
     navigate(`${path}?${params.toString()}`, { replace: true });
   }, [league, location.pathname, location.search, navigate, shareLoadPending, isLoading]);
 
