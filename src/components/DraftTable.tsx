@@ -18,6 +18,7 @@ import { keeperValues } from '@/utils/keeperValue';
 import { vorConfigFor } from '@/utils/projectionValues';
 import { KeeperValuePanel } from './KeeperValuePanel';
 import { POOL } from '@/data/draftPool';
+import { WEEKLY_SHAPE } from '@/data/weeklyShape';
 import { useSounds } from '@/hooks/useSounds';
 import { NflTeamLabel } from './NflTeamLabel';
 import { PosBadge } from './PosBadge';
@@ -361,6 +362,7 @@ export function DraftTable({
               projected,
               scoringType,
               { passTdPoints, tePremiumPerReception },
+              WEEKLY_SHAPE,
             ).startingPoints;
         return {
           teamId,

@@ -221,3 +221,48 @@ describe('projectedSeasonPoints (weekly, byes, replacement floor)', () => {
     expect(season(['qb1', 'qb4'])).toBeCloseTo(season(['qb1']), 5);
   });
 });
+
+describe('projectedSeasonPoints with a weekly shape', () => {
+  const QB_POOL2 = {
+    season: 2026,
+    generatedAt: '',
+    baseline: {},
+    players: [
+      { ...poolPlayer('qb1', 'QB', 340, 'qb1'), bye: 5 },
+      { ...poolPlayer('qb2', 'QB', 204, 'qb2'), bye: 7 },
+      { ...poolPlayer('qb3', 'QB', 170, 'qb3'), bye: 9 },
+    ],
+  } as unknown as DraftPoolFile;
+
+  const QB_ONLY: RosterSlots = {
+    ...DEFAULT_ROSTER_SLOTS,
+    QB: 1, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 0, DST: 0, BENCH: 0,
+  };
+
+  it('lands absences in their projected weeks, covered at replacement', () => {
+    // qb1 projected out weeks 1-2 (suspension) plus his week-5 bye: 14
+    // playable weeks, equal share each.
+    const curve = Array.from({ length: 17 }, (_, i) => ([0, 1, 4].includes(i) ? 0 : 25));
+    const shapeFile = { season: 2026, generatedAt: '', weeks: 17, players: { qb1: curve } };
+    const picks = [pick('qb1', 'QB')];
+    const pts = projectedPointsByPick(picks, QB_POOL2, 'ppr');
+    const { startingPoints } = projectedSeasonPoints(
+      picks, QB_POOL2, QB_ONLY, 2, pts, 'ppr', {}, shapeFile,
+    );
+    // Weights normalize to his own curve, so his 14 playable weeks still
+    // total his full 340; the 3 missed weeks stream the 10/game wire
+    // (replacement = 3rd QB of a 2-team league, 170/17).
+    expect(startingPoints).toBeCloseTo(340 + 3 * 10, 5);
+  });
+
+  it('falls back to flat-with-bye for players the shape file does not carry', () => {
+    const shapeFile = { season: 2026, generatedAt: '', weeks: 17, players: {} };
+    const picks = [pick('qb1', 'QB')];
+    const pts = projectedPointsByPick(picks, QB_POOL2, 'ppr');
+    const { startingPoints } = projectedSeasonPoints(
+      picks, QB_POOL2, QB_ONLY, 2, pts, 'ppr', {}, shapeFile,
+    );
+    // 16 flat weeks of 20/game plus the replacement-covered bye.
+    expect(startingPoints).toBeCloseTo(16 * 20 + 10, 5);
+  });
+});

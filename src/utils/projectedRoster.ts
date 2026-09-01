@@ -12,6 +12,7 @@
 
 import type { DraftPick, RosterSlots, ScoringType } from '@/types';
 import type { DraftPoolFile } from '@/types/draft';
+import type { WeeklyShapeFile } from '@/types/weeklyShape';
 import {
   adjustedPoints,
   projectedPoints,
@@ -161,6 +162,13 @@ export interface ProjectedSeason {
   startingPoints: number;
 }
 
+// `weeklyShape` (optional): per-player weekly projection curves from
+// scripts/updateWeeklyShape.ts. A player's shape is normalized into weekly
+// WEIGHTS and applied to his league-scoring-adjusted season total, so his
+// points land in the weeks the source actually projects him to play
+// (suspensions, projected absences) while the totals stay identical to the
+// Proj Pts column. Without a shape (or without the file), a player plays
+// every non-bye week at a flat rate.
 export function projectedSeasonPoints(
   picks: DraftPick[],
   pool: DraftPoolFile,
@@ -169,6 +177,7 @@ export function projectedSeasonPoints(
   seasonPoints: Map<string, number>,
   scoring: ScoringType,
   extras: ScoringExtras = {},
+  weeklyShape?: WeeklyShapeFile,
 ): ProjectedSeason {
   const cfg = vorConfigFor({
     sixPtPassTd: (extras.passTdPoints ?? 4) >= 6,
@@ -188,27 +197,37 @@ export function projectedSeasonPoints(
   const flexRepl = Math.max(replPerGame('RB'), replPerGame('WR'), replPerGame('TE'));
   const superflexRepl = Math.max(flexRepl, replPerGame('QB'));
 
-  // Per-game rate and bye week per pick, resolved once.
+  // Weekly points per pick, resolved once. With a shape, the season total
+  // is distributed across the weeks the source projects him to play; the
+  // flat fallback plays every non-bye week at total/17.
   const index = indexPool(pool);
-  const rated = picks.map(pick => ({
-    pos: normalizePos(pick.player.position),
-    perGame: (seasonPoints.get(pickKey(pick)) ?? 0) / PROJECTED_GAMES,
-    bye: resolvePoolPlayer(pick.player, index)?.bye ?? null,
-  }));
+  const rated = picks.map(pick => {
+    const seasonTotal = seasonPoints.get(pickKey(pick)) ?? 0;
+    const pooled = resolvePoolPlayer(pick.player, index);
+    const shape = pooled ? weeklyShape?.players[pooled.id] : undefined;
+    const shapeSum = shape?.reduce((sum, v) => sum + v, 0) ?? 0;
+    const bye = pooled?.bye ?? null;
+    const weekPts =
+      shape && shapeSum > 0
+        ? (week: number) => seasonTotal * ((shape[week - 1] ?? 0) / shapeSum)
+        : (week: number) => (week === bye ? 0 : seasonTotal / PROJECTED_GAMES);
+    return { pos: normalizePos(pick.player.position), weekPts };
+  });
 
   let total = 0;
   for (let week = 1; week <= FANTASY_WEEKS; week++) {
     const available = rated
-      .filter(r => r.bye !== week && r.perGame > 0)
-      .sort((a, b) => b.perGame - a.perGame);
-    const used = new Set<(typeof rated)[number]>();
+      .map(r => ({ pos: r.pos, pts: r.weekPts(week) }))
+      .filter(r => r.pts > 0)
+      .sort((a, b) => b.pts - a.pts);
+    const used = new Set<(typeof available)[number]>();
 
     const fill = (n: number, eligible: (pos: string) => boolean, floor: number) => {
       for (let i = 0; i < n; i++) {
         const found = available.find(r => !used.has(r) && eligible(r.pos));
-        if (found && found.perGame >= floor) {
+        if (found && found.pts >= floor) {
           used.add(found);
-          total += found.perGame;
+          total += found.pts;
         } else {
           // Nobody rostered (or nobody better than the wire): stream the
           // replacement. The rostered player stays available in name only -
