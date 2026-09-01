@@ -303,9 +303,22 @@ export function gradeAllPicks(
     const valueOverExpected = expectedRank - positionRank;
 
     if (isAuction) {
-      const { grade, auctionValueGrade } = gradeAuctionPick(
-        pick, positionRank, allPicks, league.auctionBudget ?? 200
-      );
+      // Pre-season (consensus override): gradeAuctionPick's bands ask "did a
+      // $1 player FINISH top-10?", a season-results question. Fed consensus
+      // ranks instead, a bargain can almost never rank that high, so every
+      // $1 steal graded Bad while its value column said +20 (owner-reported,
+      // 2026-08-31, first live auction report). Before Week 1, grade from
+      // the same cost-rank-vs-market comparison the value column shows.
+      const { grade, auctionValueGrade } = positionRanksOverride
+        ? {
+            grade: gradeConsensusPick(valueOverExpected),
+            auctionValueGrade:
+              valueOverExpected >= 4 ? 'Steal'
+              : valueOverExpected >= -1 ? 'Fair Price'
+              : valueOverExpected >= -5 ? 'Slight Overpay'
+              : 'Overpay',
+          }
+        : gradeAuctionPick(pick, positionRank, allPicks, league.auctionBudget ?? 200);
       const auctionRound = auctionRounds?.get(`${pick.teamId}-${pick.pickNumber}`);
       return {
         ...pick,

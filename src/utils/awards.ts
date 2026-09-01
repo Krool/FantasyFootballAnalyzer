@@ -505,7 +505,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       winner: { teamId: draftSteal.teamId, teamName: draftSteal.teamName },
       value: signed(draftSteal.value),
       description: 'Best single draft pick',
-      detail: `${draftSteal.playerName} (Rd ${draftSteal.round})`,
+      detail: `${draftSteal.playerName} (${draftSteal.cost != null ? `$${draftSteal.cost}` : `Rd ${draftSteal.round}`})`,
       icon: '💎',
     });
   }
@@ -520,7 +520,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       winner: { teamId: draftBust.teamId, teamName: draftBust.teamName },
       value: draftBust.value.toFixed(1),
       description: 'Worst single draft pick',
-      detail: `${draftBust.playerName} (Rd ${draftBust.round})`,
+      detail: `${draftBust.playerName} (${draftBust.cost != null ? `$${draftBust.cost}` : `Rd ${draftBust.round}`})`,
       icon: '💣',
     });
   }
@@ -535,7 +535,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       winner: { teamId: lateRoundHero.teamId, teamName: lateRoundHero.teamName },
       value: signed(lateRoundHero.value),
       description: 'Best pick from round 8+',
-      detail: `${lateRoundHero.playerName} (Rd ${lateRoundHero.round})`,
+      detail: `${lateRoundHero.playerName} (${lateRoundHero.cost != null ? `$${lateRoundHero.cost}` : `Rd ${lateRoundHero.round}`})`,
       icon: '🦸',
     });
   }
@@ -871,10 +871,20 @@ function getWorstDraft(
   return worst;
 }
 
-function getDraftSteal(
-  gradedPicks: GradedPick[]
-): { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined {
-  let best: { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined;
+// `cost` carries the auction price when there is one, so award details can
+// say "$2" instead of the cost-tier "Rd 14", which reads as nonsense on an
+// auction report (owner-reported, 2026-08-31).
+interface BestPickResult {
+  teamId: string;
+  teamName: string;
+  playerName: string;
+  value: number;
+  round: number;
+  cost?: number;
+}
+
+function getDraftSteal(gradedPicks: GradedPick[]): BestPickResult | undefined {
+  let best: BestPickResult | undefined;
 
   gradedPicks.forEach(pick => {
     const value = pick.valueOverExpected;
@@ -886,6 +896,7 @@ function getDraftSteal(
         playerName: pick.player.name,
         value,
         round: pick.round,
+        cost: pick.auctionValue,
       };
     }
   });
@@ -893,10 +904,8 @@ function getDraftSteal(
   return best;
 }
 
-function getDraftBust(
-  gradedPicks: GradedPick[]
-): { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined {
-  let worst: { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined;
+function getDraftBust(gradedPicks: GradedPick[]): BestPickResult | undefined {
+  let worst: BestPickResult | undefined;
 
   gradedPicks.forEach(pick => {
     const value = pick.valueOverExpected;
@@ -910,6 +919,7 @@ function getDraftBust(
         playerName: pick.player.name,
         value,
         round: pick.round,
+        cost: pick.auctionValue,
       };
     }
   });
@@ -917,10 +927,8 @@ function getDraftBust(
   return worst;
 }
 
-function getLateRoundHero(
-  gradedPicks: GradedPick[]
-): { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined {
-  let best: { teamId: string; teamName: string; playerName: string; value: number; round: number } | undefined;
+function getLateRoundHero(gradedPicks: GradedPick[]): BestPickResult | undefined {
+  let best: BestPickResult | undefined;
 
   gradedPicks.forEach(pick => {
     // Only consider late picks (round 8+) with positive value. For auctions,
@@ -934,6 +942,7 @@ function getLateRoundHero(
           playerName: pick.player.name,
           value,
           round: pick.round,
+          cost: pick.auctionValue,
         };
       }
     }

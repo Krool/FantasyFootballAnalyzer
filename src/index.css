@@ -626,3 +626,49 @@ html {
   white-space: nowrap;
   border: 0;
 }
+
+/* ── Print ──
+   The dark GRIDIRON palette dies on paper: browsers strip backgrounds by
+   default, leaving bone-pale text invisible on white (owner-reported: print /
+   save-as-PDF "doesn't work"). Rather than restyle every module, flip the
+   TOKENS to ink-on-white here - every component already reads them - and
+   unclip the scroll containers so tables paginate instead of printing one
+   viewport-tall slice. */
+@media print {
+  :root {
+    --ink: #ffffff;
+    --ink-2: #f4f2ec;
+    --ink-3: #eae7de;
+    --rule: #c9c4b8;
+    --bone: #111111;
+    --bone-dim: #555049;
+    --lime: #3a7d1e;      /* electric lime is unreadable on white */
+    --blood: #b32b14;
+    --blood-text: #b32b14;
+    --turf: #dfeadf;
+    --gold: #8a6d00;
+    --field-lines: rgba(10, 10, 10, 0.05);
+    --color-good: #4f7d12;
+    --color-bad: #a55212;
+    --color-warning: #a55212;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  /* Scroll viewports (rankings/values boards, logs) clip everything past one
+     screen when printed; let the paper do the scrolling. */
+  * {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Chrome is for screens: nav, buttons, form controls. */
+  .app-header,
+  button,
+  select,
+  input {
+    display: none !important;
+  }
+}

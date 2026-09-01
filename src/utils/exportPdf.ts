@@ -315,6 +315,11 @@ export async function exportLeagueReport(league: League) {
   doc.text('Top 10 Draft Picks (by Value)', 14, yPos);
   yPos += 3;
 
+  // In an auction the nomination number is noise; the dollar paid is the
+  // pick's identity (owner-reported: "Pick 160" in an auction report).
+  const isAuction = league.draftType === 'auction';
+  const pickCell = (pick: (typeof gradedPicks)[number]) =>
+    isAuction ? `$${pick.auctionValue ?? 0}` : String(pick.pickNumber);
   const topPicks = [...gradedPicks]
     .sort((a, b) => b.valueOverExpected - a.valueOverExpected)
     .slice(0, 10)
@@ -323,7 +328,7 @@ export async function exportLeagueReport(league: League) {
       pick.player.name,
       pick.player.position,
       pick.teamName.length > 12 ? pick.teamName.substring(0, 11) + '.' : pick.teamName,
-      String(pick.pickNumber),
+      pickCell(pick),
       (pick.seasonPoints || 0).toFixed(0),
       `${pick.valueOverExpected >= 0 ? '+' : ''}${pick.valueOverExpected}`,
       getGradeDisplayText(pick.grade),
@@ -331,7 +336,7 @@ export async function exportLeagueReport(league: League) {
 
   autoTable(doc, {
     startY: yPos,
-    head: [['#', 'Player', 'Pos', 'Team', 'Pick', 'Pts', 'Value', 'Grade']],
+    head: [['#', 'Player', 'Pos', 'Team', isAuction ? '$' : 'Pick', 'Pts', 'Value', 'Grade']],
     body: topPicks,
     theme: 'striped',
     headStyles: { fillColor: [34, 197, 94], fontSize: 8 },
@@ -354,7 +359,7 @@ export async function exportLeagueReport(league: League) {
       pick.player.name,
       pick.player.position,
       pick.teamName.length > 12 ? pick.teamName.substring(0, 11) + '.' : pick.teamName,
-      String(pick.pickNumber),
+      pickCell(pick),
       (pick.seasonPoints || 0).toFixed(0),
       String(pick.valueOverExpected),
       getGradeDisplayText(pick.grade),
@@ -362,7 +367,7 @@ export async function exportLeagueReport(league: League) {
 
   autoTable(doc, {
     startY: yPos,
-    head: [['#', 'Player', 'Pos', 'Team', 'Pick', 'Pts', 'Value', 'Grade']],
+    head: [['#', 'Player', 'Pos', 'Team', isAuction ? '$' : 'Pick', 'Pts', 'Value', 'Grade']],
     body: worstPicks,
     theme: 'striped',
     headStyles: { fillColor: [239, 68, 68], fontSize: 8 },
