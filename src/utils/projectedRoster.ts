@@ -36,7 +36,10 @@ const FLEX_ELIGIBLE = new Set(['RB', 'WR', 'TE']);
 const SUPERFLEX_ELIGIBLE = new Set(['QB', 'RB', 'WR', 'TE']);
 
 export function pickKey(pick: DraftPick): string {
-  return `${pick.teamId}-${pick.pickNumber}`;
+  // Player id is part of the key because pickNumber alone collides: ESPN
+  // keeper rows carry overallPickNumber 0 and Yahoo can parse NaN (see
+  // keeperValue.ts), so a team with two such picks would share one entry.
+  return `${pick.teamId}-${pick.pickNumber}-${pick.player.id}`;
 }
 
 // The scoring rules the pool's three preset columns can't express on their own.
@@ -201,7 +204,22 @@ export function projectedSeasonPoints(
     ranks,
     cfg,
   );
-  const replPerGame = (pos: string): number => (replSeason[pos] ?? 0) / PROJECTED_GAMES;
+  // replacementPoints only covers the VOR positions (QB/RB/WR/TE); K and
+  // DST would floor at 0, which un-floors exactly the slots people stream
+  // hardest - a mid-draft roster missing K+DST would bleed ~2 starters'
+  // worth of phantom points. Compute their floors from the same ranks.
+  const kickerlikeFloor = (pos: 'K' | 'DST'): number => {
+    const sorted = pool.players
+      .filter(p => p.pos === pos)
+      .map(p => projectedPoints(p, scoring))
+      .filter((v): v is number => v != null)
+      .sort((a, b) => b - a);
+    if (sorted.length === 0) return 0;
+    return sorted[Math.min(ranks[pos] - 1, sorted.length - 1)] ?? 0;
+  };
+  const replPerGame = (pos: string): number =>
+    (pos === 'K' || pos === 'DST' ? kickerlikeFloor(pos) : (replSeason[pos] ?? 0)) /
+    PROJECTED_GAMES;
   const flexRepl = Math.max(replPerGame('RB'), replPerGame('WR'), replPerGame('TE'));
   const superflexRepl = Math.max(flexRepl, replPerGame('QB'));
 
@@ -209,11 +227,16 @@ export function projectedSeasonPoints(
   // is distributed across the weeks the source projects him to play; the
   // flat fallback plays every non-bye week at total/17.
   const index = indexPool(pool);
+  // A prior-season shape file joins cleanly (player ids are stable slugs)
+  // but carries last year's byes and absences; ignore it outright.
+  const shapes = weeklyShape && weeklyShape.season === pool.season ? weeklyShape.players : {};
   const rated = picks.map(pick => {
     const seasonTotal = seasonPoints.get(pickKey(pick)) ?? 0;
     const pooled = resolvePoolPlayer(pick.player, index);
-    const shape = pooled ? weeklyShape?.players[pooled.id] : undefined;
-    const shapeSum = shape?.reduce((sum, v) => sum + v, 0) ?? 0;
+    const shape = pooled ? shapes[pooled.id] : undefined;
+    // Sum only the weeks the loop below reads, so a shape covering more
+    // weeks than the model can never silently leak season total.
+    const shapeSum = shape?.slice(0, FANTASY_WEEKS).reduce((sum, v) => sum + v, 0) ?? 0;
     const bye = pooled?.bye ?? null;
     const weekPts =
       shape && shapeSum > 0

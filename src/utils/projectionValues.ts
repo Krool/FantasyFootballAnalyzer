@@ -134,13 +134,18 @@ export function replacementRanks(
   cfg: VorConfig = DEFAULT_VOR_CONFIG,
 ): ReplacementRanks {
   const { flexShare: f, superflexShare: s, benchBuffer } = cfg;
+  // `?? 0` on every slot: a rosterSlots object persisted before a slot key
+  // existed in the schema (e.g. SUPERFLEX) would otherwise turn a rank into
+  // NaN, which indexes replacementPoints to 0 and silently un-floors the
+  // whole model. Same guard draftEngine.draftableSlotCount carries.
+  const slot = (n: number | undefined) => n ?? 0;
   const eff = {
-    QB: rosterSlots.QB + rosterSlots.SUPERFLEX * s.QB,
-    RB: rosterSlots.RB + rosterSlots.FLEX * f.RB + rosterSlots.SUPERFLEX * s.RB,
-    WR: rosterSlots.WR + rosterSlots.FLEX * f.WR + rosterSlots.SUPERFLEX * s.WR,
-    TE: rosterSlots.TE + rosterSlots.FLEX * f.TE + rosterSlots.SUPERFLEX * s.TE,
-    K: rosterSlots.K,
-    DST: rosterSlots.DST,
+    QB: slot(rosterSlots.QB) + slot(rosterSlots.SUPERFLEX) * s.QB,
+    RB: slot(rosterSlots.RB) + slot(rosterSlots.FLEX) * f.RB + slot(rosterSlots.SUPERFLEX) * s.RB,
+    WR: slot(rosterSlots.WR) + slot(rosterSlots.FLEX) * f.WR + slot(rosterSlots.SUPERFLEX) * s.WR,
+    TE: slot(rosterSlots.TE) + slot(rosterSlots.FLEX) * f.TE + slot(rosterSlots.SUPERFLEX) * s.TE,
+    K: slot(rosterSlots.K),
+    DST: slot(rosterSlots.DST),
   };
   // max(1, ...) so a position with 0 demand never indexes rank 0 (which would
   // read the last array element by negative-index clamping below).

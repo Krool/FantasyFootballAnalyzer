@@ -47,6 +47,11 @@ jobs:
       - name: Rebuild draft pool
         run: npm run build:draft-data
 
+      # Fetch+build in one script; joins against the pool built above. Before
+      # the diff step so weekly-only movement still counts as a real change.
+      - name: Rebuild weekly projection shape
+        run: npm run build:weekly-shape
+
       - name: Detect real changes (ignore fetch timestamps)
         id: diff
         run: |

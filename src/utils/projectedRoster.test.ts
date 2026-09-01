@@ -266,3 +266,30 @@ describe('projectedSeasonPoints with a weekly shape', () => {
     expect(startingPoints).toBeCloseTo(16 * 20 + 10, 5);
   });
 });
+
+describe('projectedSeasonPoints K/DST replacement floor', () => {
+  const K_POOL = {
+    season: 2026,
+    generatedAt: '',
+    baseline: {},
+    players: [
+      { ...poolPlayer('k1', 'K', 170, 'k1'), bye: 5 },
+      { ...poolPlayer('k2', 'K', 153, 'k2'), bye: 7 },
+      { ...poolPlayer('k3', 'K', 136, 'k3'), bye: 9 },
+      { ...poolPlayer('k4', 'K', 119, 'k4'), bye: 10 },
+    ],
+  } as unknown as DraftPoolFile;
+
+  const K_ONLY: RosterSlots = {
+    ...DEFAULT_ROSTER_SLOTS,
+    QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, K: 1, DST: 0, BENCH: 0,
+  };
+
+  it('floors an empty kicker slot at the waiver kicker, not zero', () => {
+    // 2 teams x 1 K x 1.25 buffer -> rank 3: k3 (136 ppr, 8/game) is the wire.
+    const { startingPoints } = projectedSeasonPoints(
+      [], K_POOL, K_ONLY, 2, new Map(), 'ppr',
+    );
+    expect(startingPoints).toBeCloseTo(17 * 8, 5);
+  });
+});
