@@ -4,6 +4,7 @@ import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected } from '@/u
 import { consensusPositionRanks, hasSeasonResults, marketAuctionValues } from '@/utils/consensusGrade';
 import { exportDraftBoard, exportDraftOrder } from '@/utils/exportDraftBoard';
 import { logger } from '@/utils/logger';
+import { nominationStats } from '@/utils/nominationAnalysis';
 import {
   DEFAULT_ROSTER_SLOTS,
   pickKey,
@@ -120,6 +121,13 @@ export function DraftTable({
 
   // True when the value/grade numbers are dollar deltas, not rank deltas.
   const valuesInDollars = !hasResults && isAuction;
+
+  // ESPN-only: who nominated what, and did they win it. Null when the
+  // platform doesn't record nominators (Sleeper, Yahoo) or coverage is thin.
+  const nominationBoard = useMemo(
+    () => (isAuction ? nominationStats(teams) : null),
+    [isAuction, teams],
+  );
 
   // Pre-season only: what the pool projects each drafted player to score, and
   // the best legal starting lineup that follows from it. Answers "is this
@@ -544,6 +552,52 @@ export function DraftTable({
                     −{row.regret.toFixed(0)} left
                   </span>
                 )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {nominationBoard && nominationBoard.length > 1 && (
+        <div className={styles.leaderboard}>
+          <h3 className={styles.leaderboardTitle}>The nomination game</h3>
+          <p className={styles.gradeBasis}>
+            ESPN logs who put each player on the block. A high own-win rate means a team nominated
+            its actual targets; a low rate with big dollars extracted means it kept throwing bait
+            and let the rest of the room burn its budget.
+          </p>
+          <div className={styles.leaderboardGrid}>
+            {nominationBoard.map((row, i) => (
+              <button
+                key={row.teamId}
+                type="button"
+                className={`${styles.leaderboardRow} ${selectedTeam === row.teamId ? styles.leaderboardRowOn : ''}`}
+                onClick={() => handleTeamFilter(selectedTeam === row.teamId ? 'all' : row.teamId)}
+                title="Filter the table to this team's picks"
+              >
+                <span className={styles.lbRank}>{i + 1}</span>
+                <span className={styles.lbName}>{row.teamName}</span>
+                <span
+                  className={styles.lbStat}
+                  title="Share of this team's nominations it went on to win"
+                >
+                  {Math.round(row.winRate * 100)}% won
+                </span>
+                <span className={styles.lbStat} title="Nominations won / nominations made">
+                  {row.wonOwn}/{row.nominations} noms
+                </span>
+                <span
+                  className={styles.lbStat}
+                  title="Dollars this team paid for players it nominated itself"
+                >
+                  ${row.spentOnOwn} on own
+                </span>
+                <span
+                  className={styles.lbStat}
+                  title="Dollars the rest of the room paid for players this team put on the block"
+                >
+                  ${row.extracted} extracted
+                </span>
               </button>
             ))}
           </div>

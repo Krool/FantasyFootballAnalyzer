@@ -44,6 +44,9 @@ export interface DraftPick {
   isKeeper?: boolean;
   // For auction drafts
   auctionValue?: number;
+  // Auction: which team put this player up for bid. Only ESPN's draft
+  // detail records the nominator, so this is unset elsewhere.
+  nominatedByTeamId?: string;
   // Grading
   grade?: DraftGrade;
   seasonPoints?: number;

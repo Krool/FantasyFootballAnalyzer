@@ -521,6 +521,8 @@ export async function loadLeague(
         teamName: '', // Will be set later
         isKeeper: pick.keeper === true,
         auctionValue: pick.bidAmount || undefined,
+        nominatedByTeamId:
+          pick.nominatingTeamId != null ? String(pick.nominatingTeamId) : undefined,
         seasonPoints,
       };
 
