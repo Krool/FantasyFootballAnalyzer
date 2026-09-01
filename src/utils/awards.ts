@@ -8,7 +8,7 @@
 import type { League, Team, Trade } from '@/types';
 import type { LuckMetrics } from './luck';
 import type { GradedPick } from './grading';
-import { gradeLeaguePicks } from './consensusGrade';
+import { gradeLeaguePicks, hasSeasonResults } from './consensusGrade';
 import { POOL } from '@/data/draftPool';
 
 // Signed display for value deltas: "+3.1" / "-2.4". A bare `+${n}` template
@@ -465,6 +465,16 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   const gradedPicks = gradeLeaguePicks(league, POOL);
   const teamMap = new Map(league.teams.map(t => [t.id, t]));
 
+  // Pre-season auction grading measures value in league dollars (market
+  // price minus price paid), so the draft award numbers should say so.
+  const draftDollars =
+    !hasSeasonResults(gradedPicks) &&
+    (league.draftType === 'auction' || gradedPicks.some(p => (p.auctionValue ?? 0) > 0));
+  const signedValue = (n: number) =>
+    draftDollars
+      ? `${n < 0 ? '-' : '+'}$${Math.abs(n) % 1 ? Math.abs(n).toFixed(1) : String(Math.abs(n))}`
+      : signed(n);
+
   // Best Draft
   const bestDraft = getBestDraft(gradedPicks, teamMap);
   if (bestDraft) {
@@ -473,7 +483,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Best Draft',
       category: 'draft',
       winner: { teamId: bestDraft.team.id, teamName: bestDraft.team.name, ownerName: bestDraft.team.ownerName },
-      value: signed(bestDraft.avgValue),
+      value: signedValue(bestDraft.avgValue),
       description: 'Highest average draft value',
       detail: `${bestDraft.greatPicks} great picks`,
       icon: '🎯',
@@ -488,7 +498,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Worst Draft',
       category: 'draft',
       winner: { teamId: worstDraft.team.id, teamName: worstDraft.team.name, ownerName: worstDraft.team.ownerName },
-      value: worstDraft.avgValue.toFixed(1),
+      value: signedValue(worstDraft.avgValue),
       description: 'Lowest average draft value',
       detail: `${worstDraft.terriblePicks} terrible picks`,
       icon: '📉',
@@ -503,7 +513,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Draft Steal',
       category: 'draft',
       winner: { teamId: draftSteal.teamId, teamName: draftSteal.teamName },
-      value: signed(draftSteal.value),
+      value: signedValue(draftSteal.value),
       description: 'Best single draft pick',
       detail: `${draftSteal.playerName} (${draftSteal.cost != null ? `$${draftSteal.cost}` : `Rd ${draftSteal.round}`})`,
       icon: '💎',
@@ -518,7 +528,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Draft Bust',
       category: 'draft',
       winner: { teamId: draftBust.teamId, teamName: draftBust.teamName },
-      value: draftBust.value.toFixed(1),
+      value: signedValue(draftBust.value),
       description: 'Worst single draft pick',
       detail: `${draftBust.playerName} (${draftBust.cost != null ? `$${draftBust.cost}` : `Rd ${draftBust.round}`})`,
       icon: '💣',
@@ -533,7 +543,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Late Round Hero',
       category: 'draft',
       winner: { teamId: lateRoundHero.teamId, teamName: lateRoundHero.teamName },
-      value: signed(lateRoundHero.value),
+      value: signedValue(lateRoundHero.value),
       description: 'Best pick from round 8+',
       detail: `${lateRoundHero.playerName} (${lateRoundHero.cost != null ? `$${lateRoundHero.cost}` : `Rd ${lateRoundHero.round}`})`,
       icon: '🦸',

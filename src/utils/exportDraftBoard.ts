@@ -43,6 +43,9 @@ export interface DraftBoardData {
   // (pick 18 of a 12-teamer prints 2.06); without it the overall number shows.
   // Also sets the cost-tier size when an auction is sectioned into rounds.
   totalTeams?: number;
+  // True when valueOverExpected carries dollar deltas (pre-season auction),
+  // so the boards print +$6 instead of +6.
+  valuesInDollars?: boolean;
   picks: GradedPick[];
 }
 
@@ -63,7 +66,8 @@ function truncate(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return cut + '…';
 }
 
-function signed(n: number): string {
+function signed(n: number, dollars = false): string {
+  if (dollars) return n < 0 ? `-$${-n}` : `+$${n}`;
   return `${n >= 0 ? '+' : ''}${n}`;
 }
 
@@ -95,7 +99,7 @@ function teamBlocks(data: DraftBoardData): Block[] {
       title: picks[0]?.teamName ?? '',
       subtitle: [
         { text: data.isAuction ? `$${spent} SPENT · VALUE ` : 'VALUE ', color: BONE_DIM },
-        { text: signed(value), color: value >= 0 ? LIME : GRADE_COLORS.terrible },
+        { text: signed(value, data.valuesInDollars), color: value >= 0 ? LIME : GRADE_COLORS.terrible },
       ],
       picks: sorted,
     };
@@ -235,7 +239,7 @@ function drawTeamsBoard(data: DraftBoardData): HTMLCanvasElement | null {
     ctx.textAlign = 'left';
     // Name in the grade's color: the color IS the grade, no badge needed.
     ctx.fillStyle = GRADE_COLORS[pick.grade];
-    const valueText = signed(pick.valueOverExpected);
+    const valueText = signed(pick.valueOverExpected, data.valuesInDollars);
     const valueW = ctx.measureText(valueText).width;
     ctx.fillText(truncate(ctx, pick.player.name, blockW - 56 - 24 - valueW - 14), x + 64, py);
     ctx.textAlign = 'right';
@@ -255,7 +259,7 @@ function drawOrderBoard(data: DraftBoardData): HTMLCanvasElement | null {
     ctx.fillText(slotLabel(data, pick), x + 56, py);
     ctx.textAlign = 'left';
     ctx.fillStyle = GRADE_COLORS[pick.grade];
-    const valueText = signed(pick.valueOverExpected);
+    const valueText = signed(pick.valueOverExpected, data.valuesInDollars);
     const valueW = ctx.measureText(valueText).width;
     const teamW = 110;
     ctx.fillText(truncate(ctx, pick.player.name, blockW - 56 - 24 - teamW - valueW - 22), x + 64, py);

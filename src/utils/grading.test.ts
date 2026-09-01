@@ -11,6 +11,7 @@ import {
   getGradeDisplayText,
   formatValueOverExpected,
   getGradeColorClass,
+  gradeAuctionDollarDelta,
 } from './grading';
 import type { DraftPick, League } from '@/types';
 
@@ -526,5 +527,31 @@ describe('formatValueOverExpected', () => {
 
   it('handles zero', () => {
     expect(formatValueOverExpected(0)).toBe('0');
+  });
+});
+
+describe('formatValueOverExpected in dollars', () => {
+  it('prints signed dollar amounts', () => {
+    expect(formatValueOverExpected(6, true)).toBe('+$6');
+    expect(formatValueOverExpected(-3, true)).toBe('-$3');
+    expect(formatValueOverExpected(0, true)).toBe('$0');
+  });
+});
+
+describe('gradeAuctionDollarDelta bands', () => {
+  it('grades around market price at a $200 budget', () => {
+    expect(gradeAuctionDollarDelta(5).grade).toBe('great');
+    expect(gradeAuctionDollarDelta(0).grade).toBe('good');
+    expect(gradeAuctionDollarDelta(-2).grade).toBe('good');
+    expect(gradeAuctionDollarDelta(-3).grade).toBe('bad');
+    expect(gradeAuctionDollarDelta(-8).grade).toBe('bad');
+    expect(gradeAuctionDollarDelta(-9).grade).toBe('terrible');
+  });
+
+  it('scales the bands to the league budget', () => {
+    // A $100 league's dollars are worth twice as much: -5 is already past
+    // the halved -4 "bad" floor.
+    expect(gradeAuctionDollarDelta(-5, 100).grade).toBe('terrible');
+    expect(gradeAuctionDollarDelta(3, 100).grade).toBe('great');
   });
 });

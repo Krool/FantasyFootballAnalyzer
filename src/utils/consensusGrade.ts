@@ -90,6 +90,37 @@ export function consensusPositionRanks(picks: DraftPick[], pool: DraftPoolFile):
   return rankMap;
 }
 
+// Consensus market price in league dollars for each drafted player, keyed
+// `${position}-${player.id}` to match what grading.ts looks up. The pool's
+// baseValue is the FantasyPros salary sheet's dollar curve reprojected onto
+// the current rankings (so it agrees with the consensus board by
+// construction); espnValue is ESPN's live auction market. Blend whichever
+// exist, scale to the league's budget, floor at the $1 a nomination costs.
+// Players the pool can't match get no entry - grading treats them as $1.
+export function marketAuctionValues(
+  picks: DraftPick[],
+  pool: DraftPoolFile,
+  budget: number = 200,
+): Map<string, number> {
+  const index = indexPool(pool);
+  const scale = budget > 0 ? budget / 200 : 1;
+  const map = new Map<string, number>();
+  for (const pick of picks) {
+    const pooled = resolvePoolPlayer(pick.player, index);
+    if (!pooled) continue;
+    const sources = [pooled.baseValue, pooled.espnValue].filter(
+      (v): v is number => typeof v === 'number' && v > 0,
+    );
+    if (sources.length === 0) continue;
+    const market = sources.reduce((sum, v) => sum + v, 0) / sources.length;
+    map.set(
+      `${pick.player.position}-${pick.player.id}`,
+      Math.max(1, Math.round(market * scale)),
+    );
+  }
+  return map;
+}
+
 // True when at least one drafted player has scored, i.e. the season is far
 // enough along that results grading means something. Sleeper's all-zero
 // preseason payload is normalized to `undefined` upstream so it reads false.
@@ -106,8 +137,15 @@ export function hasSeasonResults(picks: DraftPick[]): boolean {
 // that didn't already pay for it.
 export function gradeLeaguePicks(league: League, pool: DraftPoolFile): GradedPick[] {
   const allPicks = league.teams.flatMap(t => t.draftPicks || []);
-  const override = hasSeasonResults(allPicks)
-    ? undefined
-    : consensusPositionRanks(allPicks, pool);
-  return gradeAllPicks(league, override);
+  if (hasSeasonResults(allPicks)) return gradeAllPicks(league);
+  const override = consensusPositionRanks(allPicks, pool);
+  // Auctions additionally get the market's dollar prices, so pre-season
+  // value reads "overpaid by $3", not a rank delta the $1-4 tail distorts.
+  const isAuction =
+    league.draftType === 'auction' ||
+    allPicks.some(p => p.auctionValue !== undefined && p.auctionValue > 0);
+  const market = isAuction
+    ? marketAuctionValues(allPicks, pool, league.auctionBudget ?? 200)
+    : undefined;
+  return gradeAllPicks(league, override, market);
 }

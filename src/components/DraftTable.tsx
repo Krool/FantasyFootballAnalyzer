@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { RosterSlots, ScoringType, Team } from '@/types';
 import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected } from '@/utils/grading';
-import { consensusPositionRanks, hasSeasonResults } from '@/utils/consensusGrade';
+import { consensusPositionRanks, hasSeasonResults, marketAuctionValues } from '@/utils/consensusGrade';
 import { exportDraftBoard, exportDraftOrder } from '@/utils/exportDraftBoard';
 import {
   DEFAULT_ROSTER_SLOTS,
@@ -107,8 +107,15 @@ export function DraftTable({
     };
     // Filter out unknown players (those with names like "Player 12345")
     const override = hasResults ? undefined : consensusPositionRanks(allPicks, POOL);
-    return gradeAllPicks(mockLeague, override).filter(pick => !isPlaceholderPlayer(pick.player.name));
+    // Pre-season auction values grade in dollars vs the market, not rank
+    // deltas (which the $1-4 tail distorts into false Terribles).
+    const market =
+      !hasResults && isAuction ? marketAuctionValues(allPicks, POOL, auctionBudget ?? 200) : undefined;
+    return gradeAllPicks(mockLeague, override, market).filter(pick => !isPlaceholderPlayer(pick.player.name));
   }, [teams, totalTeams, isAuction, auctionBudget, hasResults, allPicks]);
+
+  // True when the value/grade numbers are dollar deltas, not rank deltas.
+  const valuesInDollars = !hasResults && isAuction;
 
   // Pre-season only: what the pool projects each drafted player to score, and
   // the best legal starting lineup that follows from it. Answers "is this
@@ -423,6 +430,7 @@ export function DraftTable({
                   season,
                   isAuction,
                   totalTeams,
+                  valuesInDollars,
                   picks: gradedPicks,
                 });
                 setShareState({ which, state: result === false ? 'failed' : result });
@@ -444,11 +452,22 @@ export function DraftTable({
 
       {!hasResults && (
         <p className={styles.gradeBasis}>
-          Nothing has been played yet, so none of this is a result. Grades measure each pick against
-          the FantasyPros consensus rank (did the player go earlier or later at his position than the
-          market said he should), and the points are projections for the season under your league&apos;s
-          scoring. The standings rank on projected starting lineup, so a team can buy well and still
-          sit low with a lopsided roster.
+          Nothing has been played yet, so none of this is a result.{' '}
+          {valuesInDollars ? (
+            <>
+              Value is market price minus price paid, in your league&apos;s dollars: the market price
+              blends the FantasyPros salary-cap sheet with ESPN&apos;s live auction values, so +$6
+              means the room let him go six dollars under what the market says he&apos;s worth.
+            </>
+          ) : (
+            <>
+              Grades measure each pick against the FantasyPros consensus rank (did the player go
+              earlier or later at his position than the market said he should).
+            </>
+          )}{' '}
+          The points are projections for the season under your league&apos;s scoring. The standings
+          rank on projected starting lineup, so a team can buy well and still sit low with a
+          lopsided roster.
         </p>
       )}
 
@@ -482,9 +501,13 @@ export function DraftTable({
                     </span>
                     <span
                       className={styles.lbStat}
-                      title="Positions gained on the FantasyPros consensus, summed over this team's live picks. Positive means it kept taking players later than the market ranked them. High value with a low projection means the team bought well but built a lopsided roster."
+                      title={
+                        valuesInDollars
+                          ? "Market price minus price paid, summed over this team's live picks in league dollars. Positive means it bought below what the market says the players are worth. High value with a low projection means the team bought well but built a lopsided roster."
+                          : "Positions gained on the FantasyPros consensus, summed over this team's live picks. Positive means it kept taking players later than the market ranked them. High value with a low projection means the team bought well but built a lopsided roster."
+                      }
                     >
-                      {formatValueOverExpected(row.consensusValue)} vs consensus
+                      {formatValueOverExpected(row.consensusValue, valuesInDollars)} vs {valuesInDollars ? 'market' : 'consensus'}
                     </span>
                   </>
                 )}
@@ -613,7 +636,7 @@ export function DraftTable({
                         : `font-mono text-center ${pick.valueOverExpected >= 0 ? 'grade-great' : 'grade-terrible'}`
                     }
                   >
-                    {pick.isKeeper ? '—' : formatValueOverExpected(pick.valueOverExpected)}
+                    {pick.isKeeper ? '—' : formatValueOverExpected(pick.valueOverExpected, valuesInDollars)}
                   </td>
                 )}
                 <td>

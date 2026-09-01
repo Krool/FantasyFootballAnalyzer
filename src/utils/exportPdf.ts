@@ -1,8 +1,8 @@
 // jsPDF and jspdf-autotable are dynamically imported in exportLeagueReport()
 import type { jsPDF as JsPDFType } from 'jspdf';
 import type { League } from '@/types';
-import { calculateDraftSummary, getGradeDisplayText } from './grading';
-import { gradeLeaguePicks } from './consensusGrade';
+import { calculateDraftSummary, getGradeDisplayText, formatValueOverExpected } from './grading';
+import { gradeLeaguePicks, hasSeasonResults } from './consensusGrade';
 import { POOL } from '@/data/draftPool';
 import { calculateAllAwards } from './awards';
 import { calculateLuckMetrics } from './luck';
@@ -262,6 +262,11 @@ export async function exportLeagueReport(league: League) {
   // Placeholder players ("Player 12345") would otherwise show up in the
   // Top/Bottom 10 tables; the on-site tables filter them, so must we.
   const gradedPicks = gradeLeaguePicks(league, POOL).filter(p => !isPlaceholderPlayer(p.player.name));
+  // Pre-season auctions grade in league dollars (market minus paid); the
+  // value cells should carry the $ so the report reads that way too.
+  const valuesInDollars =
+    !hasSeasonResults(gradedPicks) &&
+    (league.draftType === 'auction' || gradedPicks.some(p => (p.auctionValue ?? 0) > 0));
 
   const draftSummaryData = league.teams.map(team => {
     const teamPicks = gradedPicks.filter(p => p.teamId === team.id);
@@ -285,7 +290,11 @@ export async function exportLeagueReport(league: League) {
       String(t.good),
       String(t.bad),
       String(t.terrible),
-      t.avg >= 0 ? `+${t.avg.toFixed(1)}` : t.avg.toFixed(1),
+      valuesInDollars
+        ? `${t.avg < 0 ? '-' : '+'}$${Math.abs(t.avg).toFixed(1)}`
+        : t.avg >= 0
+          ? `+${t.avg.toFixed(1)}`
+          : t.avg.toFixed(1),
     ]),
     theme: 'striped',
     headStyles: { fillColor: [59, 130, 246], fontSize: 7, cellPadding: 1 },
@@ -330,7 +339,7 @@ export async function exportLeagueReport(league: League) {
       pick.teamName.length > 12 ? pick.teamName.substring(0, 11) + '.' : pick.teamName,
       pickCell(pick),
       (pick.seasonPoints || 0).toFixed(0),
-      `${pick.valueOverExpected >= 0 ? '+' : ''}${pick.valueOverExpected}`,
+      formatValueOverExpected(pick.valueOverExpected, valuesInDollars),
       getGradeDisplayText(pick.grade),
     ]);
 
@@ -361,7 +370,7 @@ export async function exportLeagueReport(league: League) {
       pick.teamName.length > 12 ? pick.teamName.substring(0, 11) + '.' : pick.teamName,
       pickCell(pick),
       (pick.seasonPoints || 0).toFixed(0),
-      String(pick.valueOverExpected),
+      formatValueOverExpected(pick.valueOverExpected, valuesInDollars),
       getGradeDisplayText(pick.grade),
     ]);
 

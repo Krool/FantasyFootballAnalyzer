@@ -271,9 +271,29 @@ export function gradeAuctionPick(
 // FantasyPros consensus ranks (utils/consensusGrade.ts) so a finished draft is
 // gradeable at the table instead of scoring every pick against a zeroed stat
 // line.
+// Dollar bands for pre-season auction grading, calibrated to a $200 budget
+// and scaled to the league's. Delta is market price minus price paid.
+export function gradeAuctionDollarDelta(
+  delta: number,
+  budget: number = 200,
+): { grade: DraftGrade; auctionValueGrade: string } {
+  const scale = budget > 0 ? budget / 200 : 1;
+  if (delta >= 5 * scale) return { grade: 'great', auctionValueGrade: 'Steal' };
+  if (delta >= -2 * scale) return { grade: 'good', auctionValueGrade: 'Fair Price' };
+  if (delta >= -8 * scale) return { grade: 'bad', auctionValueGrade: 'Slight Overpay' };
+  return { grade: 'terrible', auctionValueGrade: 'Overpay' };
+}
+
 export function gradeAllPicks(
   league: League,
-  positionRanksOverride?: Map<string, number>
+  positionRanksOverride?: Map<string, number>,
+  // Pre-season auctions only: consensus market price in league dollars per
+  // `${position}-${playerId}`. Present, the value column and grades switch
+  // from rank deltas to dollar deltas (market minus paid) - a $3 overpay on
+  // a $4 flier stops grading like a $20 torching just because half the
+  // league went for $1-3 and rank space is packed there (owner-reported,
+  // 2026-09-01: Deebo at $4/-12/Terrible next to a real $20 overpay).
+  auctionMarketOverride?: Map<string, number>
 ): GradedPick[] {
   // Collect all draft picks from all teams
   const allPicks = league.teams.flatMap(team => team.draftPicks || []);
@@ -307,8 +327,25 @@ export function gradeAllPicks(
       // $1 player FINISH top-10?", a season-results question. Fed consensus
       // ranks instead, a bargain can almost never rank that high, so every
       // $1 steal graded Bad while its value column said +20 (owner-reported,
-      // 2026-08-31, first live auction report). Before Week 1, grade from
-      // the same cost-rank-vs-market comparison the value column shows.
+      // 2026-08-31, first live auction report). Before Week 1, grade in
+      // DOLLARS against the consensus market price when the caller supplied
+      // one (a player the pool can't match falls back to a $1 market - an
+      // unrankable flier is a $1 player by definition), and only failing
+      // that from the cost-rank comparison.
+      const auctionRound = auctionRounds?.get(`${pick.teamId}-${pick.pickNumber}`);
+      if (positionRanksOverride && auctionMarketOverride) {
+        const market =
+          auctionMarketOverride.get(`${pick.player.position}-${pick.player.id}`) ?? 1;
+        const delta = Math.round(market - (pick.auctionValue ?? 0));
+        return {
+          ...pick,
+          round: auctionRound ?? pick.round,
+          ...gradeAuctionDollarDelta(delta, league.auctionBudget ?? 200),
+          positionRank,
+          expectedRank,
+          valueOverExpected: delta,
+        };
+      }
       const { grade, auctionValueGrade } = positionRanksOverride
         ? {
             grade: gradeConsensusPick(valueOverExpected),
@@ -319,7 +356,6 @@ export function gradeAllPicks(
               : 'Overpay',
           }
         : gradeAuctionPick(pick, positionRank, allPicks, league.auctionBudget ?? 200);
-      const auctionRound = auctionRounds?.get(`${pick.teamId}-${pick.pickNumber}`);
       return {
         ...pick,
         round: auctionRound ?? pick.round,
@@ -394,7 +430,12 @@ export function getGradeDisplayText(grade: DraftGrade): string {
 }
 
 // Format value over expected with sign
-export function formatValueOverExpected(value: number): string {
+export function formatValueOverExpected(value: number, dollars = false): string {
+  if (dollars) {
+    if (value > 0) return `+$${value.toFixed(0)}`;
+    if (value < 0) return `-$${Math.abs(value).toFixed(0)}`;
+    return '$0';
+  }
   if (value > 0) {
     return `+${value.toFixed(0)}`;
   }

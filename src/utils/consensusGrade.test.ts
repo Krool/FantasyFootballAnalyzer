@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { consensusPositionRanks, hasSeasonResults, resolvePoolPlayer, indexPool } from './consensusGrade';
+import { consensusPositionRanks, hasSeasonResults, resolvePoolPlayer, indexPool, marketAuctionValues } from './consensusGrade';
 import { gradeAllPicks, gradeConsensusPick } from './grading';
 import type { DraftPick, League, Player } from '@/types';
 import type { DraftPoolFile } from '@/types/draft';
@@ -188,5 +188,105 @@ describe('gradeConsensusPick bands', () => {
     expect(gradeConsensusPick(-2)).toBe('bad');
     expect(gradeConsensusPick(-5)).toBe('bad');
     expect(gradeConsensusPick(-6)).toBe('terrible');
+  });
+});
+
+describe('marketAuctionValues and dollar-mode auction grading', () => {
+  const auctionPool = {
+    season: 2026,
+    generatedAt: '',
+    baseline: {},
+    players: [
+      // Salary sheet and ESPN agree he's elite money.
+      { id: 'star-rb', name: 'Star Back', pos: 'RB', team: 'FA', posRank: 1, overallRank: 1, tier: 1, bye: 5, baseValue: 60, espnValue: 60, sleeperId: '1' },
+      // A $1 player everywhere: the Deebo case when bought for $4.
+      { id: 'flier-wr', name: 'Flier Receiver', pos: 'WR', team: 'FA', posRank: 55, overallRank: 135, tier: 9, bye: 5, baseValue: 1, espnValue: 1, sleeperId: '2' },
+      // The sources split (suspension news): blend lands mid.
+      { id: 'split-rb', name: 'Split Back', pos: 'RB', team: 'FA', posRank: 53, overallRank: 152, tier: 7, bye: 5, baseValue: 1, espnValue: 20, sleeperId: '3' },
+    ],
+  } as unknown as DraftPoolFile;
+
+  const auctionPick = (n: number, p: Player, cost: number, teamId = 't1'): DraftPick => ({
+    ...pick(n, p, 0, teamId),
+    auctionValue: cost,
+  });
+
+  const auctionLeague = (picks: DraftPick[], budget = 200): League =>
+    ({
+      id: '',
+      platform: 'espn',
+      name: '',
+      season: 2026,
+      draftType: 'auction',
+      auctionBudget: budget,
+      scoringType: 'ppr',
+      totalTeams: 2,
+      isLoaded: true,
+      teams: [
+        { id: 't1', name: 'One', draftPicks: picks.filter(p => p.teamId === 't1') },
+        { id: 't2', name: 'Two', draftPicks: picks.filter(p => p.teamId === 't2') },
+      ],
+    }) as unknown as League;
+
+  const picks = [
+    auctionPick(1, player('1', 'RB'), 40, 't1'), // $60 player for $40: steal
+    auctionPick(2, player('2', 'WR'), 4, 't2'), // $1 player for $4: mild overpay, NOT terrible
+    auctionPick(3, player('3', 'RB'), 9, 't2'), // sources split at $1/$20, paid $9: fair
+  ];
+
+  it('blends baseValue and espnValue into league dollars', () => {
+    const market = marketAuctionValues(picks, auctionPool);
+    expect(market.get('RB-1')).toBe(60);
+    expect(market.get('WR-2')).toBe(1);
+    expect(market.get('RB-3')).toBe(11); // mean of $1 and $20, rounded
+  });
+
+  it('scales market prices to the league budget', () => {
+    const market = marketAuctionValues(picks, auctionPool, 100);
+    expect(market.get('RB-1')).toBe(30);
+    expect(market.get('WR-2')).toBe(1); // floored at the $1 a nomination costs
+  });
+
+  it('values picks as dollar deltas and grades a $3 overpay as survivable', () => {
+    const market = marketAuctionValues(picks, auctionPool);
+    const graded = gradeAllPicks(
+      auctionLeague(picks),
+      consensusPositionRanks(picks, auctionPool),
+      market,
+    );
+    const steal = graded.find(g => g.player.id === '1')!;
+    expect(steal.valueOverExpected).toBe(20);
+    expect(steal.grade).toBe('great');
+
+    // The owner-reported case: a $3 overpay on a $4 flier is not a
+    // Terrible-band disaster just because the $1-4 tail is packed.
+    const flier = graded.find(g => g.player.id === '2')!;
+    expect(flier.valueOverExpected).toBe(-3);
+    expect(flier.grade).toBe('bad');
+    expect(flier.auctionValueGrade).toBe('Slight Overpay');
+
+    const split = graded.find(g => g.player.id === '3')!;
+    expect(split.valueOverExpected).toBe(2);
+    expect(split.grade).toBe('good');
+  });
+
+  it('treats a player the pool cannot match as a $1 market', () => {
+    const mystery = [...picks, auctionPick(4, player('unknown-99', 'TE'), 7, 't1')];
+    const graded = gradeAllPicks(
+      auctionLeague(mystery),
+      consensusPositionRanks(mystery, auctionPool),
+      marketAuctionValues(mystery, auctionPool),
+    );
+    const ghost = graded.find(g => g.player.id === 'unknown-99')!;
+    expect(ghost.valueOverExpected).toBe(-6);
+    expect(ghost.grade).toBe('bad');
+  });
+
+  it('keeps rank deltas when no market map is supplied', () => {
+    const graded = gradeAllPicks(auctionLeague(picks), consensusPositionRanks(picks, auctionPool));
+    const flier = graded.find(g => g.player.id === '2')!;
+    // Rank space, not dollars: the old behavior survives for callers that
+    // never pass a market.
+    expect(Math.abs(flier.valueOverExpected)).toBeLessThan(3);
   });
 });

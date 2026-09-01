@@ -2,7 +2,7 @@ import type { League, Team } from '@/types';
 import type { LuckMetrics } from '@/utils/luck';
 import { useMemo } from 'react';
 import { calculateDraftSummary } from '@/utils/grading';
-import { gradeLeaguePicks } from '@/utils/consensusGrade';
+import { gradeLeaguePicks, hasSeasonResults } from '@/utils/consensusGrade';
 import { POOL } from '@/data/draftPool';
 import { isPlaceholderPlayer } from '@/utils/placeholders';
 import { LuckIcon } from './LuckIcon';
@@ -26,6 +26,15 @@ export function TeamCard({ league, team, onClick, luckMetrics }: TeamCardProps) 
   }, [league, team.id]);
 
   const summary = useMemo(() => calculateDraftSummary(gradedPicks), [gradedPicks]);
+
+  // Pre-season auction values are dollar deltas (market minus paid); show
+  // the $ so the number reads in its actual unit.
+  const valuesInDollars = useMemo(
+    () =>
+      !hasSeasonResults(gradedPicks) &&
+      (league.draftType === 'auction' || gradedPicks.some(p => (p.auctionValue ?? 0) > 0)),
+    [gradedPicks, league.draftType],
+  );
 
   // Calculate waiver stats. PAR, not raw points: every other waiver surface
   // standardized on points above replacement.
@@ -143,7 +152,9 @@ export function TeamCard({ league, team, onClick, luckMetrics }: TeamCardProps) 
           </div>
           <div className={styles.avgValue}>
             Avg Value: <span className={summary.averageValue >= 0 ? 'grade-great' : 'grade-terrible'}>
-              {summary.averageValue >= 0 ? '+' : ''}{summary.averageValue.toFixed(1)}
+              {valuesInDollars
+                ? `${summary.averageValue < 0 ? '-' : '+'}$${Math.abs(summary.averageValue).toFixed(1)}`
+                : `${summary.averageValue >= 0 ? '+' : ''}${summary.averageValue.toFixed(1)}`}
             </span>
           </div>
         </div>
