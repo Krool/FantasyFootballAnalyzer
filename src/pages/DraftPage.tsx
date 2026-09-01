@@ -85,6 +85,7 @@ export function DraftPage({ league }: DraftPageProps) {
             <DraftTable
               teams={liveData.teams}
               totalTeams={liveData.totalTeams}
+              leagueName={league.name}
               season={liveData.season}
               draftType={liveData.draftType}
               auctionBudget={liveData.auctionBudget}
@@ -97,6 +98,7 @@ export function DraftPage({ league }: DraftPageProps) {
             <DraftTable
               teams={league.teams}
               totalTeams={league.totalTeams}
+              leagueName={league.name}
               season={league.season}
               draftType={league.draftType}
               auctionBudget={league.auctionBudget}

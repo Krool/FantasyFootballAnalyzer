@@ -42,6 +42,26 @@
   flex-wrap: wrap;
 }
 
+/* One-click group-chat ammo: the whole board as a PNG on the clipboard. */
+.shareBoard {
+  align-self: center;
+  padding: 0.55rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--lime);
+  border: 2px solid var(--lime);
+  cursor: pointer;
+}
+.shareBoard:hover:not(:disabled) {
+  background: var(--lime);
+  color: var(--ink);
+}
+.shareBoard:disabled { opacity: 0.6; cursor: wait; }
+
 /* Says which yardstick the grades came off: consensus before Week 1, real
    season points after. */
 .gradeBasis {

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import type { RosterSlots, ScoringType, Team } from '@/types';
 import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected } from '@/utils/grading';
 import { consensusPositionRanks, hasSeasonResults } from '@/utils/consensusGrade';
+import { exportDraftBoard } from '@/utils/exportDraftBoard';
 import {
   DEFAULT_ROSTER_SLOTS,
   pickKey,
@@ -25,6 +26,9 @@ import styles from './DraftTable.module.css';
 interface DraftTableProps {
   teams: Team[];
   totalTeams: number;
+  // Names the shareable board image; without it the image is headed by the
+  // season/draft-type line alone.
+  leagueName?: string;
   /**
    * The season this draft was actually held for. Surfaces priced off the
    * bundled pool are only meaningful when it matches the pool's season — during
@@ -55,6 +59,7 @@ const FLEX_POSITIONS = ['RB', 'WR', 'TE'];
 export function DraftTable({
   teams,
   totalTeams,
+  leagueName,
   season,
   draftType = 'snake',
   auctionBudget,
@@ -78,6 +83,7 @@ export function DraftTable({
   const hasResults = useMemo(() => hasSeasonResults(allPicks), [allPicks]);
 
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
+  const [shareState, setShareState] = useState<'idle' | 'busy' | 'copied' | 'saved' | 'failed'>('idle');
   const [selectedPosition, setSelectedPosition] = useState<string>('all');
   const [sortField, setSortField] = useState<SortField>(isAuction ? 'cost' : 'pick');
   const [sortDirection, setSortDirection] = useState<SortDirection>(isAuction ? 'desc' : 'asc');
@@ -385,6 +391,34 @@ export function DraftTable({
           <span className={`grade-badge bad`}>{summary.bad} Bad</span>
           <span className={`grade-badge terrible`}>{summary.terrible} Terrible</span>
         </div>
+
+        <button
+          type="button"
+          className={styles.shareBoard}
+          disabled={shareState === 'busy'}
+          aria-busy={shareState === 'busy'}
+          title="Copy the full draft board as an image for the group chat"
+          onClick={async () => {
+            if (shareState === 'busy') return;
+            playSort();
+            setShareState('busy');
+            const result = await exportDraftBoard({
+              leagueName: leagueName ?? 'Draft Board',
+              season,
+              isAuction,
+              totalTeams,
+              picks: gradedPicks,
+            });
+            setShareState(result === false ? 'failed' : result);
+            setTimeout(() => setShareState(current => (current === 'busy' ? current : 'idle')), 2500);
+          }}
+        >
+          {shareState === 'busy' && '…'}
+          {shareState === 'copied' && 'Copied!'}
+          {shareState === 'saved' && 'Saved PNG'}
+          {shareState === 'failed' && "Couldn't export"}
+          {shareState === 'idle' && 'Copy board as image'}
+        </button>
       </div>
 
       {!hasResults && (
