@@ -27,7 +27,15 @@ export interface PoolIndex {
   byNameKey: Map<string, PoolPlayer | null>;
 }
 
+// The pool is a bundled singleton of ~940 players, but grading used to
+// rebuild these maps on every call - twice per grading pass (ranks + market
+// prices), once per TeamCard on the Teams page. Memoize per pool object;
+// keyed weakly so a hot-swapped pool (tests) never serves stale maps.
+const poolIndexCache = new WeakMap<DraftPoolFile, PoolIndex>();
+
 export function indexPool(pool: DraftPoolFile): PoolIndex {
+  const cached = poolIndexCache.get(pool);
+  if (cached) return cached;
   const bySleeperId = new Map<string, PoolPlayer>();
   const byId = new Map<string, PoolPlayer>();
   const byNameKey = new Map<string, PoolPlayer | null>();
@@ -37,7 +45,9 @@ export function indexPool(pool: DraftPoolFile): PoolIndex {
     const key = matchKey(p.name, p.pos);
     byNameKey.set(key, byNameKey.has(key) ? null : p);
   }
-  return { bySleeperId, byId, byNameKey };
+  const index = { bySleeperId, byId, byNameKey };
+  poolIndexCache.set(pool, index);
+  return index;
 }
 
 // A Sleeper pick carries the platform player id (defenses ride as the team
@@ -135,7 +145,22 @@ export function hasSeasonResults(picks: DraftPick[]): boolean {
 // pre-season draft grades every pick against a zeroed stat line. The pool is
 // a parameter so this module never drags the ~450KB pool JSON into a chunk
 // that didn't already pay for it.
+// One grading pass covers the whole league, but the Teams page renders a
+// TeamCard per team and each card asked for its own full pass - 12 identical
+// computations on a 12-teamer. Cache per league object; a refresh or season
+// switch builds a new league object, so invalidation is automatic. Weak on
+// the league so departed leagues don't pin their graded picks in memory.
+const gradeCache = new WeakMap<League, { pool: DraftPoolFile; graded: GradedPick[] }>();
+
 export function gradeLeaguePicks(league: League, pool: DraftPoolFile): GradedPick[] {
+  const cached = gradeCache.get(league);
+  if (cached && cached.pool === pool) return cached.graded;
+  const graded = computeLeaguePicks(league, pool);
+  gradeCache.set(league, { pool, graded });
+  return graded;
+}
+
+function computeLeaguePicks(league: League, pool: DraftPoolFile): GradedPick[] {
   const allPicks = league.teams.flatMap(t => t.draftPicks || []);
   if (hasSeasonResults(allPicks)) return gradeAllPicks(league);
   const override = consensusPositionRanks(allPicks, pool);
@@ -147,5 +172,8 @@ export function gradeLeaguePicks(league: League, pool: DraftPoolFile): GradedPic
   const market = isAuction
     ? marketAuctionValues(allPicks, pool, league.auctionBudget ?? 200)
     : undefined;
-  return gradeAllPicks(league, override, market);
+  // An empty map means the pool matched nobody (name drift, odd platform);
+  // engaging dollar mode then would price every pick against the $1
+  // fallback. Stay in rank mode instead.
+  return gradeAllPicks(league, override, market?.size ? market : undefined);
 }

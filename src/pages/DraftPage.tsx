@@ -53,9 +53,12 @@ export function DraftPage({ league }: DraftPageProps) {
   // the familiar loading veil first, then mount the table.
   const [boardReady, setBoardReady] = useState(false);
   useEffect(() => {
+    // Keyed on `active` so toggling platform/live re-runs the same
+    // veil-then-mount dance: the toggle triggers a full regrade too.
+    setBoardReady(false);
     const timer = setTimeout(() => setBoardReady(true), 30);
     return () => clearTimeout(timer);
-  }, []);
+  }, [active]);
 
   return (
     <div className={styles.page}>

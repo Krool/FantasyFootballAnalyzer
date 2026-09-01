@@ -94,7 +94,11 @@ function teamBlocks(data: DraftBoardData): Block[] {
         : a.pickNumber - b.pickNumber,
     );
     const spent = picks.reduce((sum, p) => sum + (p.auctionValue ?? 0), 0);
-    const value = Math.round(picks.reduce((sum, p) => sum + p.valueOverExpected, 0));
+    // Keepers carry no verdict on the site (their cost was set by the keeper
+    // rule, not by anyone reading the board), so they don't count here either.
+    const value = Math.round(
+      picks.filter(p => !p.isKeeper).reduce((sum, p) => sum + p.valueOverExpected, 0),
+    );
     return {
       title: picks[0]?.teamName ?? '',
       subtitle: [
@@ -107,7 +111,9 @@ function teamBlocks(data: DraftBoardData): Block[] {
 }
 
 function orderBlocks(data: DraftBoardData): Block[] {
-  const tier = Math.max(1, data.totalTeams ?? new Set(data.picks.map(p => p.teamId)).size);
+  // `||`, not `??`: a league that reports totalTeams 0 should fall back to
+  // counting rosters, not slice the draft into one-pick "rounds".
+  const tier = Math.max(1, data.totalTeams || new Set(data.picks.map(p => p.teamId)).size);
   if (data.isAuction) {
     // The snake this auction implies: most expensive first, each run of
     // `tier` picks is a round. Same tiering as calculateAuctionRounds.
@@ -150,9 +156,13 @@ function drawBlocks(data: DraftBoardData, blocks: Block[], blockW: number, cols:
   const h = HEADER_H + rows * blockH + (rows - 1) * GAP + FOOTER_H;
 
   const canvas = document.createElement('canvas');
-  const scale = 2; // crisp on phone screens, where this will be looked at
-  canvas.width = w * scale;
-  canvas.height = h * scale;
+  // 2x for crisp phone screens, but iOS Safari silently blanks a canvas
+  // past ~16.7M pixels (the old 4096x4096 cap) - a 14-team, 20-round board
+  // at 2x is over it. Shrink the scale until the area fits.
+  const MAX_PIXELS = 16_000_000;
+  const scale = Math.min(2, Math.max(1, Math.floor(Math.sqrt(MAX_PIXELS / (w * h)) * 4) / 4));
+  canvas.width = Math.floor(w * scale);
+  canvas.height = Math.floor(h * scale);
   const ctx = canvas.getContext('2d');
   if (!ctx) {
     logger.error('[draftBoard] 2D canvas context unavailable');
@@ -178,7 +188,7 @@ function drawBlocks(data: DraftBoardData, blocks: Block[], blockW: number, cols:
   // Header
   ctx.fillStyle = LIME;
   ctx.font = `900 38px ${BLACK}`;
-  ctx.fillText(truncate(ctx, data.leagueName.toUpperCase(), w - MARGIN * 2 - 260), MARGIN, 68);
+  ctx.fillText(truncate(ctx, data.leagueName.toUpperCase(), Math.max(120, w - MARGIN * 2 - 260)), MARGIN, 68);
   ctx.fillStyle = BONE_DIM;
   ctx.font = `700 17px ${MONO}`;
   const sub = `${data.season ?? ''} ${data.isAuction ? 'AUCTION' : 'SNAKE'} DRAFT`.trim();
@@ -238,12 +248,13 @@ function drawTeamsBoard(data: DraftBoardData): HTMLCanvasElement | null {
     ctx.fillText(slotLabel(data, pick), x + 56, py);
     ctx.textAlign = 'left';
     // Name in the grade's color: the color IS the grade, no badge needed.
-    ctx.fillStyle = GRADE_COLORS[pick.grade];
-    const valueText = signed(pick.valueOverExpected, data.valuesInDollars);
+    // Keepers stay neutral, like the on-site table: kept, not judged.
+    ctx.fillStyle = pick.isKeeper ? BONE : GRADE_COLORS[pick.grade];
+    const valueText = pick.isKeeper ? 'K' : signed(pick.valueOverExpected, data.valuesInDollars);
     const valueW = ctx.measureText(valueText).width;
     ctx.fillText(truncate(ctx, pick.player.name, blockW - 56 - 24 - valueW - 14), x + 64, py);
     ctx.textAlign = 'right';
-    ctx.fillStyle = pick.valueOverExpected >= 0 ? BONE : BONE_DIM;
+    ctx.fillStyle = pick.isKeeper ? BONE_DIM : pick.valueOverExpected >= 0 ? BONE : BONE_DIM;
     ctx.fillText(valueText, x + blockW - 12, py);
     ctx.textAlign = 'left';
   });
@@ -258,15 +269,15 @@ function drawOrderBoard(data: DraftBoardData): HTMLCanvasElement | null {
     ctx.textAlign = 'right';
     ctx.fillText(slotLabel(data, pick), x + 56, py);
     ctx.textAlign = 'left';
-    ctx.fillStyle = GRADE_COLORS[pick.grade];
-    const valueText = signed(pick.valueOverExpected, data.valuesInDollars);
+    ctx.fillStyle = pick.isKeeper ? BONE : GRADE_COLORS[pick.grade];
+    const valueText = pick.isKeeper ? 'K' : signed(pick.valueOverExpected, data.valuesInDollars);
     const valueW = ctx.measureText(valueText).width;
     const teamW = 110;
     ctx.fillText(truncate(ctx, pick.player.name, blockW - 56 - 24 - teamW - valueW - 22), x + 64, py);
     ctx.textAlign = 'right';
     ctx.fillStyle = BONE_DIM;
     ctx.fillText(truncate(ctx, pick.teamName, teamW), x + blockW - 12 - valueW - 10, py);
-    ctx.fillStyle = pick.valueOverExpected >= 0 ? BONE : BONE_DIM;
+    ctx.fillStyle = pick.isKeeper ? BONE_DIM : pick.valueOverExpected >= 0 ? BONE : BONE_DIM;
     ctx.fillText(valueText, x + blockW - 12, py);
     ctx.textAlign = 'left';
   });
@@ -300,11 +311,22 @@ async function deliver(
   }
 
   try {
+    // An over-limit or tainted canvas RETURNS "data:," on Safari rather
+    // than throwing; downloading that would report "Saved PNG" with no file.
+    const url = canvas.toDataURL('image/png');
+    if (!url || url.length < 100) {
+      logger.error('[draftBoard] toDataURL returned a blank image');
+      return false;
+    }
     const link = document.createElement('a');
     const season = data.season ? `_${data.season}` : '';
     link.download = `${data.leagueName.replace(/[^a-z0-9]/gi, '_')}${season}_${suffix}.png`;
-    link.href = canvas.toDataURL('image/png');
+    link.href = url;
+    // In the DOM for the click: Firefox is the browser that lands in this
+    // fallback, and it has historically ignored clicks on detached anchors.
+    document.body.appendChild(link);
     link.click();
+    link.remove();
     return 'saved';
   } catch (err) {
     logger.error('[draftBoard] toDataURL/download failed:', err);

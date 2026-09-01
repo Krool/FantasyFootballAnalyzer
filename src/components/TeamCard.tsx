@@ -19,22 +19,26 @@ export function TeamCard({ league, team, onClick, luckMetrics }: TeamCardProps) 
   // Grade this team's picks against the real league (a hand-built stand-in
   // here once forced snake/PPR onto auction leagues and graded every pick
   // wrong). gradeLeaguePicks also swaps in consensus ranks pre-season.
-  const gradedPicks = useMemo(() => {
+  const { gradedPicks, valuesInDollars } = useMemo(() => {
     const allGraded = gradeLeaguePicks(league, POOL);
-    // Filter to this team's picks and exclude unknown players (e.g., "Player 12345")
-    return allGraded.filter(pick => pick.teamId === team.id && !isPlaceholderPlayer(pick.player.name));
+    // Whether the values are dollar deltas is a LEAGUE-wide fact: grading
+    // switched on all picks, so deciding from this team's subset would
+    // disagree with it (Week 1 Thursday: one TNF player scoring flips the
+    // whole league to rank mode, but a TNF-less team's subset still looks
+    // pre-season and would print $ on a rank delta).
+    const dollars =
+      !hasSeasonResults(allGraded) &&
+      (league.draftType === 'auction' || allGraded.some(p => (p.auctionValue ?? 0) > 0));
+    return {
+      // Filter to this team's picks and exclude unknown players (e.g., "Player 12345")
+      gradedPicks: allGraded.filter(
+        pick => pick.teamId === team.id && !isPlaceholderPlayer(pick.player.name),
+      ),
+      valuesInDollars: dollars,
+    };
   }, [league, team.id]);
 
   const summary = useMemo(() => calculateDraftSummary(gradedPicks), [gradedPicks]);
-
-  // Pre-season auction values are dollar deltas (market minus paid); show
-  // the $ so the number reads in its actual unit.
-  const valuesInDollars = useMemo(
-    () =>
-      !hasSeasonResults(gradedPicks) &&
-      (league.draftType === 'auction' || gradedPicks.some(p => (p.auctionValue ?? 0) > 0)),
-    [gradedPicks, league.draftType],
-  );
 
   // Calculate waiver stats. PAR, not raw points: every other waiver surface
   // standardized on points above replacement.

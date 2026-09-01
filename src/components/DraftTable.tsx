@@ -3,6 +3,7 @@ import type { RosterSlots, ScoringType, Team } from '@/types';
 import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected } from '@/utils/grading';
 import { consensusPositionRanks, hasSeasonResults, marketAuctionValues } from '@/utils/consensusGrade';
 import { exportDraftBoard, exportDraftOrder } from '@/utils/exportDraftBoard';
+import { logger } from '@/utils/logger';
 import {
   DEFAULT_ROSTER_SLOTS,
   pickKey,
@@ -111,7 +112,10 @@ export function DraftTable({
     // deltas (which the $1-4 tail distorts into false Terribles).
     const market =
       !hasResults && isAuction ? marketAuctionValues(allPicks, POOL, auctionBudget ?? 200) : undefined;
-    return gradeAllPicks(mockLeague, override, market).filter(pick => !isPlaceholderPlayer(pick.player.name));
+    // An empty market map (pool matched nobody) must not engage dollar mode.
+    return gradeAllPicks(mockLeague, override, market?.size ? market : undefined).filter(
+      pick => !isPlaceholderPlayer(pick.player.name),
+    );
   }, [teams, totalTeams, isAuction, auctionBudget, hasResults, allPicks]);
 
   // True when the value/grade numbers are dollar deltas, not rank deltas.
@@ -425,17 +429,30 @@ export function DraftTable({
                 if (shareState?.state === 'busy') return;
                 playSort();
                 setShareState({ which, state: 'busy' });
-                const result = await run({
-                  leagueName: leagueName ?? 'Draft Board',
-                  season,
-                  isAuction,
-                  totalTeams,
-                  valuesInDollars,
-                  picks: gradedPicks,
-                });
+                let result: Awaited<ReturnType<typeof run>> = false;
+                try {
+                  result = await run({
+                    leagueName: leagueName ?? 'Draft Board',
+                    season,
+                    isAuction,
+                    totalTeams,
+                    valuesInDollars,
+                    picks: gradedPicks,
+                  });
+                } catch (err) {
+                  // A throw here would otherwise leave both buttons stuck on
+                  // 'busy' with no timer to clear them.
+                  logger.error('[draftBoard] export threw:', err);
+                }
                 setShareState({ which, state: result === false ? 'failed' : result });
+                // Clear only THIS button's finished state: a flat "not busy"
+                // check let a stale timer wipe the other button's fresh
+                // confirmation after ~50ms.
                 setTimeout(
-                  () => setShareState(current => (current?.state === 'busy' ? current : null)),
+                  () =>
+                    setShareState(current =>
+                      current?.which === which && current.state !== 'busy' ? null : current,
+                    ),
                   2500,
                 );
               }}
@@ -574,8 +591,8 @@ export function DraftTable({
               <th onClick={() => handleSort('posRank')} onKeyDown={handleSortKeyDown('posRank')} tabIndex={0} aria-sort={ariaSortFor('posRank')} className={styles.sortable} role="button" aria-label={hasResults ? 'Sort by Position Rank' : 'Sort by Consensus Rank'} title={hasResults ? 'Where he finished at his position among drafted players' : 'Where the FantasyPros consensus ranked him at his position among drafted players'}>
                 {hasResults ? 'Pos Rank' : 'Consensus'}{getSortIndicator('posRank')}
               </th>
-              {!isAuction && (
-                <th onClick={() => handleSort('value')} onKeyDown={handleSortKeyDown('value')} tabIndex={0} aria-sort={ariaSortFor('value')} className={styles.sortable} role="button" aria-label="Sort by Value" title={hasResults ? 'Position rank beaten, versus where he was drafted at his position' : 'Positions gained on the consensus: positive means he fell past where the market ranked him'}>
+              {(!isAuction || valuesInDollars) && (
+                <th onClick={() => handleSort('value')} onKeyDown={handleSortKeyDown('value')} tabIndex={0} aria-sort={ariaSortFor('value')} className={styles.sortable} role="button" aria-label="Sort by Value" title={valuesInDollars ? 'Market price minus price paid, in league dollars: positive means he went under what the market says he is worth' : hasResults ? 'Position rank beaten, versus where he was drafted at his position' : 'Positions gained on the consensus: positive means he fell past where the market ranked him'}>
                   Value{getSortIndicator('value')}
                 </th>
               )}
@@ -628,7 +645,7 @@ export function DraftTable({
                     rank and projection are real — but carry no verdict, since
                     the round they cost was set by the keeper rule, not by
                     anyone reading the board. */}
-                {!isAuction && (
+                {(!isAuction || valuesInDollars) && (
                   <td
                     className={
                       pick.isKeeper
