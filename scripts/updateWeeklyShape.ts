@@ -89,6 +89,16 @@ async function main() {
     matched++;
   }
 
+  // Off-season, Sleeper serves the weekly endpoints SUCCESSFULLY but empty.
+  // A thin result must not clobber the last good file - the model degrades
+  // to flat-with-bye either way, but stale shapes beat none at all.
+  if (matched < 100 && existsSync(`src/data/weeklyShape.${SEASON}.json`)) {
+    console.warn(
+      `Weekly projections matched only ${matched} pool players; keeping the previous shape file.`,
+    );
+    return;
+  }
+
   const out = {
     season: SEASON,
     generatedAt: new Date().toISOString(),

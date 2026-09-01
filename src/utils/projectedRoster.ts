@@ -169,6 +169,14 @@ export interface ProjectedSeason {
 // (suspensions, projected absences) while the totals stay identical to the
 // Proj Pts column. Without a shape (or without the file), a player plays
 // every non-bye week at a flat rate.
+//
+// Known wrinkle, chosen deliberately: when the weekly and season sources
+// disagree on games played (a looming suspension the season aggregate
+// discounts harder than the weekly curves do), normalizing spreads the
+// smaller season total across the larger set of projected-active weeks,
+// diluting his per-week value - sometimes under the replacement floor,
+// where the model benches him. That is the conservative reading of a
+// disputed projection, and both sources refresh twice daily.
 export function projectedSeasonPoints(
   picks: DraftPick[],
   pool: DraftPoolFile,
