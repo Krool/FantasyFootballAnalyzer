@@ -263,7 +263,9 @@ describe('marketAuctionValues and dollar-mode auction grading', () => {
     const flier = graded.find(g => g.player.id === '2')!;
     expect(flier.valueOverExpected).toBe(-3);
     expect(flier.grade).toBe('bad');
-    expect(flier.auctionValueGrade).toBe('Slight Overpay');
+    expect(flier.auctionValueGrade).toMatch(/^Slight Overpay/);
+    expect(flier.marketValue).toBe(1);
+    expect(flier.auctionDamage).toBe(0); // a $3 miss never ranks among the worst picks
 
     const split = graded.find(g => g.player.id === '3')!;
     expect(split.valueOverExpected).toBe(2);

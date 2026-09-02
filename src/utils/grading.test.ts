@@ -12,6 +12,8 @@ import {
   formatValueOverExpected,
   getGradeColorClass,
   gradeAuctionDollarDelta,
+  auctionRelativeDelta,
+  auctionOverpayDamage,
 } from './grading';
 import type { DraftPick, League } from '@/types';
 
@@ -538,20 +540,56 @@ describe('formatValueOverExpected in dollars', () => {
   });
 });
 
-describe('gradeAuctionDollarDelta bands', () => {
-  it('grades around market price at a $200 budget', () => {
-    expect(gradeAuctionDollarDelta(5).grade).toBe('great');
-    expect(gradeAuctionDollarDelta(0).grade).toBe('good');
-    expect(gradeAuctionDollarDelta(-2).grade).toBe('good');
-    expect(gradeAuctionDollarDelta(-3).grade).toBe('bad');
-    expect(gradeAuctionDollarDelta(-8).grade).toBe('bad');
-    expect(gradeAuctionDollarDelta(-9).grade).toBe('terrible');
+describe('gradeAuctionDollarDelta bands (softened ratio)', () => {
+  // Owner-reported 2026-09-02: raw dollars called Gibbs at $75 vs $65
+  // "Terrible" while $8 for a $1 player was only a "Slight Overpay".
+  it('judges an overpay relative to the price, not raw dollars', () => {
+    expect(gradeAuctionDollarDelta(-10, 65).grade).toBe('good'); // Gibbs
+    expect(gradeAuctionDollarDelta(-10, 65).auctionValueGrade).toBe('Fair Price (15% over)');
+    expect(gradeAuctionDollarDelta(-10, 20).grade).toBe('bad'); // $30 for a $20 player
+    expect(gradeAuctionDollarDelta(-10, 20).auctionValueGrade).toMatch(/^Slight Overpay/);
+    expect(gradeAuctionDollarDelta(-15, 5).grade).toBe('terrible'); // $20 for a $5 player
+    expect(gradeAuctionDollarDelta(-7, 1).grade).toBe('terrible'); // $8 for a $1 player
+    expect(gradeAuctionDollarDelta(-7, 1).auctionValueGrade).toBe('Big Overpay (700% over)');
   });
 
-  it('scales the bands to the league budget', () => {
-    // A $100 league's dollars are worth twice as much: -5 is already past
-    // the halved -4 "bad" floor.
-    expect(gradeAuctionDollarDelta(-5, 100).grade).toBe('terrible');
-    expect(gradeAuctionDollarDelta(3, 100).grade).toBe('great');
+  it('softens the $1 tail so cheap fliers stay survivable', () => {
+    expect(gradeAuctionDollarDelta(-3, 1).grade).toBe('bad'); // $4 for a $1 player
+    expect(gradeAuctionDollarDelta(-3, 1).auctionValueGrade).toMatch(/^Slight Overpay/);
+    expect(gradeAuctionDollarDelta(-1, 1).grade).toBe('good'); // $2 for a $1 player
+    expect(gradeAuctionDollarDelta(0, 1).auctionValueGrade).toBe('Fair Price');
+  });
+
+  it('cuts steals in lower than overpays', () => {
+    expect(gradeAuctionDollarDelta(15, 65).grade).toBe('great'); // $50 for a $65 player
+    expect(gradeAuctionDollarDelta(10, 65).grade).toBe('good'); // $55: fair, not a steal
+    expect(gradeAuctionDollarDelta(3, 4).grade).toBe('great'); // $1 for a $4 player
+    expect(gradeAuctionDollarDelta(15, 65).auctionValueGrade).toBe('Steal (23% under)');
+  });
+
+  it('scales the softener to the league budget', () => {
+    // A $100 league: Gibbs is $37.50 vs $32.50, a $5 miss. Same ratio, same grade.
+    expect(auctionRelativeDelta(-5, 33, 100)).toBeCloseTo(auctionRelativeDelta(-10, 65, 200), 1);
+    expect(gradeAuctionDollarDelta(-5, 33, 100).grade).toBe('good');
+  });
+});
+
+describe('auctionOverpayDamage', () => {
+  it('ranks $8-for-$1 near a $10 miss on a star and below a $20-for-$5', () => {
+    const gibbs = auctionOverpayDamage(-10, 65);
+    const flier = auctionOverpayDamage(-7, 1);
+    const torching = auctionOverpayDamage(-15, 5);
+    expect(gibbs).toBeGreaterThan(10);
+    expect(flier).toBeGreaterThan(gibbs * 0.8);
+    expect(flier).toBeLessThan(gibbs * 1.2);
+    expect(torching).toBeGreaterThan(flier * 2);
+  });
+
+  it('ignores small misses and steals', () => {
+    expect(auctionOverpayDamage(-3, 1)).toBe(0); // $4 flier never makes the list
+    expect(auctionOverpayDamage(-4, 40)).toBe(0);
+    expect(auctionOverpayDamage(20, 60)).toBe(0);
+    expect(auctionOverpayDamage(-5, 40)).toBeGreaterThan(0); // floor is inclusive
+    expect(auctionOverpayDamage(-3, 1, 100)).toBeGreaterThan(0); // $3 is $6 at a $200 scale
   });
 });

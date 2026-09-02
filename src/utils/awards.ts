@@ -917,6 +917,30 @@ function getDraftSteal(gradedPicks: GradedPick[]): BestPickResult | undefined {
 function getDraftBust(gradedPicks: GradedPick[]): BestPickResult | undefined {
   let worst: BestPickResult | undefined;
 
+  // Pre-season auction (dollar mode): rank by damage, dollars lost weighted
+  // by how far over the player's price it was, so a $10 miss on a $65 star
+  // doesn't automatically beat $8 on a $1 flier, and neither beats $20 on
+  // a $5 player. No cost-tier gate: the damage floor already keeps $3
+  // fliers out, and a cheap-tier torching is a legitimate bust.
+  if (gradedPicks.some(p => p.auctionDamage !== undefined)) {
+    let worstDamage = 0;
+    gradedPicks.forEach(pick => {
+      const damage = pick.auctionDamage ?? 0;
+      if (damage > worstDamage) {
+        worstDamage = damage;
+        worst = {
+          teamId: pick.teamId,
+          teamName: pick.teamName,
+          playerName: pick.player.name,
+          value: pick.valueOverExpected,
+          round: pick.round,
+          cost: pick.auctionValue,
+        };
+      }
+    });
+    return worst;
+  }
+
   gradedPicks.forEach(pick => {
     const value = pick.valueOverExpected;
     // Only consider early picks (rounds 1-7) with negative value (actual busts).

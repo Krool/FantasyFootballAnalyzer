@@ -11,6 +11,12 @@ export interface GradedPick extends DraftPick {
   valueOverExpected: number;
   // Auction-specific fields
   auctionValueGrade?: string; // e.g., "Great Value", "Overpay"
+  // Pre-season auction only (dollar mode): the consensus market price the
+  // pick was graded against, and how much an overpay hurt on the blended
+  // dollars-times-ratio scale (see auctionOverpayDamage). 0 when the pick
+  // was not an eligible overpay.
+  marketValue?: number;
+  auctionDamage?: number;
 }
 
 export interface DraftGradeSummary {
@@ -271,17 +277,58 @@ export function gradeAuctionPick(
 // FantasyPros consensus ranks (utils/consensusGrade.ts) so a finished draft is
 // gradeable at the table instead of scoring every pick against a zeroed stat
 // line.
-// Dollar bands for pre-season auction grading, calibrated to a $200 budget
-// and scaled to the league's. Delta is market price minus price paid.
+// Pre-season auction grading judges a pick RELATIVE to what the player
+// costs, not on raw dollars. Raw dollars called Gibbs at $75 against a $65
+// market "Terrible" while $8 for a $1 flier was only a "Slight Overpay"
+// (owner-reported, 2026-09-02). A pure ratio over-corrects the other way:
+// market floors at $1, so a $3 flier would be a 200% overpay and half the
+// room grades Terrible. So the ratio is softened: delta / (market + $10 at
+// a $200 budget). The constant absorbs the $1 tail (a $3 flier scores
+// -0.18) while big-ticket misses still read as a share of the player's
+// price (Gibbs scores -0.13, $20 for a $5 player scores -1.0).
+export const AUCTION_RATIO_SOFTENER = 10;
+
+// Signed: positive is a bargain, negative an overpay. `delta` is market
+// price minus price paid, in league dollars.
+export function auctionRelativeDelta(delta: number, market: number, budget: number = 200): number {
+  const scale = budget > 0 ? budget / 200 : 1;
+  return delta / (Math.max(1, market) + AUCTION_RATIO_SOFTENER * scale);
+}
+
+// Bands on the softened ratio. Steals cut in lower than overpays: prices
+// are sticky at the top of the board, so $15 under on a $65 player is a
+// real win, while a $10 miss on the same player is the room deciding he
+// was a $75 guy. The label carries the plain percent of market so a "Fair
+// Price" on a $10 miss explains itself.
 export function gradeAuctionDollarDelta(
   delta: number,
+  market: number,
   budget: number = 200,
 ): { grade: DraftGrade; auctionValueGrade: string } {
+  const r = auctionRelativeDelta(delta, market, budget);
+  const pct = Math.round((Math.abs(delta) / Math.max(1, market)) * 100);
+  const vs = delta < 0 ? `${pct}% over` : `${pct}% under`;
+  if (r >= 0.2) return { grade: 'great', auctionValueGrade: `Steal (${vs})` };
+  if (r >= -0.15) return { grade: 'good', auctionValueGrade: delta === 0 ? 'Fair Price' : `Fair Price (${vs})` };
+  if (r >= -0.35) return { grade: 'bad', auctionValueGrade: `Slight Overpay (${vs})` };
+  if (r >= -0.6) return { grade: 'bad', auctionValueGrade: `Overpay (${vs})` };
+  return { grade: 'terrible', auctionValueGrade: `Big Overpay (${vs})` };
+}
+
+// How much an overpay actually hurt, for ranking the worst picks of a
+// draft: dollars lost, weighted up by how far over the player's price it
+// was. Pure dollars puts every $10 miss on a star at the top; pure ratio
+// fills the list with $8 fliers on $1 players. Multiplying the two puts
+// $8-for-$1 about level with $75-for-$65 and well below $20-for-$5, and a
+// floor of $5 lost (at a $200 budget) keeps $3 fliers off the list
+// entirely. 0 for anything that isn't an eligible overpay.
+export const AUCTION_DAMAGE_FLOOR = 5;
+
+export function auctionOverpayDamage(delta: number, market: number, budget: number = 200): number {
   const scale = budget > 0 ? budget / 200 : 1;
-  if (delta >= 5 * scale) return { grade: 'great', auctionValueGrade: 'Steal' };
-  if (delta >= -2 * scale) return { grade: 'good', auctionValueGrade: 'Fair Price' };
-  if (delta >= -8 * scale) return { grade: 'bad', auctionValueGrade: 'Slight Overpay' };
-  return { grade: 'terrible', auctionValueGrade: 'Overpay' };
+  if (delta > -AUCTION_DAMAGE_FLOOR * scale) return 0;
+  const lost = -delta;
+  return lost * (1 + Math.abs(auctionRelativeDelta(delta, market, budget)));
 }
 
 export function gradeAllPicks(
@@ -337,13 +384,16 @@ export function gradeAllPicks(
         const market =
           auctionMarketOverride.get(`${pick.player.position}-${pick.player.id}`) ?? 1;
         const delta = Math.round(market - (pick.auctionValue ?? 0));
+        const budget = league.auctionBudget ?? 200;
         return {
           ...pick,
           round: auctionRound ?? pick.round,
-          ...gradeAuctionDollarDelta(delta, league.auctionBudget ?? 200),
+          ...gradeAuctionDollarDelta(delta, market, budget),
           positionRank,
           expectedRank,
           valueOverExpected: delta,
+          marketValue: market,
+          auctionDamage: auctionOverpayDamage(delta, market, budget),
         };
       }
       const { grade, auctionValueGrade } = positionRanksOverride

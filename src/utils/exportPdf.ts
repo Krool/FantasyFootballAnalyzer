@@ -360,8 +360,16 @@ export async function exportLeagueReport(league: League) {
   doc.text('Bottom 10 Draft Picks (by Value)', 14, yPos);
   yPos += 3;
 
+  // Pre-season auctions carry a damage score (dollars lost weighted by the
+  // overpay ratio); rank on that so $8-for-$1 fliers and $10-over stars sit
+  // where they belong instead of the raw dollar column deciding.
+  const damageMode = gradedPicks.some(p => p.auctionDamage !== undefined);
   const worstPicks = [...gradedPicks]
-    .sort((a, b) => a.valueOverExpected - b.valueOverExpected)
+    .sort((a, b) =>
+      damageMode
+        ? (b.auctionDamage ?? 0) - (a.auctionDamage ?? 0) || a.valueOverExpected - b.valueOverExpected
+        : a.valueOverExpected - b.valueOverExpected,
+    )
     .slice(0, 10)
     .map((pick, index) => [
       String(index + 1),
