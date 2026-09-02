@@ -14,6 +14,7 @@ import {
   gradeAuctionDollarDelta,
   auctionRelativeDelta,
   auctionOverpayDamage,
+  describeAuctionMarket,
 } from './grading';
 import type { DraftPick, League } from '@/types';
 
@@ -544,33 +545,45 @@ describe('gradeAuctionDollarDelta bands (softened ratio)', () => {
   // Owner-reported 2026-09-02: raw dollars called Gibbs at $75 vs $65
   // "Terrible" while $8 for a $1 player was only a "Slight Overpay".
   it('judges an overpay relative to the price, not raw dollars', () => {
-    expect(gradeAuctionDollarDelta(-10, 65).grade).toBe('good'); // Gibbs
-    expect(gradeAuctionDollarDelta(-10, 65).auctionValueGrade).toBe('Fair Price (15% over)');
-    expect(gradeAuctionDollarDelta(-10, 20).grade).toBe('bad'); // $30 for a $20 player
-    expect(gradeAuctionDollarDelta(-10, 20).auctionValueGrade).toMatch(/^Slight Overpay/);
+    expect(gradeAuctionDollarDelta(-10, 65)).toEqual({ grade: 'bad', auctionValueGrade: 'Slight Overpay' }); // Gibbs
+    expect(gradeAuctionDollarDelta(-10, 20)).toEqual({ grade: 'bad', auctionValueGrade: 'Overpay' }); // $30 for a $20 player
     expect(gradeAuctionDollarDelta(-15, 5).grade).toBe('terrible'); // $20 for a $5 player
-    expect(gradeAuctionDollarDelta(-7, 1).grade).toBe('terrible'); // $8 for a $1 player
-    expect(gradeAuctionDollarDelta(-7, 1).auctionValueGrade).toBe('Big Overpay (700% over)');
+    expect(gradeAuctionDollarDelta(-7, 1)).toEqual({ grade: 'terrible', auctionValueGrade: 'Big Overpay' }); // $8 for a $1 player
   });
 
   it('softens the $1 tail so cheap fliers stay survivable', () => {
-    expect(gradeAuctionDollarDelta(-3, 1).grade).toBe('bad'); // $4 for a $1 player
-    expect(gradeAuctionDollarDelta(-3, 1).auctionValueGrade).toMatch(/^Slight Overpay/);
+    expect(gradeAuctionDollarDelta(-3, 1)).toEqual({ grade: 'bad', auctionValueGrade: 'Overpay' }); // $4 for a $1 player
+    expect(gradeAuctionDollarDelta(-2, 1).auctionValueGrade).toBe('Slight Overpay'); // $3 for a $1 player
     expect(gradeAuctionDollarDelta(-1, 1).grade).toBe('good'); // $2 for a $1 player
     expect(gradeAuctionDollarDelta(0, 1).auctionValueGrade).toBe('Fair Price');
   });
 
+  it('spreads on-market picks instead of calling them all Good', () => {
+    expect(gradeAuctionDollarDelta(-5, 35).grade).toBe('bad'); // $40 for a $35 player
+    expect(gradeAuctionDollarDelta(-4, 40).grade).toBe('good'); // $44 for a $40 player
+    expect(gradeAuctionDollarDelta(-4, 8).auctionValueGrade).toBe('Slight Overpay'); // $12 for an $8 player
+  });
+
   it('cuts steals in lower than overpays', () => {
-    expect(gradeAuctionDollarDelta(15, 65).grade).toBe('great'); // $50 for a $65 player
-    expect(gradeAuctionDollarDelta(10, 65).grade).toBe('good'); // $55: fair, not a steal
-    expect(gradeAuctionDollarDelta(3, 4).grade).toBe('great'); // $1 for a $4 player
-    expect(gradeAuctionDollarDelta(15, 65).auctionValueGrade).toBe('Steal (23% under)');
+    expect(gradeAuctionDollarDelta(10, 65).grade).toBe('great'); // $55 for a $65 player
+    expect(gradeAuctionDollarDelta(5, 65).grade).toBe('good'); // $60: fair, not a steal
+    expect(gradeAuctionDollarDelta(2, 3).grade).toBe('great'); // $1 for a $3 player
+    expect(gradeAuctionDollarDelta(1, 2).grade).toBe('good'); // $1 for a $2 player
   });
 
   it('scales the softener to the league budget', () => {
     // A $100 league: Gibbs is $37.50 vs $32.50, a $5 miss. Same ratio, same grade.
     expect(auctionRelativeDelta(-5, 33, 100)).toBeCloseTo(auctionRelativeDelta(-10, 65, 200), 1);
-    expect(gradeAuctionDollarDelta(-5, 33, 100).grade).toBe('good');
+    expect(gradeAuctionDollarDelta(-5, 33, 100).grade).toBe('bad');
+  });
+});
+
+describe('describeAuctionMarket', () => {
+  it('spells out paid vs market with the percent', () => {
+    expect(describeAuctionMarket(75, 65)).toBe('$75 vs $65 market (15% over)');
+    expect(describeAuctionMarket(8, 1)).toBe('$8 vs $1 market (700% over)');
+    expect(describeAuctionMarket(50, 65)).toBe('$50 vs $65 market (23% under)');
+    expect(describeAuctionMarket(1, 1)).toBe('$1 vs $1 market');
   });
 });
 

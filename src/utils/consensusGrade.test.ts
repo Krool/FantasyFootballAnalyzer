@@ -263,7 +263,7 @@ describe('marketAuctionValues and dollar-mode auction grading', () => {
     const flier = graded.find(g => g.player.id === '2')!;
     expect(flier.valueOverExpected).toBe(-3);
     expect(flier.grade).toBe('bad');
-    expect(flier.auctionValueGrade).toMatch(/^Slight Overpay/);
+    expect(flier.auctionValueGrade).toBe('Overpay');
     expect(flier.marketValue).toBe(1);
     expect(flier.auctionDamage).toBe(0); // a $3 miss never ranks among the worst picks
 
@@ -281,7 +281,7 @@ describe('marketAuctionValues and dollar-mode auction grading', () => {
     );
     const ghost = graded.find(g => g.player.id === 'unknown-99')!;
     expect(ghost.valueOverExpected).toBe(-6);
-    expect(ghost.grade).toBe('bad');
+    expect(ghost.grade).toBe('terrible'); // $7 on a $1 flier is a 600% overpay
   });
 
   it('keeps rank deltas when no market map is supplied', () => {

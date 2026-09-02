@@ -295,24 +295,31 @@ export function auctionRelativeDelta(delta: number, market: number, budget: numb
   return delta / (Math.max(1, market) + AUCTION_RATIO_SOFTENER * scale);
 }
 
-// Bands on the softened ratio. Steals cut in lower than overpays: prices
-// are sticky at the top of the board, so $15 under on a $65 player is a
-// real win, while a $10 miss on the same player is the room deciding he
-// was a $75 guy. The label carries the plain percent of market so a "Fair
-// Price" on a $10 miss explains itself.
+// Bands on the softened ratio. Five labels over four grade colors, so the
+// board reads as a gradient instead of a wall of "Good" (owner, 2026-09-02:
+// the first cut had Fair Price spanning 20% under to 15% over and nearly
+// every pick landed in it). Steals cut in a touch lower than overpays:
+// prices are sticky at the top, so $10 under on a $65 player is a win.
 export function gradeAuctionDollarDelta(
   delta: number,
   market: number,
   budget: number = 200,
 ): { grade: DraftGrade; auctionValueGrade: string } {
   const r = auctionRelativeDelta(delta, market, budget);
-  const pct = Math.round((Math.abs(delta) / Math.max(1, market)) * 100);
-  const vs = delta < 0 ? `${pct}% over` : `${pct}% under`;
-  if (r >= 0.2) return { grade: 'great', auctionValueGrade: `Steal (${vs})` };
-  if (r >= -0.15) return { grade: 'good', auctionValueGrade: delta === 0 ? 'Fair Price' : `Fair Price (${vs})` };
-  if (r >= -0.35) return { grade: 'bad', auctionValueGrade: `Slight Overpay (${vs})` };
-  if (r >= -0.6) return { grade: 'bad', auctionValueGrade: `Overpay (${vs})` };
-  return { grade: 'terrible', auctionValueGrade: `Big Overpay (${vs})` };
+  if (r >= 0.12) return { grade: 'great', auctionValueGrade: 'Steal' };
+  if (r >= -0.1) return { grade: 'good', auctionValueGrade: 'Fair Price' };
+  if (r >= -0.25) return { grade: 'bad', auctionValueGrade: 'Slight Overpay' };
+  if (r >= -0.45) return { grade: 'bad', auctionValueGrade: 'Overpay' };
+  return { grade: 'terrible', auctionValueGrade: 'Big Overpay' };
+}
+
+// "$75 vs $65 market (15% over)" for tooltips. Market floors at $1, so the
+// percent on a $1 player is honest about how silly the flier was.
+export function describeAuctionMarket(paid: number, market: number): string {
+  const m = Math.max(1, market);
+  const pct = Math.round((Math.abs(paid - m) / m) * 100);
+  const vs = paid > m ? ` (${pct}% over)` : paid < m ? ` (${pct}% under)` : '';
+  return `$${paid} vs $${m} market${vs}`;
 }
 
 // How much an overpay actually hurt, for ranking the worst picks of a

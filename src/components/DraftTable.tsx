@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { RosterSlots, ScoringType, Team } from '@/types';
-import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected } from '@/utils/grading';
+import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected, describeAuctionMarket } from '@/utils/grading';
 import { consensusPositionRanks, hasSeasonResults, marketAuctionValues } from '@/utils/consensusGrade';
 import { exportDraftBoard, exportDraftOrder } from '@/utils/exportDraftBoard';
 import { logger } from '@/utils/logger';
@@ -741,8 +741,20 @@ export function DraftTable({
                       Keeper
                     </span>
                   ) : (
-                    <span className={`grade-badge ${pick.grade}`}>
-                      {getGradeDisplayText(pick.grade)}
+                    // Dollar mode: the five-step market label (Steal .. Big
+                    // Overpay) reads as a gradient where the four grade words
+                    // made every on-market pick "Good"; the tooltip shows the math.
+                    <span
+                      className={`grade-badge ${pick.grade}`}
+                      title={
+                        valuesInDollars && pick.marketValue !== undefined
+                          ? describeAuctionMarket(pick.auctionValue ?? 0, pick.marketValue)
+                          : undefined
+                      }
+                    >
+                      {valuesInDollars && pick.auctionValueGrade
+                        ? pick.auctionValueGrade
+                        : getGradeDisplayText(pick.grade)}
                     </span>
                   )}
                 </td>
