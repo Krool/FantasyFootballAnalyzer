@@ -59,3 +59,48 @@ export function scaleValues(
   }
   return scaled;
 }
+
+// ESPN's live auction market as the room's working values, for owners whose
+// league drafts on ESPN and anchors on ESPN's dollar column (owner,
+// 2026-09-02: consensus-priced mocks "aren't very site accurate"). Pure
+// market, no projection blend: the point is matching what the room pays.
+//
+// The raw numbers can't be copied in: ESPN's priced board sums to ~10% more
+// than an ESPN room's money (the ownership average rides above budget), and
+// the league's shape differs anyway. So rescale the surplus over $1 by one
+// ratio chosen so the top `teams * rounds` players sum to the league's money,
+// which is what the AI's budget pacing and the inflation math assume. That
+// makes ESPN's default shape irrelevant. Unpriced players stay $1.
+//
+// Returns null when ESPN priced too few players to run a room on (a failed
+// fetch leaves the pool without the column); callers fall back to consensus.
+export const MIN_ESPN_PRICED = 50;
+
+export function espnMarketValues(
+  players: PoolPlayer[],
+  target: LeagueShape,
+): Map<string, number> | null {
+  const priced = players
+    .filter(p => typeof p.espnValue === 'number' && p.espnValue > 0)
+    .sort((a, b) => (b.espnValue ?? 0) - (a.espnValue ?? 0));
+  if (priced.length < MIN_ESPN_PRICED) return null;
+
+  const slots = Math.max(1, target.teams * target.rounds);
+  const rostered = priced.slice(0, slots);
+  const money = target.teams * target.budget;
+  // Every rostered slot costs $1; the surplus pool is what's left.
+  const surplusTarget = Math.max(0, money - slots);
+  const surplusNow = rostered.reduce((sum, p) => sum + ((p.espnValue ?? 1) - 1), 0);
+  const ratio = surplusNow > 0 ? surplusTarget / surplusNow : 0;
+
+  const out = new Map<string, number>();
+  for (const p of players) {
+    const v = p.espnValue;
+    if (typeof v !== 'number' || v <= 1) {
+      out.set(p.id, 1);
+      continue;
+    }
+    out.set(p.id, Math.max(1, Math.round(1 + (v - 1) * ratio)));
+  }
+  return out;
+}

@@ -80,6 +80,17 @@ describe('useDraftRoom', () => {
     expect(result.current.config.budget).toBe(300);
   });
 
+  it("prices an ESPN league's room off the ESPN market, everyone else off consensus", () => {
+    const espn = makeLeague();
+    espn.platform = 'espn';
+    expect(renderHook(() => useDraftRoom(espn)).result.current.config.valueSource).toBe('espn');
+    expect(renderHook(() => useDraftRoom(makeLeague())).result.current.config.valueSource).toBe('consensus');
+    const guest = makeLeague();
+    guest.platform = 'espn';
+    guest.isGuest = true;
+    expect(renderHook(() => useDraftRoom(guest)).result.current.config.valueSource).toBe('consensus');
+  });
+
   it('defaults the budget to $200 when the platform did not expose one', () => {
     const { result } = renderHook(() => useDraftRoom(makeLeague()));
     expect(result.current.config.budget).toBe(200);

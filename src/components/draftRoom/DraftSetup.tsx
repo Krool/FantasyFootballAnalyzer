@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { League, RosterSlots, ScoringType } from '@/types';
-import type { DraftRoomTeam } from '@/types/draft';
+import type { DraftRoomConfig, DraftRoomTeam } from '@/types/draft';
 import type { UseDraftRoomReturn } from '@/hooks/useDraftRoom';
 import { leagueKeyFor } from '@/hooks/useDraftRoom';
 import { useKeeperSourceTeams } from '@/hooks/useKeeperSource';
@@ -47,6 +47,19 @@ const SNAKE_FORMAT_OPTIONS: Array<{ value: SnakeFormat; label: string; title: st
   { value: 'standard', label: 'Snake', title: 'Order reverses every round' },
   { value: '3rr', label: '3RR', title: 'Third-round reversal: round 3 keeps round 2’s order (NFFC style)' },
   { value: 'linear', label: 'Linear', title: 'Same order every round (common for dynasty rookie drafts)' },
+];
+
+// Auction rooms can price off ESPN's live market instead of the consensus
+// blend (owner, 2026-09-02: consensus-priced mocks read wrong to an ESPN
+// room). ESPN is the only site with a public auction market; Sleeper has
+// none and Yahoo's API is gated.
+const VALUE_SOURCE_OPTIONS: Array<{
+  value: NonNullable<DraftRoomConfig['valueSource']>;
+  label: string;
+  title: string;
+}> = [
+  { value: 'consensus', label: 'Consensus', title: 'FantasyPros expert sheet blended with a projection model, scaled to your league' },
+  { value: 'espn', label: 'ESPN market', title: 'What ESPN auction rooms are actually paying, normalized to your budget' },
 ];
 
 // Below this width the setup collapses into a scannable accordion: each
@@ -326,7 +339,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
   const summary = [
     `${config.teams.length}-team`,
     scoringLabel + (config.tePremium ? ' +TEP' : ''),
-    isAuction ? `$${config.budget} auction` : `${formatLabel}`,
+    isAuction ? `${config.budget} auction${config.valueSource === 'espn' ? ' (ESPN $)' : ''}` : `${formatLabel}`,
     config.rosterSlots.SUPERFLEX > 0 ? 'Superflex' : null,
     leagueType !== 'redraft' ? leagueType : null,
     isRookieDraft ? 'rookie draft' : null,
@@ -515,6 +528,29 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
                     value={config.budget}
                     onChange={e => updateConfig({ budget: Number(e.target.value) || 0 })}
                   />
+                </div>
+              )}
+              {config.draftType === 'auction' && (
+                <div className={styles.field}>
+                  <span className={styles.label}>Player Values</span>
+                  <div className={styles.toggle}>
+                    {VALUE_SOURCE_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={
+                          (config.valueSource ?? 'consensus') === opt.value
+                            ? styles.toggleOn
+                            : styles.toggleOff
+                        }
+                        aria-pressed={(config.valueSource ?? 'consensus') === opt.value}
+                        onClick={() => updateConfig({ valueSource: opt.value })}
+                        title={opt.title}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
               {config.draftType === 'snake' && !isRookieDraft && (

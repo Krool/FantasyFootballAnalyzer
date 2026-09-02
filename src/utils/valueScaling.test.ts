@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PoolPlayer } from '@/types/draft';
-import { scaleValues, scoringScalar } from './valueScaling';
+import { scaleValues, scoringScalar, espnMarketValues } from './valueScaling';
 
 function player(id: string, baseValue: number | null, pos = 'RB'): PoolPlayer {
   return { id, name: id, team: 'FA', pos, posRank: 1, overallRank: 1, tier: 1, bye: null, baseValue };
@@ -59,5 +59,49 @@ describe('scaleValues', () => {
       expect(scaled.get(p.id)).toBe(1);
       expect(Number.isNaN(scaled.get(p.id))).toBe(false);
     }
+  });
+});
+
+describe('espnMarketValues', () => {
+  const espn = (id: string, espnValue: number | undefined, pos = 'RB'): PoolPlayer => ({
+    ...player(id, null, pos),
+    espnValue,
+  });
+  // A priced board plus enough $1 depth to clear the coverage floor.
+  const board = (top: Array<[string, number]>) => [
+    ...top.map(([id, v]) => espn(id, v)),
+    ...Array.from({ length: 60 }, (_, i) => espn(`d${i}`, 1)),
+  ];
+
+  it('rescales the surplus so the rostered board sums to the league money', () => {
+    // 2 teams, $100 each, 3 rounds: 6 slots, $200 of money, $194 of surplus.
+    // ESPN's rostered six carry $100 of surplus (49+29+19+3), ratio 1.94.
+    const players = board([['a', 50], ['b', 30], ['c', 20], ['d', 4]]);
+    const values = espnMarketValues(players, { budget: 100, teams: 2, rounds: 3 })!;
+    const total = ['a', 'b', 'c', 'd', 'd0', 'd1'].reduce((s, id) => s + values.get(id)!, 0);
+    expect(total).toBe(200);
+    expect(values.get('a')).toBe(96); // 1 + 49 * 1.94
+    expect(values.get('b')).toBe(57);
+    expect(values.get('d0')).toBe(1);
+  });
+
+  it('deflates a board that prices more money than the room has', () => {
+    // 1 team, $100, 2 rounds: ESPN says the two starters cost $150.
+    const players = board([['a', 90], ['b', 60]]);
+    const values = espnMarketValues(players, { budget: 100, teams: 1, rounds: 2 })!;
+    expect(values.get('a')! + values.get('b')!).toBe(100);
+    expect(values.get('a')).toBeGreaterThan(values.get('b')!);
+  });
+
+  it('treats unpriced players as $1', () => {
+    const players = board([['a', 40]]);
+    players.push(player('nope', 66)); // sheet value only, no ESPN column
+    const values = espnMarketValues(players, { budget: 200, teams: 12, rounds: 14 })!;
+    expect(values.get('nope')).toBe(1);
+  });
+
+  it('returns null when ESPN priced too few players to run a room on', () => {
+    const players = [espn('a', 40), espn('b', 20), player('c', 10)];
+    expect(espnMarketValues(players, { budget: 200, teams: 12, rounds: 14 })).toBeNull();
   });
 });

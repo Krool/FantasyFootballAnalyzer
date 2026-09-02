@@ -79,6 +79,12 @@ export interface DraftRoomConfig {
   // Mock auctions only: call bids out one at a time (you can price-enforce)
   // instead of submitting one sealed max bid.
   liveBidding?: boolean;
+  // Auction only: which market the room's dollar values come from.
+  // 'consensus' is the FantasyPros sheet blended with the projection model;
+  // 'espn' is ESPN's live auction market normalized to the league's money,
+  // for rooms that anchor on ESPN's dollar column. Seeded from the connected
+  // league's platform; absent (older sessions) means consensus.
+  valueSource?: 'consensus' | 'espn';
 }
 
 export type DraftEvent =
