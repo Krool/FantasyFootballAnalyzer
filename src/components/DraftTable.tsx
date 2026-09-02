@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { RosterSlots, ScoringType, Team } from '@/types';
-import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected, describeAuctionMarket } from '@/utils/grading';
+import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected, describeAuctionMarket, auctionBadgeWord } from '@/utils/grading';
 import { consensusPositionRanks, hasSeasonResults, marketAuctionValues } from '@/utils/consensusGrade';
 import { exportDraftBoard, exportDraftOrder } from '@/utils/exportDraftBoard';
 import { logger } from '@/utils/logger';
@@ -391,113 +391,6 @@ export function DraftTable({
 
   return (
     <div className={styles.container}>
-      <div className={styles.filters}>
-        <div className={styles.filter}>
-          <label htmlFor="teamFilter" className={styles.filterLabel}>
-            Team
-          </label>
-          <select
-            id="teamFilter"
-            className="input"
-            value={selectedTeam}
-            onChange={(e) => handleTeamFilter(e.target.value)}
-          >
-            <option value="all">All Teams</option>
-            {teams.map(team => (
-              <option key={team.id} value={team.id}>
-                {team.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className={styles.filter}>
-          <label htmlFor="positionFilter" className={styles.filterLabel}>
-            Position
-          </label>
-          <select
-            id="positionFilter"
-            className="input"
-            value={selectedPosition}
-            onChange={(e) => handlePositionFilter(e.target.value)}
-          >
-            <option value="all">All Positions</option>
-            <option value="FLEX">FLEX (RB/WR/TE)</option>
-            {positions.map(pos => (
-              <option key={pos} value={pos}>
-                {pos}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className={styles.summary}>
-          <span className={`grade-badge great`}>{summary.great} Great</span>
-          <span className={`grade-badge good`}>{summary.good} Good</span>
-          <span className={`grade-badge bad`}>{summary.bad} Bad</span>
-          <span className={`grade-badge terrible`}>{summary.terrible} Terrible</span>
-        </div>
-
-        {(
-          [
-            { which: 'teams', label: 'Copy rosters image', run: exportDraftBoard,
-              hint: 'Every team’s haul as one image for the group chat' },
-            { which: 'order', label: 'Copy order image', run: exportDraftOrder,
-              hint: isAuction
-                ? 'Every pick in price order, sectioned into rounds like a snake board'
-                : 'Every pick in draft order, sectioned by round' },
-          ] as const
-        ).map(({ which, label, run, hint }) => {
-          const state = shareState?.which === which ? shareState.state : null;
-          return (
-            <button
-              key={which}
-              type="button"
-              className={styles.shareBoard}
-              disabled={shareState?.state === 'busy'}
-              aria-busy={state === 'busy'}
-              title={hint}
-              onClick={async () => {
-                if (shareState?.state === 'busy') return;
-                playSort();
-                setShareState({ which, state: 'busy' });
-                let result: Awaited<ReturnType<typeof run>> = false;
-                try {
-                  result = await run({
-                    leagueName: leagueName ?? 'Draft Board',
-                    season,
-                    isAuction,
-                    totalTeams,
-                    valuesInDollars,
-                    picks: gradedPicks,
-                  });
-                } catch (err) {
-                  // A throw here would otherwise leave both buttons stuck on
-                  // 'busy' with no timer to clear them.
-                  logger.error('[draftBoard] export threw:', err);
-                }
-                setShareState({ which, state: result === false ? 'failed' : result });
-                // Clear only THIS button's finished state: a flat "not busy"
-                // check let a stale timer wipe the other button's fresh
-                // confirmation after ~50ms.
-                setTimeout(
-                  () =>
-                    setShareState(current =>
-                      current?.which === which && current.state !== 'busy' ? null : current,
-                    ),
-                  2500,
-                );
-              }}
-            >
-              {state === 'busy' && '…'}
-              {state === 'copied' && 'Copied!'}
-              {state === 'saved' && 'Saved PNG'}
-              {state === 'failed' && "Couldn't export"}
-              {state === null && label}
-            </button>
-          );
-        })}
-      </div>
 
       {!hasResults && (
         <p className={styles.gradeBasis}>
@@ -631,6 +524,116 @@ export function DraftTable({
 
       <KeeperValuePanel rows={keeperRows} />
 
+      {/* Filters and the share buttons sit right on top of the table they act on;
+          the leaderboards above are league-wide and ignore them (owner, 2026-09-02). */}
+      <div className={styles.filters}>
+        <div className={styles.filter}>
+          <label htmlFor="teamFilter" className={styles.filterLabel}>
+            Team
+          </label>
+          <select
+            id="teamFilter"
+            className="input"
+            value={selectedTeam}
+            onChange={(e) => handleTeamFilter(e.target.value)}
+          >
+            <option value="all">All Teams</option>
+            {teams.map(team => (
+              <option key={team.id} value={team.id}>
+                {team.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.filter}>
+          <label htmlFor="positionFilter" className={styles.filterLabel}>
+            Position
+          </label>
+          <select
+            id="positionFilter"
+            className="input"
+            value={selectedPosition}
+            onChange={(e) => handlePositionFilter(e.target.value)}
+          >
+            <option value="all">All Positions</option>
+            <option value="FLEX">FLEX (RB/WR/TE)</option>
+            {positions.map(pos => (
+              <option key={pos} value={pos}>
+                {pos}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.summary}>
+          <span className={`grade-badge great`}>{summary.great} Great</span>
+          <span className={`grade-badge good`}>{summary.good} Good</span>
+          <span className={`grade-badge bad`}>{summary.bad} Bad</span>
+          <span className={`grade-badge terrible`}>{summary.terrible} Terrible</span>
+        </div>
+
+        {(
+          [
+            { which: 'teams', label: 'Copy rosters image', run: exportDraftBoard,
+              hint: 'Every team’s haul as one image for the group chat' },
+            { which: 'order', label: 'Copy order image', run: exportDraftOrder,
+              hint: isAuction
+                ? 'Every pick in price order, sectioned into rounds like a snake board'
+                : 'Every pick in draft order, sectioned by round' },
+          ] as const
+        ).map(({ which, label, run, hint }) => {
+          const state = shareState?.which === which ? shareState.state : null;
+          return (
+            <button
+              key={which}
+              type="button"
+              className={styles.shareBoard}
+              disabled={shareState?.state === 'busy'}
+              aria-busy={state === 'busy'}
+              title={hint}
+              onClick={async () => {
+                if (shareState?.state === 'busy') return;
+                playSort();
+                setShareState({ which, state: 'busy' });
+                let result: Awaited<ReturnType<typeof run>> = false;
+                try {
+                  result = await run({
+                    leagueName: leagueName ?? 'Draft Board',
+                    season,
+                    isAuction,
+                    totalTeams,
+                    valuesInDollars,
+                    picks: gradedPicks,
+                  });
+                } catch (err) {
+                  // A throw here would otherwise leave both buttons stuck on
+                  // 'busy' with no timer to clear them.
+                  logger.error('[draftBoard] export threw:', err);
+                }
+                setShareState({ which, state: result === false ? 'failed' : result });
+                // Clear only THIS button's finished state: a flat "not busy"
+                // check let a stale timer wipe the other button's fresh
+                // confirmation after ~50ms.
+                setTimeout(
+                  () =>
+                    setShareState(current =>
+                      current?.which === which && current.state !== 'busy' ? null : current,
+                    ),
+                  2500,
+                );
+              }}
+            >
+              {state === 'busy' && '…'}
+              {state === 'copied' && 'Copied!'}
+              {state === 'saved' && 'Saved PNG'}
+              {state === 'failed' && "Couldn't export"}
+              {state === null && label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className={`${styles.tableWrapper} scroll-x-hint`}>
         <table className={`table ${styles.table}`}>
           <thead>
@@ -741,18 +744,20 @@ export function DraftTable({
                       Keeper
                     </span>
                   ) : (
-                    // The badge keeps the four grade words everywhere (owner,
-                    // 2026-09-02: "don't change the terms"). Dollar mode puts
-                    // the market label and the math in the tooltip instead.
+                    // Short grade words only (no room for "Slight Overpay");
+                    // dollar mode adds a Fair step between Good and Bad and
+                    // puts the market label and math in the tooltip.
                     <span
-                      className={`grade-badge ${pick.grade}`}
+                      className={`grade-badge ${valuesInDollars ? auctionBadgeWord(pick.auctionValueGrade, pick.grade).cls : pick.grade}`}
                       title={
                         valuesInDollars && pick.marketValue !== undefined
                           ? `${pick.auctionValueGrade}: ${describeAuctionMarket(pick.auctionValue ?? 0, pick.marketValue)}`
                           : undefined
                       }
                     >
-                      {getGradeDisplayText(pick.grade)}
+                      {valuesInDollars
+                        ? auctionBadgeWord(pick.auctionValueGrade, pick.grade).word
+                        : getGradeDisplayText(pick.grade)}
                     </span>
                   )}
                 </td>

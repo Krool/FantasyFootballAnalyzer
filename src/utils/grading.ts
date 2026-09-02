@@ -482,6 +482,22 @@ export function getGradeColorClass(grade: DraftGrade): string {
 }
 
 // Get display text for a grade
+// Dollar-mode badge word for the five market bands. The grade colors stay
+// four-wide (great/good/bad/terrible feed every summary), but the badge gets
+// a Fair step between Good and Bad so a 15% reach on a star reads as the
+// middle ground it is, not a Bad (owner, 2026-09-02). Short words only: the
+// column has no horizontal room for "Slight Overpay".
+export function auctionBadgeWord(auctionValueGrade: string | undefined, grade: DraftGrade): { word: string; cls: string } {
+  switch (auctionValueGrade) {
+    case 'Steal': return { word: 'Great', cls: 'great' };
+    case 'Fair Price': return { word: 'Good', cls: 'good' };
+    case 'Slight Overpay': return { word: 'Fair', cls: 'fair' };
+    case 'Overpay': return { word: 'Bad', cls: 'bad' };
+    case 'Big Overpay': return { word: 'Terrible', cls: 'terrible' };
+    default: return { word: getGradeDisplayText(grade), cls: grade };
+  }
+}
+
 export function getGradeDisplayText(grade: DraftGrade): string {
   return grade.charAt(0).toUpperCase() + grade.slice(1);
 }

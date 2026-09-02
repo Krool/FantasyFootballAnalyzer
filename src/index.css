@@ -305,6 +305,7 @@ html {
 
 .grade-badge.great    { background: var(--lime);   color: var(--ink); }
 .grade-badge.good     { background: #a6e22e;       color: var(--ink); }
+.grade-badge.fair     { background: #f5d547;       color: var(--ink); } /* dollar-mode middle step */
 .grade-badge.bad      { background: #ff8a3d;       color: var(--ink); }
 .grade-badge.terrible { background: var(--blood);  color: var(--bone); }
 

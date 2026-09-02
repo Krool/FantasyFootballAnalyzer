@@ -15,6 +15,7 @@ import {
   auctionRelativeDelta,
   auctionOverpayDamage,
   describeAuctionMarket,
+  auctionBadgeWord,
 } from './grading';
 import type { DraftPick, League } from '@/types';
 
@@ -575,6 +576,17 @@ describe('gradeAuctionDollarDelta bands (softened ratio)', () => {
     // A $100 league: Gibbs is $37.50 vs $32.50, a $5 miss. Same ratio, same grade.
     expect(auctionRelativeDelta(-5, 33, 100)).toBeCloseTo(auctionRelativeDelta(-10, 65, 200), 1);
     expect(gradeAuctionDollarDelta(-5, 33, 100).grade).toBe('bad');
+  });
+});
+
+describe('auctionBadgeWord', () => {
+  it('maps the five market bands onto short words with a Fair middle step', () => {
+    expect(auctionBadgeWord('Steal', 'great')).toEqual({ word: 'Great', cls: 'great' });
+    expect(auctionBadgeWord('Fair Price', 'good')).toEqual({ word: 'Good', cls: 'good' });
+    expect(auctionBadgeWord('Slight Overpay', 'bad')).toEqual({ word: 'Fair', cls: 'fair' });
+    expect(auctionBadgeWord('Overpay', 'bad')).toEqual({ word: 'Bad', cls: 'bad' });
+    expect(auctionBadgeWord('Big Overpay', 'terrible')).toEqual({ word: 'Terrible', cls: 'terrible' });
+    expect(auctionBadgeWord(undefined, 'bad')).toEqual({ word: 'Bad', cls: 'bad' });
   });
 });
 
