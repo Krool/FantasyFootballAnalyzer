@@ -247,7 +247,12 @@ Fonts are self-hosted via `@fontsource` (not Google Fonts), declared in `src/fon
   failure modes (chunk 404s -> `vite:preloadError` in `main.tsx`; chunk loads
   but the named export is missing -> `lazyPage` in `App.tsx`) share one
   sessionStorage-stamped reload attempt. New lazy routes must use `lazyPage`,
-  not bare `lazy()`.
+  not bare `lazy()`. The reload is the fallback, not the plan: both deploy
+  workflows carry the previous six builds' `assets/` forward onto gh-pages,
+  so a tab opened before a redeploy keeps loading its own chunk graph
+  (2026-09-02, after a day of frequent deploys put stale-chunk errors on
+  five pages). A single-file asset outside `assets/` would not get this
+  protection.
 - **Reading production errors**: org `krool-world`, project `javascript-react`.
   The owner's user env has a read-only personal token (`SENTRY_AUTH_TOKEN`,
   scopes event:read/org:read/project:read) for the Sentry API; the CI secret

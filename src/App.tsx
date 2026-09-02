@@ -486,10 +486,16 @@ function App() {
     }
     if (isLoading) return;
     attemptedShareRef.current = shareTarget.key;
+    // Cookies never ride in the URL, but this tab may already hold them: a
+    // private ESPN league connected earlier this session persisted its
+    // espn_s2/SWID to sessionStorage. Reuse them so a reload of the share
+    // link (or a stale-cache refresh) loads straight through instead of
+    // 401ing and bouncing to the connect form for one more click.
+    const stored = shareTarget.platform === 'espn' ? loadESPNCredentials(shareTarget.id) : undefined;
     load({
       platform: shareTarget.platform,
       leagueId: shareTarget.id,
-      ...(shareTarget.platform === 'espn' ? { season: new Date().getFullYear() } : {}),
+      ...(shareTarget.platform === 'espn' ? { season: new Date().getFullYear(), ...stored } : {}),
     }).then(loaded => {
       // Prefill the connect form for next visit, same as a manual connect.
       if (loaded) {

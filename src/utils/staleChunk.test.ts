@@ -13,6 +13,7 @@ describe('reloadOnceForStaleChunk', () => {
 
   beforeEach(() => {
     sessionStorage.clear();
+    runtime.inFlight = false;
     reload = vi.fn();
     vi.spyOn(runtime, 'reload').mockImplementation(reload);
   });
@@ -52,6 +53,7 @@ describe('reloadOnceForStaleChunk', () => {
 describe('resolveLazyPageModule', () => {
   beforeEach(() => {
     sessionStorage.clear();
+    runtime.inFlight = false;
     vi.spyOn(runtime, 'reload').mockImplementation(() => {});
   });
 
@@ -74,6 +76,23 @@ describe('resolveLazyPageModule', () => {
     );
     // The factory must not settle while the reload is in flight — Suspense
     // should keep its spinner up, not flash an error.
+    const outcome = await Promise.race([
+      pending.then(() => 'settled', () => 'settled'),
+      new Promise(resolve => setTimeout(() => resolve('pending'), 25)),
+    ]);
+    expect(outcome).toBe('pending');
+    expect(runtime.reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps waiting when the preload path already asked this page to reload', async () => {
+    // Same click, same stale chunk: vite:preloadError reloaded first, then the
+    // import resolved to an empty module. The stamp is seconds old, but the
+    // reload has not landed yet - do not throw, let it land.
+    expect(reloadOnceForStaleChunk()).toBe(true);
+    const pending = resolveLazyPageModule(
+      async () => ({}) as { TeamsPage?: () => null },
+      'TeamsPage',
+    );
     const outcome = await Promise.race([
       pending.then(() => 'settled', () => 'settled'),
       new Promise(resolve => setTimeout(() => resolve('pending'), 25)),

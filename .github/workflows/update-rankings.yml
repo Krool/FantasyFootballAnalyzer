@@ -133,6 +133,23 @@ jobs:
       # GITHUB_TOKEN, and GitHub does not trigger workflows (including ci.yml)
       # from GITHUB_TOKEN pushes - so relying on ci.yml to deploy the data
       # commit would silently never run. dist/ is the artifact the gate built.
+      # A redeploy rehashes every chunk. A tab opened before it still asks for
+      # the old filenames, and if they are gone the first lazy route it touches
+      # breaks (Sentry, 2026-09-02: dozens of stale-chunk errors across five
+      # pages in one day of frequent deploys). Carry the last six deploys'
+      # assets/ forward so an old tab keeps loading its own chunk graph; the
+      # self-heal reload becomes a fallback, not the plan. ~3MB per build, so
+      # the published tree stays around 25MB. Older builds fall off as new
+      # ones land, because publish_dir still replaces the branch wholesale.
+      - name: Carry forward recent builds' assets
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git fetch --no-tags --depth=8 origin gh-pages || { echo "::notice::no gh-pages history to carry forward"; exit 0; }
+          for c in $(git rev-list -n 6 FETCH_HEAD); do
+            git archive "$c" assets 2>/dev/null | tar -x -C dist --skip-old-files || true
+          done
+          echo "assets now: $(ls dist/assets | wc -l) files"
+
       - name: Deploy to GitHub Pages
         if: steps.diff.outputs.changed == 'true'
         uses: peaceiris/actions-gh-pages@v4

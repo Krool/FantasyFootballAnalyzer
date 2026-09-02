@@ -20,6 +20,16 @@ const RELOAD_KEY = 'chunk-reload-at';
 // non-configurable, so tests stub this seam instead. Exported for tests only.
 export const runtime = {
   reload: () => window.location.reload(),
+  // True once THIS page instance has asked for a reload. location.reload()
+  // is asynchronous: the page keeps running until the navigation commits,
+  // and a stale lazy route trips both self-heal paths on the same click
+  // (the chunk 404 fires vite:preloadError, Vite then resolves the import to
+  // an empty module and lazyPage sees the export missing). The second path
+  // used to read the fresh sessionStorage stamp as "already tried, give up"
+  // and throw into the route error boundary while the reload was still on
+  // its way (Sentry, 2026-09-02: dozens of "missing after a reload attempt"
+  // on tabs that had never reloaded). Reset only by the reload itself.
+  inFlight: false,
 };
 
 // True when a reload was initiated; false when one was already attempted
@@ -35,6 +45,7 @@ export function reloadOnceForStaleChunk(): boolean {
     // loop, so don't.
     return false;
   }
+  runtime.inFlight = true;
   runtime.reload();
   return true;
 }
@@ -48,7 +59,7 @@ export async function resolveLazyPageModule<M, K extends keyof M>(
   const mod = await load();
   const component = mod?.[name];
   if (component === undefined) {
-    if (reloadOnceForStaleChunk()) {
+    if (runtime.inFlight || reloadOnceForStaleChunk()) {
       // Reload is underway; never resolve so Suspense keeps its spinner up
       // instead of flashing an error during the navigation.
       return new Promise(() => {});
