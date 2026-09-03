@@ -4,12 +4,21 @@ import type { DraftPoolFile } from '@/types/draft';
 import { matchPlayer } from '@/utils/playerNames';
 import { logger } from '@/utils/logger';
 
-// Yahoo auction market prices for the draft board. Fetched once per session
-// when a Yahoo login is present (any platform's league can benefit), cached
-// in localStorage for 12 hours, and joined onto the pool by name.
+// Yahoo auction market prices for the draft board.
+//
+// Preferred source is the pool itself: the twice-daily build bundles Yahoo's
+// public draft_analysis averages as `yahooValue` (2026-09-03), which needs no
+// login and is what the Draft Room prices off. The OAuth fetch below is the
+// fallback for a pool built without that column; it is dead in production
+// while Yahoo's per-app approval is pending (every call 403s), so a pool
+// with prices must never trigger it or the room shows a bogus "failed to
+// load" alert to anyone who once signed in to Yahoo. Fetched rows are cached
+// in localStorage for 12 hours and joined onto the pool by name.
 
 const CACHE_VERSION = 1;
 const TTL_MS = 12 * 60 * 60 * 1000;
+// Below this the bundled column is a failed fetch, not a market.
+const MIN_BUNDLED = 50;
 
 interface CacheEntry {
   fetchedAt: number;
@@ -51,6 +60,14 @@ function readCache(season: number): CacheEntry | null {
   }
 }
 
+function bundledCosts(pool: DraftPoolFile): Map<string, number> | null {
+  const map = new Map<string, number>();
+  for (const p of pool.players) {
+    if (typeof p.yahooValue === 'number' && p.yahooValue > 0) map.set(p.id, p.yahooValue);
+  }
+  return map.size >= MIN_BUNDLED ? map : null;
+}
+
 export interface UseYahooValuesReturn {
   // poolPlayerId -> average Yahoo auction cost
   costs: Map<string, number> | null;
@@ -58,15 +75,16 @@ export interface UseYahooValuesReturn {
 }
 
 export function useYahooValues(pool: DraftPoolFile): UseYahooValuesReturn {
+  const bundled = useMemo(() => bundledCosts(pool), [pool]);
   const [rows, setRows] = useState<YahooDraftAnalysis[] | null>(
-    () => readCache(pool.season)?.players ?? null,
+    () => (bundled ? null : (readCache(pool.season)?.players ?? null)),
   );
   const [status, setStatus] = useState<YahooValuesStatus>(() =>
-    rows ? 'ready' : isAuthenticated() ? 'loading' : 'unavailable',
+    bundled || rows ? 'ready' : isAuthenticated() ? 'loading' : 'unavailable',
   );
 
   useEffect(() => {
-    if (rows || !isAuthenticated()) return;
+    if (bundled || rows || !isAuthenticated()) return;
     let cancelled = false;
     setStatus('loading');
     getDraftAnalysis()
@@ -92,9 +110,9 @@ export function useYahooValues(pool: DraftPoolFile): UseYahooValuesReturn {
     return () => {
       cancelled = true;
     };
-  }, [rows, pool.season]);
+  }, [bundled, rows, pool.season]);
 
-  const costs = useMemo(() => {
+  const fetched = useMemo(() => {
     if (!rows) return null;
     const map = new Map<string, number>();
     for (const row of rows) {
@@ -107,5 +125,5 @@ export function useYahooValues(pool: DraftPoolFile): UseYahooValuesReturn {
     return map;
   }, [rows, pool.players]);
 
-  return { costs, status };
+  return { costs: bundled ?? fetched, status };
 }

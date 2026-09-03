@@ -65,12 +65,17 @@ export function scaleValues(
 // 2026-09-02: consensus-priced mocks "aren't very site accurate"). Pure
 // market, no projection blend: the point is matching what the room pays.
 //
-// The raw numbers can't be copied in: ESPN's priced board sums to ~10% more
-// than an ESPN room's money (the ownership average rides above budget), and
-// the league's shape differs anyway. So rescale the surplus over $1 by one
-// ratio chosen so the top `teams * rounds` players sum to the league's money,
-// which is what the AI's budget pacing and the inflation math assume. That
-// makes the site's default shape irrelevant. Unpriced players stay $1.
+// The site's numbers are averages from real $200 rooms, so they are already
+// the best guess at what a $200 room pays: scale the surplus over $1 only by
+// the budget ratio. Do NOT inflate the board up to the league's money. A
+// site's priced list stops around 225 players and its top `teams * rounds`
+// sum to less than a room's money (Yahoo ~15% under, 2026-09-03) because the
+// rest lands on unlisted $1-3 players, not on the stars; stretching the
+// averages to fill the gap told the owner Gibbs was worth $89 in a room that
+// pays $74. The opposite case is real, though: when the board prices more
+// money than the room has (ESPN's ownership average rides above budget),
+// deflate so the rostered top can actually be bought, which is what the
+// AI's budget pacing and the inflation math assume. Unpriced players stay $1.
 //
 // Returns null when the site priced too few players to run a room on (a
 // failed fetch leaves the pool without the column); callers fall back to
@@ -78,6 +83,9 @@ export function scaleValues(
 export const MIN_SITE_PRICED = 50;
 
 export type MarketSite = 'espn' | 'yahoo';
+
+// Both sites publish averages from their default $200 rooms.
+export const SITE_BASELINE_BUDGET = 200;
 
 const SITE_VALUE: Record<MarketSite, (p: PoolPlayer) => number | undefined> = {
   espn: p => p.espnValue,
@@ -104,7 +112,9 @@ export function siteMarketValues(
   // Every rostered slot costs $1; the surplus pool is what's left.
   const surplusTarget = Math.max(0, money - slots);
   const surplusNow = rostered.reduce((sum, p) => sum + ((read(p) ?? 1) - 1), 0);
-  const ratio = surplusNow > 0 ? surplusTarget / surplusNow : 0;
+  const budgetRatio = target.budget / SITE_BASELINE_BUDGET;
+  const fitRatio = surplusNow > 0 ? surplusTarget / surplusNow : 0;
+  const ratio = Math.min(budgetRatio, fitRatio);
 
   const out = new Map<string, number>();
   for (const p of players) {

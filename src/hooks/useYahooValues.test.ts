@@ -107,3 +107,31 @@ describe('useYahooValues', () => {
     expect(result.current.costs).toBeNull();
   });
 });
+
+describe('useYahooValues with bundled pool prices', () => {
+  const bundledPool: DraftPoolFile = {
+    ...pool,
+    players: Array.from({ length: 60 }, (_, i) => ({
+      ...pool.players[0],
+      id: `p${i}`,
+      name: `Player ${i}`,
+      yahooValue: 60 - i,
+    })),
+  };
+
+  it('serves the pool column without touching Yahoo OAuth, even when signed in', () => {
+    mocks.isAuthenticated.mockReturnValue(true);
+    const { result } = renderHook(() => useYahooValues(bundledPool));
+    expect(result.current.status).toBe('ready');
+    expect(result.current.costs?.get('p0')).toBe(60);
+    expect(result.current.costs?.get('p59')).toBe(1);
+    expect(mocks.getDraftAnalysis).not.toHaveBeenCalled();
+  });
+
+  it('is ready for a guest with no Yahoo session', () => {
+    mocks.isAuthenticated.mockReturnValue(false);
+    const { result } = renderHook(() => useYahooValues(bundledPool));
+    expect(result.current.status).toBe('ready');
+    expect(result.current.costs?.size).toBe(60);
+  });
+});

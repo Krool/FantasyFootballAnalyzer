@@ -73,23 +73,31 @@ describe('espnMarketValues', () => {
     ...Array.from({ length: 60 }, (_, i) => espn(`d${i}`, 1)),
   ];
 
-  it('rescales the surplus so the rostered board sums to the league money', () => {
-    // 2 teams, $100 each, 3 rounds: 6 slots, $200 of money, $194 of surplus.
-    // ESPN's rostered six carry $100 of surplus (49+29+19+3), ratio 1.94.
+  it('keeps the site averages as-is at a $200 budget instead of inflating to fill the money', () => {
+    // 12 teams, $200, 3 rounds: 36 slots, $2400 of money, but the priced
+    // board only carries $100 of surplus. Real rooms spend the gap on
+    // unlisted depth, so the stars keep their real average price.
     const players = board([['a', 50], ['b', 30], ['c', 20], ['d', 4]]);
-    const values = espnMarketValues(players, { budget: 100, teams: 2, rounds: 3 })!;
-    const total = ['a', 'b', 'c', 'd', 'd0', 'd1'].reduce((s, id) => s + values.get(id)!, 0);
-    expect(total).toBe(200);
-    expect(values.get('a')).toBe(96); // 1 + 49 * 1.94
-    expect(values.get('b')).toBe(57);
+    const values = espnMarketValues(players, { budget: 200, teams: 12, rounds: 3 })!;
+    expect(values.get('a')).toBe(50);
+    expect(values.get('b')).toBe(30);
+    expect(values.get('d')).toBe(4);
     expect(values.get('d0')).toBe(1);
   });
 
+  it('scales the surplus by the budget ratio', () => {
+    // A $100 budget is half the site baseline: surplus over $1 halves.
+    const players = board([['a', 51], ['b', 31]]);
+    const values = espnMarketValues(players, { budget: 100, teams: 12, rounds: 3 })!;
+    expect(values.get('a')).toBe(26); // 1 + 50 * 0.5
+    expect(values.get('b')).toBe(16);
+  });
+
   it('deflates a board that prices more money than the room has', () => {
-    // 1 team, $100, 2 rounds: ESPN says the two starters cost $150.
-    const players = board([['a', 90], ['b', 60]]);
-    const values = espnMarketValues(players, { budget: 100, teams: 1, rounds: 2 })!;
-    expect(values.get('a')! + values.get('b')!).toBe(100);
+    // 1 team, $200, 2 rounds: ESPN says the two starters cost $240.
+    const players = board([['a', 150], ['b', 90]]);
+    const values = espnMarketValues(players, { budget: 200, teams: 1, rounds: 2 })!;
+    expect(values.get('a')! + values.get('b')!).toBe(200);
     expect(values.get('a')).toBeGreaterThan(values.get('b')!);
   });
 
