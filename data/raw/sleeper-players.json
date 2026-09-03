@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-09-03T05:30:48.585Z",
+ "fetchedAt": "2026-09-03T14:51:11.747Z",
  "data": {
   "players": [
    {
@@ -7515,7 +7515,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 6
+    "depthChartOrder": null
    },
    {
     "sleeperId": "12480",
@@ -8588,6 +8588,19 @@
     "name": "Garrett Greene",
     "pos": "QB",
     "team": "TB",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 1,
+    "depthChartOrder": null
+   },
+   {
+    "sleeperId": "12797",
+    "name": "Ahmani Marshall",
+    "pos": "RB",
+    "team": "CAR",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
@@ -11012,7 +11025,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 5
+    "depthChartOrder": null
    },
    {
     "sleeperId": "13846",
@@ -11202,7 +11215,7 @@
     "pos": "TE",
     "team": "NYJ",
     "status": "Inactive",
-    "injuryStatus": "IR",
+    "injuryStatus": "Questionable",
     "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
