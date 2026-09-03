@@ -22,7 +22,7 @@ import {
 } from '@/utils/draftRoomCache';
 import { computeInflation, NEUTRAL_INFLATION, type InflationState } from '@/utils/inflation';
 import { loadLastConnection } from '@/utils/lastConnection';
-import { espnMarketValues, type ScoringType } from '@/utils/valueScaling';
+import { siteMarketValues, type ScoringType } from '@/utils/valueScaling';
 import { draftValues, vorConfigFor } from '@/utils/projectionValues';
 
 // Defined in utils/draftDefaults so callers that need only the roster shape
@@ -118,9 +118,13 @@ function configFromLeague(league: League): DraftRoomConfig {
     // the running price is always visible and you can rebid or pass after
     // being outbid, instead of sealing one max and watching it resolve.
     liveBidding: true,
-    // An ESPN league's room anchors on ESPN's dollar column, so price the
-    // room off ESPN's market; guests and every other platform get consensus.
-    valueSource: league.platform === 'espn' && !league.isGuest ? 'espn' : 'consensus',
+    // An ESPN or Yahoo league's room anchors on that site's dollar column, so
+    // price the room off its market; guests and Sleeper (which publishes no
+    // auction market) get consensus.
+    valueSource:
+      !league.isGuest && (league.platform === 'espn' || league.platform === 'yahoo')
+        ? league.platform
+        : 'consensus',
   };
 }
 
@@ -315,17 +319,18 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
   // roster (incl. superflex). Falls back to the scaled salary sheet for players
   // without projections. rosterSlots is a real dep here: replacement levels
   // (and therefore every price) move when slot counts change.
-  // Auction rooms can price off ESPN's live market instead (config.valueSource);
-  // it falls back to consensus when the pool lacks the ESPN column.
+  // Auction rooms can price off a site's live market instead (config.valueSource);
+  // it falls back to consensus when the pool lacks that site's column.
   const scaledValues = useMemo(() => {
     const shape = {
       budget: state.config.budget,
       teams: state.config.teams.length,
       rounds: state.config.rounds,
     };
-    if (state.config.draftType === 'auction' && state.config.valueSource === 'espn') {
-      const espn = espnMarketValues(POOL.players, shape);
-      if (espn) return espn;
+    const source = state.config.valueSource;
+    if (state.config.draftType === 'auction' && (source === 'espn' || source === 'yahoo')) {
+      const site = siteMarketValues(source, POOL.players, shape);
+      if (site) return site;
     }
     return draftValues(
       POOL.players,

@@ -13,9 +13,10 @@
 //   client uses; public, undocumented. api.sleeper.app/v1/players/nfl is
 //   the documented players dump (injury status, depth charts, experience).
 // - Yahoo ADP comes via FantasyPros' ADP board (source id 236), not Yahoo
-//   directly, so it needs no OAuth. Yahoo's own draft-analysis endpoint
-//   (average_pick / average_cost auction values) still does, and is not
-//   fetched here.
+//   directly, so it needs no OAuth. Yahoo's auction market (average_cost)
+//   comes from pub-api-ro.fantasysports.yahoo.com, the READ-ONLY public host
+//   of the Fantasy API: no OAuth, no app approval (found 2026-09-02; the
+//   OAuth host 403s unapproved apps, this one does not).
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -41,7 +42,7 @@ const FP_API_KEY = 'zjxN52G3lP4fORpHRftGI2mTU8cTwxVNvkjByM3j';
 // A truncated or empty source response must not silently gut the pool: the
 // daily Action would commit and deploy it. These floors are well under the
 // normal counts (FP ~500, ESPN 400, Sleeper ~250+) but catch a dead source.
-const MIN_ROWS = { fp: 400, espn: 200, sleeper: 150, sleeperPlayers: 300, yahoo: 150 };
+const MIN_ROWS = { fp: 400, espn: 200, sleeper: 150, sleeperPlayers: 300, yahoo: 150, yahooValues: 100 };
 
 const ESPN_POSITION_MAP: Record<number, string> = {
   1: 'QB', 2: 'RB', 3: 'WR', 4: 'TE', 5: 'K', 16: 'DST',
@@ -227,6 +228,63 @@ async function fetchYahooAdp(): Promise<void> {
   writeRaw(`yahoo-adp.${SEASON}.json`, { scoring: FP_SCORING, source: FP_ADP_SOURCE_YAHOO, players });
 }
 
+// Yahoo's own auction market: average_cost (and true average_pick) per
+// player from the public read-only API host, sorted by Yahoo's actual rank
+// and paged 25 at a time. Yahoo prices ~300 players; a page whose rows are
+// all "-" ends the walk. Non-fatal like the ADP feed: losing it drops the
+// Yahoo dollar column and the Draft Room's "Yahoo market" values.
+const YAHOO_PAGE = 25;
+const YAHOO_MAX_PAGES = 20;
+
+async function fetchYahooValues(): Promise<void> {
+  type Row = { name: string; team: string; pos: string; avgPick: number | null; avgCost: number | null };
+  const players: Row[] = [];
+  const num = (v: unknown) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  for (let page = 0; page < YAHOO_MAX_PAGES; page++) {
+    const start = page * YAHOO_PAGE;
+    const url = `https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/game/nfl/players;sort=AR;start=${start};count=${YAHOO_PAGE}/draft_analysis?format=json`;
+    const json = (await getJson(url, { Accept: 'application/json' })) as {
+      fantasy_content?: { game?: Array<{ players?: Record<string, { player?: unknown[] }> }> };
+    };
+    const bucket = json.fantasy_content?.game?.[1]?.players;
+    if (!bucket) throw new Error(`Yahoo draft analysis page ${page}: no players bucket`);
+    let pricedOnPage = 0;
+    for (const [key, entry] of Object.entries(bucket)) {
+      if (key === 'count' || !Array.isArray(entry.player)) continue;
+      // player[0] is an array of one-key objects (name, team, position...);
+      // player[1] is { draft_analysis: [one-key objects] }.
+      const meta = Object.assign({}, ...(entry.player[0] as object[]).filter(x => x && typeof x === 'object')) as {
+        name?: { full?: string }; editorial_team_abbr?: string; display_position?: string;
+      };
+      const da = Object.assign(
+        {},
+        ...(((entry.player[1] as { draft_analysis?: object[] })?.draft_analysis ?? []).filter(x => x && typeof x === 'object')),
+      ) as { average_pick?: string; average_cost?: string };
+      const name = meta.name?.full;
+      if (!name) continue;
+      // Yahoo lists multi-eligible players as "WR,RB"; the first is primary.
+      const pos = (meta.display_position ?? '').split(',')[0].trim().toUpperCase();
+      const avgCost = num(da.average_cost);
+      if (avgCost !== null) pricedOnPage++;
+      players.push({
+        name,
+        team: (meta.editorial_team_abbr ?? 'FA').toUpperCase(),
+        pos: pos === 'DEF' ? 'DST' : pos,
+        avgPick: num(da.average_pick),
+        avgCost,
+      });
+    }
+    if (pricedOnPage === 0) break;
+  }
+  const priced = players.filter(p => p.avgCost !== null).length;
+  assertMinRows('Yahoo values', priced, MIN_ROWS.yahooValues);
+  console.log(`Yahoo values: ${priced} priced players of ${players.length} rows (public read-only API)`);
+  writeRaw(`yahoo-values.${SEASON}.json`, { players: players.filter(p => p.avgCost !== null || p.avgPick !== null) });
+}
+
 async function fetchEspn(): Promise<void> {
   const url = `https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/${SEASON}/segments/0/leaguedefaults/3?view=kona_player_info`;
   const filter = { players: { limit: 400, sortAdp: { sortAsc: true, sortPriority: 1 } } };
@@ -355,6 +413,7 @@ const optional = await Promise.allSettled([
   fetchFantasyProsDynasty(),
   fetchFantasyProsSuperflex(),
   fetchYahooAdp(),
+  fetchYahooValues(),
 ]);
 if (optional[0].status === 'rejected') {
   console.warn('Dynasty rankings unavailable (non-fatal):', optional[0].reason);
@@ -364,6 +423,9 @@ if (optional[1].status === 'rejected') {
 }
 if (optional[2].status === 'rejected') {
   console.warn('Yahoo ADP unavailable (non-fatal):', optional[2].reason);
+}
+if (optional[3].status === 'rejected') {
+  console.warn('Yahoo values unavailable (non-fatal):', optional[3].reason);
 }
 
 if (failed) {

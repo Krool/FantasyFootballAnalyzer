@@ -49,10 +49,9 @@ const SNAKE_FORMAT_OPTIONS: Array<{ value: SnakeFormat; label: string; title: st
   { value: 'linear', label: 'Linear', title: 'Same order every round (common for dynasty rookie drafts)' },
 ];
 
-// Auction rooms can price off ESPN's live market instead of the consensus
+// Auction rooms can price off a site's live market instead of the consensus
 // blend (owner, 2026-09-02: consensus-priced mocks read wrong to an ESPN
-// room). ESPN is the only site with a public auction market; Sleeper has
-// none and Yahoo's API is gated.
+// room). ESPN and Yahoo publish auction markets; Sleeper has none.
 const VALUE_SOURCE_OPTIONS: Array<{
   value: NonNullable<DraftRoomConfig['valueSource']>;
   label: string;
@@ -60,6 +59,7 @@ const VALUE_SOURCE_OPTIONS: Array<{
 }> = [
   { value: 'consensus', label: 'Consensus', title: 'FantasyPros expert sheet blended with a projection model, scaled to your league' },
   { value: 'espn', label: 'ESPN market', title: 'What ESPN auction rooms are actually paying, normalized to your budget' },
+  { value: 'yahoo', label: 'Yahoo market', title: 'What Yahoo salary-cap rooms are actually paying, normalized to your budget' },
 ];
 
 // Below this width the setup collapses into a scannable accordion: each
@@ -339,7 +339,7 @@ export function DraftSetup({ room, league }: DraftSetupProps) {
   const summary = [
     `${config.teams.length}-team`,
     scoringLabel + (config.tePremium ? ' +TEP' : ''),
-    isAuction ? `${config.budget} auction${config.valueSource === 'espn' ? ' (ESPN $)' : ''}` : `${formatLabel}`,
+    isAuction ? `${config.budget} auction${config.valueSource === 'espn' ? ' (ESPN $)' : config.valueSource === 'yahoo' ? ' (Yahoo $)' : ''}` : `${formatLabel}`,
     config.rosterSlots.SUPERFLEX > 0 ? 'Superflex' : null,
     leagueType !== 'redraft' ? leagueType : null,
     isRookieDraft ? 'rookie draft' : null,

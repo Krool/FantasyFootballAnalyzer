@@ -447,6 +447,12 @@ fetches it.
   `{position, count}` entries that **include BN and IR counts** - `yahoo.ts`
   parses these, keeping `BENCH: 6, IR: 1` only as a fallback when
   `roster_positions` doesn't parse.
+- **Public read-only host, no OAuth**: `https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/...`
+  serves game-scoped resources (verified 2026-09-02 with
+  `game/nfl/players;sort=AR;start=0;count=25/draft_analysis?format=json`:
+  `average_pick`, `average_cost`, `percent_drafted`, ~300 priced players).
+  It is not gated by the per-app approval that 403s the OAuth host, which
+  is how the pool gets `yahooValue`. League-scoped resources still need OAuth.
 - **Auction budget is genuinely not exposed** (confirmed across wrappers).
   Infer by summing `draftresults` costs, or keep the editable $200 default.
 - `/league/{key}/draftresults`: `{pick, round, cost, team_key, player_key}`;

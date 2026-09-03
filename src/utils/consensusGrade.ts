@@ -104,7 +104,8 @@ export function consensusPositionRanks(picks: DraftPick[], pool: DraftPoolFile):
 // `${position}-${player.id}` to match what grading.ts looks up. The pool's
 // baseValue is the FantasyPros salary sheet's dollar curve reprojected onto
 // the current rankings (so it agrees with the consensus board by
-// construction); espnValue is ESPN's live auction market. Blend whichever
+// construction); espnValue and yahooValue are those sites' live auction
+// markets. Blend whichever
 // exist, scale to the league's budget, floor at the $1 a nomination costs.
 // Players the pool can't match get no entry - grading treats them as $1.
 export function marketAuctionValues(
@@ -118,7 +119,7 @@ export function marketAuctionValues(
   for (const pick of picks) {
     const pooled = resolvePoolPlayer(pick.player, index);
     if (!pooled) continue;
-    const sources = [pooled.baseValue, pooled.espnValue].filter(
+    const sources = [pooled.baseValue, pooled.espnValue, pooled.yahooValue].filter(
       (v): v is number => typeof v === 'number' && v > 0,
     );
     if (sources.length === 0) continue;

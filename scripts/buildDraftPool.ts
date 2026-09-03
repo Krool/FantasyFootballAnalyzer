@@ -10,6 +10,7 @@
 //   data/raw/sleeper-adp.<season>.json  (optional: Sleeper ADP + projections)
 //   data/raw/sleeper-players.json       (optional: injury/rookie/depth/ids)
 //   data/raw/yahoo-adp.<season>.json    (optional: Yahoo ADP rank, via FantasyPros)
+//   data/raw/yahoo-values.<season>.json (optional: Yahoo auction market, public read-only API)
 // Outputs:
 //   src/data/draftPool.<season>.json    (the pool data)
 //   src/data/draftPool.ts               (regenerated indirection module the
@@ -78,6 +79,7 @@ interface PoolPlayer {
   sleeperAdpStd?: number;
   sleeperAdp2qb?: number; // 2QB/superflex ADP
   yahooAdpRank?: number; // Yahoo ADP as a dense 1..N ordering, not an average pick
+  yahooValue?: number; // Yahoo auction market average cost (their default $200 shape)
   // Sleeper season-long projected points by scoring format.
   projPts?: number; // half-PPR
   projPtsPpr?: number;
@@ -387,6 +389,17 @@ const yahooSnapshot = loadRawSnapshot<{ players: YahooAdpRow[] }>(`yahoo-adp.${S
 // blend needs; do not present it as a raw ADP.
 joinSource('Yahoo ADP', yahooSnapshot?.players, (player, row) => {
   if (Number.isFinite(row.rank) && row.rank > 0) player.yahooAdpRank = row.rank;
+});
+
+interface YahooValueRow {
+  name: string; pos: string; team: string; avgPick: number | null; avgCost: number | null;
+}
+const yahooValuesSnapshot = loadRawSnapshot<{ players: YahooValueRow[] }>(`yahoo-values.${SEASON}.json`);
+// Yahoo's own auction market (average cost across Yahoo salary-cap drafts),
+// whole dollars like espnValue. Sub-$1 tails round to $1, not 0, so a priced
+// player never reads as unpriced.
+joinSource('Yahoo values', yahooValuesSnapshot?.players, (player, row) => {
+  if (row.avgCost !== null && row.avgCost > 0) player.yahooValue = Math.max(1, Math.round(row.avgCost));
 });
 
 interface SleeperPlayerRow {

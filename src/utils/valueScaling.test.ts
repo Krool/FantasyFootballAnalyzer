@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PoolPlayer } from '@/types/draft';
-import { scaleValues, scoringScalar, espnMarketValues } from './valueScaling';
+import { scaleValues, scoringScalar, espnMarketValues, siteMarketValues } from './valueScaling';
 
 function player(id: string, baseValue: number | null, pos = 'RB'): PoolPlayer {
   return { id, name: id, team: 'FA', pos, posRank: 1, overallRank: 1, tier: 1, bye: null, baseValue };
@@ -98,6 +98,17 @@ describe('espnMarketValues', () => {
     players.push(player('nope', 66)); // sheet value only, no ESPN column
     const values = espnMarketValues(players, { budget: 200, teams: 12, rounds: 14 })!;
     expect(values.get('nope')).toBe(1);
+  });
+
+  it('reads the Yahoo column for the yahoo site', () => {
+    const players = [
+      ...Array.from({ length: 60 }, (_, i) => ({ ...player(`y${i}`, null), yahooValue: 60 - i })),
+      espn('espnOnly', 50),
+    ];
+    const values = siteMarketValues('yahoo', players, { budget: 200, teams: 12, rounds: 5 })!;
+    expect(values.get('y0')).toBeGreaterThan(values.get('y1')!);
+    expect(values.get('espnOnly')).toBe(1); // no Yahoo price
+    expect(siteMarketValues('espn', players, { budget: 200, teams: 12, rounds: 5 })).toBeNull();
   });
 
   it('returns null when ESPN priced too few players to run a room on', () => {

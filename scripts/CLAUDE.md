@@ -1,5 +1,7 @@
 # Data pipeline notes (scripts/)
 
+**Yahoo auction values** come straight from Yahoo: `pub-api-ro.fantasysports.yahoo.com` is the READ-ONLY public host of the Fantasy API and serves `game/nfl/players;sort=AR;start=N;count=25/draft_analysis` with `average_cost` and a true `average_pick`, no OAuth and no app approval (found 2026-09-02; the OAuth host 403s unapproved apps, this one does not). `fetchYahooValues` walks it 25 rows a page until a page has no priced rows (~300 players) into `yahoo-values.<season>.json`, and the pool carries it as `yahooValue` (whole dollars, Yahoo's $200 default). Optional, non-fatal.
+
 **Yahoo ADP** arrives through FantasyPros, not Yahoo. Yahoo's own
 draft-analysis endpoint needs OAuth, but FantasyPros carries Yahoo as one of
 three sources behind its ADP board, and the same public FP key isolates it:

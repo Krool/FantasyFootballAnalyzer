@@ -81,10 +81,10 @@ export interface DraftRoomConfig {
   liveBidding?: boolean;
   // Auction only: which market the room's dollar values come from.
   // 'consensus' is the FantasyPros sheet blended with the projection model;
-  // 'espn' is ESPN's live auction market normalized to the league's money,
-  // for rooms that anchor on ESPN's dollar column. Seeded from the connected
+  // 'espn' / 'yahoo' are that site's live auction market normalized to the
+  // league's money, for rooms that anchor on the site's dollar column. Seeded from the connected
   // league's platform; absent (older sessions) means consensus.
-  valueSource?: 'consensus' | 'espn';
+  valueSource?: 'consensus' | 'espn' | 'yahoo';
 }
 
 export type DraftEvent =
@@ -158,6 +158,9 @@ export interface PoolPlayer {
   // it is a "rank" and not a "yahooAdp": same "how early is he gone" scale
   // as overallRank, but never present it to the user as a raw ADP.
   yahooAdpRank?: number;
+  // Yahoo auction market: average cost across Yahoo salary-cap drafts, from
+  // the public read-only API (whole dollars, Yahoo's default $200 shape).
+  yahooValue?: number;
   // Expert disagreement band around the consensus rank (FantasyPros
   // rank_min/rank_max/rank_std): wide band = the experts can't agree.
   rankMin?: number;
