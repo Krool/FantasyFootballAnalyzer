@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-09-02T14:56:26.582Z",
+ "fetchedAt": "2026-09-03T01:02:29.060Z",
  "data": {
   "players": [
    {
@@ -561,6 +561,19 @@
     "injuryStartDate": null,
     "yearsExp": 10,
     "depthChartOrder": 1
+   },
+   {
+    "sleeperId": "3258",
+    "name": "Nick Vannett",
+    "pos": "TE",
+    "team": "BAL",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 10,
+    "depthChartOrder": null
    },
    {
     "sleeperId": "3269",
@@ -1353,7 +1366,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "4981",
@@ -2669,6 +2682,19 @@
     "depthChartOrder": null
    },
    {
+    "sleeperId": "6931",
+    "name": "DeeJay Dallas",
+    "pos": "RB",
+    "team": "MIN",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 6,
+    "depthChartOrder": null
+   },
+   {
     "sleeperId": "6964",
     "name": "Sean McKeon",
     "pos": "TE",
@@ -3303,7 +3329,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 5
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "7600",
@@ -3583,6 +3609,19 @@
     "name": "Tim Jones",
     "pos": "WR",
     "team": "JAX",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 5,
+    "depthChartOrder": null
+   },
+   {
+    "sleeperId": "8041",
+    "name": "Shane Zylstra",
+    "pos": "TE",
+    "team": "NE",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
@@ -4026,8 +4065,8 @@
     "pos": "RB",
     "team": "KC",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Foot",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
@@ -4577,7 +4616,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "8489",
@@ -5092,8 +5131,8 @@
     "pos": "RB",
     "team": "TB",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
@@ -5253,7 +5292,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "10212",
@@ -5804,7 +5843,7 @@
    {
     "sleeperId": "11280",
     "name": "Brady Russell",
-    "pos": "TE",
+    "pos": "RB",
     "team": "SEA",
     "status": "Active",
     "injuryStatus": null,
@@ -5890,7 +5929,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "11377",
@@ -6145,8 +6184,8 @@
     "pos": "QB",
     "team": "MIN",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
@@ -7021,7 +7060,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 8
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "11911",
@@ -7037,19 +7076,6 @@
     "depthChartOrder": 5
    },
    {
-    "sleeperId": "11921",
-    "name": "Xavier Weaver",
-    "pos": "WR",
-    "team": "ARI",
-    "status": "Inactive",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Hamstring",
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 2,
-    "depthChartOrder": null
-   },
-   {
     "sleeperId": "11942",
     "name": "Colson Yankoff",
     "pos": "TE",
@@ -7061,6 +7087,19 @@
     "injuryStartDate": null,
     "yearsExp": 2,
     "depthChartOrder": 5
+   },
+   {
+    "sleeperId": "11959",
+    "name": "Bryce Oliver",
+    "pos": "WR",
+    "team": "CLE",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 2,
+    "depthChartOrder": null
    },
    {
     "sleeperId": "11963",
@@ -7245,6 +7284,19 @@
     "depthChartOrder": null
    },
    {
+    "sleeperId": "12267",
+    "name": "Qadir Ismail",
+    "pos": "WR",
+    "team": "CHI",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 2,
+    "depthChartOrder": null
+   },
+   {
     "sleeperId": "12356",
     "name": "Jabari Small",
     "pos": "RB",
@@ -7255,7 +7307,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 5
+    "depthChartOrder": null
    },
    {
     "sleeperId": "12357",
@@ -7458,7 +7510,7 @@
     "pos": "RB",
     "team": "PHI",
     "status": "Inactive",
-    "injuryStatus": "IR",
+    "injuryStatus": "Questionable",
     "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -7476,7 +7528,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 5
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "12481",
@@ -7588,8 +7640,8 @@
     "pos": "RB",
     "team": "JAX",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Illness",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -7866,7 +7918,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "12512",
@@ -7945,6 +7997,19 @@
     "injuryStartDate": null,
     "yearsExp": 1,
     "depthChartOrder": 1
+   },
+   {
+    "sleeperId": "12520",
+    "name": "Xavier Restrepo",
+    "pos": "WR",
+    "team": "TEN",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 1,
+    "depthChartOrder": null
    },
    {
     "sleeperId": "12521",
@@ -8218,6 +8283,19 @@
     "injuryStartDate": null,
     "yearsExp": 1,
     "depthChartOrder": 5
+   },
+   {
+    "sleeperId": "12548",
+    "name": "Lenny Krieg",
+    "pos": "K",
+    "team": "GB",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 4,
+    "depthChartOrder": null
    },
    {
     "sleeperId": "12634",
@@ -8532,19 +8610,6 @@
     "depthChartOrder": 4
    },
    {
-    "sleeperId": "12826",
-    "name": "Ulysses Bentley",
-    "pos": "RB",
-    "team": "IND",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 1,
-    "depthChartOrder": null
-   },
-   {
     "sleeperId": "12829",
     "name": "Coleman Owen",
     "pos": "WR",
@@ -8562,6 +8627,19 @@
     "name": "Josh Kelly",
     "pos": "WR",
     "team": "HOU",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 1,
+    "depthChartOrder": null
+   },
+   {
+    "sleeperId": "12860",
+    "name": "Theo Wease",
+    "pos": "WR",
+    "team": "LAC",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
@@ -8636,19 +8714,6 @@
     "depthChartOrder": null
    },
    {
-    "sleeperId": "12892",
-    "name": "Da'Quan Felton",
-    "pos": "WR",
-    "team": "NYJ",
-    "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 1,
-    "depthChartOrder": null
-   },
-   {
     "sleeperId": "12897",
     "name": "Nathan Carter",
     "pos": "RB",
@@ -8666,19 +8731,6 @@
     "name": "Patrick Herbert",
     "pos": "TE",
     "team": "LAC",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 1,
-    "depthChartOrder": null
-   },
-   {
-    "sleeperId": "12906",
-    "name": "Cam Camper",
-    "pos": "WR",
-    "team": "NYJ",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
@@ -9283,7 +9335,7 @@
     "injuryNotes": "Strain",
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 9
+    "depthChartOrder": 10
    },
    {
     "sleeperId": "13282",
@@ -9556,7 +9608,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 6
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "13311",
@@ -10458,7 +10510,7 @@
    {
     "sleeperId": "13516",
     "name": "Max Bredeson",
-    "pos": "TE",
+    "pos": "RB",
     "team": "MIN",
     "status": "Active",
     "injuryStatus": null,
@@ -10791,7 +10843,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 6
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "13725",
@@ -10859,19 +10911,6 @@
     "depthChartOrder": 9
    },
    {
-    "sleeperId": "13776",
-    "name": "Hank Beatty",
-    "pos": "WR",
-    "team": "TEN",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 0,
-    "depthChartOrder": null
-   },
-   {
     "sleeperId": "13778",
     "name": "EJ Smith",
     "pos": "RB",
@@ -10889,19 +10928,6 @@
     "name": "Al-Jay Henderson",
     "pos": "RB",
     "team": "NYJ",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 0,
-    "depthChartOrder": null
-   },
-   {
-    "sleeperId": "13780",
-    "name": "Terion Stewart",
-    "pos": "RB",
-    "team": "KC",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
@@ -10947,7 +10973,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 5
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "13830",
@@ -10981,7 +11007,7 @@
     "pos": "TE",
     "team": "NYJ",
     "status": "Inactive",
-    "injuryStatus": "IR",
+    "injuryStatus": "Questionable",
     "injuryBodyPart": "Knee",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -11098,12 +11124,12 @@
     "pos": "WR",
     "team": "NE",
     "status": "Inactive",
-    "injuryStatus": "IR",
+    "injuryStatus": "Questionable",
     "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 10
+    "depthChartOrder": null
    },
    {
     "sleeperId": "13968",
@@ -11122,19 +11148,6 @@
     "sleeperId": "13981",
     "name": "Kolbe Katsis",
     "pos": "WR",
-    "team": "DEN",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 0,
-    "depthChartOrder": null
-   },
-   {
-    "sleeperId": "14008",
-    "name": "Rodney Hammond",
-    "pos": "RB",
     "team": "DEN",
     "status": "Active",
     "injuryStatus": null,
