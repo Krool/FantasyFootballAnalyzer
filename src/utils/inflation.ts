@@ -37,10 +37,18 @@ export const NEUTRAL_INFLATION: InflationState = {
   openSlots: 0,
 };
 
+// `openingRate` is the same ratio measured before any sale (full budgets,
+// every slot open, the whole pool available). Inflation is reported relative
+// to it, so a room starts at exactly 0% whatever the value sheet sums to.
+// Site-market sheets need this: Yahoo's averages for the top 180 sum ~15%
+// under a 12-team room's money because real rooms spend the gap on unlisted
+// $1-3 depth, and without the baseline the room opened at +20% and told the
+// owner Gibbs "should" clear at $89 in a market that pays $74 (2026-09-03).
 export function computeInflation(
   teams: TeamMoney[],
   available: PoolPlayer[],
   scaledValues: Map<string, number>,
+  openingRate = 1,
 ): InflationState {
   let remainingBudget = 0;
   let openSlots = 0;
@@ -79,8 +87,23 @@ export function computeInflation(
   // tops out well under 2x; cap generously so a degenerate end state can't
   // blow up the displayed expected prices and bid guidance.
   const rawRate = surplusValue > 0 ? surplusMoney / surplusValue : 1;
-  const rate = Math.min(rawRate, MAX_INFLATION_RATE);
+  const baseline = openingRate > 0 ? openingRate : 1;
+  const rate = Math.min(rawRate / baseline, MAX_INFLATION_RATE);
   return { rate, remainingBudget, remainingValue, openSlots };
+}
+
+// The room's ratio before the first sale: every team at full budget with
+// every slot open, the whole pool on the board. Feed it back to
+// computeInflation as `openingRate`.
+export function openingInflationRate(
+  teamCount: number,
+  budget: number,
+  rounds: number,
+  pool: PoolPlayer[],
+  scaledValues: Map<string, number>,
+): number {
+  const teams = Array.from({ length: teamCount }, () => ({ remaining: budget, openSlots: rounds }));
+  return computeInflation(teams, pool, scaledValues).rate;
 }
 
 // A player's sheet value corrected for the room's inflation. The $1 floor

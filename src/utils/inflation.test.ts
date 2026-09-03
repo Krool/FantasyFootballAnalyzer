@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PoolPlayer } from '@/types/draft';
-import { computeInflation, inflateValue, MAX_INFLATION_RATE } from './inflation';
+import { computeInflation, inflateValue, MAX_INFLATION_RATE, openingInflationRate } from './inflation';
 
 function player(id: string, rank: number): PoolPlayer {
   return {
@@ -121,5 +121,41 @@ describe('inflateValue', () => {
   it('never moves $1 players or drops below $1', () => {
     expect(inflateValue(1, 2)).toBe(1);
     expect(inflateValue(2, 0.01)).toBe(1);
+  });
+});
+
+describe('openingInflationRate', () => {
+  it('zeroes out a sheet that prices less than the room money, then moves with the sales', () => {
+    // 2 teams, $20 each, 2 slots each: $36 of surplus money. The sheet's
+    // best four carry only 9+4+1+0 = 14 of surplus (a site market whose
+    // averages leave money for unlisted depth), so the raw ratio is 36/14.
+    const pool = poolOf(6);
+    const values = valuesFor(pool, [10, 5, 2, 1, 1, 1]);
+    const opening = openingInflationRate(2, 20, 2, pool, values);
+    expect(opening).toBeCloseTo(36 / 14);
+
+    const fresh = [
+      { remaining: 20, openSlots: 2 },
+      { remaining: 20, openSlots: 2 },
+    ];
+    expect(computeInflation(fresh, pool, values, opening).rate).toBeCloseTo(1);
+
+    // p1 sells for $10, exactly his sheet price: still on the money.
+    const after = [
+      { remaining: 10, openSlots: 1 },
+      { remaining: 20, openSlots: 2 },
+    ];
+    const rest = pool.slice(1);
+    // surplus money 30 - 3 = 27; surplus value (5+2+1) - 3 = 5 -> raw 5.4,
+    // relative to the 36/14 opening = 2.1: the sale drained fewer surplus
+    // dollars than surplus value, so the remaining names inflate.
+    expect(computeInflation(after, rest, values, opening).rate).toBeCloseTo(5.4 / (36 / 14));
+  });
+
+  it('defaults to the raw ratio when no opening rate is given', () => {
+    const pool = poolOf(4);
+    const values = valuesFor(pool, [10, 5, 2, 1]);
+    const teams = [{ remaining: 9, openSlots: 2 }, { remaining: 9, openSlots: 2 }];
+    expect(computeInflation(teams, pool, values).rate).toBe(computeInflation(teams, pool, values, 1).rate);
   });
 });

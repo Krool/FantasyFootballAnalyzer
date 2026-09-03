@@ -20,7 +20,7 @@ import {
   saveDraftRoom,
   type DraftRoomSession,
 } from '@/utils/draftRoomCache';
-import { computeInflation, NEUTRAL_INFLATION, type InflationState } from '@/utils/inflation';
+import { computeInflation, NEUTRAL_INFLATION, openingInflationRate, type InflationState } from '@/utils/inflation';
 import { loadLastConnection } from '@/utils/lastConnection';
 import { siteMarketValues, type ScoringType } from '@/utils/valueScaling';
 import { draftValues, vorConfigFor } from '@/utils/projectionValues';
@@ -361,12 +361,27 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
   // drafts `spent` stays 0 while the available pool shrinks, so the raw
   // computation balloons into a garbage rate; return neutral instead so a
   // future consumer can't trust a bogus number.
+  // Reported relative to the room's opening ratio, so pick 1 always reads
+  // 0% even on a site-market sheet that does not sum to the league's money.
+  const openingRate = useMemo(
+    () =>
+      state.config.draftType === 'auction'
+        ? openingInflationRate(
+            state.config.teams.length,
+            state.config.budget,
+            state.config.rounds,
+            POOL.players,
+            scaledValues,
+          )
+        : 1,
+    [state.config.draftType, state.config.teams.length, state.config.budget, state.config.rounds, scaledValues],
+  );
   const inflation = useMemo(
     () =>
       state.config.draftType === 'auction'
-        ? computeInflation([...derived.teams.values()], derived.available, scaledValues)
+        ? computeInflation([...derived.teams.values()], derived.available, scaledValues, openingRate)
         : NEUTRAL_INFLATION,
-    [state.config.draftType, derived, scaledValues],
+    [state.config.draftType, derived, scaledValues, openingRate],
   );
 
   // Persist any in-progress or finished draft; setup-phase tweaking is not
