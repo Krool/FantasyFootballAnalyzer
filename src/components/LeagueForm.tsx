@@ -357,11 +357,16 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
       : null,
   );
 
-  // Returns the leagues found (current season first), or null when the
-  // lookup produced nothing usable; the error state is already set then.
-  const handleSleeperLookup = async (): Promise<Array<{ id: string; name: string; season: string }> | null> => {
+  // Resolves to the leagues found (current season first), or to why not:
+  // 'unresolved' when Sleeper answered and the name has no user or no
+  // leagues, 'unreachable' when the request itself failed. The error text
+  // is already on screen in both failure cases.
+  type SleeperLookupResult =
+    | { leagues: Array<{ id: string; name: string; season: string }> }
+    | { failure: 'unresolved' | 'unreachable' };
+  const handleSleeperLookup = async (): Promise<SleeperLookupResult> => {
     const username = sleeperUsername.trim();
-    if (!username) return null;
+    if (!username) return { failure: 'unresolved' };
     setSleeperLookupBusy(true);
     setSleeperLookupError(null);
     try {
@@ -370,7 +375,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
       if (found === null) {
         setSleeperLeagues([]);
         setSleeperLookupError('No Sleeper user with that username.');
-        return null;
+        return { failure: 'unresolved' };
       }
       const { userId, leagues } = found;
       setSleeperLeagues(leagues);
@@ -380,19 +385,18 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
       rememberSleeperUsername(username, userId);
       if (leagues.length === 0) {
         setSleeperLookupError('That user has no leagues this season or last.');
-        return null;
+        return { failure: 'unresolved' };
       }
       setLeagueId(leagues[0].id);
       setLeagueIdError(null);
-      return leagues;
+      return { leagues };
     } catch (err) {
       logger.error('Sleeper league lookup failed:', err);
+      const noUser = String(err).includes('404');
       setSleeperLookupError(
-        String(err).includes('404')
-          ? 'No Sleeper user with that username.'
-          : 'Could not reach Sleeper. Try again.'
+        noUser ? 'No Sleeper user with that username.' : 'Could not reach Sleeper. Try again.'
       );
-      return null;
+      return { failure: noUser ? 'unresolved' : 'unreachable' };
     } finally {
       setSleeperLookupBusy(false);
     }
@@ -448,15 +452,22 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     // the empty (or stale, saved-from-last-time) League ID: keep the typed
     // ID if it belongs to that user, otherwise load the best guess, which
     // is the first league found (current season first).
-    if (platform === 'sleeper' && !sleeperLookupBusy) {
+    if (platform === 'sleeper') {
       const username = sleeperUsername.trim().toLowerCase();
       if (username && username !== lookedUpUsernameRef.current) {
-        const leagues = await handleSleeperLookup();
-        if (leagues) {
+        // A second Enter while the search is in flight must not load
+        // whatever ID happens to be in the field; the search will finish
+        // and the user can submit again.
+        if (sleeperLookupBusy) return;
+        const result = await handleSleeperLookup();
+        if ('leagues' in result) {
+          const { leagues } = result;
           trimmedId = leagues.some((l) => l.id === trimmedId) ? trimmedId : leagues[0].id;
           setLeagueId(trimmedId);
-        } else if (!trimmedId) {
-          // The lookup error is on screen; nothing else to load.
+        } else if (result.failure === 'unresolved' || !trimmedId) {
+          // Sleeper said the name has nothing to load: stop on that error
+          // rather than quietly loading a remembered ID the user did not
+          // ask for. Only an unreachable Sleeper falls back to a typed ID.
           return;
         }
       }
