@@ -18,9 +18,9 @@ function stubViewport(phone: boolean) {
 
 function makeLeague(overrides: Partial<League> = {}): League {
   return {
-    id: '1240782642371104768',
+    id: '111111111111111111',
     platform: 'sleeper',
-    name: '415 Football Club',
+    name: 'Test Football Club',
     season: 2025,
     draftType: 'snake',
     teams: Array.from({ length: 12 }, (_, i) => ({
@@ -108,7 +108,7 @@ describe('DraftRoomPage phone focus mode', () => {
 
     expect(screen.getByText(/Reset Draft/i)).toBeInTheDocument();
     // The config line the masthead used to carry.
-    expect(screen.getByText(/415 Football Club · 2026 Snake/i)).toBeInTheDocument();
+    expect(screen.getByText(/Test Football Club · 2026 Snake/i)).toBeInTheDocument();
     // Focus mode hides the app nav, so settings has to carry the way out.
     expect(screen.getByRole('link', { name: /Rankings/i })).toBeInTheDocument();
   });
@@ -229,7 +229,7 @@ describe('DraftRoomPage phone auction nomination', () => {
     // affordance), so seed the persisted queue the hook reads on mount.
     const player = POOL.players[0];
     localStorage.setItem(
-      `ffa:draftQueue:v1:sleeper:1240782642371104768:${POOL.season}`,
+      `ffa:draftQueue:v1:sleeper:111111111111111111:${POOL.season}`,
       JSON.stringify([player.id]),
     );
     startLiveAuctionOnPhone();

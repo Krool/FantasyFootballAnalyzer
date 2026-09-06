@@ -25,10 +25,10 @@ describe('rememberConnection + loadLastConnection', () => {
   });
 
   it('keeps the espn season alongside the id', () => {
-    rememberConnection('espn', '347749457', 2025);
+    rememberConnection('espn', '123456789', 2025);
     expect(loadLastConnection()).toEqual({
       platform: 'espn',
-      espn: { leagueId: '347749457', season: 2025 },
+      espn: { leagueId: '123456789', season: 2025 },
     });
   });
 
@@ -89,7 +89,7 @@ describe('corrupt storage', () => {
   it('drops a malformed espn record instead of passing it to the form', () => {
     localStorage.setItem(
       KEY,
-      JSON.stringify({ platform: 'espn', espn: { leagueId: 347749457, season: 2025 } }),
+      JSON.stringify({ platform: 'espn', espn: { leagueId: 123456789, season: 2025 } }),
     );
     expect(loadLastConnection()).toEqual({ platform: 'espn' });
   });

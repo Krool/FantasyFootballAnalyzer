@@ -15,9 +15,9 @@ beforeEach(() => {
 });
 
 const league: League = {
-  id: '1240782642371104768',
+  id: '111111111111111111',
   platform: 'sleeper',
-  name: '415 Football Club',
+  name: 'Test Football Club',
   season: 2025,
   draftType: 'snake',
   teams: [],
@@ -29,7 +29,7 @@ const league: League = {
 
 const credentials: LeagueCredentials = {
   platform: 'sleeper',
-  leagueId: '1240782642371104768',
+  leagueId: '111111111111111111',
 };
 
 function LocationProbe() {

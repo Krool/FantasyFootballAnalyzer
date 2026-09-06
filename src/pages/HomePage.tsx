@@ -17,26 +17,27 @@ interface HomePageProps {
   progress: LoadingProgress | null;
 }
 
-// Test-league shortcuts for the crocodile button. Dev builds only: the
-// import.meta.env.DEV guards below are statically false in production, so
-// these credentials are dead-code-eliminated from the deployed bundle.
-const SECRET_SLEEPER: LeagueCredentials | null = import.meta.env.DEV
-  ? {
-      platform: 'sleeper',
-      leagueId: '1240782642371104768',
-    }
-  : null;
+// Test-league shortcuts for the crocodile button. Dev builds only, and the
+// values live in the gitignored .env.local (see .env.example), never in
+// source: the ESPN cookies are the owner's whole ESPN session, and this repo
+// is public. import.meta.env.DEV is statically false in production, so the
+// block is dead-code-eliminated from the deployed bundle either way.
+const SECRET_SLEEPER: LeagueCredentials | null =
+  import.meta.env.DEV && import.meta.env.VITE_DEV_SLEEPER_LEAGUE_ID
+    ? { platform: 'sleeper', leagueId: import.meta.env.VITE_DEV_SLEEPER_LEAGUE_ID }
+    : null;
 
-const SECRET_ESPN: LeagueCredentials | null = import.meta.env.DEV
-  ? {
-      platform: 'espn',
-      leagueId: '347749457',
-      season: 2025,
-      // Store decoded - the API layer will encode for headers
-      espnS2: 'AECcgwVOUgKOpAFwDhM8LMDZ+6kT13GrqWmxCIE14bNXH7MbiuByz4DdB7mTAJZ7Nmh5NRYPV7/zrQqIg6UCJSQyXOvFjksg4AFx1rgpiI7gbTS8hCudtxF54SbZys7fKrfYYY/OfXxEeTSgRVdw8fx0Q4gS8kiUV0/bLbnTmbOxDom+/qVuwaExb8lWZrXyQ7H3luMiYk+w+zMYKq07zm1J4gBTkuwyQp3hFt/d0kN4HAdpCByIzPTP988NEIJz7eZtk5UlnAyF1tkDvTaGT5HXex0OO0hUlPsF5fxNjzHmDA==',
-      swid: '{419BAD61-FE0D-4590-827B-BAE6A00E5289}',
-    }
-  : null;
+const SECRET_ESPN: LeagueCredentials | null =
+  import.meta.env.DEV && import.meta.env.VITE_DEV_ESPN_LEAGUE_ID
+    ? {
+        platform: 'espn',
+        leagueId: import.meta.env.VITE_DEV_ESPN_LEAGUE_ID,
+        season: Number(import.meta.env.VITE_DEV_ESPN_SEASON) || new Date().getFullYear() - 1,
+        // Store decoded - the API layer will encode for headers
+        espnS2: import.meta.env.VITE_DEV_ESPN_S2 || undefined,
+        swid: import.meta.env.VITE_DEV_ESPN_SWID || undefined,
+      }
+    : null;
 
 export function HomePage({ onLoadLeague, onGuest, isLoading, error, progress }: HomePageProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>('sleeper');

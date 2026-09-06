@@ -7,9 +7,9 @@ import type { ErrorEvent } from '@sentry/react';
 // credentials or league ids into Sentry. See [[error-logging-and-privacy-claim]].
 
 // Real shapes of the secrets the app handles (values are fabricated).
-const SWID = '{419BAD61-FE0D-4590-827B-BAE6A00E5289}';
+const SWID = '{12345678-ABCD-4EF0-9876-ABCDEF012345}';
 const ESPN_S2 =
-  'AECcgwVOUgKOpAFwDhM8LMDZ+6kT13GrqWmxCIE14bNXH7MbiuByz4DdB7mTAJZ7Nmh5NRYPV7';
+  'AEBfakeFAKEfakeFAKE0123456789abcdefABCDEF+/0123456789abcdefABCDEFfakeFAKE';
 
 describe('scrubString', () => {
   it('redacts query strings (oauth codes, league lookups, tokens)', () => {
@@ -22,7 +22,7 @@ describe('scrubString', () => {
   });
 
   it('redacts SWID-style GUIDs, braced or bare', () => {
-    expect(scrubString(`Cookie SWID=${SWID} sent`)).not.toContain('419BAD61');
+    expect(scrubString(`Cookie SWID=${SWID} sent`)).not.toContain('12345678');
     expect(scrubString('id 419bad61-fe0d-4590-827b-bae6a00e5289 here')).toContain(
       '[redacted]',
     );
@@ -34,7 +34,7 @@ describe('scrubString', () => {
     const cookie = `espn_s2=${ESPN_S2}; SWID=${SWID}`;
     const scrubbed = scrubString(cookie);
     expect(scrubbed).not.toContain(ESPN_S2);
-    expect(scrubbed).not.toContain('419BAD61');
+    expect(scrubbed).not.toContain('12345678');
     expect(scrubbed).toContain('espn_s2=[redacted]');
   });
 
@@ -90,7 +90,7 @@ describe('scrub', () => {
     };
     const out = scrub(event);
     expect(out.breadcrumbs[0].data.url).toBe('https://api/league?[redacted]');
-    expect(out.breadcrumbs[1].message).not.toContain('419BAD61');
+    expect(out.breadcrumbs[1].message).not.toContain('12345678');
   });
 
   it('serializes the whole structure without leaking either secret', () => {
@@ -101,7 +101,7 @@ describe('scrub', () => {
     };
     const serialized = JSON.stringify(scrub(event));
     expect(serialized).not.toContain(ESPN_S2);
-    expect(serialized).not.toContain('419BAD61');
+    expect(serialized).not.toContain('12345678');
   });
 });
 

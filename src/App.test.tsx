@@ -195,13 +195,13 @@ describe('share links (?league=sleeper:<id>)', () => {
       h.store.set({ league });
       return league;
     });
-    renderApp('/awards?league=espn:347749457');
+    renderApp('/awards?league=espn:123456789');
     expect(await screen.findByTestId('awards-page')).toBeTruthy();
     expect(h.loadMock).toHaveBeenCalledWith(
-      expect.objectContaining({ platform: 'espn', leagueId: '347749457' }),
+      expect.objectContaining({ platform: 'espn', leagueId: '123456789' }),
     );
     expect(decodeURIComponent(screen.getByTestId('loc').textContent ?? '')).toBe(
-      '/awards?league=espn:347749457',
+      '/awards?league=espn:123456789',
     );
   });
 
@@ -214,7 +214,7 @@ describe('share links (?league=sleeper:<id>)', () => {
       h.store.set({ isLoading: false });
       return null;
     });
-    renderApp('/awards?league=espn:347749457');
+    renderApp('/awards?league=espn:123456789');
     expect(await screen.findByTestId('home-page')).toBeTruthy();
     expect(h.loadMock).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('loc').textContent).toMatch(/^\//);
