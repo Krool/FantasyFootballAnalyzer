@@ -85,8 +85,8 @@ export function AwardsPage({ league }: AwardsPageProps) {
 
         {!hasPlayedGames && awards.length > 0 && (
           <p className={styles.categoryNote}>
-            Nothing has been played yet, so these are draft-day awards, graded
-            against the FantasyPros consensus like the Draft board. Performance,
+            No results are in yet, so these are draft-day awards, graded against
+            the FantasyPros consensus board like the Draft page. Performance,
             waiver, trade, and activity awards unlock after Week 1.
           </p>
         )}

@@ -423,8 +423,8 @@ export function DraftTable({
           ) : (
             <>
               Grades measure each pick against the FantasyPros consensus board: how many draft
-              slots earlier or later he went than the market had him, so the round a pick cost
-              counts, not just whether he was the right player at his position.
+              slots he went before or after the market had him, so the round a pick cost counts,
+              not just whether he was the right player at his position.
             </>
           )}{' '}
           The points are projections for the season under your league&apos;s scoring. The standings
@@ -467,7 +467,7 @@ export function DraftTable({
                       title={
                         valuesInDollars
                           ? "Market price minus price paid, summed over this team's live picks in league dollars. Positive means it bought below what the market says the players are worth. High value with a low projection means the team bought well but built a lopsided roster."
-                          : "Positions gained on the FantasyPros consensus, summed over this team's live picks. Positive means it kept taking players later than the market ranked them. High value with a low projection means the team bought well but built a lopsided roster."
+                          : "Draft slots gained on the FantasyPros consensus board, summed over this team's live picks. Positive means it kept taking players later than the market had them. High value with a low projection means the team bought well but built a lopsided roster."
                       }
                     >
                       {formatValueOverExpected(row.consensusValue, valuesInDollars)} vs {valuesInDollars ? 'market' : 'consensus'}
