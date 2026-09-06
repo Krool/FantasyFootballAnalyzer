@@ -23,9 +23,9 @@ export function TeamCard({ league, team, onClick, luckMetrics }: TeamCardProps) 
     const allGraded = gradeLeaguePicks(league, POOL);
     // Whether the values are dollar deltas is a LEAGUE-wide fact: grading
     // switched on all picks, so deciding from this team's subset would
-    // disagree with it (Week 1 Thursday: one TNF player scoring flips the
-    // whole league to rank mode, but a TNF-less team's subset still looks
-    // pre-season and would print $ on a rank delta).
+    // disagree with it. hasSeasonResults now needs most of the board to have
+    // played, but the subsets still diverge - a team whose starters all played
+    // early can clear the bar while the league has not.
     const dollars =
       !hasSeasonResults(allGraded) &&
       (league.draftType === 'auction' || allGraded.some(p => (p.auctionValue ?? 0) > 0));

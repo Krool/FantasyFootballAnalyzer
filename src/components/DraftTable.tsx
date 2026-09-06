@@ -394,7 +394,7 @@ export function DraftTable({
 
       {!hasResults && (
         <p className={styles.gradeBasis}>
-          Nothing has been played yet, so none of this is a result.{' '}
+          Too little of the season has been played to grade on results yet.{' '}
           {valuesInDollars ? (
             <>
               Value is market price minus price paid, in your league&apos;s dollars: the market price

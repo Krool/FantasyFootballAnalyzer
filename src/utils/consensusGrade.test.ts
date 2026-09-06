@@ -84,8 +84,35 @@ describe('hasSeasonResults', () => {
     expect(hasSeasonResults([pick(1, player('9221', 'RB'))])).toBe(false);
   });
 
-  it('is true once any drafted player has scored', () => {
-    expect(hasSeasonResults([pick(1, player('9221', 'RB'), 0), pick(2, player('11584', 'RB'), 210.4)])).toBe(true);
+  // A board where some picks have played and most have not is the whole
+  // problem: grading gives an unplayed pick no position rank, which sorts it
+  // behind everyone who has one, so it grades as if it finished last.
+  const board = (total: number, scored: number): DraftPick[] =>
+    Array.from({ length: total }, (_, i) =>
+      pick(i + 1, player(`p${i}`, 'RB'), i < scored ? 120.5 : undefined),
+    );
+
+  it('stays false when only the opening game has been played', () => {
+    // Week 1 Thursday night: 6 of 168 picks carry points. Grading on results
+    // here marked 162 picks Terrible, the 1.01 included.
+    expect(hasSeasonResults(board(168, 6))).toBe(false);
+  });
+
+  it('stays false while most of the opening slate is still to come', () => {
+    expect(hasSeasonResults(board(168, 70))).toBe(false);
+  });
+
+  it('is true once most of the board has played', () => {
+    expect(hasSeasonResults(board(168, 150))).toBe(true);
+  });
+
+  it('is true for a finished season whose late picks never played a snap', () => {
+    // A dynasty startup's deep stashes never score; the season still happened.
+    expect(hasSeasonResults(board(168, 110))).toBe(true);
+  });
+
+  it('is false on an empty board', () => {
+    expect(hasSeasonResults([])).toBe(false);
   });
 });
 

@@ -132,15 +132,34 @@ export function marketAuctionValues(
   return map;
 }
 
-// True when at least one drafted player has scored, i.e. the season is far
-// enough along that results grading means something. Sleeper's all-zero
-// preseason payload is normalized to `undefined` upstream so it reads false.
+// True when the season has produced results for MOST of the draft class, i.e.
+// ranking the board on points says something.
+//
+// Not "anyone has scored". Grading ranks each position by season points and
+// gives a pick with no recorded result no rank at all, which lands it behind
+// every player who has one. So on the first Sunday of the season, when a
+// handful of early-game players carry points and the rest of the board carries
+// none, every unplayed pick grades as if it had finished last: 162 of 168
+// picks Terrible, the 1.01 among them (owner-reported, 2026-09-06). One
+// Thursday-night player was enough to flip a whole league.
+//
+// A strict majority is the line. It clears every finished season - even a
+// dynasty startup whose late stashes never played a snap - while the opening
+// week stays on consensus ranks until most of the slate is done. "Has a
+// result" stays `> 0` rather than "is defined": Sleeper publishes a full
+// preseason stat payload carrying no fantasy points, and Yahoo reports a flat
+// 0, so a defined-but-zero line means "hasn't played", not "played badly".
 export function hasSeasonResults(picks: DraftPick[]): boolean {
-  return picks.some(p => p.seasonPoints !== undefined && p.seasonPoints > 0);
+  if (picks.length === 0) return false;
+  const scored = picks.reduce(
+    (n, p) => n + (p.seasonPoints !== undefined && p.seasonPoints > 0 ? 1 : 0),
+    0,
+  );
+  return scored * 2 > picks.length;
 }
 
 // gradeAllPicks with the right yardstick for the calendar: season points once
-// any drafted player has scored, consensus rank before Week 1. Every surface
+// most of the board has results, consensus rank until then. Every surface
 // that grades a real league's draft (team cards, awards, manager score, the
 // PDF) should call this instead of gradeAllPicks directly, or a finished
 // pre-season draft grades every pick against a zeroed stat line. The pool is
