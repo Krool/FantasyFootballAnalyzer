@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { ESPNAPI, League } from '@/types';
 import { loadHeadToHeadRecords, loadLeague, loadLeagueHistory, parseEspnRosterSlots } from './espn';
+import { gradeLeaguePicks, hasSeasonResults } from '@/utils/consensusGrade';
+import { POOL } from '@/data/draftPool';
 import { calculateReplacementLevels } from '@/utils/par';
 
 // Fixture: a 4-team public ESPN auction league, season 2025 (a past season,
@@ -987,5 +989,113 @@ describe('espn loadLeague trade detection Priority 2 (communication endpoint)', 
     expect(team2.teamName).toBe('Team Beta');
     expect(team2.playersReceived.map(p => p.name)).toEqual(['Trade Player B']);
     expect(team2.playersSent.map(p => p.name)).toEqual(['Trade Player A']);
+  });
+});
+
+
+// A live league mid-Week-1: only the Thursday-night player has an actual
+// season total. ESPN still sends a projected total for everyone (statSourceId
+// 1), which must never read as a result, and sends no actual season entry at
+// all for a player who has not kicked off.
+//
+// The bug this guards (owner-reported, 2026-09-06): grading flipped to season
+// points as soon as ANY drafted player had scored, and a pick with no result
+// gets no position rank, so it sorted behind everyone who had one. One early
+// game marked most of the board Terrible - on ESPN exactly as on Sleeper.
+describe('espn loadLeague mid-Week-1', () => {
+  const W1_SEASON = 2026;
+  const W1_TEAMS = 4;
+  const W1_PER_TEAM = 6;
+  const w1Pool = POOL.players.slice(0, W1_TEAMS * W1_PER_TEAM);
+  const posId: Record<string, number> = { QB: 1, RB: 2, WR: 3, TE: 4, K: 5, DST: 16 };
+
+  const w1Player = (idx: number): ESPNAPI.Player => {
+    const stats: ESPNAPI.PlayerStats[] = [
+      { seasonId: W1_SEASON, scoringPeriodId: 0, statSourceId: 1, appliedTotal: 240, stats: {} },
+    ];
+    if (idx === 0) {
+      stats.push({ seasonId: W1_SEASON, scoringPeriodId: 0, statSourceId: 0, appliedTotal: 21.4, stats: {} });
+    }
+    return {
+      id: 1000 + idx,
+      fullName: w1Pool[idx].name,
+      defaultPositionId: posId[w1Pool[idx].pos] ?? 2,
+      proTeamId: 1,
+      stats,
+    } as ESPNAPI.Player;
+  };
+
+  const w1Body = {
+    id: 12345,
+    seasonId: W1_SEASON,
+    scoringPeriodId: 1,
+    status: { currentMatchupPeriod: 1, isActive: true },
+    settings: {
+      name: 'ESPN Week One',
+      draftSettings: { type: 'SNAKE' },
+      rosterSettings: {
+        lineupSlotCounts: { 0: 1, 2: 2, 4: 2, 6: 1, 16: 1, 17: 1, 20: 5, 21: 1, 23: 1 },
+        positionLimits: {},
+      },
+      scoringSettings: { scoringItems: [{ statId: 53, points: 1 }] },
+    },
+    teams: Array.from({ length: W1_TEAMS }, (_, t) => ({
+      id: t + 1,
+      name: `Team ${t + 1}`,
+      abbrev: `T${t + 1}`,
+      owners: [`m${t + 1}`],
+      roster: {
+        entries: Array.from({ length: W1_PER_TEAM }, (_, i) =>
+          rosterEntry(1000 + t * W1_PER_TEAM + i, i === 0 ? 0 : 20, w1Player(t * W1_PER_TEAM + i)),
+        ),
+      },
+      record: { overall: { wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0 } },
+    })),
+    members: Array.from({ length: W1_TEAMS }, (_, t) => ({ id: `m${t + 1}`, displayName: `Owner ${t + 1}` })),
+    draftDetail: {
+      drafted: true,
+      picks: w1Pool.map((_, i) => ({
+        overallPickNumber: i + 1,
+        roundId: Math.floor(i / W1_TEAMS) + 1,
+        roundPickNumber: (i % W1_TEAMS) + 1,
+        playerId: 1000 + i,
+        teamId: (i % W1_TEAMS) + 1,
+      })),
+    },
+    schedule: [
+      scheduleGame(1, 1, 0, 2, 0, 'UNDECIDED'),
+    ],
+  };
+
+  let w1League: League;
+
+  beforeAll(async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('kona_league_communication')) return jsonResponse({ topics: [] });
+      if (url.includes('view=mTransactions2')) return jsonResponse({ transactions: [] });
+      if (url.includes('view=mTeam')) return jsonResponse(w1Body);
+      return jsonResponse({ teams: [] });
+    }));
+    w1League = await loadLeague('E-W1', W1_SEASON);
+  });
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('gives an unplayed pick no season result, projections included', () => {
+    const picks = w1League.teams.flatMap(t => t.draftPicks ?? []);
+    expect(picks).toHaveLength(W1_TEAMS * W1_PER_TEAM);
+    // Only the TNF player. A projected total must not count as one.
+    expect(picks.filter(p => p.seasonPoints !== undefined)).toHaveLength(1);
+  });
+
+  it('keeps grading on consensus until most of the board has played', () => {
+    const picks = w1League.teams.flatMap(t => t.draftPicks ?? []);
+    expect(hasSeasonResults(picks)).toBe(false);
+    const graded = gradeLeaguePicks(w1League, POOL);
+    // The old predicate graded 23 of these 24 Terrible off the single result.
+    expect(graded.filter(g => g.grade === 'terrible').length).toBeLessThan(graded.length / 2);
   });
 });
