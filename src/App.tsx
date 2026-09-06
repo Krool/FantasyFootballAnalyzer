@@ -605,6 +605,33 @@ function App() {
     navigate(`${path}?${params.toString()}`, { replace: true });
   }, [league, location.pathname, location.search, navigate, shareLoadPending, isLoading]);
 
+  // Neither of the 2026-09-06 bugs raised a single error event: the app
+  // rendered null forever and graded a board wrong, both without throwing, so
+  // the first report came from Reddit rather than Sentry. This catches the
+  // routing half of that class. '/' with a real league loaded is a pure
+  // redirect - nothing renders there - so still being on it a beat later means
+  // something cancelled the redirect and the user is looking at a blank page
+  // under the header. Fires at most once per session; logger.error scrubs and
+  // throttles on the way to Sentry.
+  const strandReportedRef = useRef(false);
+  useEffect(() => {
+    if (strandReportedRef.current) return;
+    if (!league || league.isGuest || location.pathname !== '/') return;
+    const timer = setTimeout(() => {
+      if (strandReportedRef.current) return;
+      strandReportedRef.current = true;
+      logger.error('[App] Stranded on the home route with a league loaded', {
+        // No ids: the league is identifiable and Sentry scrubs them anyway.
+        // These are the relations that say WHO cancelled the redirect.
+        platform: league.platform,
+        search: location.search.replace(/=[^&]*/g, '=…'),
+        loading: isLoading,
+        emptyPreseason: isEmptyPreseason(league),
+      });
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [league, location.pathname, location.search, isLoading]);
+
   // Data pages require a real (non-guest) league. Guests get redirected to
   // Rankings; no league at all goes home. The render callback receives the
   // narrowed, non-null league.

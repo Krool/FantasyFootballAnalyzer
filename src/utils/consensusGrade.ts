@@ -182,6 +182,24 @@ export function marketAuctionValues(
   return map;
 }
 
+// Opening week, still running. The majority rule below is a data heuristic and
+// it crosses the line somewhere mid-slate on the season's first Sunday, which
+// leaves the Sunday-night and Monday players graded against a stat line they
+// have not had a chance to earn - a smaller version of the bug it fixes, on
+// one day of the year. The platform already tells us the week, so ask it
+// instead of inferring: hold results grading until the first week is OVER.
+//
+// `status === 'final'` first, because currentWeek is the CURRENT NFL week on
+// Sleeper, not the loaded league's. Opening a finished 2025 league during Week
+// 1 of 2026 reports week 1, and grading last season on consensus would be the
+// worse mistake. Platforms that report no week fall through to the data.
+export function firstWeekInProgress(
+  league?: Pick<League, 'status' | 'currentWeek'>,
+): boolean {
+  if (!league || league.status === 'final') return false;
+  return league.currentWeek !== undefined && league.currentWeek <= 1;
+}
+
 // True when the season has produced results for MOST of the draft class, i.e.
 // ranking the board on points says something.
 //
@@ -199,7 +217,11 @@ export function marketAuctionValues(
 // result" stays `> 0` rather than "is defined": Sleeper publishes a full
 // preseason stat payload carrying no fantasy points, and Yahoo reports a flat
 // 0, so a defined-but-zero line means "hasn't played", not "played badly".
-export function hasSeasonResults(picks: DraftPick[]): boolean {
+export function hasSeasonResults(
+  picks: DraftPick[],
+  league?: Pick<League, 'status' | 'currentWeek'>,
+): boolean {
+  if (firstWeekInProgress(league)) return false;
   if (picks.length === 0) return false;
   const scored = picks.reduce(
     (n, p) => n + (p.seasonPoints !== undefined && p.seasonPoints > 0 ? 1 : 0),
@@ -232,7 +254,7 @@ export function gradeLeaguePicks(league: League, pool: DraftPoolFile): GradedPic
 
 function computeLeaguePicks(league: League, pool: DraftPoolFile): GradedPick[] {
   const allPicks = league.teams.flatMap(t => t.draftPicks || []);
-  if (hasSeasonResults(allPicks)) return gradeAllPicks(league);
+  if (hasSeasonResults(allPicks, league)) return gradeAllPicks(league);
   const override = consensusPositionRanks(allPicks, pool);
   // Auctions additionally get the market's dollar prices, so pre-season
   // value reads "overpaid by $3", not a rank delta the $1-4 tail distorts.

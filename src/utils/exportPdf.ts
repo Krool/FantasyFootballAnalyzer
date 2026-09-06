@@ -265,7 +265,7 @@ export async function exportLeagueReport(league: League) {
   // Pre-season auctions grade in league dollars (market minus paid); the
   // value cells should carry the $ so the report reads that way too.
   const valuesInDollars =
-    !hasSeasonResults(gradedPicks) &&
+    !hasSeasonResults(gradedPicks, league) &&
     (league.draftType === 'auction' || gradedPicks.some(p => (p.auctionValue ?? 0) > 0));
 
   const draftSummaryData = league.teams.map(team => {

@@ -5,7 +5,7 @@
 // Everything below App itself is stubbed: these tests pin who renders where,
 // not what the pages draw.
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter, useLocation } from 'react-router-dom';
 import App from './App';
@@ -39,6 +39,8 @@ const h = vi.hoisted(() => {
     validateOAuthState: vi.fn(),
     clearOAuthState: vi.fn(),
     takeOAuthReturn: vi.fn(() => null),
+    loggerError: vi.fn(),
+    blockRedirect: false,
   };
 });
 
@@ -65,6 +67,18 @@ vi.mock('@/hooks/useLeague', async () => {
   };
 });
 
+// The one thing the strand detector needs and the app no longer does: a
+// <Navigate> that does not navigate. Off by default, so every other test runs
+// against the real router.
+vi.mock('react-router-dom', async importOriginal => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {
+    ...actual,
+    Navigate: (props: React.ComponentProps<typeof actual.Navigate>) =>
+      h.blockRedirect ? null : <actual.Navigate {...props} />,
+  };
+});
+
 vi.mock('@/hooks/useSounds', () => ({
   useSounds: () => ({ playLoadComplete: h.noop, playError: h.noop }),
 }));
@@ -85,6 +99,10 @@ vi.mock('@/api/sleeper', async importOriginal => ({
 
 vi.mock('@/utils/analytics', () => ({
   Analytics: { pageView: h.noop, connectAttempt: h.noop },
+}));
+
+vi.mock('@/utils/logger', () => ({
+  logger: { debug: h.noop, warn: h.noop, error: h.loggerError },
 }));
 
 // Chrome stubs: these tests pin routing, not chrome or page content.
@@ -154,6 +172,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.store.league = null;
   h.store.isLoading = false;
+  h.blockRedirect = false;
   h.takeOAuthReturn.mockReturnValue(null);
   vi.spyOn(window, 'alert').mockImplementation(() => {});
   // Default load: succeed and swap the store's league in, like the real hook.
@@ -355,5 +374,44 @@ describe('connect flow lands on a page', () => {
     });
 
     expect(window.location.pathname).toBe('/teams');
+  });
+});
+
+
+// Neither reported bug threw, so nothing reached Sentry and the first report
+// came from Reddit. '/' with a real league is a pure redirect - nothing
+// renders there - so sitting on it means the redirect was cancelled and the
+// user is staring at a blank page under the header.
+describe('stranded-on-home detector', () => {
+  beforeEach(() => { vi.useFakeTimers({ shouldAdvanceTime: true }); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('reports once when a real league is left sitting on the home route', async () => {
+    h.blockRedirect = true;
+    h.store.league = sleeperLeague('55');
+    window.history.replaceState(null, '', '/');
+    render(
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>,
+    );
+    expect(h.loggerError).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(2500);
+    const strandCalls = h.loggerError.mock.calls.filter(c =>
+      String(c[0]).includes('Stranded on the home route'),
+    );
+    expect(strandCalls).toHaveLength(1);
+    // Never an id: the payload carries only what says who cancelled it.
+    expect(JSON.stringify(strandCalls[0][1])).not.toContain('55');
+  });
+
+  it('stays quiet on a healthy connect that reaches a page', async () => {
+    renderApp('/');
+    fireEvent.click(await screen.findByRole('button', { name: 'Load League' }));
+    expect(await screen.findByTestId('draft-page')).toBeTruthy();
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(
+      h.loggerError.mock.calls.filter(c => String(c[0]).includes('Stranded on the home route')),
+    ).toHaveLength(0);
   });
 });

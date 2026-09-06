@@ -3,6 +3,7 @@ import {
   BOARD_MATCH_FLOOR,
   consensusBoardCoverage,
   consensusBoardSlots,
+  firstWeekInProgress,
   consensusPositionRanks,
   hasSeasonResults,
   resolvePoolPlayer,
@@ -124,6 +125,45 @@ describe('hasSeasonResults', () => {
 
   it('is false on an empty board', () => {
     expect(hasSeasonResults([])).toBe(false);
+  });
+
+  // The majority rule crosses somewhere mid-slate on the season's first
+  // Sunday, which would grade the Sunday-night and Monday players against a
+  // stat line they have not had a chance to earn. The platform knows the week;
+  // ask it rather than inferring.
+  describe('while the opening week is still running', () => {
+    it('holds results grading even once most of the board has played', () => {
+      const played = board(168, 160);
+      expect(hasSeasonResults(played)).toBe(true);
+      expect(hasSeasonResults(played, { status: 'live', currentWeek: 1 })).toBe(false);
+    });
+
+    it('grades on results from week 2', () => {
+      expect(hasSeasonResults(board(168, 160), { status: 'live', currentWeek: 2 })).toBe(true);
+    });
+
+    it('still grades a finished season on results', () => {
+      // currentWeek is the CURRENT NFL week on Sleeper, not the loaded
+      // league's: opening a finished 2025 league during Week 1 of 2026 reports
+      // week 1, and must not fall back to consensus.
+      expect(hasSeasonResults(board(168, 160), { status: 'final', currentWeek: 1 })).toBe(true);
+    });
+
+    it('falls through to the data when the platform reports no week', () => {
+      expect(hasSeasonResults(board(168, 160), { status: 'live' })).toBe(true);
+      expect(hasSeasonResults(board(168, 6), { status: 'live' })).toBe(false);
+    });
+  });
+
+  describe('firstWeekInProgress', () => {
+    it('is true only for a live league in week 0 or 1', () => {
+      expect(firstWeekInProgress({ status: 'live', currentWeek: 1 })).toBe(true);
+      expect(firstWeekInProgress({ status: 'preseason', currentWeek: 0 })).toBe(true);
+      expect(firstWeekInProgress({ status: 'live', currentWeek: 2 })).toBe(false);
+      expect(firstWeekInProgress({ status: 'final', currentWeek: 1 })).toBe(false);
+      expect(firstWeekInProgress({ status: 'live' })).toBe(false);
+      expect(firstWeekInProgress(undefined)).toBe(false);
+    });
   });
 });
 

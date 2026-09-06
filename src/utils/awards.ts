@@ -468,7 +468,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   // Pre-season auction grading measures value in league dollars (market
   // price minus price paid), so the draft award numbers should say so.
   const draftDollars =
-    !hasSeasonResults(gradedPicks) &&
+    !hasSeasonResults(gradedPicks, league) &&
     (league.draftType === 'auction' || gradedPicks.some(p => (p.auctionValue ?? 0) > 0));
   const signedValue = (n: number) =>
     draftDollars

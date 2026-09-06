@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { RosterSlots, ScoringType, Team } from '@/types';
+import type { League, RosterSlots, ScoringType, Team } from '@/types';
 import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected, describeAuctionMarket, auctionBadgeWord } from '@/utils/grading';
 import {
   BOARD_MATCH_FLOOR,
@@ -58,6 +58,11 @@ interface DraftTableProps {
   // built on 4pt passing TDs and no TE bonus.
   passTdPoints?: number;
   tePremiumPerReception?: number;
+  // The loaded league's lifecycle, for deciding whether to grade on results.
+  // Omitted for a draft logged in the Draft Room: that session has no platform
+  // week, and no results either, so the data heuristic answers it alone.
+  leagueStatus?: League['status'];
+  currentWeek?: number;
 }
 
 type SortField = 'pick' | 'round' | 'player' | 'position' | 'team' | 'points' | 'posRank' | 'value' | 'grade' | 'cost' | 'proj';
@@ -77,6 +82,8 @@ export function DraftTable({
   rosterSlots = DEFAULT_ROSTER_SLOTS,
   passTdPoints,
   tePremiumPerReception,
+  leagueStatus,
+  currentWeek,
 }: DraftTableProps) {
   const { playFilter, playSort } = useSounds();
 
@@ -90,7 +97,10 @@ export function DraftTable({
   // the 1.01 at "terrible"), we swap the yardstick: before Week 1 each pick is
   // judged against the FantasyPros consensus rank, after it against real points.
   const allPicks = useMemo(() => teams.flatMap(t => t.draftPicks ?? []), [teams]);
-  const hasResults = useMemo(() => hasSeasonResults(allPicks), [allPicks]);
+  const hasResults = useMemo(
+    () => hasSeasonResults(allPicks, { status: leagueStatus, currentWeek }),
+    [allPicks, leagueStatus, currentWeek],
+  );
 
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
   const [shareState, setShareState] = useState<{

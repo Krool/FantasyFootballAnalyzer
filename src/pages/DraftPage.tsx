@@ -122,6 +122,8 @@ export function DraftPage({ league }: DraftPageProps) {
               rosterSlots={league.rosterSlots}
               passTdPoints={league.passTdPoints}
               tePremiumPerReception={league.tePremiumPerReception}
+              leagueStatus={league.status}
+              currentWeek={league.currentWeek}
             />
           )
         ) : (

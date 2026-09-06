@@ -27,7 +27,7 @@ export function TeamCard({ league, team, onClick, luckMetrics }: TeamCardProps) 
     // played, but the subsets still diverge - a team whose starters all played
     // early can clear the bar while the league has not.
     const dollars =
-      !hasSeasonResults(allGraded) &&
+      !hasSeasonResults(allGraded, league) &&
       (league.draftType === 'auction' || allGraded.some(p => (p.auctionValue ?? 0) > 0));
     return {
       // Filter to this team's picks and exclude unknown players (e.g., "Player 12345")
