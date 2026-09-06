@@ -8,10 +8,11 @@
 // the 1.01 ends up graded "terrible".
 //
 // The honest stand-in is the FantasyPros consensus rank bundled in the draft
-// pool: rank each drafted player against the others at his position by where
-// the market ranked him, not by where he finished. Feed that into the same
-// expected-vs-actual math and "did you reach?" becomes answerable the moment
-// the draft ends.
+// pool: order the drafted players by where the market had them, not by where
+// they finished, and "did you reach?" becomes answerable the moment the draft
+// ends. Two orderings come out of that - consensusBoardSlots across the whole
+// board, which is what grades a pick, and consensusPositionRanks within a
+// position, which is what the board's Consensus column reads ("RB5").
 
 import type { DraftPick, League, Player } from '@/types';
 import type { DraftPoolFile, PoolPlayer } from '@/types/draft';
@@ -98,6 +99,55 @@ export function consensusPositionRanks(picks: DraftPick[], pool: DraftPoolFile):
   }
 
   return rankMap;
+}
+
+// Where the consensus board would have taken each drafted player, as a slot in
+// THIS draft: order every pick by the pool's overall rank and number them 1..N.
+// Keyed `${position}-${player.id}` like the maps above.
+//
+// The positional version answers "was he the right kicker"; it cannot answer
+// "in the third round?", because the first kicker off the board is expected
+// K1 wherever he goes, so the pick always grades even (owner-reported via
+// users, 2026-09-06: a round-1 kicker graded the same as Puka Nacua at 1.04,
+// and the same as a kicker taken at 13.01). Comparing a board slot to the
+// actual pick number is what "reach" and "steal" mean at a real draft table,
+// and it is the only form that can see across positions.
+//
+// Self-normalizing on purpose: slots run over the drafted players, not the
+// whole pool, so a 10-team 12-rounder and a 14-team 20-rounder both produce
+// slots 1..N and the same delta scale. Players the pool cannot match sort
+// behind everyone it knows, ordered by when they came off the board - taking
+// a player the market does not rank at all IS a reach, by definition.
+export function consensusBoardSlots(picks: DraftPick[], pool: DraftPoolFile): Map<string, number> {
+  const index = indexPool(pool);
+  const ranked = picks.map(pick => ({
+    pick,
+    rank: resolvePoolPlayer(pick.player, index)?.overallRank ?? null,
+  }));
+  ranked.sort((a, b) => {
+    if (a.rank !== null && b.rank !== null) return a.rank - b.rank;
+    if (a.rank !== null) return -1;
+    if (b.rank !== null) return 1;
+    return a.pick.pickNumber - b.pick.pickNumber;
+  });
+  const slots = new Map<string, number>();
+  ranked.forEach((entry, i) => {
+    slots.set(`${entry.pick.player.position}-${entry.pick.player.id}`, i + 1);
+  });
+  return slots;
+}
+
+// How much of the board the pool actually recognized. Below this the overall
+// slots are mostly "unranked, sorted by draft order", which would read every
+// early pick as a reach against a board that does not exist; grading stays on
+// the positional comparison instead.
+export const BOARD_MATCH_FLOOR = 0.6;
+
+export function consensusBoardCoverage(picks: DraftPick[], pool: DraftPoolFile): number {
+  if (picks.length === 0) return 0;
+  const index = indexPool(pool);
+  const matched = picks.filter(p => resolvePoolPlayer(p.player, index) !== undefined).length;
+  return matched / picks.length;
 }
 
 // Consensus market price in league dollars for each drafted player, keyed
@@ -192,8 +242,16 @@ function computeLeaguePicks(league: League, pool: DraftPoolFile): GradedPick[] {
   const market = isAuction
     ? marketAuctionValues(allPicks, pool, league.auctionBudget ?? 200)
     : undefined;
+  // Snake drafts grade on the overall board (reach vs steal in draft slots),
+  // which needs the pool to actually recognize the board. Below the floor the
+  // slots are mostly draft order wearing a consensus hat, so fall back to the
+  // positional comparison rather than calling every early pick a reach.
+  const board =
+    !isAuction && consensusBoardCoverage(allPicks, pool) >= BOARD_MATCH_FLOOR
+      ? consensusBoardSlots(allPicks, pool)
+      : undefined;
   // An empty map means the pool matched nobody (name drift, odd platform);
   // engaging dollar mode then would price every pick against the $1
   // fallback. Stay in rank mode instead.
-  return gradeAllPicks(league, override, market?.size ? market : undefined);
+  return gradeAllPicks(league, override, market?.size ? market : undefined, board);
 }

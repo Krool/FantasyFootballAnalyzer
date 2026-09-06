@@ -5,6 +5,7 @@ import {
   calculateExpectedRanksByCost,
   calculateAuctionRounds,
   gradePick,
+  gradeConsensusBoardPick,
   gradeAuctionPick,
   gradeAllPicks,
   calculateDraftSummary,
@@ -616,5 +617,37 @@ describe('auctionOverpayDamage', () => {
     expect(auctionOverpayDamage(20, 60)).toBe(0);
     expect(auctionOverpayDamage(-5, 40)).toBeGreaterThan(0); // floor is inclusive
     expect(auctionOverpayDamage(-3, 1, 100)).toBeGreaterThan(0); // $3 is $6 at a $200 scale
+  });
+});
+
+
+// Overall-board consensus bands are expressed in rounds, so the same event -
+// "he fell a full round past his slot" - grades the same in an 8-team league
+// and a 16-team one, despite being a very different number of picks.
+describe('gradeConsensusBoardPick', () => {
+  it('scales its bands with the league size', () => {
+    // Falling one full round is the steal threshold either way.
+    expect(gradeConsensusBoardPick(12, 12)).toBe('great');
+    expect(gradeConsensusBoardPick(11, 12)).toBe('good');
+    expect(gradeConsensusBoardPick(8, 8)).toBe('great');
+    expect(gradeConsensusBoardPick(7, 8)).toBe('good');
+  });
+
+  it('treats half a round either side of the slot as meeting the market', () => {
+    expect(gradeConsensusBoardPick(0, 12)).toBe('good');
+    expect(gradeConsensusBoardPick(-6, 12)).toBe('good');
+    expect(gradeConsensusBoardPick(-7, 12)).toBe('bad');
+  });
+
+  it('reserves terrible for a reach of more than two rounds', () => {
+    expect(gradeConsensusBoardPick(-24, 12)).toBe('bad');
+    expect(gradeConsensusBoardPick(-25, 12)).toBe('terrible');
+    // The reported case: a round-1 kicker the board had ~150 slots later.
+    expect(gradeConsensusBoardPick(-150, 12)).toBe('terrible');
+  });
+
+  it('falls back to a 12-team round when the league size is unknown', () => {
+    expect(gradeConsensusBoardPick(12, 0)).toBe('great');
+    expect(gradeConsensusBoardPick(-7, 0)).toBe('bad');
   });
 });

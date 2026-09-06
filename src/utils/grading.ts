@@ -199,6 +199,21 @@ export function gradeConsensusPick(valueOverExpected: number): DraftGrade {
   return 'terrible'; // nobody else had him within five spots at his position
 }
 
+// Consensus grading on the OVERALL board: the delta is slots on the draft
+// board, so the bands are rounds, not positional places. Expressed in picks
+// per round so an 8-team and a 16-team league grade on the same yardstick -
+// "he fell a round" is the same event in both, but a very different number.
+export function gradeConsensusBoardPick(
+  valueOverExpected: number,
+  picksPerRound: number,
+): DraftGrade {
+  const round = picksPerRound > 0 ? picksPerRound : 12;
+  if (valueOverExpected >= round) return 'great'; // fell a full round past the market
+  if (valueOverExpected >= -round / 2) return 'good'; // within half a round of his slot
+  if (valueOverExpected >= -round * 2) return 'bad'; // a reach of a round or two
+  return 'terrible'; // taken more than two rounds before the board had him
+}
+
 // Grade a pick for auction drafts based on cost vs performance
 export function gradeAuctionPick(
   pick: DraftPick,
@@ -347,7 +362,12 @@ export function gradeAllPicks(
   // a $4 flier stops grading like a $20 torching just because half the
   // league went for $1-3 and rank space is packed there (owner-reported,
   // 2026-09-01: Deebo at $4/-12/Terrible next to a real $20 overpay).
-  auctionMarketOverride?: Map<string, number>
+  auctionMarketOverride?: Map<string, number>,
+  // Snake consensus mode: where the consensus board would have taken each
+  // player in THIS draft (see consensusBoardSlots). Present, value and grade
+  // become board slot minus actual pick - a cross-positional reach/steal -
+  // instead of a within-position comparison that cannot see the round.
+  consensusBoardOverride?: Map<string, number>
 ): GradedPick[] {
   // Collect all draft picks from all teams
   const allPicks = league.teams.flatMap(team => team.draftPicks || []);
@@ -425,7 +445,28 @@ export function gradeAllPicks(
     }
 
     // Consensus mode ranks by market opinion, not by what happened, so it gets
-    // its own bands (see gradeConsensusPick).
+    // its own bands (see gradeConsensusPick / gradeConsensusBoardPick).
+    // positionRank stays positional either way: it is the "Consensus" column
+    // ("RB5"), which is still the useful thing to read off a row.
+    const boardSlot = consensusBoardOverride?.get(
+      `${pick.player.position}-${pick.player.id}`,
+    );
+    if (positionRanksOverride && boardSlot !== undefined) {
+      // Positive means he fell to you, matching the positional convention
+      // (expectedRank - positionRank): the market had him at slot 20 and you
+      // got him at 34, that is +14 of value. A reach is negative.
+      const boardValue = pick.pickNumber - boardSlot;
+      return {
+        ...pick,
+        grade: gradeConsensusBoardPick(
+          boardValue,
+          league.totalTeams || league.teams.length || 0,
+        ),
+        positionRank,
+        expectedRank: boardSlot,
+        valueOverExpected: boardValue,
+      };
+    }
     const grade = positionRanksOverride
       ? gradeConsensusPick(valueOverExpected)
       : gradePick(pick, positionRank, expectedRank);

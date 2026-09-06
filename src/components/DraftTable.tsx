@@ -1,7 +1,14 @@
 import { useState, useMemo } from 'react';
 import type { RosterSlots, ScoringType, Team } from '@/types';
 import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected, describeAuctionMarket, auctionBadgeWord } from '@/utils/grading';
-import { consensusPositionRanks, hasSeasonResults, marketAuctionValues } from '@/utils/consensusGrade';
+import {
+  BOARD_MATCH_FLOOR,
+  consensusBoardCoverage,
+  consensusBoardSlots,
+  consensusPositionRanks,
+  hasSeasonResults,
+  marketAuctionValues,
+} from '@/utils/consensusGrade';
 import { exportDraftBoard, exportDraftOrder } from '@/utils/exportDraftBoard';
 import { logger } from '@/utils/logger';
 import { nominationStats } from '@/utils/nominationAnalysis';
@@ -114,10 +121,22 @@ export function DraftTable({
     // deltas (which the $1-4 tail distorts into false Terribles).
     const market =
       !hasResults && isAuction ? marketAuctionValues(allPicks, POOL, auctionBudget ?? 200) : undefined;
+    // Snake consensus grades on the overall board, so a pick is judged on the
+    // round it cost, not only on being the right player at his position (a
+    // round-1 kicker used to grade the same as one taken in the 13th).
+    // Needs the pool to recognize most of the board; below the floor the
+    // slots are draft order in disguise.
+    const board =
+      !hasResults && !isAuction && consensusBoardCoverage(allPicks, POOL) >= BOARD_MATCH_FLOOR
+        ? consensusBoardSlots(allPicks, POOL)
+        : undefined;
     // An empty market map (pool matched nobody) must not engage dollar mode.
-    return gradeAllPicks(mockLeague, override, market?.size ? market : undefined).filter(
-      pick => !isPlaceholderPlayer(pick.player.name),
-    );
+    return gradeAllPicks(
+      mockLeague,
+      override,
+      market?.size ? market : undefined,
+      board,
+    ).filter(pick => !isPlaceholderPlayer(pick.player.name));
   }, [teams, totalTeams, isAuction, auctionBudget, hasResults, allPicks]);
 
   // True when the value/grade numbers are dollar deltas, not rank deltas.
@@ -403,8 +422,9 @@ export function DraftTable({
             </>
           ) : (
             <>
-              Grades measure each pick against the FantasyPros consensus rank (did the player go
-              earlier or later at his position than the market said he should).
+              Grades measure each pick against the FantasyPros consensus board: how many draft
+              slots earlier or later he went than the market had him, so the round a pick cost
+              counts, not just whether he was the right player at his position.
             </>
           )}{' '}
           The points are projections for the season under your league&apos;s scoring. The standings
@@ -674,7 +694,7 @@ export function DraftTable({
                 {hasResults ? 'Pos Rank' : 'Consensus'}{getSortIndicator('posRank')}
               </th>
               {(!isAuction || valuesInDollars) && (
-                <th onClick={() => handleSort('value')} onKeyDown={handleSortKeyDown('value')} tabIndex={0} aria-sort={ariaSortFor('value')} className={styles.sortable} role="button" aria-label="Sort by Value" title={valuesInDollars ? 'Market price minus price paid, in league dollars: positive means he went under what the market says he is worth' : hasResults ? 'Position rank beaten, versus where he was drafted at his position' : 'Positions gained on the consensus: positive means he fell past where the market ranked him'}>
+                <th onClick={() => handleSort('value')} onKeyDown={handleSortKeyDown('value')} tabIndex={0} aria-sort={ariaSortFor('value')} className={styles.sortable} role="button" aria-label="Sort by Value" title={valuesInDollars ? 'Market price minus price paid, in league dollars: positive means he went under what the market says he is worth' : hasResults ? 'Position rank beaten, versus where he was drafted at his position' : 'Draft slots gained on the consensus board: positive means he fell past where the market had him, negative means you reached'}>
                   Value{getSortIndicator('value')}
                 </th>
               )}

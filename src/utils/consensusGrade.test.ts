@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { consensusPositionRanks, hasSeasonResults, resolvePoolPlayer, indexPool, marketAuctionValues } from './consensusGrade';
+import {
+  BOARD_MATCH_FLOOR,
+  consensusBoardCoverage,
+  consensusBoardSlots,
+  consensusPositionRanks,
+  hasSeasonResults,
+  resolvePoolPlayer,
+  indexPool,
+  marketAuctionValues,
+} from './consensusGrade';
+import { POOL as REAL_POOL } from '@/data/draftPool';
+import { gradeLeaguePicks } from './consensusGrade';
 import { gradeAllPicks, gradeConsensusPick } from './grading';
 import type { DraftPick, League, Player } from '@/types';
 import type { DraftPoolFile } from '@/types/draft';
@@ -317,5 +328,108 @@ describe('marketAuctionValues and dollar-mode auction grading', () => {
     // Rank space, not dollars: the old behavior survives for callers that
     // never pass a market.
     expect(Math.abs(flier.valueOverExpected)).toBeLessThan(3);
+  });
+});
+
+
+describe('consensusBoardSlots', () => {
+  it('orders the whole drafted board by consensus rank, not by draft order', () => {
+    // Drafted worst-first; the board must still read best-first.
+    const picks = [
+      pick(1, player('HOU', 'DST')),      // overall 177
+      pick(2, player('12000', 'RB')),     // overall 134
+      pick(3, player('11584', 'RB')),     // overall 51
+      pick(4, player('9221', 'RB')),      // overall 1
+    ];
+    const slots = consensusBoardSlots(picks, POOL);
+    expect(slots.get('RB-9221')).toBe(1);
+    expect(slots.get('RB-11584')).toBe(2);
+    expect(slots.get('RB-12000')).toBe(3);
+    expect(slots.get('DST-HOU')).toBe(4);
+  });
+
+  it('sorts players the pool cannot rank behind the ones it can', () => {
+    const picks = [
+      pick(1, player('99999', 'WR')),   // not in the pool
+      pick(2, player('9221', 'RB')),    // overall 1
+      pick(3, player('88888', 'WR')),   // not in the pool either
+    ];
+    const slots = consensusBoardSlots(picks, POOL);
+    expect(slots.get('RB-9221')).toBe(1);
+    // Unranked keep draft order behind everyone the board knows.
+    expect(slots.get('WR-99999')).toBe(2);
+    expect(slots.get('WR-88888')).toBe(3);
+  });
+
+  it('reports how much of the board the pool recognized', () => {
+    const known = [pick(1, player('9221', 'RB')), pick(2, player('11584', 'RB'))];
+    expect(consensusBoardCoverage(known, POOL)).toBe(1);
+    const half = [pick(1, player('9221', 'RB')), pick(2, player('99999', 'WR'))];
+    expect(consensusBoardCoverage(half, POOL)).toBe(0.5);
+    expect(0.5).toBeLessThan(BOARD_MATCH_FLOOR);
+  });
+});
+
+// The reported problem (via users, 2026-09-06): grading compared a pick only
+// with others at his position, so the first kicker off the board was expected
+// K1 wherever he went and always graded even. A round-1 kicker scored the same
+// as the WR taken at 1.04 and the same as a kicker taken in the 13th.
+describe('grading a draft on the overall consensus board', () => {
+  const TEAMS = 12;
+  const ROUNDS = 14;
+
+  function leagueDrafting(order: Array<{ id: string; name: string; pos: string; team: string; sleeperId?: string }>): League {
+    const picks: DraftPick[] = order.map((p, i) => ({
+      pickNumber: i + 1,
+      round: Math.floor(i / TEAMS) + 1,
+      player: { id: p.id, platformId: p.sleeperId ?? p.id, name: p.name, position: p.pos, team: p.team },
+      teamId: String((i % TEAMS) + 1),
+      teamName: `Team ${(i % TEAMS) + 1}`,
+      isKeeper: false,
+    }));
+    return {
+      id: 'L', platform: 'sleeper', name: 'Board Test', season: REAL_POOL.season,
+      draftType: 'snake', scoringType: 'half_ppr', totalTeams: TEAMS, isLoaded: true,
+      teams: Array.from({ length: TEAMS }, (_, t) => ({
+        id: String(t + 1), name: `Team ${t + 1}`, roster: [],
+        draftPicks: picks.filter(p => p.teamId === String(t + 1)),
+        transactions: [], trades: [],
+        wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0,
+      })),
+    } as unknown as League;
+  }
+
+  // Real pool: a kicker's consensus rank sits ~150+, far below any first-round
+  // slot, which is the whole point. The bot refreshes these ranks daily, so the
+  // assertions ride on that gap, never on a specific number.
+  const skill = REAL_POOL.players.filter(p => !['K', 'DST'].includes(p.pos));
+  const kickers = REAL_POOL.players.filter(p => p.pos === 'K');
+
+  function boardWithKickerAt(slot: number) {
+    const order = skill.slice(0, TEAMS * ROUNDS - 1);
+    order.splice(slot - 1, 0, kickers[0]);
+    return order.slice(0, TEAMS * ROUNDS);
+  }
+
+  it('grades the top kicker taken in round 1 as a reach', () => {
+    const graded = gradeLeaguePicks(leagueDrafting(boardWithKickerAt(5)), REAL_POOL);
+    const kicker = graded.find(g => g.player.position === 'K')!;
+    expect(kicker.pickNumber).toBe(5);
+    expect(kicker.valueOverExpected).toBeLessThan(-TEAMS * 2);
+    expect(kicker.grade).toBe('terrible');
+  });
+
+  it('does not punish the same kicker taken where kickers go', () => {
+    const graded = gradeLeaguePicks(leagueDrafting(boardWithKickerAt(160)), REAL_POOL);
+    const kicker = graded.find(g => g.player.position === 'K')!;
+    expect(kicker.pickNumber).toBe(160);
+    expect(kicker.grade).not.toBe('terrible');
+  });
+
+  it('leaves a pick taken at his consensus slot at market', () => {
+    const graded = gradeLeaguePicks(leagueDrafting(skill.slice(0, TEAMS * ROUNDS)), REAL_POOL);
+    const early = graded.find(g => g.pickNumber === 4)!;
+    expect(Math.abs(early.valueOverExpected)).toBeLessThanOrEqual(2);
+    expect(early.grade).toBe('good');
   });
 });
