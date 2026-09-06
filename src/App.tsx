@@ -116,6 +116,13 @@ const PAGE_TITLES: Record<string, string> = {
   '/draft-grades': 'Draft Grades',
 };
 
+// Router paths are basename-relative; window.location.pathname is not. Join
+// them so the two can be compared (see the share-param effect below).
+function routerPathToUrl(pathname: string): string {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  return base ? `${base}${pathname}` : pathname;
+}
+
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -543,6 +550,15 @@ function App() {
     const wanted = `${league.platform}:${league.id}`;
     const path = location.pathname;
     if (path === '/yahoo-success' || path === '/yahoo-error') return;
+    // React Router 7 commits location updates inside startTransition, so
+    // useLocation() lags a navigate() that has ALREADY written history. A
+    // rewrite built from the lagging value navigates back to the old path and
+    // cancels the redirect that was in flight — which is exactly what happened
+    // on connect: handleLoadLeague pushed /draft, this effect replaced it with
+    // /?league=…, and the home route's <Navigate> (whose effect deps never
+    // change) never fired again, leaving the app parked on / rendering nothing
+    // under the header. Skip the pass; a settled location re-runs this effect.
+    if (window.location.pathname !== routerPathToUrl(path)) return;
     const params = new URLSearchParams(location.search);
     if (params.get('league') === wanted) return;
     // A share link for a DIFFERENT league is still loading: the param on the

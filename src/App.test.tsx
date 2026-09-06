@@ -6,8 +6,8 @@
 // not what the pages draw.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, useLocation } from 'react-router-dom';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { BrowserRouter, useLocation } from 'react-router-dom';
 import App from './App';
 import type { League } from '@/types';
 
@@ -94,13 +94,24 @@ vi.mock('@/components/SeasonLoadingOverlay', () => ({ SeasonLoadingOverlay: () =
 vi.mock('@/components/DraftPrepBanner', () => ({ DraftPrepBanner: () => null }));
 vi.mock('@/components/GuestBanner', () => ({ GuestBanner: () => null }));
 vi.mock('@/components/SeasonFallbackNotice', () => ({ SeasonFallbackNotice: () => null }));
-vi.mock('@/pages/HomePage', () => ({ HomePage: () => <div data-testid="home-page" /> }));
+// The connect form stands in for the real one: a button that hands App the
+// credentials, so handleLoadLeague (load -> navigate) runs for real.
+vi.mock('@/pages/HomePage', () => ({
+  HomePage: ({ onLoadLeague }: { onLoadLeague: (c: unknown) => void }) => (
+    <div data-testid="home-page">
+      <button type="button" onClick={() => onLoadLeague({ platform: 'sleeper', leagueId: '77' })}>
+        Load League
+      </button>
+    </div>
+  ),
+}));
 // The lazy pages the routes below can reach (lazyPage resolves these mocks
 // through the same dynamic import).
 vi.mock('@/pages/AwardsPage', () => ({ AwardsPage: () => <div data-testid="awards-page" /> }));
 vi.mock('@/pages/RankingsPage', () => ({ RankingsPage: () => <div data-testid="rankings-page" /> }));
 vi.mock('@/pages/TrendsPage', () => ({ TrendsPage: () => <div data-testid="trends-page" /> }));
 vi.mock('@/pages/DraftPage', () => ({ DraftPage: () => <div data-testid="draft-page" /> }));
+vi.mock('@/pages/DraftRoomPage', () => ({ DraftRoomPage: () => <div data-testid="draft-room-page" /> }));
 vi.mock('@/pages/TeamsPage', () => ({ TeamsPage: () => <div data-testid="teams-page" /> }));
 
 function sleeperLeague(id: string, overrides: Partial<League> = {}): League {
@@ -122,18 +133,24 @@ function LocationSpy() {
   return <div data-testid="loc">{location.pathname + location.search}</div>;
 }
 
+// A real history-backed router, not MemoryRouter: App compares the browser
+// URL against useLocation() to spot a navigation the router has not committed
+// yet (React Router 7 commits location updates in a transition), and only a
+// history-backed router reproduces that.
 function renderApp(initialEntry: string) {
+  window.history.replaceState(null, '', initialEntry);
   return render(
-    <MemoryRouter initialEntries={[initialEntry]}>
+    <BrowserRouter>
       <App />
       <LocationSpy />
-    </MemoryRouter>,
+    </BrowserRouter>,
   );
 }
 
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
+  window.history.replaceState(null, '', '/');
   vi.clearAllMocks();
   h.store.league = null;
   h.store.isLoading = false;
@@ -281,5 +298,62 @@ describe('Yahoo OAuth return (/yahoo-success)', () => {
     expect(await screen.findByTestId('home-page')).toBeTruthy();
     expect(h.saveTokens).toHaveBeenCalledWith(tokens);
     expect(screen.getByTestId('loc').textContent).toBe('/');
+  });
+});
+
+
+// A connect resolves the league and navigates in the same tick. React Router 7
+// commits the location in a transition, so the render that reacts to the new
+// league still reports the OLD pathname; a URL rewrite built from it navigates
+// back and cancels the redirect. The home route's <Navigate> fires once (its
+// effect deps never change again), so a cancelled redirect stranded the app on
+// '/' rendering nothing under the header - the blank page users reported after
+// loading a league. These two pin the destinations; the one below pins the
+// rewrite guard that keeps them reachable.
+describe('connect flow lands on a page', () => {
+  it('reaches the draft analysis after connecting, share param and all', async () => {
+    renderApp('/');
+    fireEvent.click(await screen.findByRole('button', { name: 'Load League' }));
+
+    expect(await screen.findByTestId('draft-page')).toBeTruthy();
+    await waitFor(() =>
+      expect(decodeURIComponent(screen.getByTestId('loc').textContent ?? '')).toBe(
+        '/draft?league=sleeper:77',
+      ),
+    );
+  });
+
+  it('reaches the draft room when the connected league has not drafted yet', async () => {
+    h.loadMock.mockImplementation(async ({ leagueId }: { leagueId: string }) => {
+      const league = sleeperLeague(leagueId, { status: 'preseason' } as Partial<League>);
+      h.store.set({ league });
+      return league;
+    });
+    renderApp('/');
+    fireEvent.click(await screen.findByRole('button', { name: 'Load League' }));
+
+    expect(await screen.findByTestId('draft-room-page')).toBeTruthy();
+    await waitFor(() =>
+      expect(decodeURIComponent(screen.getByTestId('loc').textContent ?? '')).toBe(
+        '/draft-room?league=sleeper:77',
+      ),
+    );
+  });
+
+  it('leaves the URL alone when the browser has already left the rendered path', async () => {
+    h.store.league = sleeperLeague('55');
+    renderApp('/awards');
+    expect(await screen.findByTestId('awards-page')).toBeTruthy();
+    await waitFor(() => expect(window.location.pathname).toBe('/awards'));
+
+    // What an uncommitted navigate() looks like from inside the effect: history
+    // is already on the new path while useLocation() still reports the old one.
+    // Swapping the league gives the effect a param to want to rewrite.
+    window.history.replaceState(null, '', '/teams');
+    await act(async () => {
+      h.store.set({ league: sleeperLeague('66') });
+    });
+
+    expect(window.location.pathname).toBe('/teams');
   });
 });
