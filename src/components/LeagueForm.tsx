@@ -347,17 +347,30 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     }
   };
 
-  const handleSleeperLookup = async () => {
+  // Username the current sleeperLeagues list was fetched for. Load League
+  // checks it so a name typed but never searched still gets looked up. A
+  // remembered username + league id pair was matched last visit, so it
+  // starts as looked-up and a returning user still loads in one click.
+  const lookedUpUsernameRef = useRef<string | null>(
+    saved?.sleeper?.username && saved.sleeper.leagueId
+      ? saved.sleeper.username.trim().toLowerCase()
+      : null,
+  );
+
+  // Returns the leagues found (current season first), or null when the
+  // lookup produced nothing usable; the error state is already set then.
+  const handleSleeperLookup = async (): Promise<Array<{ id: string; name: string; season: string }> | null> => {
     const username = sleeperUsername.trim();
-    if (!username) return;
+    if (!username) return null;
     setSleeperLookupBusy(true);
     setSleeperLookupError(null);
     try {
       const found = await findLeaguesByUsername(username);
+      lookedUpUsernameRef.current = username.toLowerCase();
       if (found === null) {
         setSleeperLeagues([]);
         setSleeperLookupError('No Sleeper user with that username.');
-        return;
+        return null;
       }
       const { userId, leagues } = found;
       setSleeperLeagues(leagues);
@@ -367,10 +380,11 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
       rememberSleeperUsername(username, userId);
       if (leagues.length === 0) {
         setSleeperLookupError('That user has no leagues this season or last.');
-      } else {
-        setLeagueId(leagues[0].id);
-        setLeagueIdError(null);
+        return null;
       }
+      setLeagueId(leagues[0].id);
+      setLeagueIdError(null);
+      return leagues;
     } catch (err) {
       logger.error('Sleeper league lookup failed:', err);
       setSleeperLookupError(
@@ -378,6 +392,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
           ? 'No Sleeper user with that username.'
           : 'Could not reach Sleeper. Try again.'
       );
+      return null;
     } finally {
       setSleeperLookupBusy(false);
     }
@@ -413,7 +428,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     setSelectedYahooLeague('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (platform === 'yahoo') {
@@ -426,7 +441,27 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
       return;
     }
 
-    const trimmedId = leagueId.trim();
+    let trimmedId = leagueId.trim();
+
+    // Owner-reported (2026-09-05): username typed, Find leagues never
+    // pressed, Load League clicked. Do the search here instead of failing on
+    // the empty (or stale, saved-from-last-time) League ID: keep the typed
+    // ID if it belongs to that user, otherwise load the best guess, which
+    // is the first league found (current season first).
+    if (platform === 'sleeper' && !sleeperLookupBusy) {
+      const username = sleeperUsername.trim().toLowerCase();
+      if (username && username !== lookedUpUsernameRef.current) {
+        const leagues = await handleSleeperLookup();
+        if (leagues) {
+          trimmedId = leagues.some((l) => l.id === trimmedId) ? trimmedId : leagues[0].id;
+          setLeagueId(trimmedId);
+        } else if (!trimmedId) {
+          // The lookup error is on screen; nothing else to load.
+          return;
+        }
+      }
+    }
+
     if (!trimmedId) {
       // Owner-reported (2026-08-31): cookies pasted, League ID overlooked,
       // Load League silently did nothing. Say what's missing and point at it
@@ -904,13 +939,14 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
             // no explanation reads as a dead click. Submitting without an ID
             // surfaces the field error and focuses the field instead.
             isLoading ||
+            sleeperLookupBusy ||
             (platform === 'yahoo' && (!selectedYahooLeague || loadingYahooLeagues))
           }
         >
-          {isLoading ? (
+          {isLoading || sleeperLookupBusy ? (
             <>
               <span className={styles.spinner}></span>
-              Loading League...
+              {sleeperLookupBusy ? 'Finding leagues...' : 'Loading League...'}
             </>
           ) : (
             'Load League'
