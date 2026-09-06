@@ -550,6 +550,11 @@ function App() {
     const wanted = `${league.platform}:${league.id}`;
     const path = location.pathname;
     if (path === '/yahoo-success' || path === '/yahoo-error') return;
+    // '/' is not a surface a connected league can sit on — it renders nothing
+    // but the redirect below — so the param can only ever land on a URL the
+    // user is already leaving. Writing it there is what pinned the app to the
+    // blank home route; there is nothing to share here either way.
+    if (path === '/') return;
     // React Router 7 commits location updates inside startTransition, so
     // useLocation() lags a navigate() that has ALREADY written history. A
     // rewrite built from the lagging value navigates back to the old path and
@@ -680,7 +685,12 @@ function App() {
             path="/"
             element={
               league && !league.isGuest ? (
-                <Navigate to={isEmptyPreseason(league) ? '/draft-room' : '/draft'} replace />
+                // Keyed on the location so the redirect re-fires on every
+                // arrival at '/'. <Navigate> resolves an absolute path, so its
+                // effect deps never change and it otherwise fires exactly once
+                // per mount: anything that put the URL back on '/' left the
+                // league loaded, the nav hidden, and the page blank for good.
+                <Navigate key={location.key} to={isEmptyPreseason(league) ? '/draft-room' : '/draft'} replace />
               ) : (
                 // No league, or a guest visiting home: show the connect form
                 // and guest entry. This is also where the header's "Connect
