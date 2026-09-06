@@ -5,6 +5,7 @@ import {
   BOARD_MATCH_FLOOR,
   consensusBoardCoverage,
   consensusBoardSlots,
+  boardFormatFor,
   consensusPositionRanks,
   hasSeasonResults,
   marketAuctionValues,
@@ -138,7 +139,7 @@ export function DraftTable({
     // slots are draft order in disguise.
     const board =
       !hasResults && !isAuction && consensusBoardCoverage(allPicks, POOL) >= BOARD_MATCH_FLOOR
-        ? consensusBoardSlots(allPicks, POOL)
+        ? consensusBoardSlots(allPicks, POOL, boardFormatFor({ scoringType, rosterSlots }))
         : undefined;
     // An empty market map (pool matched nobody) must not engage dollar mode.
     return gradeAllPicks(
@@ -147,7 +148,7 @@ export function DraftTable({
       market?.size ? market : undefined,
       board,
     ).filter(pick => !isPlaceholderPlayer(pick.player.name));
-  }, [teams, totalTeams, isAuction, auctionBudget, hasResults, allPicks]);
+  }, [teams, totalTeams, isAuction, auctionBudget, hasResults, allPicks, scoringType, rosterSlots]);
 
   // True when the value/grade numbers are dollar deltas, not rank deltas.
   const valuesInDollars = !hasResults && isAuction;

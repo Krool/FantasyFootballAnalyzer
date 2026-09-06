@@ -3,6 +3,7 @@ import {
   BOARD_MATCH_FLOOR,
   consensusBoardCoverage,
   consensusBoardSlots,
+  boardFormatFor,
   firstWeekInProgress,
   consensusPositionRanks,
   hasSeasonResults,
@@ -13,7 +14,8 @@ import {
 import { POOL as REAL_POOL } from '@/data/draftPool';
 import { gradeLeaguePicks } from './consensusGrade';
 import { gradeAllPicks, gradeConsensusPick } from './grading';
-import type { DraftPick, League, Player } from '@/types';
+import type { DraftPick, League, Player, RosterSlots } from '@/types';
+import { DEFAULT_ROSTER_SLOTS } from './projectedRoster';
 import type { DraftPoolFile } from '@/types/draft';
 
 const poolPlayer = (id: string, name: string, pos: string, overallRank: number, sleeperId?: string) =>
@@ -418,7 +420,10 @@ describe('grading a draft on the overall consensus board', () => {
   const TEAMS = 12;
   const ROUNDS = 14;
 
-  function leagueDrafting(order: Array<{ id: string; name: string; pos: string; team: string; sleeperId?: string }>): League {
+  function leagueDrafting(
+    order: Array<{ id: string; name: string; pos: string; team: string; sleeperId?: string }>,
+    rosterSlots: RosterSlots = DEFAULT_ROSTER_SLOTS,
+  ): League {
     const picks: DraftPick[] = order.map((p, i) => ({
       pickNumber: i + 1,
       round: Math.floor(i / TEAMS) + 1,
@@ -429,7 +434,7 @@ describe('grading a draft on the overall consensus board', () => {
     }));
     return {
       id: 'L', platform: 'sleeper', name: 'Board Test', season: REAL_POOL.season,
-      draftType: 'snake', scoringType: 'half_ppr', totalTeams: TEAMS, isLoaded: true,
+      draftType: 'snake', scoringType: 'half_ppr', totalTeams: TEAMS, isLoaded: true, rosterSlots,
       teams: Array.from({ length: TEAMS }, (_, t) => ({
         id: String(t + 1), name: `Team ${t + 1}`, roster: [],
         draftPicks: picks.filter(p => p.teamId === String(t + 1)),
@@ -464,6 +469,41 @@ describe('grading a draft on the overall consensus board', () => {
     const kicker = graded.find(g => g.player.position === 'K')!;
     expect(kicker.pickNumber).toBe(160);
     expect(kicker.grade).not.toBe('terrible');
+  });
+
+  // Reported by users, 2026-09-06: "superflex league and it seems like every QB
+  // taken in early rounds are considered terrible". FantasyPros has Josh Allen
+  // 28th on its 1QB board and 1st on its superflex board, so a 2QB room taking
+  // him at 1.01 read as a two-round reach. consensusAvg already drops the 1QB
+  // signals in superflex; the board just has to ask it in the league's format.
+  it('grades a superflex room taking QBs in round 1 at market', () => {
+    const qbs = REAL_POOL.players.filter(p => p.pos === 'QB').slice(0, 6);
+    const rest = REAL_POOL.players.filter(p => !qbs.includes(p) && !['K', 'DST'].includes(p.pos));
+    const order = Array.from({ length: TEAMS * ROUNDS }, (_, i) =>
+      i % 2 === 0 && qbs.length ? qbs.shift()! : rest.shift()!,
+    );
+
+    const sfSlots = { ...DEFAULT_ROSTER_SLOTS, SUPERFLEX: 1 };
+    const sf = gradeLeaguePicks(leagueDrafting(order, sfSlots), REAL_POOL)
+      .filter(g => g.player.position === 'QB' && g.pickNumber <= TEAMS);
+    expect(sf.length).toBeGreaterThan(3);
+    expect(sf.every(g => g.grade !== 'terrible')).toBe(true);
+
+    // The same draft in a 1QB league IS a pile of reaches, and must still say so.
+    const oneQb = gradeLeaguePicks(leagueDrafting(order, DEFAULT_ROSTER_SLOTS), REAL_POOL)
+      .filter(g => g.player.position === 'QB' && g.pickNumber <= TEAMS);
+    expect(oneQb.filter(g => g.grade === 'terrible').length).toBeGreaterThan(2);
+  });
+
+  it('reads superflex off the roster slot, not the league flag', () => {
+    expect(boardFormatFor({ scoringType: 'ppr', rosterSlots: DEFAULT_ROSTER_SLOTS }))
+      .toEqual({ scoring: 'ppr', superflex: false });
+    expect(boardFormatFor({
+      scoringType: 'half_ppr',
+      rosterSlots: { ...DEFAULT_ROSTER_SLOTS, SUPERFLEX: 1 },
+    })).toEqual({ scoring: 'half_ppr', superflex: true });
+    expect(boardFormatFor({ scoringType: 'standard' }))
+      .toEqual({ scoring: 'standard', superflex: false });
   });
 
   it('leaves a pick taken at his consensus slot at market', () => {

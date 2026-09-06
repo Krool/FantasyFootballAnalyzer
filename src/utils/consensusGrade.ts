@@ -14,7 +14,8 @@
 // board, which is what grades a pick, and consensusPositionRanks within a
 // position, which is what the board's Consensus column reads ("RB5").
 
-import type { DraftPick, League, Player } from '@/types';
+import type { DraftPick, League, Player, RosterSlots, ScoringType } from '@/types';
+import { consensusAvg } from './consensus';
 import type { DraftPoolFile, PoolPlayer } from '@/types/draft';
 import { gradeAllPicks, type GradedPick } from './grading';
 import { matchKey } from './playerNames';
@@ -101,6 +102,35 @@ export function consensusPositionRanks(picks: DraftPick[], pool: DraftPoolFile):
   return rankMap;
 }
 
+// A league's format, as the consensus board understands it. Superflex is the
+// one that moves the board hard: FantasyPros' 1QB rank has Josh Allen 28th
+// and its superflex rank has him 1st, so grading a superflex draft against
+// the 1QB board called every early QB a reach of two rounds or more - the
+// whole first round of a 2QB league graded terrible (reported by users,
+// 2026-09-06). consensusAvg already knows this: in superflex it drops the
+// 1QB signals (ESPN ADP, Yahoo, the 1QB rank) instead of averaging them in.
+//
+// Scoring rides along the same way, through the scoring-matched Sleeper ADP.
+// Custom scoring falls back to half PPR, which is what it usually is a tweak
+// of. Reading the board through consensusAvg also means a pick is graded
+// against the same ordering the Rankings page showed while the user drafted.
+export interface BoardFormat {
+  scoring?: ScoringType;
+  superflex?: boolean;
+}
+
+// The board format a loaded league implies. SUPERFLEX comes off the roster
+// slots, never league.hasSuperflex: every other piece of QB pricing in the app
+// keys off the slot, and a league can carry the flag without the slot.
+export function boardFormatFor(
+  league: Pick<League, 'scoringType'> & { rosterSlots?: RosterSlots },
+): BoardFormat {
+  return {
+    scoring: league.scoringType,
+    superflex: (league.rosterSlots?.SUPERFLEX ?? 0) > 0,
+  };
+}
+
 // Where the consensus board would have taken each drafted player, as a slot in
 // THIS draft: order every pick by the pool's overall rank and number them 1..N.
 // Keyed `${position}-${player.id}` like the maps above.
@@ -118,12 +148,19 @@ export function consensusPositionRanks(picks: DraftPick[], pool: DraftPoolFile):
 // slots 1..N and the same delta scale. Players the pool cannot match sort
 // behind everyone it knows, ordered by when they came off the board - taking
 // a player the market does not rank at all IS a reach, by definition.
-export function consensusBoardSlots(picks: DraftPick[], pool: DraftPoolFile): Map<string, number> {
+export function consensusBoardSlots(
+  picks: DraftPick[],
+  pool: DraftPoolFile,
+  format: BoardFormat = {},
+): Map<string, number> {
   const index = indexPool(pool);
-  const ranked = picks.map(pick => ({
-    pick,
-    rank: resolvePoolPlayer(pick.player, index)?.overallRank ?? null,
-  }));
+  const ranked = picks.map(pick => {
+    const pooled = resolvePoolPlayer(pick.player, index);
+    return {
+      pick,
+      rank: pooled ? consensusAvg(pooled, format.scoring ?? 'half_ppr', format.superflex ?? false) : null,
+    };
+  });
   ranked.sort((a, b) => {
     if (a.rank !== null && b.rank !== null) return a.rank - b.rank;
     if (a.rank !== null) return -1;
@@ -270,7 +307,7 @@ function computeLeaguePicks(league: League, pool: DraftPoolFile): GradedPick[] {
   // positional comparison rather than calling every early pick a reach.
   const board =
     !isAuction && consensusBoardCoverage(allPicks, pool) >= BOARD_MATCH_FLOOR
-      ? consensusBoardSlots(allPicks, pool)
+      ? consensusBoardSlots(allPicks, pool, boardFormatFor(league))
       : undefined;
   // An empty map means the pool matched nobody (name drift, odd platform);
   // engaging dollar mode then would price every pick against the $1
