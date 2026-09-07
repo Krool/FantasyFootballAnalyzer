@@ -6,6 +6,7 @@ import { useSounds } from '@/hooks/useSounds';
 import { logger } from '@/utils/logger';
 import { Analytics } from '@/utils/analytics';
 import { hasDraftedPoolSeason } from '@/utils/draftSeasonState';
+import { importChunk } from '@/utils/staleChunk';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -89,9 +90,10 @@ export function Header({
       // grading), so a static import here would park the ~450KB pool JSON in
       // the eager entry chunk on every route. The catch also covers a failed
       // chunk load (offline, or a stale deploy hash), which would otherwise be
-      // a silent unhandled rejection.
+      // a silent unhandled rejection. importChunk holds the promise open
+      // while the stale-deploy reload is in flight instead of alerting.
       Analytics.pdfExported('league_report');
-      import('@/utils/exportPdf')
+      importChunk(() => import('@/utils/exportPdf'), 'PDF export')
         .then(({ exportLeagueReport }) => exportLeagueReport(league))
         .catch(err => {
           logger.error('PDF export failed:', err);

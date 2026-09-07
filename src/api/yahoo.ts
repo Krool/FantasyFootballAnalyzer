@@ -2,6 +2,7 @@ import type { League, LeagueCredentials, LeagueStatus, SeasonOption, Team, Draft
 import { logger } from '@/utils/logger';
 import { decideTradeWinner } from '@/utils/tradeVerdict';
 import { calculateGamesPAR, calculateReplacementLevels } from '@/utils/par';
+import { safeLocalStorage, safeSessionStorage } from '@/utils/safeStorage';
 
 // Backend API URL - Vercel deployment
 const API_BASE = import.meta.env.VITE_YAHOO_API_URL || 'https://fantasy-football-analyzer-mu.vercel.app';
@@ -89,36 +90,36 @@ interface YahooTokens {
 
 // Token management
 export function saveTokens(tokens: YahooTokens): void {
-  localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
+  safeLocalStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
   // A refresh response may omit the refresh token; keep the one we have.
   if (tokens.refresh_token) {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
+    safeLocalStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
   }
-  localStorage.setItem(
+  safeLocalStorage.setItem(
     STORAGE_KEYS.TOKEN_EXPIRY,
     String(Date.now() + tokens.expires_in * 1000)
   );
 }
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  return safeLocalStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
 }
 
 export function getRefreshToken(): string | null {
-  return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  return safeLocalStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
 }
 
 export function isTokenExpired(): boolean {
-  const expiry = localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY);
+  const expiry = safeLocalStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY);
   if (!expiry) return true;
   // Add 5 minute buffer
   return Date.now() > parseInt(expiry) - 5 * 60 * 1000;
 }
 
 export function clearTokens(): void {
-  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-  localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
+  safeLocalStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+  safeLocalStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  safeLocalStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
 }
 
 // A stored refresh token counts as logged in: the next API call mints a
@@ -147,7 +148,7 @@ export async function getAuthUrl(forceLogin = false): Promise<string> {
 
   // Store state in sessionStorage for CSRF validation
   if (data.state) {
-    sessionStorage.setItem(STORAGE_KEYS.OAUTH_STATE, data.state);
+    safeSessionStorage.setItem(STORAGE_KEYS.OAUTH_STATE, data.state);
   }
 
   return data.authUrl;
@@ -155,9 +156,9 @@ export async function getAuthUrl(forceLogin = false): Promise<string> {
 
 // Validate OAuth state for CSRF protection
 export function validateOAuthState(receivedState: string): boolean {
-  const storedState = sessionStorage.getItem(STORAGE_KEYS.OAUTH_STATE);
+  const storedState = safeSessionStorage.getItem(STORAGE_KEYS.OAUTH_STATE);
   // Clear the stored state after validation attempt
-  sessionStorage.removeItem(STORAGE_KEYS.OAUTH_STATE);
+  safeSessionStorage.removeItem(STORAGE_KEYS.OAUTH_STATE);
 
   if (!storedState || !receivedState) {
     return false;
@@ -168,7 +169,7 @@ export function validateOAuthState(receivedState: string): boolean {
 
 // Clear OAuth state (call on auth failure)
 export function clearOAuthState(): void {
-  sessionStorage.removeItem(STORAGE_KEYS.OAUTH_STATE);
+  safeSessionStorage.removeItem(STORAGE_KEYS.OAUTH_STATE);
 }
 
 // The OAuth round trip is a full page load, so the route and league the user

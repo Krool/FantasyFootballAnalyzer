@@ -5,6 +5,7 @@ import { findLeaguesByUsername } from '@/api/sleeper';
 import { normalizeLeagueId } from '@/utils/leagueId';
 import { loadLastConnection, rememberSleeperUsername } from '@/utils/lastConnection';
 import { loadESPNCredentials } from '@/utils/espnCredentials';
+import { normalizeEspnS2, normalizeSwid, isEspnS2Valid, isSwidValid } from '@/utils/espnCookies';
 import { logger } from '@/utils/logger';
 import { Analytics } from '@/utils/analytics';
 import styles from './LeagueForm.module.css';
@@ -22,43 +23,6 @@ const YAHOO_SUPPORTED_SEASONS = Array.from(
 // once published; defaults to '' (unset) so detection silently no-ops in dev.
 const ESPN_EXTENSION_ID =
   (import.meta.env.VITE_ESPN_EXTENSION_ID as string | undefined) || '';
-
-const SWID_REGEX = /\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}/;
-const SWID_BARE_REGEX = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
-
-// Strip common paste mistakes: cookie name prefix, quotes, whitespace, trailing semicolons.
-function normalizeEspnS2(raw: string): string {
-  return raw
-    .trim()
-    .replace(/^espn_s2\s*=\s*/i, '')
-    .replace(/^["']|["']$/g, '')
-    .replace(/;+\s*$/, '')
-    .trim();
-}
-
-function normalizeSwid(raw: string): string {
-  let v = raw
-    .trim()
-    .replace(/^swid\s*=\s*/i, '')
-    .replace(/^["']|["']$/g, '')
-    .replace(/;+\s*$/, '')
-    .trim();
-  // Users often paste the bare UUID without braces - add them back.
-  if (!v.startsWith('{') && SWID_BARE_REGEX.test(v)) {
-    const match = v.match(SWID_BARE_REGEX);
-    if (match) v = `{${match[0]}}`;
-  }
-  return v;
-}
-
-function isEspnS2Valid(v: string): boolean {
-  // ESPN's espn_s2 is opaque but always long; ~300-400 base64-ish chars.
-  return v.length >= 100;
-}
-
-function isSwidValid(v: string): boolean {
-  return SWID_REGEX.test(v);
-}
 
 // Set right before the form's Yahoo redirect so the post-OAuth remount lands
 // back on the Yahoo tab instead of the Sleeper default.

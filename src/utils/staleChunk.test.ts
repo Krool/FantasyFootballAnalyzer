@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { reloadOnceForStaleChunk, resolveLazyPageModule, runtime } from './staleChunk';
+import { importChunk, reloadOnceForStaleChunk, resolveLazyPageModule, runtime } from './staleChunk';
 
 // These pin the stale-deploy self-heal: a visitor on an old tab whose lazy
 // import resolves against a mixed build (chunk loads, named export missing)
@@ -106,6 +106,56 @@ describe('resolveLazyPageModule', () => {
     await expect(
       resolveLazyPageModule(async () => ({}) as { TeamsPage?: () => null }, 'TeamsPage'),
     ).rejects.toThrow('Stale chunk: module has no export TeamsPage');
+    expect(runtime.reload).not.toHaveBeenCalled();
+  });
+});
+
+describe('importChunk', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    runtime.inFlight = false;
+    vi.spyOn(runtime, 'reload').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    sessionStorage.clear();
+  });
+
+  it('passes a loaded module straight through', async () => {
+    const mod = { exportLeagueReport: () => {} };
+    await expect(importChunk(async () => mod, 'PDF export')).resolves.toBe(mod);
+    expect(runtime.reload).not.toHaveBeenCalled();
+  });
+
+  it('never settles when the import resolved empty and a reload is already in flight', async () => {
+    // vite:preloadError reloaded and swallowed the rethrow, so Vite resolved
+    // the import to undefined. The caller must not alert during the reload.
+    expect(reloadOnceForStaleChunk()).toBe(true);
+    const pending = importChunk(async () => undefined as unknown as object, 'PDF export');
+    const outcome = await Promise.race([
+      pending.then(() => 'settled', () => 'settled'),
+      new Promise(resolve => setTimeout(() => resolve('pending'), 25)),
+    ]);
+    expect(outcome).toBe('pending');
+    expect(runtime.reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts the one-shot reload itself when nothing else has', async () => {
+    const pending = importChunk(async () => undefined as unknown as object, 'PDF export');
+    const outcome = await Promise.race([
+      pending.then(() => 'settled', () => 'settled'),
+      new Promise(resolve => setTimeout(() => resolve('pending'), 25)),
+    ]);
+    expect(outcome).toBe('pending');
+    expect(runtime.reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws when a reload was already attempted (broken deploy)', async () => {
+    sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+    await expect(
+      importChunk(async () => undefined as unknown as object, 'PDF export'),
+    ).rejects.toThrow('Stale chunk: PDF export failed to load');
     expect(runtime.reload).not.toHaveBeenCalled();
   });
 });

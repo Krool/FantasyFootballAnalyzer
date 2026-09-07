@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as sounds from '@/utils/sounds';
+import { safeLocalStorage } from '@/utils/safeStorage';
 
 const SOUND_PREFS_KEY = 'ff-analyzer-sounds-enabled';
 
@@ -12,7 +13,7 @@ function installFirstInteractionInit(): void {
   interactionListenersInstalled = true;
   const handleFirstInteraction = () => {
     sounds.initAudio();
-    sounds.setMuted(localStorage.getItem(SOUND_PREFS_KEY) === 'false');
+    sounds.setMuted(safeLocalStorage.getItem(SOUND_PREFS_KEY) === 'false');
     document.removeEventListener('click', handleFirstInteraction);
     document.removeEventListener('keydown', handleFirstInteraction);
   };
@@ -22,7 +23,7 @@ function installFirstInteractionInit(): void {
 
 export function useSounds() {
   const [isMuted, setIsMuted] = useState(() => {
-    const stored = localStorage.getItem(SOUND_PREFS_KEY);
+    const stored = safeLocalStorage.getItem(SOUND_PREFS_KEY);
     return stored === 'false';
   });
 
@@ -33,7 +34,7 @@ export function useSounds() {
   // Sync muted state with sounds utility
   useEffect(() => {
     sounds.setMuted(isMuted);
-    localStorage.setItem(SOUND_PREFS_KEY, String(!isMuted));
+    safeLocalStorage.setItem(SOUND_PREFS_KEY, String(!isMuted));
   }, [isMuted]);
 
   const toggleMute = useCallback(() => {

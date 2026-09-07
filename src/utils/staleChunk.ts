@@ -50,14 +50,35 @@ export function reloadOnceForStaleChunk(): boolean {
   return true;
 }
 
+// A dynamic import() that survives a redeploy. When the chunk hash 404s,
+// main.tsx's vite:preloadError handler starts the one-shot reload and
+// swallows Vite's rethrow — after which Vite resolves the import to
+// `undefined` rather than rejecting. Callers that destructure the module
+// then crash on their own ("Cannot destructure property 'exportLeagueReport'
+// of 'undefined'", Sentry 2026-08-31, from the header's PDF button on stale
+// tabs) while the reload is already on its way. Hand back a never-settling
+// promise in that case so the caller stays quiet until the navigation lands;
+// throw only when a reload was already tried and the deploy itself is broken.
+export async function importChunk<M>(load: () => Promise<M>, what: string): Promise<M> {
+  const mod = await load();
+  if (mod === undefined || mod === null) {
+    if (runtime.inFlight || reloadOnceForStaleChunk()) {
+      return new Promise(() => {});
+    }
+    logger.error(`[importChunk] ${what} failed to load after a reload attempt; broken or mixed deploy?`);
+    throw new Error(`Stale chunk: ${what} failed to load`);
+  }
+  return mod;
+}
+
 // The factory behind lazyPage, split out so tests can drive it without
 // rendering through React.lazy/Suspense. Exported for tests.
 export async function resolveLazyPageModule<M, K extends keyof M>(
   load: () => Promise<M>,
   name: K,
 ): Promise<{ default: M[K] }> {
-  const mod = await load();
-  const component = mod?.[name];
+  const mod = await importChunk(load, `page ${String(name)}`);
+  const component = mod[name];
   if (component === undefined) {
     if (runtime.inFlight || reloadOnceForStaleChunk()) {
       // Reload is underway; never resolve so Suspense keeps its spinner up

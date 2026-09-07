@@ -10,7 +10,18 @@ import * as Sentry from '@sentry/react';
 // an env var only so non-production builds stay dark.
 
 const DSN = import.meta.env.VITE_SENTRY_DSN;
-const ENABLED = Boolean(DSN) && import.meta.env.PROD;
+// The repo is public and the built site has been re-hosted elsewhere with
+// this DSN baked in (a *.web.app mirror reported a stale-chunk error on
+// 2026-08-30). Only the real production origin gets to spend the quota.
+const PRODUCTION_HOST = 'fantasyfootballanalyzer.app';
+export function isProductionHost(hostname: string): boolean {
+  return hostname === PRODUCTION_HOST || hostname === `www.${PRODUCTION_HOST}`;
+}
+const ENABLED =
+  Boolean(DSN) &&
+  import.meta.env.PROD &&
+  typeof window !== 'undefined' &&
+  isProductionHost(window.location.hostname);
 
 const REDACTED = '[redacted]';
 
@@ -82,8 +93,13 @@ export function scrub<T>(value: T): T {
 //     request never completed. Every caller already degrades gracefully. A real
 //     server error returns a response and throws a descriptive message instead
 //     (e.g. "Sleeper season stats 2024: 500"), so this never masks an API bug.
+//   - An Event object rejected as a promise: "Event `CustomEvent`
+//     (type=unhandledrejection) captured as promise rejection". Nothing in
+//     this app rejects with an Event; it comes from scripts injected by
+//     in-app browsers (Reddit's iOS webview, 2026-09-06) and extensions,
+//     and carries no stack to act on.
 const BENIGN_ERROR =
-  /(failed to fetch|error loading) dynamically imported module|importing a module script failed|loading chunk \d+ failed|unable to preload css|load failed|failed to fetch|networkerror when attempting to fetch/i;
+  /(failed to fetch|error loading) dynamically imported module|importing a module script failed|loading chunk \d+ failed|unable to preload css|load failed|failed to fetch|networkerror when attempting to fetch|^event `\w+` \(type=\w+\) captured as promise rejection/i;
 
 // Expected user-situation failures: the UI already explains each of these to
 // the person who caused it, and there is nothing for us to fix, so reporting
@@ -101,6 +117,9 @@ const BENIGN_ERROR =
 //   - Sleeper 404: a mistyped league id on the connect form.
 //   - Yahoo access_denied: the user clicked Cancel on Yahoo's consent page.
 //   - runtime.sendMessage: a browser extension messaging a closed tab.
+//   - ESPN proxy "Malformed cookie" 400: a pasted cookie carrying a `;`
+//     (the whole cookie string in one field). The form now strips that
+//     before submit; the filter covers tabs still on the older form.
 //   - Yahoo "not authorized" 403: the per-app API lockdown (2026-08-22, see
 //     docs/API_REFERENCE.md). Every data call fails this way until Yahoo
 //     approves the app; nothing in this repo can fix it, and it was the top
@@ -113,6 +132,7 @@ const EXPECTED_USER_ERROR = new RegExp(
     'cookies were rejected \\(401\\)',
     'ESPN API error: 4\\d\\d',
     '\\[ESPN\\] Proxy error \\(4\\d\\d\\)',
+    'Malformed cookie (value|header encoding): 400',
     'Sleeper API error: 404',
     'Yahoo OAuth error: access_denied',
     'Invalid call to runtime\\.sendMessage',

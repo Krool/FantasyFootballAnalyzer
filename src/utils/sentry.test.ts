@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scrub, scrubString, isBenignError, isExpectedUserError } from './sentry';
+import { scrub, scrubString, isBenignError, isExpectedUserError, isProductionHost } from './sentry';
 import type { ErrorEvent } from '@sentry/react';
 
 // The homepage manifesto promises "anonymized error logs". These tests pin the
@@ -128,6 +128,13 @@ describe('isBenignError', () => {
     expect(isBenignError({ message: 'Load failed' } as ErrorEvent)).toBe(true);
   });
 
+  it('drops an Event object rejected as a promise (injected in-app browser scripts)', () => {
+    expect(isBenignError(exception('Event `CustomEvent` (type=unhandledrejection) captured as promise rejection'))).toBe(true);
+    expect(isBenignError(exception('Event `Event` (type=error) captured as promise rejection'))).toBe(true);
+    // A real rejection with a real reason is not the same shape.
+    expect(isBenignError(exception('Non-Error promise rejection captured with value: boom'))).toBe(false);
+  });
+
   it('keeps real application errors', () => {
     expect(isBenignError(exception("Cannot read properties of undefined (reading 'name')"))).toBe(false);
     // A real server error returns a response and throws a descriptive message,
@@ -147,6 +154,9 @@ describe('isExpectedUserError', () => {
     expect(isExpectedUserError(exception('ESPN API error: 404 Not Found'))).toBe(true);
     expect(isExpectedUserError(exception('ESPN API error: 400'))).toBe(true);
     expect(isExpectedUserError(exception('Sleeper API error: 404'))).toBe(true);
+    // A pasted cookie carrying a `;` — the proxy's own 400.
+    expect(isExpectedUserError(exception('Malformed cookie value: 400'))).toBe(true);
+    expect(isExpectedUserError(exception('Malformed cookie header encoding: 400'))).toBe(true);
   });
 
   it('drops history-probing warnings by their inner cause, and OAuth cancellation', () => {
@@ -178,5 +188,15 @@ describe('isExpectedUserError', () => {
     expect(isExpectedUserError({ message: '[ESPN History] Could not load season 2024: ESPN API error: 500' } as ErrorEvent)).toBe(false);
     expect(isExpectedUserError({ message: 'Could not load season for league [redacted]: Sleeper API error: 500' } as ErrorEvent)).toBe(false);
     expect(isExpectedUserError({} as ErrorEvent)).toBe(false);
+  });
+});
+
+describe('isProductionHost', () => {
+  it('accepts only the production domain, so mirrors of the public build stay dark', () => {
+    expect(isProductionHost('fantasyfootballanalyzer.app')).toBe(true);
+    expect(isProductionHost('www.fantasyfootballanalyzer.app')).toBe(true);
+    expect(isProductionHost('fantasy-focus-distractions.web.app')).toBe(false);
+    expect(isProductionHost('krool.github.io')).toBe(false);
+    expect(isProductionHost('localhost')).toBe(false);
   });
 });
