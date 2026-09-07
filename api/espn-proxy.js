@@ -116,7 +116,18 @@ export default async function handler(req, res) {
       headers['x-fantasy-filter'] = fantasyFilter;
     }
 
-    const espnResponse = await fetch(espnUrl, { headers });
+    // Split the two ways this can blow up so the client's error text (and
+    // the Sentry feed) says which: a fetch that never completes is ESPN or
+    // the network, a 200 with a non-JSON body is ESPN serving an HTML
+    // interstitial. Both used to collapse into a bare "Server error during
+    // ESPN request: 500" with nothing to act on (Sentry 2026-08-28).
+    let espnResponse;
+    try {
+      espnResponse = await fetch(espnUrl, { headers });
+    } catch (err) {
+      console.error('ESPN proxy: upstream fetch failed:', err);
+      return res.status(502).json({ error: 'ESPN did not respond', status: 502 });
+    }
 
     if (!espnResponse.ok) {
       const errorText = await espnResponse.text();
@@ -135,7 +146,13 @@ export default async function handler(req, res) {
       });
     }
 
-    const data = await espnResponse.json();
+    let data;
+    try {
+      data = await espnResponse.json();
+    } catch (err) {
+      console.error('ESPN proxy: upstream body was not JSON:', err);
+      return res.status(502).json({ error: 'ESPN returned a non-JSON response', status: 502 });
+    }
     return res.status(200).json(data);
   } catch (err) {
     console.error('ESPN proxy error:', err);

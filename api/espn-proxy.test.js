@@ -195,6 +195,22 @@ describe('espn-proxy forwarding', () => {
     expect(res.body.status).toBe(404)
   })
 
+  it('502s with a named cause when the fetch to ESPN never completes', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('fetch failed') }))
+    const res = mockRes()
+    await handler(mockReq({ query: { season: '2025', leagueId: '123' } }), res)
+    expect(res.statusCode).toBe(502)
+    expect(res.body.error).toMatch(/did not respond/i)
+  })
+
+  it('502s with a named cause when ESPN answers 200 with a non-JSON body', async () => {
+    stubFetch({ ok: true, json: async () => { throw new SyntaxError('Unexpected token <') } })
+    const res = mockRes()
+    await handler(mockReq({ query: { season: '2025', leagueId: '123' } }), res)
+    expect(res.statusCode).toBe(502)
+    expect(res.body.error).toMatch(/non-JSON/i)
+  })
+
   it('maps an upstream 401 to the private-league hint', async () => {
     stubFetch({ ok: false, status: 401, text: async () => 'denied' })
     const res = mockRes()

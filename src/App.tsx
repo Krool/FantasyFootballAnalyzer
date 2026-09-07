@@ -233,9 +233,18 @@ function App() {
 
       // Validate CSRF state
       if (!stateParam || !validateOAuthState(stateParam)) {
+        // The state lives in sessionStorage, so this is almost always the
+        // return landing in a different tab or window from the one that
+        // started the login (or storage being blocked), not an attack. Say
+        // so instead of silently dropping the user on the home page looking
+        // logged out (Sentry 2026-09-03).
         logger.error('Yahoo OAuth CSRF validation failed');
         clearOAuthState();
         takeOAuthReturn(); // discard the stash so a later login can't replay it
+        playError();
+        window.alert(
+          'Yahoo sent you back to a different tab than the one that started the login, so it could not be verified. Try connecting again from this tab.',
+        );
         navigate('/', { replace: true });
         return;
       }
