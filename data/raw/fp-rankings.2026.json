@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-09-10T00:56:53.262Z",
+ "fetchedAt": "2026-09-11T00:53:56.575Z",
  "data": {
   "scoring": "HALF",
   "players": [
@@ -3882,12 +3882,12 @@
    },
    {
     "name": "Jarquez Hunter",
-    "team": "FA",
+    "team": "MIA",
     "pos": "RB",
     "posRank": 99,
     "rank": 324,
     "tier": 10,
-    "bye": null,
+    "bye": 6,
     "rankMin": 252,
     "rankMax": 519,
     "rankStd": 39.57
@@ -6642,12 +6642,12 @@
    },
    {
     "name": "Ben Sims",
-    "team": "MIA",
+    "team": "FA",
     "pos": "TE",
     "posRank": 105,
     "rank": 554,
     "tier": 13,
-    "bye": 6,
+    "bye": null,
     "rankMin": 461,
     "rankMax": 574,
     "rankStd": 34.23
@@ -6774,12 +6774,12 @@
    },
    {
     "name": "Jalen Reagor",
-    "team": "FA",
+    "team": "MIA",
     "pos": "WR",
     "posRank": 196,
     "rank": 565,
     "tier": 13,
-    "bye": null,
+    "bye": 6,
     "rankMin": 229,
     "rankMax": 654,
     "rankStd": 166.39
@@ -7974,12 +7974,12 @@
    },
    {
     "name": "Carlos Washington Jr.",
-    "team": "FA",
+    "team": "MIA",
     "pos": "RB",
     "posRank": 172,
     "rank": 665,
     "tier": 14,
-    "bye": null,
+    "bye": 6,
     "rankMin": 420,
     "rankMax": 754,
     "rankStd": 126.06
@@ -8069,13 +8069,13 @@
     "rankStd": 140.55
    },
    {
-    "name": "Nathan Carter",
-    "team": "FA",
+    "name": "Nate Carter",
+    "team": "KC",
     "pos": "RB",
     "posRank": 174,
     "rank": 673,
     "tier": 14,
-    "bye": null,
+    "bye": 5,
     "rankMin": 365,
     "rankMax": 702,
     "rankStd": 125.85
@@ -9942,12 +9942,12 @@
    },
    {
     "name": "Bryson Nesbit",
-    "team": "MIN",
+    "team": "FA",
     "pos": "TE",
     "posRank": 179,
     "rank": 829,
     "tier": 15,
-    "bye": 6,
+    "bye": null,
     "rankMin": 506,
     "rankMax": 714,
     "rankStd": 90.44
@@ -9990,12 +9990,12 @@
    },
    {
     "name": "Sean McKeon",
-    "team": "IND",
+    "team": "FA",
     "pos": "TE",
     "posRank": 182,
     "rank": 833,
     "tier": 15,
-    "bye": 13,
+    "bye": null,
     "rankMin": 573,
     "rankMax": 816,
     "rankStd": 89.85
@@ -10674,12 +10674,12 @@
    },
    {
     "name": "Dontae Fleming",
-    "team": "FA",
+    "team": "MIN",
     "pos": "WR",
     "posRank": 292,
     "rank": 890,
     "tier": 15,
-    "bye": null,
+    "bye": 6,
     "rankMin": 448,
     "rankMax": 913,
     "rankStd": 195.1
