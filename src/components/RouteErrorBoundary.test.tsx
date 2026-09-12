@@ -24,7 +24,10 @@ function renderWithError(message: string) {
 
 describe('RouteErrorBoundary chunk-failure detection', () => {
   // Each browser phrases a stale-chunk dynamic-import 404 differently. All of
-  // them must surface the "deployed while you were here" copy and a Reload
+  // them must surface the "did not load" copy and a Reload. The copy no longer
+  // ASSERTS a redeploy: the same errors fire when the connection drops a
+  // chunk, and a user on the current build was being told a new version had
+  // shipped (owner-reported 2026-09-12).
   // button, not the dead-end "Try Again" retry.
   const chunkMessages = [
     // Chrome / V8
@@ -39,13 +42,13 @@ describe('RouteErrorBoundary chunk-failure detection', () => {
 
   it.each(chunkMessages)('treats %s as a redeploy and offers Reload', (message) => {
     renderWithError(message);
-    expect(screen.getByText(/a new version of the app was deployed/i)).toBeTruthy();
+    expect(screen.getByText(/part of the app did not load/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /reload/i })).toBeTruthy();
   });
 
   it('shows a retryable error for a normal render crash', () => {
     renderWithError('Cannot read properties of undefined (reading "id")');
     expect(screen.getByRole('button', { name: /try again/i })).toBeTruthy();
-    expect(screen.queryByText(/a new version of the app was deployed/i)).toBeNull();
+    expect(screen.queryByText(/part of the app did not load/i)).toBeNull();
   });
 });

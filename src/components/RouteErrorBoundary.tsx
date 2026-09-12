@@ -80,7 +80,7 @@ export class RouteErrorBoundary extends Component<Props, State> {
           </h2>
           <p style={{ color: 'var(--bone-dim)', fontStyle: 'italic', marginBottom: '1.5rem', maxWidth: 520 }}>
             {chunkFailure
-              ? 'A new version of the app was deployed while you were here. Reload to pick it up.'
+              ? 'Part of the app did not load. Either the connection dropped it or a new version shipped while you were here. Reload to pick it up.'
               : error?.message || 'An unexpected error occurred.'}{' '}
             Your league data and any draft in progress are safe.
           </p>

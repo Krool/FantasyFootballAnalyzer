@@ -7,12 +7,16 @@ import { importChunk, reloadOnceForStaleChunk, resolveLazyPageModule, runtime } 
 // route error boundary instead of reload-looping.
 
 const RELOAD_KEY = 'chunk-reload-at';
+// The stamp carries "reloads spent" and "when", so a test can hand the guard
+// a spent budget without waiting.
+const spent = (n: number, agoMs = 0) => `ffa-chunk-reload:${n}:${Date.now() - agoMs}`;
 
 describe('reloadOnceForStaleChunk', () => {
   let reload: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     sessionStorage.clear();
+    window.name = '';
     runtime.inFlight = false;
     reload = vi.fn();
     vi.spyOn(runtime, 'reload').mockImplementation(reload);
@@ -21,32 +25,69 @@ describe('reloadOnceForStaleChunk', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     sessionStorage.clear();
+    window.name = '';
   });
 
   it('reloads on the first attempt and stamps the try', () => {
     expect(reloadOnceForStaleChunk()).toBe(true);
     expect(reload).toHaveBeenCalledTimes(1);
-    expect(Number(sessionStorage.getItem(RELOAD_KEY))).toBeGreaterThan(0);
+    expect(sessionStorage.getItem(RELOAD_KEY)).toMatch(/^ffa-chunk-reload:1:\d+$/);
   });
 
-  it('refuses a second attempt inside the 10s window (no reload loop)', () => {
+  // The budget used to be a ten-second window, which read a SECOND dropped
+  // request as a reload loop and refused it. On a phone that is just the
+  // connection, and the refusal left a dead page (owner-reported 2026-09-12).
+  it('allows a second reload, because two drops in a row are a flaky connection', () => {
     expect(reloadOnceForStaleChunk()).toBe(true);
+    runtime.inFlight = false; // the reload landed; this is the fresh page
+    expect(reloadOnceForStaleChunk()).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops at the budget so a broken deploy cannot loop', () => {
+    sessionStorage.setItem(RELOAD_KEY, spent(2));
     expect(reloadOnceForStaleChunk()).toBe(false);
-    expect(reload).toHaveBeenCalledTimes(1);
+    expect(reload).not.toHaveBeenCalled();
   });
 
-  it('allows another attempt once the stamp has aged out', () => {
-    sessionStorage.setItem(RELOAD_KEY, String(Date.now() - 11_000));
+  it('hands the budget back after a quiet minute', () => {
+    sessionStorage.setItem(RELOAD_KEY, spent(2, 61_000));
     expect(reloadOnceForStaleChunk()).toBe(true);
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it('does not reload blind when sessionStorage is unavailable', () => {
+  it('reports success without reloading twice while one is already on its way', () => {
+    expect(reloadOnceForStaleChunk()).toBe(true);
+    expect(reloadOnceForStaleChunk()).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  // Edge's tracking prevention, iOS in-app browsers and Lockdown Mode make the
+  // storage getter itself throw. This used to disable the self-heal outright,
+  // so one dropped chunk was a dead page for the rest of the session.
+  it('still reloads when Web Storage is blocked, stamping window.name instead', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('denied');
     });
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('denied');
+    });
+    expect(reloadOnceForStaleChunk()).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(window.name).toMatch(/^ffa-chunk-reload:1:\d+$/);
+  });
+
+  it('leaves a window.name someone else owns alone rather than reloading blind', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('denied');
+    });
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('denied');
+    });
+    window.name = 'some-other-owner';
     expect(reloadOnceForStaleChunk()).toBe(false);
     expect(reload).not.toHaveBeenCalled();
+    expect(window.name).toBe('some-other-owner');
   });
 });
 
@@ -60,6 +101,7 @@ describe('resolveLazyPageModule', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     sessionStorage.clear();
+    window.name = '';
   });
 
   it('resolves the named export as the default', async () => {
@@ -102,7 +144,7 @@ describe('resolveLazyPageModule', () => {
   });
 
   it('throws (for the route error boundary) when a reload was already attempted', async () => {
-    sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+    sessionStorage.setItem(RELOAD_KEY, spent(2));
     await expect(
       resolveLazyPageModule(async () => ({}) as { TeamsPage?: () => null }, 'TeamsPage'),
     ).rejects.toThrow('Stale chunk: module has no export TeamsPage');
@@ -120,6 +162,7 @@ describe('importChunk', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     sessionStorage.clear();
+    window.name = '';
   });
 
   it('passes a loaded module straight through', async () => {
@@ -152,10 +195,33 @@ describe('importChunk', () => {
   });
 
   it('throws when a reload was already attempted (broken deploy)', async () => {
-    sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+    sessionStorage.setItem(RELOAD_KEY, spent(2));
     await expect(
       importChunk(async () => undefined as unknown as object, 'PDF export'),
     ).rejects.toThrow('Stale chunk: PDF export failed to load');
+    expect(runtime.reload).not.toHaveBeenCalled();
+  });
+
+  // A REJECTED import (the request was dropped, not the deploy rehashed) used
+  // to sail past every self-heal into the route error boundary, which then
+  // told the user a new version had shipped. Retrying the thunk is useless -
+  // the browser records the failed specifier and never re-fetches it - so the
+  // rejection has to buy a reload like the other shapes.
+  it('spends a reload on a rejected import instead of surfacing it', async () => {
+    const boom = new TypeError('Failed to fetch dynamically imported module');
+    let outcome = 'pending';
+    void importChunk(() => Promise.reject(boom), 'page DraftPage')
+      .then(() => { outcome = 'resolved'; })
+      .catch(() => { outcome = 'rejected'; });
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect(outcome).toBe('pending');
+    expect(runtime.reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets a rejected import through once the reload budget is gone', async () => {
+    sessionStorage.setItem(RELOAD_KEY, spent(2));
+    const boom = new TypeError('Failed to fetch dynamically imported module');
+    await expect(importChunk(() => Promise.reject(boom), 'page DraftPage')).rejects.toThrow(boom);
     expect(runtime.reload).not.toHaveBeenCalled();
   });
 });
