@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-09-13T00:45:44.138Z",
+ "fetchedAt": "2026-09-13T14:47:21.440Z",
  "data": {
   "players": [
    {
@@ -154,7 +154,7 @@
     "name": "George Pickens",
     "team": "DAL",
     "pos": "WR",
-    "avgPick": 22.6,
+    "avgPick": 22.5,
     "avgCost": 32
    },
    {
@@ -204,7 +204,7 @@
     "team": "DAL",
     "pos": "RB",
     "avgPick": 31.7,
-    "avgCost": 25.9
+    "avgCost": 26
    },
    {
     "name": "Breece Hall",
@@ -434,7 +434,7 @@
     "name": "Rhamondre Stevenson",
     "team": "NE",
     "pos": "RB",
-    "avgPick": 74.4,
+    "avgPick": 74.3,
     "avgCost": 4.9
    },
    {
@@ -525,14 +525,14 @@
     "name": "Justin Herbert",
     "team": "LAC",
     "pos": "QB",
-    "avgPick": 69.8,
+    "avgPick": 69.9,
     "avgCost": 3.5
    },
    {
     "name": "DK Metcalf",
     "team": "PIT",
     "pos": "WR",
-    "avgPick": 84.8,
+    "avgPick": 84.7,
     "avgCost": 2.3
    },
    {
@@ -728,7 +728,7 @@
     "name": "Michael Pittman Jr.",
     "team": "PIT",
     "pos": "WR",
-    "avgPick": 122,
+    "avgPick": 121.9,
     "avgCost": 1.3
    },
    {
@@ -882,7 +882,7 @@
     "name": "Josh Jacobs",
     "team": "GB",
     "pos": "RB",
-    "avgPick": 68.9,
+    "avgPick": 69,
     "avgCost": 15
    },
    {
@@ -903,7 +903,7 @@
     "name": "Jordyn Tyson",
     "team": "NO",
     "pos": "WR",
-    "avgPick": 107.3,
+    "avgPick": 107.4,
     "avgCost": 1.8
    },
    {
@@ -924,7 +924,7 @@
     "name": "Rashid Shaheed",
     "team": "SEA",
     "pos": "WR",
-    "avgPick": 128,
+    "avgPick": 127.9,
     "avgCost": 1.1
    },
    {
@@ -952,7 +952,7 @@
     "name": "Tyler Allgeier",
     "team": "ARI",
     "pos": "RB",
-    "avgPick": 129.4,
+    "avgPick": 129.3,
     "avgCost": 1.3
    },
    {
@@ -973,7 +973,7 @@
     "name": "Khalil Shakir",
     "team": "BUF",
     "pos": "WR",
-    "avgPick": 130.4,
+    "avgPick": 130.3,
     "avgCost": 1.2
    },
    {
@@ -1001,7 +1001,7 @@
     "name": "Tyler Shough",
     "team": "NO",
     "pos": "QB",
-    "avgPick": 130,
+    "avgPick": 129.9,
     "avgCost": 1.2
    },
    {
@@ -1114,7 +1114,7 @@
     "team": "ATL",
     "pos": "RB",
     "avgPick": 116.6,
-    "avgCost": 20.1
+    "avgCost": 20
    },
    {
     "name": "Broncos",
@@ -1162,7 +1162,7 @@
     "name": "Kaelon Black",
     "team": "SF",
     "pos": "RB",
-    "avgPick": 129.1,
+    "avgPick": 129,
     "avgCost": 1.3
    },
    {
@@ -1344,14 +1344,14 @@
     "name": "Pat Freiermuth",
     "team": "PIT",
     "pos": "TE",
-    "avgPick": 122.8,
+    "avgPick": 122.7,
     "avgCost": 1.2
    },
    {
     "name": "Oronde Gadsden",
     "team": "LAC",
     "pos": "TE",
-    "avgPick": 126.5,
+    "avgPick": 126.4,
     "avgCost": 1
    },
    {
@@ -1456,7 +1456,7 @@
     "name": "Isaac TeSlaa",
     "team": "DET",
     "pos": "WR",
-    "avgPick": 123.1,
+    "avgPick": 123,
     "avgCost": 1
    },
    {
@@ -1464,27 +1464,27 @@
     "team": "SF",
     "pos": "DST",
     "avgPick": 124.3,
-    "avgCost": 1.2
+    "avgCost": 1.1
    },
    {
     "name": "Cooper Kupp",
     "team": "SEA",
     "pos": "WR",
-    "avgPick": 119.6,
+    "avgPick": 119.5,
     "avgCost": 1
    },
    {
     "name": "Trey Smack",
     "team": "GB",
     "pos": "K",
-    "avgPick": 130.3,
+    "avgPick": 130.2,
     "avgCost": 1.2
    },
    {
     "name": "Giants",
     "team": "NYG",
     "pos": "DST",
-    "avgPick": 126.3,
+    "avgPick": 126.2,
     "avgCost": 1.1
    },
    {
@@ -1526,7 +1526,7 @@
     "name": "Browns",
     "team": "CLE",
     "pos": "DST",
-    "avgPick": 130,
+    "avgPick": 129.9,
     "avgCost": 1.2
    },
    {
@@ -1554,7 +1554,7 @@
     "name": "Spencer Shrader",
     "team": "IND",
     "pos": "K",
-    "avgPick": 133.6,
+    "avgPick": 133.7,
     "avgCost": 1.2
    },
    {
@@ -1570,13 +1570,6 @@
     "pos": "WR",
     "avgPick": 132.7,
     "avgCost": 1.1
-   },
-   {
-    "name": "Nick Folk",
-    "team": "ATL",
-    "pos": "K",
-    "avgPick": 126.8,
-    "avgCost": 1
    }
   ]
  }
