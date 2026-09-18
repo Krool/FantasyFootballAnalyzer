@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-09-17T15:25:11.958Z",
+ "fetchedAt": "2026-09-18T01:10:18.327Z",
  "data": {
   "players": [
    {
@@ -828,8 +828,8 @@
     "pos": "WR",
     "team": "SEA",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Back",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
@@ -906,8 +906,8 @@
     "pos": "RB",
     "team": "CIN",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Knee",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
@@ -1158,7 +1158,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "4602",
@@ -1964,7 +1964,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": null
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "5973",
@@ -2063,7 +2063,7 @@
     "pos": "RB",
     "team": "BUF",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Hamstring",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -2406,7 +2406,7 @@
     "injuryNotes": "Strain",
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 1
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "6770",
@@ -3961,8 +3961,8 @@
     "pos": "WR",
     "team": "IND",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Heel",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
@@ -3987,8 +3987,8 @@
     "pos": "WR",
     "team": "NO",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Hamstring",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
@@ -4538,7 +4538,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "8259",
@@ -4840,6 +4840,19 @@
     "depthChartOrder": 1
    },
    {
+    "sleeperId": "9227",
+    "name": "Israel Abanikanda",
+    "pos": "RB",
+    "team": "DAL",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 3,
+    "depthChartOrder": null
+   },
+   {
     "sleeperId": "9228",
     "name": "Bryce Young",
     "pos": "QB",
@@ -4858,8 +4871,8 @@
     "pos": "QB",
     "team": "IND",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Groin",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
@@ -6137,7 +6150,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 2
+    "depthChartOrder": 1
    },
    {
     "sleeperId": "11560",
@@ -6267,7 +6280,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": null
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "11574",
@@ -6925,8 +6938,8 @@
     "pos": "RB",
     "team": "NYG",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Illness",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
@@ -7100,6 +7113,19 @@
     "injuryStartDate": null,
     "yearsExp": 2,
     "depthChartOrder": 4
+   },
+   {
+    "sleeperId": "11959",
+    "name": "Bryce Oliver",
+    "pos": "WR",
+    "team": "HOU",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 2,
+    "depthChartOrder": null
    },
    {
     "sleeperId": "11963",
@@ -7406,8 +7432,8 @@
     "pos": "RB",
     "team": "IND",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Knee",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -7541,7 +7567,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 9
+    "depthChartOrder": 10
    },
    {
     "sleeperId": "12485",
@@ -9348,7 +9374,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "13289",
@@ -10058,8 +10084,8 @@
     "pos": "WR",
     "team": "BUF",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Coach's Decision",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -10162,8 +10188,8 @@
     "pos": "RB",
     "team": "SF",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Illness",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -10824,6 +10850,19 @@
     "name": "Kansei Matsuzawa",
     "pos": "K",
     "team": "LV",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 0,
+    "depthChartOrder": null
+   },
+   {
+    "sleeperId": "13805",
+    "name": "E.J. Williams",
+    "pos": "WR",
+    "team": "CAR",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
