@@ -4,14 +4,14 @@
 // of the eager entry chunk. See buildDraftPool.ts for why.
 
 export const POOL_SEASON = 2026;
-export const POOL_GENERATED_AT = "2026-09-21T16:46:07.702Z";
+export const POOL_GENERATED_AT = "2026-09-22T01:32:20.303Z";
 export const POOL_BASELINE = {"budget":200,"teams":12,"rounds":14};
 
 /** Top 5 of the consensus board, for the homepage hero. */
 export const TOP_OF_BOARD = [
   {"id":"jahmyr-gibbs-rb","name":"Jahmyr Gibbs","pos":"RB","team":"DET","overallRank":1,"baseValue":58},
-  {"id":"jamarr-chase-wr","name":"Ja'Marr Chase","pos":"WR","team":"CIN","overallRank":2,"baseValue":66},
-  {"id":"bijan-robinson-rb","name":"Bijan Robinson","pos":"RB","team":"ATL","overallRank":3,"baseValue":57},
+  {"id":"bijan-robinson-rb","name":"Bijan Robinson","pos":"RB","team":"ATL","overallRank":2,"baseValue":57},
+  {"id":"jamarr-chase-wr","name":"Ja'Marr Chase","pos":"WR","team":"CIN","overallRank":3,"baseValue":66},
   {"id":"puka-nacua-wr","name":"Puka Nacua","pos":"WR","team":"LAR","overallRank":4,"baseValue":63},
   {"id":"jaxon-smithnjigba-wr","name":"Jaxon Smith-Njigba","pos":"WR","team":"SEA","overallRank":5,"baseValue":57},
 ] as const;
