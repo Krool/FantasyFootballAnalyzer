@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-09-24T01:16:26.486Z",
+ "fetchedAt": "2026-09-25T01:19:59.771Z",
  "data": {
   "scoring": "HALF",
   "players": [
@@ -6918,12 +6918,12 @@
    },
    {
     "name": "Scotty Miller",
-    "team": "CHI",
+    "team": "FA",
     "pos": "WR",
     "posRank": 202,
     "rank": 577,
     "tier": 13,
-    "bye": 10,
+    "bye": null,
     "rankMin": 379,
     "rankMax": 830,
     "rankStd": 143.16
@@ -10926,12 +10926,12 @@
    },
    {
     "name": "AJ Henning",
-    "team": "FA",
+    "team": "MIA",
     "pos": "WR",
     "posRank": 304,
     "rank": 911,
     "tier": 15,
-    "bye": null,
+    "bye": 6,
     "rankMin": 474,
     "rankMax": 921,
     "rankStd": 187.41
