@@ -1,733 +1,725 @@
 {
  "season": 2026,
- "fetchedAt": "2026-09-26T01:23:01.689Z",
+ "fetchedAt": "2026-09-26T14:52:06.083Z",
  "data": {
   "players": [
    {
     "name": "Jahmyr Gibbs",
     "pos": "RB",
     "team": "DET",
-    "adp": 1.86,
-    "auctionValueLive": 65.8,
+    "adp": 1.89,
+    "auctionValueLive": 65.47,
     "auctionValueEditorial": 57
    },
    {
     "name": "Bijan Robinson",
     "pos": "RB",
     "team": "ATL",
-    "adp": 3.91,
-    "auctionValueLive": 59.41,
+    "adp": 3.97,
+    "auctionValueLive": 58.77,
     "auctionValueEditorial": 56
    },
    {
     "name": "Jaxon Smith-Njigba",
     "pos": "WR",
     "team": "SEA",
-    "adp": 5.32,
-    "auctionValueLive": 63.06,
+    "adp": 5.14,
+    "auctionValueLive": 63.68,
     "auctionValueEditorial": 53
    },
    {
     "name": "Ja'Marr Chase",
     "pos": "WR",
     "team": "CIN",
-    "adp": 5.48,
-    "auctionValueLive": 56.48,
+    "adp": 5.49,
+    "auctionValueLive": 56.3,
     "auctionValueEditorial": 56
    },
    {
     "name": "Jonathan Taylor",
     "pos": "RB",
     "team": "IND",
-    "adp": 7.85,
-    "auctionValueLive": 52.57,
+    "adp": 7.8,
+    "auctionValueLive": 52.46,
     "auctionValueEditorial": 54
-   },
-   {
-    "name": "Puka Nacua",
-    "pos": "WR",
-    "team": "LAR",
-    "adp": 8.24,
-    "auctionValueLive": 52.3,
-    "auctionValueEditorial": 55
    },
    {
     "name": "Amon-Ra St. Brown",
     "pos": "WR",
     "team": "DET",
-    "adp": 8.34,
-    "auctionValueLive": 55.12,
+    "adp": 8.36,
+    "auctionValueLive": 54.92,
     "auctionValueEditorial": 52
+   },
+   {
+    "name": "Puka Nacua",
+    "pos": "WR",
+    "team": "LAR",
+    "adp": 8.52,
+    "auctionValueLive": 51.66,
+    "auctionValueEditorial": 55
    },
    {
     "name": "Christian McCaffrey",
     "pos": "RB",
     "team": "SF",
     "adp": 9.49,
-    "auctionValueLive": 48.88,
+    "auctionValueLive": 48.76,
     "auctionValueEditorial": 52
    },
    {
     "name": "Josh Allen",
     "pos": "QB",
     "team": "BUF",
-    "adp": 10.32,
-    "auctionValueLive": 47.19,
+    "adp": 10.37,
+    "auctionValueLive": 46.6,
     "auctionValueEditorial": 30
    },
    {
     "name": "CeeDee Lamb",
     "pos": "WR",
     "team": "DAL",
-    "adp": 12.31,
-    "auctionValueLive": 47.43,
+    "adp": 12.2,
+    "auctionValueLive": 47.33,
     "auctionValueEditorial": 50
    },
    {
     "name": "James Cook III",
     "pos": "RB",
     "team": "BUF",
-    "adp": 12.8,
-    "auctionValueLive": 46.29,
+    "adp": 12.91,
+    "auctionValueLive": 45.95,
     "auctionValueEditorial": 51
    },
    {
     "name": "Justin Jefferson",
     "pos": "WR",
     "team": "MIN",
-    "adp": 13.01,
-    "auctionValueLive": 46.55,
+    "adp": 13.09,
+    "auctionValueLive": 46.4,
     "auctionValueEditorial": 48
    },
    {
     "name": "Derrick Henry",
     "pos": "RB",
     "team": "BAL",
-    "adp": 16.41,
-    "auctionValueLive": 39.21,
+    "adp": 16.47,
+    "auctionValueLive": 39,
     "auctionValueEditorial": 40
    },
    {
     "name": "De'Von Achane",
     "pos": "RB",
     "team": "MIA",
-    "adp": 18.65,
-    "auctionValueLive": 39.24,
+    "adp": 18.71,
+    "auctionValueLive": 38.87,
     "auctionValueEditorial": 46
    },
    {
     "name": "Kenneth Walker III",
     "pos": "RB",
     "team": "KC",
-    "adp": 20.02,
-    "auctionValueLive": 37.6,
+    "adp": 19.68,
+    "auctionValueLive": 37.92,
     "auctionValueEditorial": 29
    },
    {
     "name": "Trey McBride",
     "pos": "TE",
     "team": "ARI",
-    "adp": 21.09,
-    "auctionValueLive": 33.14,
+    "adp": 21.02,
+    "auctionValueLive": 33.13,
     "auctionValueEditorial": 34
    },
    {
     "name": "Ashton Jeanty",
     "pos": "RB",
     "team": "LV",
-    "adp": 22.16,
-    "auctionValueLive": 34.97,
+    "adp": 22.29,
+    "auctionValueLive": 34.47,
     "auctionValueEditorial": 38
    },
    {
     "name": "Saquon Barkley",
     "pos": "RB",
     "team": "PHI",
-    "adp": 22.56,
-    "auctionValueLive": 36.73,
+    "adp": 23.02,
+    "auctionValueLive": 36.11,
     "auctionValueEditorial": 42
    },
    {
     "name": "Chase Brown",
     "pos": "RB",
     "team": "CIN",
-    "adp": 24.1,
-    "auctionValueLive": 36.02,
+    "adp": 24.09,
+    "auctionValueLive": 35.68,
     "auctionValueEditorial": 43
    },
    {
     "name": "Lamar Jackson",
     "pos": "QB",
     "team": "BAL",
-    "adp": 24.54,
-    "auctionValueLive": 20.51,
+    "adp": 24.68,
+    "auctionValueLive": 20.26,
     "auctionValueEditorial": 18
    },
    {
     "name": "Drake London",
     "pos": "WR",
     "team": "ATL",
-    "adp": 25.24,
-    "auctionValueLive": 31.98,
+    "adp": 25.25,
+    "auctionValueLive": 31.89,
     "auctionValueEditorial": 37
    },
    {
     "name": "Omarion Hampton",
     "pos": "RB",
     "team": "LAC",
-    "adp": 25.7,
-    "auctionValueLive": 37.23,
+    "adp": 25.86,
+    "auctionValueLive": 36.87,
     "auctionValueEditorial": 45
    },
    {
     "name": "Chris Olave",
     "pos": "WR",
     "team": "NO",
-    "adp": 28.3,
-    "auctionValueLive": 30.77,
+    "adp": 27.44,
+    "auctionValueLive": 31,
     "auctionValueEditorial": 32
    },
    {
     "name": "Brock Bowers",
     "pos": "TE",
     "team": "LV",
-    "adp": 30.52,
-    "auctionValueLive": 28.43,
+    "adp": 30.65,
+    "auctionValueLive": 28.13,
     "auctionValueEditorial": 33
    },
    {
     "name": "Jeremiyah Love",
     "pos": "RB",
     "team": "ARI",
-    "adp": 31.88,
-    "auctionValueLive": 29.26,
+    "adp": 32.33,
+    "auctionValueLive": 29.05,
     "auctionValueEditorial": 36
    },
    {
     "name": "George Pickens",
     "pos": "WR",
     "team": "DAL",
-    "adp": 32.65,
-    "auctionValueLive": 26.28,
+    "adp": 32.86,
+    "auctionValueLive": 25.87,
     "auctionValueEditorial": 30
    },
    {
     "name": "Rashee Rice",
     "pos": "WR",
     "team": "KC",
-    "adp": 35.8,
-    "auctionValueLive": 25.31,
+    "adp": 36.25,
+    "auctionValueLive": 25.09,
     "auctionValueEditorial": 31
-   },
-   {
-    "name": "Nico Collins",
-    "pos": "WR",
-    "team": "HOU",
-    "adp": 37.54,
-    "auctionValueLive": 28.04,
-    "auctionValueEditorial": 32
    },
    {
     "name": "DeVonta Smith",
     "pos": "WR",
     "team": "PHI",
-    "adp": 37.58,
-    "auctionValueLive": 20.4,
+    "adp": 37.11,
+    "auctionValueLive": 20.35,
     "auctionValueEditorial": 23
+   },
+   {
+    "name": "Nico Collins",
+    "pos": "WR",
+    "team": "HOU",
+    "adp": 37.87,
+    "auctionValueLive": 27.7,
+    "auctionValueEditorial": 32
    },
    {
     "name": "Breece Hall",
     "pos": "RB",
     "team": "NYJ",
-    "adp": 39.25,
-    "auctionValueLive": 22.92,
+    "adp": 39.23,
+    "auctionValueLive": 22.74,
     "auctionValueEditorial": 27
    },
    {
     "name": "A.J. Brown",
     "pos": "WR",
     "team": "NE",
-    "adp": 40.32,
-    "auctionValueLive": 28.75,
+    "adp": 40.69,
+    "auctionValueLive": 28.41,
     "auctionValueEditorial": 35
    },
    {
     "name": "Garrett Wilson",
     "pos": "WR",
     "team": "NYJ",
-    "adp": 40.82,
-    "auctionValueLive": 23.4,
+    "adp": 40.84,
+    "auctionValueLive": 23.23,
     "auctionValueEditorial": 28
    },
    {
     "name": "Javonte Williams",
     "pos": "RB",
     "team": "DAL",
-    "adp": 41.71,
-    "auctionValueLive": 22.48,
+    "adp": 41.87,
+    "auctionValueLive": 22.11,
     "auctionValueEditorial": 26
    },
    {
     "name": "Malik Nabers",
     "pos": "WR",
     "team": "NYG",
-    "adp": 41.87,
-    "auctionValueLive": 20.33,
+    "adp": 42.88,
+    "auctionValueLive": 19.9,
     "auctionValueEditorial": 24
    },
    {
     "name": "Kyren Williams",
     "pos": "RB",
     "team": "LAR",
-    "adp": 45.6,
-    "auctionValueLive": 20.74,
+    "adp": 45.52,
+    "auctionValueLive": 20.49,
     "auctionValueEditorial": 25
    },
    {
     "name": "Zay Flowers",
     "pos": "WR",
     "team": "BAL",
-    "adp": 48.94,
-    "auctionValueLive": 19.14,
-    "auctionValueEditorial": 22
-   },
-   {
-    "name": "Cam Skattebo",
-    "pos": "RB",
-    "team": "NYG",
-    "adp": 51.36,
-    "auctionValueLive": 14,
-    "auctionValueEditorial": 17
-   },
-   {
-    "name": "Tetairoa McMillan",
-    "pos": "WR",
-    "team": "CAR",
-    "adp": 51.53,
-    "auctionValueLive": 18.29,
+    "adp": 49.24,
+    "auctionValueLive": 19.02,
     "auctionValueEditorial": 22
    },
    {
     "name": "Davante Adams",
     "pos": "WR",
     "team": "LAR",
-    "adp": 52.05,
-    "auctionValueLive": 15.08,
+    "adp": 50.73,
+    "auctionValueLive": 15.28,
+    "auctionValueEditorial": 17
+   },
+   {
+    "name": "Tetairoa McMillan",
+    "pos": "WR",
+    "team": "CAR",
+    "adp": 51.38,
+    "auctionValueLive": 18.15,
+    "auctionValueEditorial": 22
+   },
+   {
+    "name": "Cam Skattebo",
+    "pos": "RB",
+    "team": "NYG",
+    "adp": 51.92,
+    "auctionValueLive": 13.71,
     "auctionValueEditorial": 17
    },
    {
     "name": "Colston Loveland",
     "pos": "TE",
     "team": "CHI",
-    "adp": 53.17,
-    "auctionValueLive": 15.63,
+    "adp": 54.3,
+    "auctionValueLive": 15.41,
     "auctionValueEditorial": 19
    },
    {
     "name": "Tyler Warren",
     "pos": "TE",
     "team": "IND",
-    "adp": 54.56,
-    "auctionValueLive": 10.06,
+    "adp": 54.68,
+    "auctionValueLive": 9.94,
     "auctionValueEditorial": 11
    },
    {
     "name": "Emeka Egbuka",
     "pos": "WR",
     "team": "TB",
-    "adp": 57.23,
-    "auctionValueLive": 16.46,
+    "adp": 57.99,
+    "auctionValueLive": 16.11,
     "auctionValueEditorial": 21
    },
    {
     "name": "Drake Maye",
     "pos": "QB",
     "team": "NE",
-    "adp": 57.6,
-    "auctionValueLive": 9.41,
+    "adp": 58.19,
+    "auctionValueLive": 9.24,
     "auctionValueEditorial": 10
    },
    {
     "name": "D'Andre Swift",
     "pos": "RB",
     "team": "CHI",
-    "adp": 59.23,
-    "auctionValueLive": 13.6,
+    "adp": 59.38,
+    "auctionValueLive": 13.42,
     "auctionValueEditorial": 15
    },
    {
     "name": "Jalen Hurts",
     "pos": "QB",
     "team": "PHI",
-    "adp": 59.68,
-    "auctionValueLive": 7.31,
+    "adp": 59.59,
+    "auctionValueLive": 7.33,
     "auctionValueEditorial": 7
    },
    {
     "name": "Travis Etienne Jr.",
     "pos": "RB",
     "team": "NO",
-    "adp": 59.73,
-    "auctionValueLive": 16.94,
+    "adp": 60.5,
+    "auctionValueLive": 16.73,
     "auctionValueEditorial": 22
-   },
-   {
-    "name": "Tee Higgins",
-    "pos": "WR",
-    "team": "CIN",
-    "adp": 61.52,
-    "auctionValueLive": 13.97,
-    "auctionValueEditorial": 19
    },
    {
     "name": "Joe Burrow",
     "pos": "QB",
     "team": "CIN",
-    "adp": 61.93,
-    "auctionValueLive": 6.82,
+    "adp": 60.88,
+    "auctionValueLive": 6.77,
     "auctionValueEditorial": 7
    },
    {
-    "name": "Jayden Daniels",
-    "pos": "QB",
-    "team": "WAS",
-    "adp": 63.45,
-    "auctionValueLive": 9.24,
-    "auctionValueEditorial": 10
+    "name": "Tee Higgins",
+    "pos": "WR",
+    "team": "CIN",
+    "adp": 61.54,
+    "auctionValueLive": 13.79,
+    "auctionValueEditorial": 19
    },
    {
     "name": "Ladd McConkey",
     "pos": "WR",
     "team": "LAC",
-    "adp": 64.76,
-    "auctionValueLive": 15.3,
+    "adp": 65.13,
+    "auctionValueLive": 15.01,
     "auctionValueEditorial": 20
+   },
+   {
+    "name": "Jayden Daniels",
+    "pos": "QB",
+    "team": "WAS",
+    "adp": 65.52,
+    "auctionValueLive": 9.02,
+    "auctionValueEditorial": 10
    },
    {
     "name": "Bucky Irving",
     "pos": "RB",
     "team": "TB",
-    "adp": 66.52,
-    "auctionValueLive": 11.2,
+    "adp": 65.71,
+    "auctionValueLive": 11.13,
     "auctionValueEditorial": 13
-   },
-   {
-    "name": "Quinshon Judkins",
-    "pos": "RB",
-    "team": "CLE",
-    "adp": 70.44,
-    "auctionValueLive": 14.49,
-    "auctionValueEditorial": 21
    },
    {
     "name": "George Kittle",
     "pos": "TE",
     "team": "SF",
-    "adp": 70.57,
-    "auctionValueLive": 5.01,
+    "adp": 68.76,
+    "auctionValueLive": 5.13,
     "auctionValueEditorial": 6
+   },
+   {
+    "name": "Quinshon Judkins",
+    "pos": "RB",
+    "team": "CLE",
+    "adp": 70.98,
+    "auctionValueLive": 14.26,
+    "auctionValueEditorial": 21
    },
    {
     "name": "Jaylen Waddle",
     "pos": "WR",
     "team": "DEN",
-    "adp": 72.38,
-    "auctionValueLive": 10.38,
+    "adp": 71.82,
+    "auctionValueLive": 10.31,
     "auctionValueEditorial": 14
    },
    {
     "name": "Brandon Aubrey",
     "pos": "K",
     "team": "DAL",
-    "adp": 74.61,
-    "auctionValueLive": 3.23,
+    "adp": 73.98,
+    "auctionValueLive": 3.36,
     "auctionValueEditorial": 1
+   },
+   {
+    "name": "Patrick Mahomes",
+    "pos": "QB",
+    "team": "KC",
+    "adp": 77.75,
+    "auctionValueLive": 5.01,
+    "auctionValueEditorial": 2
    },
    {
     "name": "Sam LaPorta",
     "pos": "TE",
     "team": "DET",
-    "adp": 78.58,
-    "auctionValueLive": 4.4,
+    "adp": 78.89,
+    "auctionValueLive": 4.26,
     "auctionValueEditorial": 4
    },
    {
     "name": "David Montgomery",
     "pos": "RB",
     "team": "HOU",
-    "adp": 79.44,
-    "auctionValueLive": 8.56,
+    "adp": 80.54,
+    "auctionValueLive": 8.23,
     "auctionValueEditorial": 10
-   },
-   {
-    "name": "Patrick Mahomes",
-    "pos": "QB",
-    "team": "KC",
-    "adp": 80.14,
-    "auctionValueLive": 4.76,
-    "auctionValueEditorial": 2
-   },
-   {
-    "name": "Texans D/ST",
-    "pos": "DST",
-    "team": "HOU",
-    "adp": 81.94,
-    "auctionValueLive": 1.82,
-    "auctionValueEditorial": 1
    },
    {
     "name": "Dak Prescott",
     "pos": "QB",
     "team": "DAL",
-    "adp": 82.22,
-    "auctionValueLive": 4.23,
+    "adp": 80.96,
+    "auctionValueLive": 4.2,
     "auctionValueEditorial": 5
+   },
+   {
+    "name": "Texans D/ST",
+    "pos": "DST",
+    "team": "HOU",
+    "adp": 82.53,
+    "auctionValueLive": 1.77,
+    "auctionValueEditorial": 1
+   },
+   {
+    "name": "Seahawks D/ST",
+    "pos": "DST",
+    "team": "SEA",
+    "adp": 83.09,
+    "auctionValueLive": 2.97,
+    "auctionValueEditorial": 1
    },
    {
     "name": "DJ Moore",
     "pos": "WR",
     "team": "BUF",
-    "adp": 83.71,
-    "auctionValueLive": 8.4,
+    "adp": 84.02,
+    "auctionValueLive": 8.29,
     "auctionValueEditorial": 12
    },
    {
     "name": "Bhayshul Tuten",
     "pos": "RB",
     "team": "JAC",
-    "adp": 83.77,
-    "auctionValueLive": 10.33,
+    "adp": 84.23,
+    "auctionValueLive": 10.15,
     "auctionValueEditorial": 15
-   },
-   {
-    "name": "Seahawks D/ST",
-    "pos": "DST",
-    "team": "SEA",
-    "adp": 83.8,
-    "auctionValueLive": 2.84,
-    "auctionValueEditorial": 1
-   },
-   {
-    "name": "Terry McLaurin",
-    "pos": "WR",
-    "team": "WAS",
-    "adp": 85.26,
-    "auctionValueLive": 9.03,
-    "auctionValueEditorial": 13
    },
    {
     "name": "Travis Kelce",
     "pos": "TE",
     "team": "KC",
-    "adp": 88.11,
-    "auctionValueLive": 3.24,
+    "adp": 85.48,
+    "auctionValueLive": 3.4,
     "auctionValueEditorial": 2
+   },
+   {
+    "name": "Terry McLaurin",
+    "pos": "WR",
+    "team": "WAS",
+    "adp": 85.76,
+    "auctionValueLive": 8.85,
+    "auctionValueEditorial": 13
    },
    {
     "name": "Jameson Williams",
     "pos": "WR",
     "team": "DET",
-    "adp": 88.31,
-    "auctionValueLive": 7.5,
+    "adp": 88.71,
+    "auctionValueLive": 7.38,
     "auctionValueEditorial": 11
    },
    {
     "name": "Brock Purdy",
     "pos": "QB",
     "team": "SF",
-    "adp": 91.87,
-    "auctionValueLive": 2.93,
+    "adp": 89.46,
+    "auctionValueLive": 3.1,
     "auctionValueEditorial": 2
-   },
-   {
-    "name": "Jaxson Dart",
-    "pos": "QB",
-    "team": "NYG",
-    "adp": 93.24,
-    "auctionValueLive": 3.29,
-    "auctionValueEditorial": 4
    },
    {
     "name": "Parker Washington",
     "pos": "WR",
     "team": "JAC",
-    "adp": 93.3,
-    "auctionValueLive": 6.29,
+    "adp": 91.59,
+    "auctionValueLive": 6.54,
+    "auctionValueEditorial": 5
+   },
+   {
+    "name": "Christian Watson",
+    "pos": "WR",
+    "team": "GB",
+    "adp": 94.38,
+    "auctionValueLive": 6.18,
     "auctionValueEditorial": 5
    },
    {
     "name": "Rome Odunze",
     "pos": "WR",
     "team": "CHI",
-    "adp": 93.83,
-    "auctionValueLive": 6.47,
+    "adp": 94.89,
+    "auctionValueLive": 6.31,
     "auctionValueEditorial": 10
    },
    {
-    "name": "Christian Watson",
-    "pos": "WR",
-    "team": "GB",
-    "adp": 95.36,
-    "auctionValueLive": 5.85,
-    "auctionValueEditorial": 5
+    "name": "Jaxson Dart",
+    "pos": "QB",
+    "team": "NYG",
+    "adp": 95.95,
+    "auctionValueLive": 3.15,
+    "auctionValueEditorial": 4
    },
    {
     "name": "Harold Fannin Jr.",
     "pos": "TE",
     "team": "CLE",
-    "adp": 96.33,
-    "auctionValueLive": 4.73,
+    "adp": 97.18,
+    "auctionValueLive": 4.64,
+    "auctionValueEditorial": 6
+   },
+   {
+    "name": "Kyle Pitts Sr.",
+    "pos": "TE",
+    "team": "ATL",
+    "adp": 98.13,
+    "auctionValueLive": 4.61,
     "auctionValueEditorial": 6
    },
    {
     "name": "Mike Evans",
     "pos": "WR",
     "team": "SF",
-    "adp": 96.95,
-    "auctionValueLive": 5.31,
+    "adp": 98.26,
+    "auctionValueLive": 5.1,
     "auctionValueEditorial": 8
-   },
-   {
-    "name": "Kyle Pitts Sr.",
-    "pos": "TE",
-    "team": "ATL",
-    "adp": 97.38,
-    "auctionValueLive": 4.72,
-    "auctionValueEditorial": 6
-   },
-   {
-    "name": "Broncos D/ST",
-    "pos": "DST",
-    "team": "DEN",
-    "adp": 97.96,
-    "auctionValueLive": 1.42,
-    "auctionValueEditorial": 1
    },
    {
     "name": "Dalton Kincaid",
     "pos": "TE",
     "team": "BUF",
-    "adp": 99.39,
-    "auctionValueLive": 4.61,
+    "adp": 98.64,
+    "auctionValueLive": 4.67,
     "auctionValueEditorial": 1
    },
    {
-    "name": "Caleb Williams",
-    "pos": "QB",
-    "team": "CHI",
-    "adp": 100.26,
-    "auctionValueLive": 3.38,
-    "auctionValueEditorial": 3
+    "name": "Broncos D/ST",
+    "pos": "DST",
+    "team": "DEN",
+    "adp": 98.82,
+    "auctionValueLive": 1.36,
+    "auctionValueEditorial": 1
    },
    {
     "name": "TreVeyon Henderson",
     "pos": "RB",
     "team": "NE",
-    "adp": 100.82,
-    "auctionValueLive": 5.07,
+    "adp": 100.45,
+    "auctionValueLive": 5.04,
     "auctionValueEditorial": 9
    },
    {
     "name": "Jadarian Price",
     "pos": "RB",
     "team": "SEA",
-    "adp": 100.9,
-    "auctionValueLive": 5.82,
+    "adp": 101.55,
+    "auctionValueLive": 5.6,
     "auctionValueEditorial": 9
    },
    {
     "name": "Luther Burden III",
     "pos": "WR",
     "team": "CHI",
-    "adp": 102.54,
-    "auctionValueLive": 5.81,
+    "adp": 103.23,
+    "auctionValueLive": 5.62,
     "auctionValueEditorial": 9
    },
    {
     "name": "Isaiah Likely",
     "pos": "TE",
     "team": "NYG",
-    "adp": 104.53,
-    "auctionValueLive": 2.7,
+    "adp": 104.69,
+    "auctionValueLive": 2.63,
     "auctionValueEditorial": 2
    },
    {
-    "name": "Rhamondre Stevenson",
-    "pos": "RB",
-    "team": "NE",
-    "adp": 105.17,
-    "auctionValueLive": 3.6,
-    "auctionValueEditorial": 7
-   },
-   {
-    "name": "DK Metcalf",
-    "pos": "WR",
-    "team": "PIT",
-    "adp": 105.47,
-    "auctionValueLive": 3.62,
-    "auctionValueEditorial": 6
+    "name": "Caleb Williams",
+    "pos": "QB",
+    "team": "CHI",
+    "adp": 105.02,
+    "auctionValueLive": 2.92,
+    "auctionValueEditorial": 3
    },
    {
     "name": "Chuba Hubbard",
     "pos": "RB",
     "team": "CAR",
-    "adp": 106.63,
-    "auctionValueLive": 4.08,
+    "adp": 105.06,
+    "auctionValueLive": 4.4,
     "auctionValueEditorial": 3
+   },
+   {
+    "name": "DK Metcalf",
+    "pos": "WR",
+    "team": "PIT",
+    "adp": 106.02,
+    "auctionValueLive": 3.49,
+    "auctionValueEditorial": 6
+   },
+   {
+    "name": "Rhamondre Stevenson",
+    "pos": "RB",
+    "team": "NE",
+    "adp": 106.12,
+    "auctionValueLive": 3.46,
+    "auctionValueEditorial": 7
    },
    {
     "name": "Cameron Dicker",
     "pos": "K",
     "team": "LAC",
-    "adp": 106.79,
+    "adp": 107.64,
     "auctionValueLive": 1.15,
-    "auctionValueEditorial": 1
-   },
-   {
-    "name": "Steelers D/ST",
-    "pos": "DST",
-    "team": "PIT",
-    "adp": 107.43,
-    "auctionValueLive": 1.29,
     "auctionValueEditorial": 1
    },
    {
     "name": "Carnell Tate",
     "pos": "WR",
     "team": "TEN",
-    "adp": 107.77,
-    "auctionValueLive": 4.65,
+    "adp": 108.11,
+    "auctionValueLive": 4.49,
     "auctionValueEditorial": 8
+   },
+   {
+    "name": "Steelers D/ST",
+    "pos": "DST",
+    "team": "PIT",
+    "adp": 108.23,
+    "auctionValueLive": 1.26,
+    "auctionValueEditorial": 1
    },
    {
     "name": "Stefon Diggs",
     "pos": "WR",
     "team": "WAS",
-    "adp": 109.85,
-    "auctionValueLive": 2.59,
+    "adp": 109.07,
+    "auctionValueLive": 2.68,
     "auctionValueEditorial": 3
    },
    {
     "name": "Jason Myers",
     "pos": "K",
     "team": "SEA",
-    "adp": 109.92,
-    "auctionValueLive": 1.18,
+    "adp": 109.63,
+    "auctionValueLive": 1.2,
     "auctionValueEditorial": 1
-   },
-   {
-    "name": "Marvin Harrison Jr.",
-    "pos": "WR",
-    "team": "ARI",
-    "adp": 111.74,
-    "auctionValueLive": 3.89,
-    "auctionValueEditorial": 8
    },
    {
     "name": "Matthew Stafford",
     "pos": "QB",
     "team": "LAR",
-    "adp": 112.41,
+    "adp": 111.24,
     "auctionValueLive": 1.95,
     "auctionValueEditorial": 2
    },
@@ -735,575 +727,535 @@
     "name": "Rams D/ST",
     "pos": "DST",
     "team": "LAR",
-    "adp": 112.51,
-    "auctionValueLive": 1.25,
+    "adp": 112.23,
+    "auctionValueLive": 1.31,
     "auctionValueEditorial": 1
+   },
+   {
+    "name": "Marvin Harrison Jr.",
+    "pos": "WR",
+    "team": "ARI",
+    "adp": 112.31,
+    "auctionValueLive": 3.77,
+    "auctionValueEditorial": 8
    },
    {
     "name": "Tucker Kraft",
     "pos": "TE",
     "team": "GB",
-    "adp": 112.57,
-    "auctionValueLive": 2.31,
+    "adp": 113.18,
+    "auctionValueLive": 2.22,
     "auctionValueEditorial": 3
    },
    {
     "name": "Trevor Lawrence",
     "pos": "QB",
     "team": "JAC",
-    "adp": 113.39,
-    "auctionValueLive": 1.85,
+    "adp": 114.13,
+    "auctionValueLive": 1.78,
     "auctionValueEditorial": 3
    },
    {
     "name": "Jaylen Warren",
     "pos": "RB",
     "team": "PIT",
-    "adp": 114.81,
-    "auctionValueLive": 2.68,
+    "adp": 114.95,
+    "auctionValueLive": 2.64,
     "auctionValueEditorial": 5
    },
    {
     "name": "Justin Herbert",
     "pos": "QB",
     "team": "LAC",
-    "adp": 115.54,
-    "auctionValueLive": 2.45,
+    "adp": 116.11,
+    "auctionValueLive": 2.32,
     "auctionValueEditorial": 4
    },
    {
     "name": "Courtland Sutton",
     "pos": "WR",
     "team": "DEN",
-    "adp": 116.04,
-    "auctionValueLive": 3.14,
+    "adp": 116.5,
+    "auctionValueLive": 3.04,
     "auctionValueEditorial": 6
    },
    {
     "name": "Tony Pollard",
     "pos": "RB",
     "team": "TEN",
-    "adp": 117.06,
-    "auctionValueLive": 2.8,
+    "adp": 117.37,
+    "auctionValueLive": 2.73,
     "auctionValueEditorial": 6
    },
    {
     "name": "Michael Pittman Jr.",
     "pos": "WR",
     "team": "PIT",
-    "adp": 117.08,
-    "auctionValueLive": 3.3,
+    "adp": 117.57,
+    "auctionValueLive": 3.18,
     "auctionValueEditorial": 7
    },
    {
     "name": "Josh Jacobs",
     "pos": "RB",
     "team": "GB",
-    "adp": 121.86,
-    "auctionValueLive": 1.88,
+    "adp": 122.06,
+    "auctionValueLive": 1.89,
     "auctionValueEditorial": 4
    },
    {
     "name": "Jalen Coker",
     "pos": "WR",
     "team": "CAR",
-    "adp": 124.62,
-    "auctionValueLive": 2.81,
+    "adp": 123.22,
+    "auctionValueLive": 3.02,
     "auctionValueEditorial": 1
    },
    {
     "name": "Kenny Gainwell",
     "pos": "RB",
     "team": "TB",
-    "adp": 125.38,
-    "auctionValueLive": 1.57,
+    "adp": 125.64,
+    "auctionValueLive": 1.55,
     "auctionValueEditorial": 4
    },
    {
     "name": "Ravens D/ST",
     "pos": "DST",
     "team": "BAL",
-    "adp": 126.84,
-    "auctionValueLive": 1.03,
+    "adp": 126.29,
+    "auctionValueLive": 1.01,
     "auctionValueEditorial": 1
-   },
-   {
-    "name": "Michael Wilson",
-    "pos": "WR",
-    "team": "ARI",
-    "adp": 128.12,
-    "auctionValueLive": 1.81,
-    "auctionValueEditorial": 4
-   },
-   {
-    "name": "Dallas Goedert",
-    "pos": "TE",
-    "team": "PHI",
-    "adp": 128.28,
-    "auctionValueLive": 1.53,
-    "auctionValueEditorial": 2
    },
    {
     "name": "Aaron Jones Sr.",
     "pos": "RB",
     "team": "MIN",
-    "adp": 128.61,
-    "auctionValueLive": 1.81,
+    "adp": 128.28,
+    "auctionValueLive": 1.78,
     "auctionValueEditorial": 3
+   },
+   {
+    "name": "Michael Wilson",
+    "pos": "WR",
+    "team": "ARI",
+    "adp": 128.33,
+    "auctionValueLive": 1.77,
+    "auctionValueEditorial": 4
+   },
+   {
+    "name": "Matthew Golden",
+    "pos": "WR",
+    "team": "GB",
+    "adp": 128.79,
+    "auctionValueLive": 1.96,
+    "auctionValueEditorial": 2
    },
    {
     "name": "Wan'Dale Robinson",
     "pos": "WR",
     "team": "TEN",
-    "adp": 128.74,
-    "auctionValueLive": 1.74,
+    "adp": 129.14,
+    "auctionValueLive": 1.69,
     "auctionValueEditorial": 4
    },
    {
     "name": "Bo Nix",
     "pos": "QB",
     "team": "DEN",
-    "adp": 128.79,
-    "auctionValueLive": 1.34,
+    "adp": 129.14,
+    "auctionValueLive": 1.32,
     "auctionValueEditorial": 2
    },
    {
-    "name": "Matthew Golden",
-    "pos": "WR",
-    "team": "GB",
-    "adp": 129.28,
-    "auctionValueLive": 1.83,
+    "name": "Jake Ferguson",
+    "pos": "TE",
+    "team": "DAL",
+    "adp": 130.69,
+    "auctionValueLive": 1.48,
+    "auctionValueEditorial": 2
+   },
+   {
+    "name": "Dallas Goedert",
+    "pos": "TE",
+    "team": "PHI",
+    "adp": 130.76,
+    "auctionValueLive": 1.45,
     "auctionValueEditorial": 2
    },
    {
     "name": "Jonathon Brooks",
     "pos": "RB",
     "team": "CAR",
-    "adp": 130.31,
-    "auctionValueLive": 1.21,
+    "adp": 130.91,
+    "auctionValueLive": 1.19,
     "auctionValueEditorial": 4
-   },
-   {
-    "name": "Jake Ferguson",
-    "pos": "TE",
-    "team": "DAL",
-    "adp": 131.43,
-    "auctionValueLive": 1.5,
-    "auctionValueEditorial": 2
    },
    {
     "name": "Jared Goff",
     "pos": "QB",
     "team": "DET",
-    "adp": 131.74,
-    "auctionValueLive": 1.33,
+    "adp": 131.25,
+    "auctionValueLive": 1.27,
     "auctionValueEditorial": 1
    },
    {
     "name": "MarShawn Lloyd",
     "pos": "RB",
     "team": "GB",
-    "adp": 132.41,
-    "auctionValueLive": 1.53,
+    "adp": 132.71,
+    "auctionValueLive": 1.47,
     "auctionValueEditorial": 4
    },
    {
     "name": "Rico Dowdle",
     "pos": "RB",
     "team": "PIT",
-    "adp": 132.8,
-    "auctionValueLive": 1.34,
+    "adp": 133.55,
+    "auctionValueLive": 1.33,
     "auctionValueEditorial": 3
+   },
+   {
+    "name": "Tyler Shough",
+    "pos": "QB",
+    "team": "NO",
+    "adp": 133.64,
+    "auctionValueLive": 1.34,
+    "auctionValueEditorial": 1
    },
    {
     "name": "Alec Pierce",
     "pos": "WR",
     "team": "IND",
-    "adp": 133.94,
-    "auctionValueLive": 1.67,
+    "adp": 134.64,
+    "auctionValueLive": 1.62,
     "auctionValueEditorial": 3
+   },
+   {
+    "name": "Harrison Butker",
+    "pos": "K",
+    "team": "KC",
+    "adp": 135.17,
+    "auctionValueLive": 1.06,
+    "auctionValueEditorial": 1
    },
    {
     "name": "Kyle Monangai",
     "pos": "RB",
     "team": "CHI",
-    "adp": 134.83,
+    "adp": 135.21,
     "auctionValueLive": 1.25,
+    "auctionValueEditorial": 2
+   },
+   {
+    "name": "Brian Thomas Jr.",
+    "pos": "WR",
+    "team": "JAC",
+    "adp": 135.87,
+    "auctionValueLive": 1.3,
     "auctionValueEditorial": 2
    },
    {
     "name": "Harrison Mevis",
     "pos": "K",
     "team": "LAR",
-    "adp": 135.59,
-    "auctionValueLive": 0.97,
-    "auctionValueEditorial": 1
-   },
-   {
-    "name": "Brian Thomas Jr.",
-    "pos": "WR",
-    "team": "JAC",
-    "adp": 135.69,
-    "auctionValueLive": 1.34,
-    "auctionValueEditorial": 2
-   },
-   {
-    "name": "Tyler Shough",
-    "pos": "QB",
-    "team": "NO",
-    "adp": 135.73,
-    "auctionValueLive": 1.27,
+    "adp": 136.23,
+    "auctionValueLive": 0.96,
     "auctionValueEditorial": 1
    },
    {
     "name": "Cam Little",
     "pos": "K",
     "team": "JAC",
-    "adp": 136.01,
-    "auctionValueLive": 1.03,
+    "adp": 136.31,
+    "auctionValueLive": 1.02,
     "auctionValueEditorial": 1
    },
    {
-    "name": "Harrison Butker",
+    "name": "Ka'imi Fairbairn",
     "pos": "K",
-    "team": "KC",
-    "adp": 136.39,
-    "auctionValueLive": 1.01,
+    "team": "HOU",
+    "adp": 136.55,
+    "auctionValueLive": 0.95,
     "auctionValueEditorial": 1
    },
    {
     "name": "Jakobi Meyers",
     "pos": "WR",
     "team": "JAC",
-    "adp": 136.5,
-    "auctionValueLive": 1.42,
+    "adp": 136.92,
+    "auctionValueLive": 1.38,
     "auctionValueEditorial": 3
-   },
-   {
-    "name": "Ka'imi Fairbairn",
-    "pos": "K",
-    "team": "HOU",
-    "adp": 136.77,
-    "auctionValueLive": 0.97,
-    "auctionValueEditorial": 1
    },
    {
     "name": "Deebo Samuel Sr.",
     "pos": "WR",
     "team": "SF",
-    "adp": 137.18,
-    "auctionValueLive": 1.23,
+    "adp": 137.03,
+    "auctionValueLive": 1.18,
     "auctionValueEditorial": 1
    },
    {
     "name": "Mark Andrews",
     "pos": "TE",
     "team": "BAL",
-    "adp": 137.4,
-    "auctionValueLive": 1.05,
+    "adp": 137.33,
+    "auctionValueLive": 1.04,
     "auctionValueEditorial": 2
    },
    {
     "name": "J.K. Dobbins",
     "pos": "RB",
     "team": "DEN",
-    "adp": 137.73,
-    "auctionValueLive": 0.94,
+    "adp": 137.92,
+    "auctionValueLive": 0.91,
     "auctionValueEditorial": 2
-   },
-   {
-    "name": "Eagles D/ST",
-    "pos": "DST",
-    "team": "PHI",
-    "adp": 138.64,
-    "auctionValueLive": 0.9,
-    "auctionValueEditorial": 1
    },
    {
     "name": "Rachaad White",
     "pos": "RB",
     "team": "WAS",
-    "adp": 138.76,
-    "auctionValueLive": 0.99,
+    "adp": 138.75,
+    "auctionValueLive": 1,
     "auctionValueEditorial": 2
    },
    {
     "name": "Xavier Worthy",
     "pos": "WR",
     "team": "KC",
-    "adp": 139.45,
-    "auctionValueLive": 0.96,
+    "adp": 138.98,
+    "auctionValueLive": 0.97,
+    "auctionValueEditorial": 1
+   },
+   {
+    "name": "Eagles D/ST",
+    "pos": "DST",
+    "team": "PHI",
+    "adp": 139.02,
+    "auctionValueLive": 0.89,
     "auctionValueEditorial": 1
    },
    {
     "name": "Josh Downs",
     "pos": "WR",
     "team": "IND",
-    "adp": 140.44,
-    "auctionValueLive": 1.36,
+    "adp": 139.9,
+    "auctionValueLive": 1.38,
     "auctionValueEditorial": 2
    },
    {
     "name": "Jordan Addison",
     "pos": "WR",
     "team": "MIN",
-    "adp": 141.46,
-    "auctionValueLive": 1.25,
+    "adp": 141.65,
+    "auctionValueLive": 1.22,
     "auctionValueEditorial": 2
    },
    {
     "name": "Khalil Shakir",
     "pos": "WR",
     "team": "BUF",
-    "adp": 141.46,
-    "auctionValueLive": 1,
+    "adp": 141.87,
+    "auctionValueLive": 0.98,
     "auctionValueEditorial": 2
    },
    {
     "name": "Chris Godwin Jr.",
     "pos": "WR",
     "team": "TB",
-    "adp": 141.61,
-    "auctionValueLive": 1.44,
-    "auctionValueEditorial": 2
-   },
-   {
-    "name": "Blake Corum",
-    "pos": "RB",
-    "team": "LAR",
-    "adp": 143.32,
-    "auctionValueLive": 1,
+    "adp": 141.91,
+    "auctionValueLive": 1.4,
     "auctionValueEditorial": 2
    },
    {
     "name": "Bryce Young",
     "pos": "QB",
     "team": "CAR",
-    "adp": 144.74,
-    "auctionValueLive": 0.86,
+    "adp": 142.17,
+    "auctionValueLive": 1.02,
     "auctionValueEditorial": 0
+   },
+   {
+    "name": "Blake Corum",
+    "pos": "RB",
+    "team": "LAR",
+    "adp": 143.27,
+    "auctionValueLive": 1.01,
+    "auctionValueEditorial": 2
    },
    {
     "name": "Patriots D/ST",
     "pos": "DST",
     "team": "NE",
-    "adp": 146.17,
-    "auctionValueLive": 0.97,
+    "adp": 145.01,
+    "auctionValueLive": 0.98,
     "auctionValueEditorial": 1
    },
    {
     "name": "RJ Harvey",
     "pos": "RB",
     "team": "DEN",
-    "adp": 146.75,
-    "auctionValueLive": 0.81,
+    "adp": 146.9,
+    "auctionValueLive": 0.8,
     "auctionValueEditorial": 2
    },
    {
     "name": "Jacory Croskey-Merritt",
     "pos": "RB",
     "team": "WAS",
-    "adp": 147.35,
-    "auctionValueLive": 0.91,
+    "adp": 147.82,
+    "auctionValueLive": 0.88,
     "auctionValueEditorial": 2
    },
    {
     "name": "Eddy Pineiro",
     "pos": "K",
     "team": "SF",
-    "adp": 148.91,
-    "auctionValueLive": 1.02,
+    "adp": 148.17,
+    "auctionValueLive": 0.96,
+    "auctionValueEditorial": 1
+   },
+   {
+    "name": "Kyler Murray",
+    "pos": "QB",
+    "team": "MIN",
+    "adp": 149.69,
+    "auctionValueLive": 0.8,
     "auctionValueEditorial": 1
    },
    {
     "name": "Makai Lemon",
     "pos": "WR",
     "team": "PHI",
-    "adp": 150,
-    "auctionValueLive": 1.01,
-    "auctionValueEditorial": 2
-   },
-   {
-    "name": "Kyler Murray",
-    "pos": "QB",
-    "team": "MIN",
-    "adp": 150.07,
-    "auctionValueLive": 0.81,
-    "auctionValueEditorial": 1
-   },
-   {
-    "name": "Quentin Johnston",
-    "pos": "WR",
-    "team": "LAC",
-    "adp": 151.46,
-    "auctionValueLive": 1.15,
+    "adp": 150.32,
+    "auctionValueLive": 1,
     "auctionValueEditorial": 2
    },
    {
     "name": "Chiefs D/ST",
     "pos": "DST",
     "team": "KC",
-    "adp": 151.55,
-    "auctionValueLive": 0.4,
+    "adp": 151.76,
+    "auctionValueLive": 0.37,
     "auctionValueEditorial": 0
+   },
+   {
+    "name": "Quentin Johnston",
+    "pos": "WR",
+    "team": "LAC",
+    "adp": 151.77,
+    "auctionValueLive": 1.13,
+    "auctionValueEditorial": 2
    },
    {
     "name": "Jayden Reed",
     "pos": "WR",
     "team": "GB",
-    "adp": 153.47,
-    "auctionValueLive": 1.13,
+    "adp": 154.11,
+    "auctionValueLive": 1.1,
     "auctionValueEditorial": 2
+   },
+   {
+    "name": "Denzel Boston",
+    "pos": "WR",
+    "team": "CLE",
+    "adp": 154.29,
+    "auctionValueLive": 0.73,
+    "auctionValueEditorial": 0
    },
    {
     "name": "Romeo Doubs",
     "pos": "WR",
     "team": "NE",
-    "adp": 154.64,
-    "auctionValueLive": 1.06,
+    "adp": 154.73,
+    "auctionValueLive": 1.03,
     "auctionValueEditorial": 1
    },
    {
     "name": "49ers D/ST",
     "pos": "DST",
     "team": "SF",
-    "adp": 155.95,
-    "auctionValueLive": 0.33,
+    "adp": 155.81,
+    "auctionValueLive": 0.31,
     "auctionValueEditorial": 0
-   },
-   {
-    "name": "Denzel Boston",
-    "pos": "WR",
-    "team": "CLE",
-    "adp": 156.22,
-    "auctionValueLive": 0.64,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "De'Zhaun Stribling",
-    "pos": "WR",
-    "team": "SF",
-    "adp": 156.5,
-    "auctionValueLive": 0.83,
-    "auctionValueEditorial": 1
-   },
-   {
-    "name": "Travis Hunter",
-    "pos": "WR",
-    "team": "JAC",
-    "adp": 156.7,
-    "auctionValueLive": 1.03,
-    "auctionValueEditorial": 3
    },
    {
     "name": "Juwan Johnson",
     "pos": "TE",
     "team": "NO",
-    "adp": 156.78,
-    "auctionValueLive": 0.53,
+    "adp": 156.33,
+    "auctionValueLive": 0.51,
     "auctionValueEditorial": 0
    },
    {
     "name": "Evan McPherson",
     "pos": "K",
     "team": "CIN",
-    "adp": 157.48,
-    "auctionValueLive": 0.55,
+    "adp": 156.85,
+    "auctionValueLive": 0.58,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "De'Zhaun Stribling",
+    "pos": "WR",
+    "team": "SF",
+    "adp": 156.88,
+    "auctionValueLive": 0.81,
+    "auctionValueEditorial": 1
+   },
+   {
+    "name": "Travis Hunter",
+    "pos": "WR",
+    "team": "JAC",
+    "adp": 156.91,
+    "auctionValueLive": 1.04,
+    "auctionValueEditorial": 3
+   },
+   {
+    "name": "Dalton Schultz",
+    "pos": "TE",
+    "team": "HOU",
+    "adp": 157.07,
+    "auctionValueLive": 0.41,
     "auctionValueEditorial": 0
    },
    {
     "name": "Jake Bates",
     "pos": "K",
     "team": "DET",
-    "adp": 157.81,
-    "auctionValueLive": 0.75,
+    "adp": 157.97,
+    "auctionValueLive": 0.73,
     "auctionValueEditorial": 1
    },
    {
     "name": "Baker Mayfield",
     "pos": "QB",
     "team": "TB",
-    "adp": 158.1,
-    "auctionValueLive": 0.42,
+    "adp": 158.3,
+    "auctionValueLive": 0.41,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Jordan Love",
+    "pos": "QB",
+    "team": "GB",
+    "adp": 158.42,
+    "auctionValueLive": 0.19,
     "auctionValueEditorial": 0
    },
    {
     "name": "Browns D/ST",
     "pos": "DST",
     "team": "CLE",
-    "adp": 158.3,
-    "auctionValueLive": 0.79,
-    "auctionValueEditorial": 1
-   },
-   {
-    "name": "Jordan Love",
-    "pos": "QB",
-    "team": "GB",
-    "adp": 158.38,
-    "auctionValueLive": 0.21,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Dalton Schultz",
-    "pos": "TE",
-    "team": "HOU",
     "adp": 158.48,
-    "auctionValueLive": 0.36,
-    "auctionValueEditorial": 0
+    "auctionValueLive": 0.78,
+    "auctionValueEditorial": 1
    },
    {
     "name": "Lions D/ST",
     "pos": "DST",
     "team": "DET",
-    "adp": 159.04,
-    "auctionValueLive": 0.68,
-    "auctionValueEditorial": 1
-   },
-   {
-    "name": "Tyjae Spears",
-    "pos": "RB",
-    "team": "TEN",
-    "adp": 159.63,
-    "auctionValueLive": 0.74,
-    "auctionValueEditorial": 1
-   },
-   {
-    "name": "Woody Marks",
-    "pos": "RB",
-    "team": "HOU",
-    "adp": 159.78,
-    "auctionValueLive": 0.75,
-    "auctionValueEditorial": 1
-   },
-   {
-    "name": "Tyler Loop",
-    "pos": "K",
-    "team": "BAL",
-    "adp": 160.01,
-    "auctionValueLive": 0.63,
-    "auctionValueEditorial": 1
-   },
-   {
-    "name": "Hunter Henry",
-    "pos": "TE",
-    "team": "NE",
-    "adp": 160.1,
-    "auctionValueLive": 0.18,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "T.J. Hockenson",
-    "pos": "TE",
-    "team": "MIN",
-    "adp": 160.42,
-    "auctionValueLive": 0.21,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "KC Concepcion",
-    "pos": "WR",
-    "team": "CLE",
-    "adp": 160.58,
+    "adp": 159.2,
     "auctionValueLive": 0.68,
     "auctionValueEditorial": 1
    },
@@ -1311,167 +1263,199 @@
     "name": "Vikings D/ST",
     "pos": "DST",
     "team": "MIN",
-    "adp": 160.86,
-    "auctionValueLive": 0.27,
+    "adp": 159.76,
+    "auctionValueLive": 0.32,
     "auctionValueEditorial": 0
+   },
+   {
+    "name": "Tyjae Spears",
+    "pos": "RB",
+    "team": "TEN",
+    "adp": 159.86,
+    "auctionValueLive": 0.72,
+    "auctionValueEditorial": 1
+   },
+   {
+    "name": "Hunter Henry",
+    "pos": "TE",
+    "team": "NE",
+    "adp": 159.88,
+    "auctionValueLive": 0.19,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Woody Marks",
+    "pos": "RB",
+    "team": "HOU",
+    "adp": 159.98,
+    "auctionValueLive": 0.73,
+    "auctionValueEditorial": 1
+   },
+   {
+    "name": "Tyler Loop",
+    "pos": "K",
+    "team": "BAL",
+    "adp": 160.23,
+    "auctionValueLive": 0.6,
+    "auctionValueEditorial": 1
+   },
+   {
+    "name": "KC Concepcion",
+    "pos": "WR",
+    "team": "CLE",
+    "adp": 160.62,
+    "auctionValueLive": 0.67,
+    "auctionValueEditorial": 1
    },
    {
     "name": "Alvin Kamara",
     "pos": "RB",
     "team": "NO",
-    "adp": 161.1,
-    "auctionValueLive": 0.24,
+    "adp": 160.82,
+    "auctionValueLive": 0.21,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "T.J. Hockenson",
+    "pos": "TE",
+    "team": "MIN",
+    "adp": 160.83,
+    "auctionValueLive": 0.21,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Bengals D/ST",
+    "pos": "DST",
+    "team": "CIN",
+    "adp": 162.28,
+    "auctionValueLive": 0.19,
     "auctionValueEditorial": 0
    },
    {
     "name": "Jordan Mason",
     "pos": "RB",
     "team": "MIN",
-    "adp": 162.31,
-    "auctionValueLive": 0.68,
+    "adp": 162.67,
+    "auctionValueLive": 0.65,
     "auctionValueEditorial": 1
-   },
-   {
-    "name": "Bengals D/ST",
-    "pos": "DST",
-    "team": "CIN",
-    "adp": 162.77,
-    "auctionValueLive": 0.18,
-    "auctionValueEditorial": 0
    },
    {
     "name": "Rashid Shaheed",
     "pos": "WR",
     "team": "SEA",
-    "adp": 163.1,
-    "auctionValueLive": 0.21,
+    "adp": 162.93,
+    "auctionValueLive": 0.2,
     "auctionValueEditorial": 0
    },
    {
     "name": "Devaughn Vele",
     "pos": "WR",
     "team": "NO",
-    "adp": 163.27,
-    "auctionValueLive": 0.45,
+    "adp": 162.94,
+    "auctionValueLive": 0.52,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Dontayvion Wicks",
+    "pos": "WR",
+    "team": "PHI",
+    "adp": 163,
+    "auctionValueLive": 0.33,
     "auctionValueEditorial": 0
    },
    {
     "name": "Zach Charbonnet",
     "pos": "RB",
     "team": "SEA",
-    "adp": 163.57,
+    "adp": 163.51,
     "auctionValueLive": 0.57,
     "auctionValueEditorial": 1
-   },
-   {
-    "name": "Dontayvion Wicks",
-    "pos": "WR",
-    "team": "PHI",
-    "adp": 163.6,
-    "auctionValueLive": 0.31,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "C.J. Stroud",
-    "pos": "QB",
-    "team": "HOU",
-    "adp": 164.11,
-    "auctionValueLive": 0.15,
-    "auctionValueEditorial": 0
    },
    {
     "name": "Chase McLaughlin",
     "pos": "K",
     "team": "TB",
-    "adp": 164.29,
-    "auctionValueLive": 0.2,
+    "adp": 163.58,
+    "auctionValueLive": 0.21,
     "auctionValueEditorial": 0
    },
    {
     "name": "Tre Tucker",
     "pos": "WR",
     "team": "LV",
-    "adp": 164.34,
-    "auctionValueLive": 0.24,
+    "adp": 163.73,
+    "auctionValueLive": 0.27,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "C.J. Stroud",
+    "pos": "QB",
+    "team": "HOU",
+    "adp": 164.05,
+    "auctionValueLive": 0.15,
     "auctionValueEditorial": 0
    },
    {
     "name": "Sam Darnold",
     "pos": "QB",
     "team": "SEA",
-    "adp": 165.24,
-    "auctionValueLive": 0.18,
+    "adp": 164.89,
+    "auctionValueLive": 0.19,
     "auctionValueEditorial": 0
    },
    {
     "name": "Jonah Coleman",
     "pos": "RB",
     "team": "DEN",
-    "adp": 165.3,
-    "auctionValueLive": 0.35,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Bills D/ST",
-    "pos": "DST",
-    "team": "BUF",
-    "adp": 165.38,
-    "auctionValueLive": 0.08,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Chris Boswell",
-    "pos": "K",
-    "team": "PIT",
-    "adp": 165.41,
-    "auctionValueLive": 0.11,
+    "adp": 164.92,
+    "auctionValueLive": 0.34,
     "auctionValueEditorial": 0
    },
    {
     "name": "Will Reichard",
     "pos": "K",
     "team": "MIN",
-    "adp": 165.61,
-    "auctionValueLive": 0.17,
+    "adp": 165.52,
+    "auctionValueLive": 0.16,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Bills D/ST",
+    "pos": "DST",
+    "team": "BUF",
+    "adp": 165.52,
+    "auctionValueLive": 0.06,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Chris Boswell",
+    "pos": "K",
+    "team": "PIT",
+    "adp": 165.57,
+    "auctionValueLive": 0.1,
     "auctionValueEditorial": 0
    },
    {
     "name": "Jalen McMillan",
     "pos": "WR",
     "team": "TB",
-    "adp": 165.62,
-    "auctionValueLive": 0.55,
+    "adp": 165.78,
+    "auctionValueLive": 0.54,
     "auctionValueEditorial": 1
-   },
-   {
-    "name": "Cairo Santos",
-    "pos": "K",
-    "team": "CHI",
-    "adp": 165.92,
-    "auctionValueLive": 0.2,
-    "auctionValueEditorial": 0
    },
    {
     "name": "Daniel Jones",
     "pos": "QB",
     "team": "IND",
-    "adp": 165.94,
-    "auctionValueLive": 0.17,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Kenyon Sadiq",
-    "pos": "TE",
-    "team": "NYJ",
-    "adp": 165.98,
-    "auctionValueLive": 0.15,
+    "adp": 165.97,
+    "auctionValueLive": 0.18,
     "auctionValueEditorial": 0
    },
    {
     "name": "Chargers D/ST",
     "pos": "DST",
     "team": "LAC",
-    "adp": 166.01,
+    "adp": 166.09,
     "auctionValueLive": 0.13,
     "auctionValueEditorial": 0
    },
@@ -1479,24 +1463,56 @@
     "name": "Tank Dell",
     "pos": "WR",
     "team": "HOU",
-    "adp": 166.1,
-    "auctionValueLive": 0.44,
+    "adp": 166.21,
+    "auctionValueLive": 0.42,
     "auctionValueEditorial": 1
    },
    {
     "name": "Isiah Pacheco",
     "pos": "RB",
     "team": "DET",
-    "adp": 166.18,
-    "auctionValueLive": 0.3,
+    "adp": 166.26,
+    "auctionValueLive": 0.29,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Kenyon Sadiq",
+    "pos": "TE",
+    "team": "NYJ",
+    "adp": 166.31,
+    "auctionValueLive": 0.13,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Cairo Santos",
+    "pos": "K",
+    "team": "CHI",
+    "adp": 166.32,
+    "auctionValueLive": 0.17,
     "auctionValueEditorial": 0
    },
    {
     "name": "Trey Smack",
     "pos": "K",
     "team": "GB",
-    "adp": 166.43,
+    "adp": 166.35,
     "auctionValueLive": 0.15,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Rashod Bateman",
+    "pos": "WR",
+    "team": "BAL",
+    "adp": 166.39,
+    "auctionValueLive": 0.14,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Terrance Ferguson",
+    "pos": "TE",
+    "team": "LAR",
+    "adp": 166.47,
+    "auctionValueLive": 0.12,
     "auctionValueEditorial": 0
    },
    {
@@ -1508,58 +1524,34 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Rashod Bateman",
-    "pos": "WR",
-    "team": "BAL",
-    "adp": 166.67,
-    "auctionValueLive": 0.14,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Terrance Ferguson",
-    "pos": "TE",
-    "team": "LAR",
-    "adp": 166.68,
-    "auctionValueLive": 0.11,
-    "auctionValueEditorial": 0
-   },
-   {
     "name": "Tyler Bass",
     "pos": "K",
     "team": "BUF",
-    "adp": 166.69,
+    "adp": 166.85,
     "auctionValueLive": 0.08,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Buccaneers D/ST",
-    "pos": "DST",
-    "team": "TB",
-    "adp": 167.16,
-    "auctionValueLive": 0.07,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Jake Elliott",
-    "pos": "K",
-    "team": "PHI",
-    "adp": 167.21,
-    "auctionValueLive": 0.03,
     "auctionValueEditorial": 0
    },
    {
     "name": "Brian Robinson Jr.",
     "pos": "RB",
     "team": "ATL",
-    "adp": 167.44,
-    "auctionValueLive": 0.75,
+    "adp": 167.16,
+    "auctionValueLive": 0.65,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Jake Elliott",
+    "pos": "K",
+    "team": "PHI",
+    "adp": 167.18,
+    "auctionValueLive": 0.03,
     "auctionValueEditorial": 0
    },
    {
     "name": "Panthers D/ST",
     "pos": "DST",
     "team": "CAR",
-    "adp": 167.48,
+    "adp": 167.24,
     "auctionValueLive": 0.03,
     "auctionValueEditorial": 0
    },
@@ -1567,39 +1559,95 @@
     "name": "Adonai Mitchell",
     "pos": "WR",
     "team": "NYJ",
-    "adp": 167.57,
-    "auctionValueLive": 0.1,
+    "adp": 167.29,
+    "auctionValueLive": 0.12,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Buccaneers D/ST",
+    "pos": "DST",
+    "team": "TB",
+    "adp": 167.67,
+    "auctionValueLive": 0.05,
     "auctionValueEditorial": 0
    },
    {
     "name": "Kaelon Black",
     "pos": "RB",
     "team": "SF",
-    "adp": 167.65,
-    "auctionValueLive": 0.17,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Pat Freiermuth",
-    "pos": "TE",
-    "team": "PIT",
-    "adp": 167.89,
-    "auctionValueLive": 0.11,
+    "adp": 167.76,
+    "auctionValueLive": 0.16,
     "auctionValueEditorial": 0
    },
    {
     "name": "Cowboys D/ST",
     "pos": "DST",
     "team": "DAL",
-    "adp": 167.92,
-    "auctionValueLive": 0.01,
+    "adp": 167.86,
+    "auctionValueLive": 0.02,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Pat Freiermuth",
+    "pos": "TE",
+    "team": "PIT",
+    "adp": 168.03,
+    "auctionValueLive": 0.1,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Raiders D/ST",
+    "pos": "DST",
+    "team": "LV",
+    "adp": 168.04,
+    "auctionValueLive": 0.04,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "AJ Barner",
+    "pos": "TE",
+    "team": "SEA",
+    "adp": 168.05,
+    "auctionValueLive": 0.09,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Emmett Johnson",
+    "pos": "RB",
+    "team": "KC",
+    "adp": 168.08,
+    "auctionValueLive": 0.09,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Keenan Allen",
+    "pos": "WR",
+    "team": "IND",
+    "adp": 168.09,
+    "auctionValueLive": 0.05,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Packers D/ST",
+    "pos": "DST",
+    "team": "GB",
+    "adp": 168.21,
+    "auctionValueLive": 0.12,
     "auctionValueEditorial": 0
    },
    {
     "name": "Jaguars D/ST",
     "pos": "DST",
     "team": "JAC",
-    "adp": 167.92,
+    "adp": 168.22,
+    "auctionValueLive": 0.12,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Tank Bigsby",
+    "pos": "RB",
+    "team": "PHI",
+    "adp": 168.26,
     "auctionValueLive": 0.11,
     "auctionValueEditorial": 0
    },
@@ -1607,71 +1655,39 @@
     "name": "Tyler Allgeier",
     "pos": "RB",
     "team": "ARI",
-    "adp": 168.08,
-    "auctionValueLive": 0.12,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Keenan Allen",
-    "pos": "WR",
-    "team": "IND",
-    "adp": 168.12,
-    "auctionValueLive": 0.06,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "AJ Barner",
-    "pos": "TE",
-    "team": "SEA",
-    "adp": 168.13,
-    "auctionValueLive": 0.09,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Packers D/ST",
-    "pos": "DST",
-    "team": "GB",
-    "adp": 168.16,
-    "auctionValueLive": 0.12,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Emmett Johnson",
-    "pos": "RB",
-    "team": "KC",
-    "adp": 168.17,
-    "auctionValueLive": 0.09,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Raiders D/ST",
-    "pos": "DST",
-    "team": "LV",
-    "adp": 168.17,
-    "auctionValueLive": 0.04,
+    "adp": 168.28,
+    "auctionValueLive": 0.11,
     "auctionValueEditorial": 0
    },
    {
     "name": "Odell Beckham Jr.",
     "pos": "WR",
     "team": "NYG",
-    "adp": 168.43,
-    "auctionValueLive": 0.28,
+    "adp": 168.5,
+    "auctionValueLive": 0.34,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Tank Bigsby",
-    "pos": "RB",
-    "team": "PHI",
-    "adp": 168.43,
-    "auctionValueLive": 0.11,
+    "name": "Darren Waller",
+    "pos": "TE",
+    "team": "CAR",
+    "adp": 168.5,
+    "auctionValueLive": 0.05,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Kirk Cousins",
+    "pos": "QB",
+    "team": "LV",
+    "adp": 168.51,
+    "auctionValueLive": 0.04,
     "auctionValueEditorial": 0
    },
    {
     "name": "Malik Willis",
     "pos": "QB",
     "team": "MIA",
-    "adp": 168.47,
+    "adp": 168.54,
     "auctionValueLive": 0.11,
     "auctionValueEditorial": 0
    },
@@ -1679,111 +1695,103 @@
     "name": "Giants D/ST",
     "pos": "DST",
     "team": "NYG",
-    "adp": 168.51,
+    "adp": 168.56,
     "auctionValueLive": 0.02,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Fernando Mendoza",
-    "pos": "QB",
-    "team": "LV",
-    "adp": 168.58,
-    "auctionValueLive": 0.05,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Chris Rodriguez Jr.",
-    "pos": "RB",
-    "team": "JAC",
-    "adp": 168.58,
-    "auctionValueLive": 0.18,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Kirk Cousins",
-    "pos": "QB",
-    "team": "LV",
-    "adp": 168.59,
-    "auctionValueLive": 0.04,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Darren Waller",
-    "pos": "TE",
-    "team": "CAR",
-    "adp": 168.6,
-    "auctionValueLive": 0.04,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Caleb Douglas",
-    "pos": "WR",
-    "team": "MIA",
-    "adp": 168.61,
-    "auctionValueLive": 0.07,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Brenton Strange",
-    "pos": "TE",
-    "team": "JAC",
-    "adp": 168.63,
-    "auctionValueLive": 0.09,
     "auctionValueEditorial": 0
    },
    {
     "name": "Jets D/ST",
     "pos": "DST",
     "team": "NYJ",
-    "adp": 168.65,
+    "adp": 168.59,
     "auctionValueLive": 0.01,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Chris Rodriguez Jr.",
+    "pos": "RB",
+    "team": "JAC",
+    "adp": 168.61,
+    "auctionValueLive": 0.17,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Fernando Mendoza",
+    "pos": "QB",
+    "team": "LV",
+    "adp": 168.63,
+    "auctionValueLive": 0.05,
     "auctionValueEditorial": 0
    },
    {
     "name": "Dolphins D/ST",
     "pos": "DST",
     "team": "MIA",
-    "adp": 168.68,
+    "adp": 168.65,
     "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Brenton Strange",
+    "pos": "TE",
+    "team": "JAC",
+    "adp": 168.68,
+    "auctionValueLive": 0.09,
     "auctionValueEditorial": 0
    },
    {
     "name": "Matt Gay",
     "pos": "K",
     "team": "LV",
-    "adp": 168.69,
+    "adp": 168.7,
     "auctionValueLive": 0.04,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Jerry Jeudy",
-    "pos": "WR",
-    "team": "CLE",
-    "adp": 168.74,
-    "auctionValueLive": 0.08,
     "auctionValueEditorial": 0
    },
    {
     "name": "Darnell Washington",
     "pos": "TE",
     "team": "PIT",
-    "adp": 168.77,
-    "auctionValueLive": 0.03,
+    "adp": 168.78,
+    "auctionValueLive": 0.02,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Jerry Jeudy",
+    "pos": "WR",
+    "team": "CLE",
+    "adp": 168.79,
+    "auctionValueLive": 0.08,
     "auctionValueEditorial": 0
    },
    {
     "name": "Keon Coleman",
     "pos": "WR",
     "team": "BUF",
-    "adp": 168.81,
-    "auctionValueLive": 0.03,
+    "adp": 168.88,
+    "auctionValueLive": 0.02,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Saints D/ST",
+    "pos": "DST",
+    "team": "NO",
+    "adp": 168.97,
+    "auctionValueLive": 0.02,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Caleb Douglas",
+    "pos": "WR",
+    "team": "MIA",
+    "adp": 168.98,
+    "auctionValueLive": 0.05,
     "auctionValueEditorial": 0
    },
    {
     "name": "Bears D/ST",
     "pos": "DST",
     "team": "CHI",
-    "adp": 168.95,
+    "adp": 168.98,
     "auctionValueLive": 0.08,
     "auctionValueEditorial": 0
    },
@@ -1791,7 +1799,15 @@
     "name": "Dawson Knox",
     "pos": "TE",
     "team": "BUF",
-    "adp": 168.96,
+    "adp": 168.99,
+    "auctionValueLive": 0.01,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Spencer Shrader",
+    "pos": "K",
+    "team": "IND",
+    "adp": 168.99,
     "auctionValueLive": 0.02,
     "auctionValueEditorial": 0
    },
@@ -1800,30 +1816,14 @@
     "pos": "K",
     "team": "FA",
     "adp": 168.99,
-    "auctionValueLive": 0.05,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Saints D/ST",
-    "pos": "DST",
-    "team": "NO",
-    "adp": 169,
-    "auctionValueLive": 0.02,
+    "auctionValueLive": 0.03,
     "auctionValueEditorial": 0
    },
    {
     "name": "Najee Harris",
     "pos": "RB",
     "team": "NYG",
-    "adp": 169.03,
-    "auctionValueLive": 0.01,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Spencer Shrader",
-    "pos": "K",
-    "team": "IND",
-    "adp": 169.1,
+    "adp": 169.02,
     "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
@@ -1836,6 +1836,14 @@
     "auctionValueEditorial": 0
    },
    {
+    "name": "Cam Ward",
+    "pos": "QB",
+    "team": "TEN",
+    "adp": 169.14,
+    "auctionValueLive": 0.07,
+    "auctionValueEditorial": 0
+   },
+   {
     "name": "Justice Hill",
     "pos": "RB",
     "team": "BAL",
@@ -1844,58 +1852,42 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Cam Ward",
-    "pos": "QB",
-    "team": "TEN",
-    "adp": 169.21,
-    "auctionValueLive": 0.08,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Aaron Rodgers",
-    "pos": "QB",
-    "team": "PIT",
-    "adp": 169.23,
-    "auctionValueLive": 0.09,
-    "auctionValueEditorial": 0
-   },
-   {
     "name": "Braelon Allen",
     "pos": "RB",
     "team": "NYJ",
-    "adp": 169.29,
-    "auctionValueLive": 0.02,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Ryan Fitzgerald",
-    "pos": "K",
-    "team": "CAR",
-    "adp": 169.3,
-    "auctionValueLive": 0.01,
+    "adp": 169.25,
+    "auctionValueLive": 0.03,
     "auctionValueEditorial": 0
    },
    {
     "name": "Deshaun Watson",
     "pos": "QB",
     "team": "CLE",
-    "adp": 169.33,
+    "adp": 169.29,
     "auctionValueLive": 0.03,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Ryan Fitzgerald",
+    "pos": "K",
+    "team": "CAR",
+    "adp": 169.29,
+    "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
    {
     "name": "Nick Folk",
     "pos": "K",
     "team": "ATL",
-    "adp": 169.33,
+    "adp": 169.3,
     "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Joshua Palmer",
-    "pos": "WR",
-    "team": "BUF",
-    "adp": 169.33,
+    "name": "Drew Lock",
+    "pos": "QB",
+    "team": "SEA",
+    "adp": 169.32,
     "auctionValueLive": 0.02,
     "auctionValueEditorial": 0
    },
@@ -1903,63 +1895,7 @@
     "name": "Ben Sauls",
     "pos": "K",
     "team": "NYG",
-    "adp": 169.33,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Tyreek Hill",
-    "pos": "WR",
-    "team": "FA",
-    "adp": 169.33,
-    "auctionValueLive": 0.04,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Drew Lock",
-    "pos": "QB",
-    "team": "SEA",
-    "adp": 169.34,
-    "auctionValueLive": 0.02,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Cole Kmet",
-    "pos": "TE",
-    "team": "CHI",
-    "adp": 169.34,
-    "auctionValueLive": 0.01,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Dominic Zvada",
-    "pos": "K",
-    "team": "NYG",
-    "adp": 169.35,
-    "auctionValueLive": 0.01,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Jordyn Tyson",
-    "pos": "WR",
-    "team": "NO",
-    "adp": 169.37,
-    "auctionValueLive": 0.09,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Cardinals D/ST",
-    "pos": "DST",
-    "team": "ARI",
-    "adp": 169.37,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Philip Rivers",
-    "pos": "QB",
-    "team": "IND",
-    "adp": 169.39,
+    "adp": 169.32,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
@@ -1967,24 +1903,88 @@
     "name": "Wil Lutz",
     "pos": "K",
     "team": "DEN",
-    "adp": 169.4,
+    "adp": 169.33,
     "auctionValueLive": 0.05,
     "auctionValueEditorial": 0
    },
    {
-    "name": "J.J. McCarthy",
+    "name": "Tyreek Hill",
+    "pos": "WR",
+    "team": "FA",
+    "adp": 169.34,
+    "auctionValueLive": 0.05,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Aaron Rodgers",
     "pos": "QB",
-    "team": "MIN",
-    "adp": 169.41,
-    "auctionValueLive": 0.01,
+    "team": "PIT",
+    "adp": 169.35,
+    "auctionValueLive": 0.09,
     "auctionValueEditorial": 0
    },
    {
     "name": "Tyquan Thornton",
     "pos": "WR",
     "team": "KC",
-    "adp": 169.41,
+    "adp": 169.35,
     "auctionValueLive": 0.02,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Jordyn Tyson",
+    "pos": "WR",
+    "team": "NO",
+    "adp": 169.36,
+    "auctionValueLive": 0.09,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Cardinals D/ST",
+    "pos": "DST",
+    "team": "ARI",
+    "adp": 169.36,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Philip Rivers",
+    "pos": "QB",
+    "team": "IND",
+    "adp": 169.37,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Cole Kmet",
+    "pos": "TE",
+    "team": "CHI",
+    "adp": 169.37,
+    "auctionValueLive": 0.01,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Dominic Zvada",
+    "pos": "K",
+    "team": "NYG",
+    "adp": 169.38,
+    "auctionValueLive": 0.01,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "J.J. McCarthy",
+    "pos": "QB",
+    "team": "MIN",
+    "adp": 169.4,
+    "auctionValueLive": 0.01,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Malik Washington",
+    "pos": "WR",
+    "team": "MIA",
+    "adp": 169.4,
+    "auctionValueLive": 0.08,
     "auctionValueEditorial": 0
    },
    {
@@ -1992,47 +1992,47 @@
     "pos": "K",
     "team": "NO",
     "adp": 169.42,
-    "auctionValueLive": 0,
+    "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Mike Washington Jr.",
-    "pos": "RB",
-    "team": "LV",
-    "adp": 169.45,
-    "auctionValueLive": 0.08,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Malik Washington",
+    "name": "Joshua Palmer",
     "pos": "WR",
-    "team": "MIA",
-    "adp": 169.46,
-    "auctionValueLive": 0.09,
+    "team": "BUF",
+    "adp": 169.42,
+    "auctionValueLive": 0.02,
     "auctionValueEditorial": 0
    },
    {
     "name": "Michael Penix Jr.",
     "pos": "QB",
     "team": "ATL",
-    "adp": 169.48,
+    "adp": 169.44,
     "auctionValueLive": 0.01,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Mike Washington Jr.",
+    "pos": "RB",
+    "team": "LV",
+    "adp": 169.46,
+    "auctionValueLive": 0.07,
     "auctionValueEditorial": 0
    },
    {
     "name": "Jason Sanders",
     "pos": "K",
     "team": "NYJ",
-    "adp": 169.49,
+    "adp": 169.51,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Shedeur Sanders",
-    "pos": "QB",
-    "team": "CLE",
-    "adp": 169.5,
-    "auctionValueLive": 0.01,
+    "name": "Emanuel Wilson",
+    "pos": "RB",
+    "team": "SEA",
+    "adp": 169.51,
+    "auctionValueLive": 0.02,
     "auctionValueEditorial": 0
    },
    {
@@ -2044,58 +2044,42 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Titans D/ST",
-    "pos": "DST",
-    "team": "TEN",
-    "adp": 169.53,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "KaVontae Turpin",
-    "pos": "WR",
-    "team": "DAL",
-    "adp": 169.53,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Emanuel Wilson",
-    "pos": "RB",
-    "team": "SEA",
-    "adp": 169.53,
+    "name": "Shedeur Sanders",
+    "pos": "QB",
+    "team": "CLE",
+    "adp": 169.52,
     "auctionValueLive": 0.01,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Evan Engram",
-    "pos": "TE",
-    "team": "DEN",
-    "adp": 169.54,
-    "auctionValueLive": 0.1,
     "auctionValueEditorial": 0
    },
    {
     "name": "Jameis Winston",
     "pos": "QB",
     "team": "NYG",
+    "adp": 169.53,
+    "auctionValueLive": 0.01,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Titans D/ST",
+    "pos": "DST",
+    "team": "TEN",
     "adp": 169.55,
     "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Samaje Perine",
-    "pos": "RB",
-    "team": "CIN",
+    "name": "KaVontae Turpin",
+    "pos": "WR",
+    "team": "DAL",
     "adp": 169.55,
-    "auctionValueLive": 0.01,
+    "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
     "name": "Malachi Fields",
     "pos": "WR",
     "team": "NYG",
-    "adp": 169.57,
+    "adp": 169.55,
     "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
@@ -2103,16 +2087,32 @@
     "name": "Kyle Juszczyk",
     "pos": "RB",
     "team": "SF",
-    "adp": 169.58,
+    "adp": 169.56,
     "auctionValueLive": 0.02,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Adrian Martinez",
-    "pos": "QB",
-    "team": "FA",
+    "name": "Samaje Perine",
+    "pos": "RB",
+    "team": "CIN",
+    "adp": 169.56,
+    "auctionValueLive": 0.01,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Colts D/ST",
+    "pos": "DST",
+    "team": "IND",
     "adp": 169.58,
-    "auctionValueLive": 0,
+    "auctionValueLive": 0.01,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Ja'Kobi Lane",
+    "pos": "WR",
+    "team": "BAL",
+    "adp": 169.58,
+    "auctionValueLive": 0.05,
     "auctionValueEditorial": 0
    },
    {
@@ -2124,43 +2124,51 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Mike Gesicki",
-    "pos": "TE",
-    "team": "CIN",
+    "name": "Adrian Martinez",
+    "pos": "QB",
+    "team": "FA",
     "adp": 169.59,
-    "auctionValueLive": 0.1,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Colts D/ST",
-    "pos": "DST",
-    "team": "IND",
-    "adp": 169.6,
-    "auctionValueLive": 0.01,
+    "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
     "name": "Isaac TeSlaa",
     "pos": "WR",
     "team": "DET",
+    "adp": 169.6,
+    "auctionValueLive": 0.04,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Evan Engram",
+    "pos": "TE",
+    "team": "DEN",
+    "adp": 169.6,
+    "auctionValueLive": 0.09,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Andre Szmyt",
+    "pos": "K",
+    "team": "CLE",
+    "adp": 169.6,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Geno Smith",
+    "pos": "QB",
+    "team": "NYJ",
     "adp": 169.61,
     "auctionValueLive": 0.04,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Ja'Kobi Lane",
-    "pos": "WR",
-    "team": "BAL",
+    "name": "Michael Mayer",
+    "pos": "TE",
+    "team": "LV",
     "adp": 169.61,
-    "auctionValueLive": 0.06,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Emari Demercado",
-    "pos": "RB",
-    "team": "DAL",
-    "adp": 169.62,
-    "auctionValueLive": 0,
+    "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
    {
@@ -2172,10 +2180,10 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Andre Szmyt",
-    "pos": "K",
-    "team": "CLE",
-    "adp": 169.63,
+    "name": "Emari Demercado",
+    "pos": "RB",
+    "team": "DAL",
+    "adp": 169.64,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
@@ -2183,16 +2191,8 @@
     "name": "Chig Okonkwo",
     "pos": "TE",
     "team": "WAS",
-    "adp": 169.64,
+    "adp": 169.65,
     "auctionValueLive": 0.08,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Tyrone Tracy Jr.",
-    "pos": "RB",
-    "team": "NYG",
-    "adp": 169.66,
-    "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
@@ -2200,62 +2200,22 @@
     "pos": "TE",
     "team": "TEN",
     "adp": 169.66,
-    "auctionValueLive": 0.08,
+    "auctionValueLive": 0.07,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Geno Smith",
-    "pos": "QB",
-    "team": "NYJ",
-    "adp": 169.67,
-    "auctionValueLive": 0.04,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Carson Wentz",
-    "pos": "QB",
-    "team": "MIN",
-    "adp": 169.67,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Tua Tagovailoa",
-    "pos": "QB",
-    "team": "ATL",
-    "adp": 169.68,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Noah Gray",
-    "pos": "TE",
-    "team": "KC",
-    "adp": 169.68,
-    "auctionValueLive": 0.01,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Michael Mayer",
-    "pos": "TE",
-    "team": "LV",
-    "adp": 169.68,
-    "auctionValueLive": 0.02,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Devin Singletary",
+    "name": "Tyrone Tracy Jr.",
     "pos": "RB",
     "team": "NYG",
-    "adp": 169.69,
-    "auctionValueLive": 0.01,
+    "adp": 169.67,
+    "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Justin Fields",
-    "pos": "QB",
+    "name": "Brashard Smith",
+    "pos": "RB",
     "team": "KC",
-    "adp": 169.7,
+    "adp": 169.67,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
@@ -2263,15 +2223,23 @@
     "name": "Zach Ertz",
     "pos": "TE",
     "team": "FA",
-    "adp": 169.71,
+    "adp": 169.68,
     "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Ty Johnson",
-    "pos": "RB",
-    "team": "BUF",
-    "adp": 169.71,
+    "name": "Justin Fields",
+    "pos": "QB",
+    "team": "KC",
+    "adp": 169.68,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Tua Tagovailoa",
+    "pos": "QB",
+    "team": "ATL",
+    "adp": 169.69,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
@@ -2279,14 +2247,38 @@
     "name": "Falcons D/ST",
     "pos": "DST",
     "team": "ATL",
-    "adp": 169.71,
+    "adp": 169.69,
     "auctionValueLive": 0.04,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Chad Ryland",
+    "name": "Carson Wentz",
+    "pos": "QB",
+    "team": "MIN",
+    "adp": 169.69,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Noah Gray",
+    "pos": "TE",
+    "team": "KC",
+    "adp": 169.69,
+    "auctionValueLive": 0.01,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Ty Johnson",
+    "pos": "RB",
+    "team": "BUF",
+    "adp": 169.7,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Riley Patterson",
     "pos": "K",
-    "team": "ARI",
+    "team": "MIA",
     "adp": 169.71,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -2300,26 +2292,18 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Will Shipley",
+    "name": "Devin Singletary",
     "pos": "RB",
-    "team": "PHI",
+    "team": "NYG",
     "adp": 169.72,
-    "auctionValueLive": 0,
+    "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Riley Patterson",
+    "name": "Chad Ryland",
     "pos": "K",
-    "team": "MIA",
-    "adp": 169.72,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Brashard Smith",
-    "pos": "RB",
-    "team": "KC",
-    "adp": 169.72,
+    "team": "ARI",
+    "adp": 169.73,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
@@ -2332,33 +2316,25 @@
     "auctionValueEditorial": null
    },
    {
-    "name": "Jalen Nailor",
+    "name": "Demarcus Robinson",
     "pos": "WR",
-    "team": "LV",
+    "team": "SF",
     "adp": 169.74,
-    "auctionValueLive": 0.08,
+    "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Tommy Tremble",
-    "pos": "TE",
-    "team": "CAR",
+    "name": "Ezekiel Elliott",
+    "pos": "RB",
+    "team": "FA",
     "adp": 169.74,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Kalif Raymond",
-    "pos": "WR",
-    "team": "CHI",
-    "adp": 169.75,
-    "auctionValueLive": 0.04,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Demarcus Robinson",
-    "pos": "WR",
-    "team": "SF",
+    "name": "Will Shipley",
+    "pos": "RB",
+    "team": "PHI",
     "adp": 169.75,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -2372,19 +2348,27 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Antonio Williams",
-    "pos": "WR",
-    "team": "WAS",
+    "name": "Tommy Tremble",
+    "pos": "TE",
+    "team": "CAR",
     "adp": 169.75,
-    "auctionValueLive": 0.02,
+    "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Joey Slye",
-    "pos": "K",
-    "team": "TEN",
+    "name": "Mike Gesicki",
+    "pos": "TE",
+    "team": "CIN",
     "adp": 169.75,
-    "auctionValueLive": 0,
+    "auctionValueLive": 0.09,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Jalen Nailor",
+    "pos": "WR",
+    "team": "LV",
+    "adp": 169.76,
+    "auctionValueLive": 0.07,
     "auctionValueEditorial": 0
    },
    {
@@ -2396,10 +2380,18 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Elijah Arroyo",
-    "pos": "TE",
-    "team": "SEA",
+    "name": "Joey Slye",
+    "pos": "K",
+    "team": "TEN",
     "adp": 169.76,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Nick Chubb",
+    "pos": "RB",
+    "team": "FA",
+    "adp": 169.77,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
@@ -2412,10 +2404,10 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Ezekiel Elliott",
-    "pos": "RB",
-    "team": "FA",
-    "adp": 169.77,
+    "name": "Elijah Arroyo",
+    "pos": "TE",
+    "team": "SEA",
+    "adp": 169.78,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
@@ -2423,22 +2415,6 @@
     "name": "Jaylen Wright",
     "pos": "RB",
     "team": "MIA",
-    "adp": 169.77,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Nick Chubb",
-    "pos": "RB",
-    "team": "FA",
-    "adp": 169.78,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Brock Wright",
-    "pos": "TE",
-    "team": "DET",
     "adp": 169.78,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -2452,41 +2428,65 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Jake Briningstool",
+    "name": "Germie Bernard",
+    "pos": "WR",
+    "team": "PIT",
+    "adp": 169.79,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Kalif Raymond",
+    "pos": "WR",
+    "team": "CHI",
+    "adp": 169.79,
+    "auctionValueLive": 0.04,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Antonio Williams",
+    "pos": "WR",
+    "team": "WAS",
+    "adp": 169.79,
+    "auctionValueLive": 0.02,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Christian Kirk",
+    "pos": "WR",
+    "team": "SF",
+    "adp": 169.79,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Brock Wright",
     "pos": "TE",
-    "team": "KC",
-    "adp": 169.78,
+    "team": "DET",
+    "adp": 169.79,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Chris Myarick",
+    "pos": "TE",
+    "team": "LV",
+    "adp": 169.79,
     "auctionValueLive": 0,
     "auctionValueEditorial": null
    },
    {
-    "name": "Jacoby Brissett",
-    "pos": "QB",
-    "team": "ARI",
-    "adp": 169.79,
-    "auctionValueLive": 0.08,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Tyler Higbee",
-    "pos": "TE",
-    "team": "LAR",
-    "adp": 169.79,
-    "auctionValueLive": 0.01,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "David Njoku",
-    "pos": "TE",
-    "team": "LAC",
+    "name": "Jalen Royals",
+    "pos": "WR",
+    "team": "KC",
     "adp": 169.8,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Brevyn Spann-Ford",
-    "pos": "TE",
-    "team": "DAL",
+    "name": "Hollywood Brown",
+    "pos": "WR",
+    "team": "PHI",
     "adp": 169.8,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -2500,74 +2500,74 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Chris Myarick",
+    "name": "Tyler Higbee",
     "pos": "TE",
-    "team": "LV",
+    "team": "LAR",
     "adp": 169.8,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": null
-   },
-   {
-    "name": "Germie Bernard",
-    "pos": "WR",
-    "team": "PIT",
-    "adp": 169.81,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Hollywood Brown",
-    "pos": "WR",
-    "team": "PHI",
-    "adp": 169.81,
-    "auctionValueLive": 0,
+    "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
    {
     "name": "Malik Davis",
     "pos": "RB",
     "team": "DAL",
-    "adp": 169.81,
+    "adp": 169.8,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Jalen Royals",
-    "pos": "WR",
+    "name": "Jake Briningstool",
+    "pos": "TE",
     "team": "KC",
-    "adp": 169.82,
+    "adp": 169.8,
     "auctionValueLive": 0,
-    "auctionValueEditorial": 0
+    "auctionValueEditorial": null
    },
    {
     "name": "Zachariah Branch",
     "pos": "WR",
     "team": "ATL",
-    "adp": 169.82,
+    "adp": 169.81,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Christian Kirk",
+    "name": "Tutu Atwell",
     "pos": "WR",
-    "team": "SF",
+    "team": "LAR",
+    "adp": 169.81,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Brevyn Spann-Ford",
+    "pos": "TE",
+    "team": "DAL",
+    "adp": 169.81,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Lil'Jordan Humphrey",
+    "pos": "WR",
+    "team": "DEN",
     "adp": 169.82,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Zavion Thomas",
+    "name": "Michael Trigg",
+    "pos": "TE",
+    "team": "FA",
+    "adp": 169.82,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Jahdae Walker",
     "pos": "WR",
     "team": "CHI",
-    "adp": 169.83,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Andrei Iosivas",
-    "pos": "WR",
-    "team": "CIN",
-    "adp": 169.83,
+    "adp": 169.82,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
@@ -2576,37 +2576,13 @@
     "pos": "K",
     "team": "FA",
     "adp": 169.83,
-    "auctionValueLive": 0,
+    "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
    {
     "name": "Tyson Bagent",
     "pos": "QB",
     "team": "CHI",
-    "adp": 169.83,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Kyle Allen",
-    "pos": "QB",
-    "team": "BUF",
-    "adp": 169.83,
-    "auctionValueLive": 0.03,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Lil'Jordan Humphrey",
-    "pos": "WR",
-    "team": "DEN",
-    "adp": 169.83,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Tutu Atwell",
-    "pos": "WR",
-    "team": "LAR",
     "adp": 169.83,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -2628,35 +2604,27 @@
     "auctionValueEditorial": null
    },
    {
-    "name": "Michael Trigg",
-    "pos": "TE",
-    "team": "FA",
-    "adp": 169.83,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Jahdae Walker",
+    "name": "Zavion Thomas",
     "pos": "WR",
     "team": "CHI",
-    "adp": 169.83,
+    "adp": 169.84,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Skyler Bell",
-    "pos": "WR",
+    "name": "Jacoby Brissett",
+    "pos": "QB",
+    "team": "ARI",
+    "adp": 169.84,
+    "auctionValueLive": 0.07,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Kyle Allen",
+    "pos": "QB",
     "team": "BUF",
     "adp": 169.84,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Cyrus Allen",
-    "pos": "WR",
-    "team": "KC",
-    "adp": 169.84,
-    "auctionValueLive": 0,
+    "auctionValueLive": 0.03,
     "auctionValueEditorial": 0
    },
    {
@@ -2684,9 +2652,9 @@
     "auctionValueEditorial": null
    },
    {
-    "name": "Jordan James",
-    "pos": "RB",
-    "team": "SF",
+    "name": "Skyler Bell",
+    "pos": "WR",
+    "team": "BUF",
     "adp": 169.85,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -2696,15 +2664,23 @@
     "pos": "TE",
     "team": "NE",
     "adp": 169.85,
-    "auctionValueLive": 0,
+    "auctionValueLive": 0.01,
     "auctionValueEditorial": null
    },
    {
-    "name": "Kaleb Johnson",
-    "pos": "RB",
-    "team": "GB",
+    "name": "David Njoku",
+    "pos": "TE",
+    "team": "LAC",
     "adp": 169.85,
     "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Xavier Legette",
+    "pos": "WR",
+    "team": "CAR",
+    "adp": 169.85,
+    "auctionValueLive": 0.01,
     "auctionValueEditorial": 0
    },
    {
@@ -2740,17 +2716,17 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Troy Franklin",
+    "name": "Cyrus Allen",
     "pos": "WR",
-    "team": "DEN",
-    "adp": 169.86,
+    "team": "KC",
+    "adp": 169.85,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Mack Hollins",
+    "name": "Troy Franklin",
     "pos": "WR",
-    "team": "NE",
+    "team": "DEN",
     "adp": 169.86,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -2764,6 +2740,14 @@
     "auctionValueEditorial": 0
    },
    {
+    "name": "Jaleel McLaughlin",
+    "pos": "RB",
+    "team": "CLE",
+    "adp": 169.86,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
     "name": "Isaiah Williams",
     "pos": "WR",
     "team": "NYJ",
@@ -2772,40 +2756,48 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Sione Vaki",
-    "pos": "RB",
-    "team": "DET",
-    "adp": 169.86,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Theo Johnson",
-    "pos": "TE",
-    "team": "NYG",
-    "adp": 169.86,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Kenny Pickett",
+    "name": "Tommy DeVito",
     "pos": "QB",
-    "team": "CAR",
+    "team": "NE",
     "adp": 169.86,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Jordan Watkins",
+    "name": "Chimere Dike",
     "pos": "WR",
+    "team": "TEN",
+    "adp": 169.87,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Jordan James",
+    "pos": "RB",
     "team": "SF",
     "adp": 169.87,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Dustin Hopkins",
-    "pos": "K",
+    "name": "Mack Hollins",
+    "pos": "WR",
+    "team": "NE",
+    "adp": 169.87,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Andrei Iosivas",
+    "pos": "WR",
+    "team": "CIN",
+    "adp": 169.87,
+    "auctionValueLive": 0.01,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Jermar Jefferson",
+    "pos": "RB",
     "team": "FA",
     "adp": 169.87,
     "auctionValueLive": 0,
@@ -2820,25 +2812,9 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "George Holani",
-    "pos": "RB",
-    "team": "SEA",
-    "adp": 169.87,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Xavier Legette",
-    "pos": "WR",
-    "team": "CAR",
-    "adp": 169.87,
-    "auctionValueLive": 0.02,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Jaleel McLaughlin",
-    "pos": "RB",
-    "team": "CLE",
+    "name": "Luke Farrell",
+    "pos": "TE",
+    "team": "SF",
     "adp": 169.87,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -2852,17 +2828,9 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Jonnu Smith",
-    "pos": "TE",
-    "team": "GB",
-    "adp": 169.87,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Kedon Slovis",
+    "name": "Marcus Mariota",
     "pos": "QB",
-    "team": "FA",
+    "team": "WAS",
     "adp": 169.87,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -2876,27 +2844,19 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Myles Price",
-    "pos": "WR",
-    "team": "MIN",
-    "adp": 169.87,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Tommy DeVito",
-    "pos": "QB",
-    "team": "NE",
-    "adp": 169.87,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
     "name": "Kyle Williams",
     "pos": "WR",
     "team": "NE",
     "adp": 169.87,
     "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Colby Parkinson",
+    "pos": "TE",
+    "team": "LAR",
+    "adp": 169.87,
+    "auctionValueLive": 0.02,
     "auctionValueEditorial": 0
    },
    {
@@ -2908,49 +2868,17 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Israel Abanikanda",
-    "pos": "RB",
-    "team": "FA",
-    "adp": 169.88,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Chimere Dike",
-    "pos": "WR",
-    "team": "TEN",
-    "adp": 169.88,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Jermar Jefferson",
-    "pos": "RB",
-    "team": "FA",
-    "adp": 169.88,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Emmanuel Henderson Jr.",
-    "pos": "WR",
-    "team": "FA",
-    "adp": 169.88,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Patrick Ricard",
-    "pos": "RB",
-    "team": "NYG",
-    "adp": 169.88,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Ja'Tavion Sanders",
+    "name": "Theo Johnson",
     "pos": "TE",
-    "team": "CAR",
+    "team": "NYG",
+    "adp": 169.87,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Jordan Watkins",
+    "pos": "WR",
+    "team": "SF",
     "adp": 169.88,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -2964,17 +2892,9 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Luke Farrell",
-    "pos": "TE",
-    "team": "SF",
-    "adp": 169.88,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Austin Hooper",
-    "pos": "TE",
-    "team": "ATL",
+    "name": "George Holani",
+    "pos": "RB",
+    "team": "SEA",
     "adp": 169.88,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -2988,9 +2908,25 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Mason Taylor",
-    "pos": "TE",
-    "team": "NYJ",
+    "name": "Gary Jennings",
+    "pos": "WR",
+    "team": "FA",
+    "adp": 169.88,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": null
+   },
+   {
+    "name": "Skyy Moore",
+    "pos": "WR",
+    "team": "GB",
+    "adp": 169.88,
+    "auctionValueLive": 0.01,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Kaleb Johnson",
+    "pos": "RB",
+    "team": "GB",
     "adp": 169.88,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -3012,9 +2948,9 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "DeWayne McBride",
-    "pos": "RB",
-    "team": "FA",
+    "name": "Jonnu Smith",
+    "pos": "TE",
+    "team": "GB",
     "adp": 169.88,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -3023,14 +2959,6 @@
     "name": "Hunter Luepke",
     "pos": "RB",
     "team": "DAL",
-    "adp": 169.88,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Carson Beck",
-    "pos": "QB",
-    "team": "ARI",
     "adp": 169.88,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -3052,15 +2980,63 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Joshua Dobbs",
+    "name": "Kenny Pickett",
     "pos": "QB",
-    "team": "DET",
+    "team": "CAR",
     "adp": 169.88,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Ty Simpson",
+    "name": "DeAndre Hopkins",
+    "pos": "WR",
+    "team": "FA",
+    "adp": 169.89,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Israel Abanikanda",
+    "pos": "RB",
+    "team": "FA",
+    "adp": 169.89,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Dalvin Cook",
+    "pos": "RB",
+    "team": "FA",
+    "adp": 169.89,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Dustin Hopkins",
+    "pos": "K",
+    "team": "FA",
+    "adp": 169.89,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Emmanuel Henderson Jr.",
+    "pos": "WR",
+    "team": "FA",
+    "adp": 169.89,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Patrick Ricard",
+    "pos": "RB",
+    "team": "NYG",
+    "adp": 169.89,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Stetson Bennett IV",
     "pos": "QB",
     "team": "LAR",
     "adp": 169.89,
@@ -3084,9 +3060,9 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Drew Sample",
+    "name": "Austin Hooper",
     "pos": "TE",
-    "team": "CIN",
+    "team": "ATL",
     "adp": 169.89,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -3100,6 +3076,22 @@
     "auctionValueEditorial": 0
    },
    {
+    "name": "Dillon Bell",
+    "pos": "WR",
+    "team": "MIN",
+    "adp": 169.89,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": null
+   },
+   {
+    "name": "John Metchie III",
+    "pos": "WR",
+    "team": "CAR",
+    "adp": 169.89,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
     "name": "Erick All Jr.",
     "pos": "TE",
     "team": "CIN",
@@ -3108,57 +3100,57 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "Parker Romo",
-    "pos": "K",
+    "name": "LaJohntay Wester",
+    "pos": "WR",
+    "team": "BAL",
+    "adp": 169.89,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "DeWayne McBride",
+    "pos": "RB",
     "team": "FA",
     "adp": 169.89,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Gary Jennings",
-    "pos": "WR",
-    "team": "FA",
-    "adp": 169.89,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": null
-   },
-   {
-    "name": "Skyy Moore",
-    "pos": "WR",
-    "team": "GB",
-    "adp": 169.89,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Marcus Mariota",
+    "name": "Kedon Slovis",
     "pos": "QB",
-    "team": "WAS",
+    "team": "FA",
     "adp": 169.89,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
-    "name": "Kayshon Boutte",
+    "name": "Myles Price",
     "pos": "WR",
-    "team": "HOU",
+    "team": "MIN",
     "adp": 169.89,
-    "auctionValueLive": 0.08,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Carson Beck",
+    "pos": "QB",
+    "team": "ARI",
+    "adp": 169.89,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
+    "name": "Omar Cooper Jr.",
+    "pos": "WR",
+    "team": "NYJ",
+    "adp": 169.89,
+    "auctionValueLive": 0,
     "auctionValueEditorial": 0
    },
    {
     "name": "Raheim Sanders",
     "pos": "RB",
     "team": "CLE",
-    "adp": 169.89,
-    "auctionValueLive": 0,
-    "auctionValueEditorial": 0
-   },
-   {
-    "name": "Joshua Karty",
-    "pos": "K",
-    "team": "FA",
     "adp": 169.89,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
@@ -3180,6 +3172,14 @@
     "auctionValueEditorial": 0
    },
    {
+    "name": "Joshua Dobbs",
+    "pos": "QB",
+    "team": "DET",
+    "adp": 169.89,
+    "auctionValueLive": 0,
+    "auctionValueEditorial": 0
+   },
+   {
     "name": "Bo Melton",
     "pos": "WR",
     "team": "GB",
@@ -3196,9 +3196,9 @@
     "auctionValueEditorial": 0
    },
    {
-    "name": "DeAndre Hopkins",
-    "pos": "WR",
-    "team": "FA",
+    "name": "Ja'Tavion Sanders",
+    "pos": "TE",
+    "team": "CAR",
     "adp": 169.9,
     "auctionValueLive": 0,
     "auctionValueEditorial": 0
