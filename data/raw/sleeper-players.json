@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-09-28T01:29:43.435Z",
+ "fetchedAt": "2026-09-28T18:24:13.777Z",
  "data": {
   "players": [
    {
@@ -1270,9 +1270,9 @@
     "pos": "QB",
     "team": "TB",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Hand",
-    "injuryNotes": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Thumb",
+    "injuryNotes": "Dislocated",
     "injuryStartDate": null,
     "yearsExp": 8,
     "depthChartOrder": 1
@@ -6286,7 +6286,7 @@
     "sleeperId": "11565",
     "name": "J.J. McCarthy",
     "pos": "QB",
-    "team": "MIN",
+    "team": "NYG",
     "status": "Active",
     "injuryStatus": "Out",
     "injuryBodyPart": "Coach's Decision",
@@ -7692,8 +7692,8 @@
     "pos": "RB",
     "team": "DEN",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Concussion",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
