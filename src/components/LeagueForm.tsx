@@ -623,6 +623,8 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
               </div>
 
               {yahooError && <p className={styles.error} role="alert">{yahooError}</p>}
+              {/* Required by Yahoo's API agreement; the league list is Yahoo data. */}
+              <p className={styles.yahooAttribution}>Fantasy data provided by Yahoo Fantasy</p>
             </div>
           )}
         </div>

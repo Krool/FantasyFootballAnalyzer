@@ -837,6 +837,10 @@ function App() {
               </svg>
             </a>
           </p>
+          {/* Yahoo's API agreement requires this wherever its data shows. */}
+          {league?.platform === 'yahoo' && !league.isGuest && (
+            <p className="footer-attribution">Fantasy data provided by Yahoo Fantasy</p>
+          )}
         </div>
         {/* Build version. Only rendered in deployed builds where
             VITE_BUILD_TIME is injected; in `vite dev` the env var is

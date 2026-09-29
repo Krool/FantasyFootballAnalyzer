@@ -289,6 +289,15 @@
   margin: 0;
 }
 
+.yahooAttribution {
+  margin: 0.75rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: var(--bone-dim);
+  text-align: right;
+}
+
 .yahooLogo {
   display: inline-flex;
   align-items: center;
