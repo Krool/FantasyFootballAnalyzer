@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-10-01T01:56:45.514Z",
+ "fetchedAt": "2026-10-01T17:15:18.809Z",
  "data": {
   "scoring": "HALF",
   "players": [
@@ -110,37 +110,37 @@
     "tier": 3
    },
    {
-    "name": "Trey McBride",
-    "team": "ARI",
-    "pos": "TE",
-    "rank": 16,
-    "tier": 3
-   },
-   {
-    "name": "Jonathan Taylor",
-    "team": "IND",
-    "pos": "RB",
-    "rank": 17,
-    "tier": 3
-   },
-   {
     "name": "Chris Olave",
     "team": "NO",
     "pos": "WR",
-    "rank": 18,
-    "tier": 3
-   },
-   {
-    "name": "Josh Allen",
-    "team": "BUF",
-    "pos": "QB",
-    "rank": 19,
+    "rank": 16,
     "tier": 3
    },
    {
     "name": "Kenneth Walker III",
     "team": "KC",
     "pos": "RB",
+    "rank": 17,
+    "tier": 3
+   },
+   {
+    "name": "Trey McBride",
+    "team": "ARI",
+    "pos": "TE",
+    "rank": 18,
+    "tier": 3
+   },
+   {
+    "name": "Jonathan Taylor",
+    "team": "IND",
+    "pos": "RB",
+    "rank": 19,
+    "tier": 3
+   },
+   {
+    "name": "Josh Allen",
+    "team": "BUF",
+    "pos": "QB",
     "rank": 20,
     "tier": 3
    },
@@ -156,19 +156,19 @@
     "team": "LAC",
     "pos": "RB",
     "rank": 22,
-    "tier": 3
-   },
-   {
-    "name": "Nico Collins",
-    "team": "HOU",
-    "pos": "WR",
-    "rank": 23,
     "tier": 4
    },
    {
     "name": "De'Von Achane",
     "team": "MIA",
     "pos": "RB",
+    "rank": 23,
+    "tier": 4
+   },
+   {
+    "name": "Nico Collins",
+    "team": "HOU",
+    "pos": "WR",
     "rank": 24,
     "tier": 4
    },
@@ -180,15 +180,15 @@
     "tier": 4
    },
    {
-    "name": "Emeka Egbuka",
-    "team": "TB",
+    "name": "Garrett Wilson",
+    "team": "NYJ",
     "pos": "WR",
     "rank": 26,
     "tier": 4
    },
    {
-    "name": "Garrett Wilson",
-    "team": "NYJ",
+    "name": "Emeka Egbuka",
+    "team": "TB",
     "pos": "WR",
     "rank": 27,
     "tier": 4
@@ -222,16 +222,16 @@
     "tier": 4
    },
    {
-    "name": "Joe Burrow",
-    "team": "CIN",
-    "pos": "QB",
+    "name": "Breece Hall",
+    "team": "NYJ",
+    "pos": "RB",
     "rank": 32,
     "tier": 4
    },
    {
-    "name": "Breece Hall",
-    "team": "NYJ",
-    "pos": "RB",
+    "name": "Joe Burrow",
+    "team": "CIN",
+    "pos": "QB",
     "rank": 33,
     "tier": 4
    },
@@ -285,29 +285,29 @@
     "tier": 5
    },
    {
+    "name": "Christian Watson",
+    "team": "GB",
+    "pos": "WR",
+    "rank": 41,
+    "tier": 5
+   },
+   {
     "name": "Jaylen Waddle",
     "team": "DEN",
     "pos": "WR",
-    "rank": 41,
+    "rank": 42,
     "tier": 5
    },
    {
     "name": "Tee Higgins",
     "team": "CIN",
     "pos": "WR",
-    "rank": 42,
-    "tier": 5
-   },
-   {
-    "name": "Jordyn Tyson",
-    "team": "NO",
-    "pos": "WR",
     "rank": 43,
     "tier": 5
    },
    {
-    "name": "Christian Watson",
-    "team": "GB",
+    "name": "Parker Washington",
+    "team": "JAC",
     "pos": "WR",
     "rank": 44,
     "tier": 5
@@ -320,37 +320,37 @@
     "tier": 5
    },
    {
-    "name": "Jameson Williams",
-    "team": "DET",
+    "name": "Jordyn Tyson",
+    "team": "NO",
     "pos": "WR",
     "rank": 46,
     "tier": 5
    },
    {
-    "name": "Parker Washington",
-    "team": "JAC",
+    "name": "Jameson Williams",
+    "team": "DET",
     "pos": "WR",
     "rank": 47,
-    "tier": 5
-   },
-   {
-    "name": "Jalen Hurts",
-    "team": "PHI",
-    "pos": "QB",
-    "rank": 48,
-    "tier": 5
-   },
-   {
-    "name": "Trevor Lawrence",
-    "team": "JAC",
-    "pos": "QB",
-    "rank": 49,
     "tier": 5
    },
    {
     "name": "Rashee Rice",
     "team": "KC",
     "pos": "WR",
+    "rank": 48,
+    "tier": 5
+   },
+   {
+    "name": "Jalen Hurts",
+    "team": "PHI",
+    "pos": "QB",
+    "rank": 49,
+    "tier": 5
+   },
+   {
+    "name": "Trevor Lawrence",
+    "team": "JAC",
+    "pos": "QB",
     "rank": 50,
     "tier": 5
    },
@@ -383,30 +383,30 @@
     "tier": 6
    },
    {
-    "name": "Sam LaPorta",
-    "team": "DET",
-    "pos": "TE",
+    "name": "Kyren Williams",
+    "team": "LAR",
+    "pos": "RB",
     "rank": 55,
     "tier": 6
    },
    {
-    "name": "Kyren Williams",
-    "team": "LAR",
-    "pos": "RB",
+    "name": "Sam LaPorta",
+    "team": "DET",
+    "pos": "TE",
     "rank": 56,
-    "tier": 6
-   },
-   {
-    "name": "Rome Odunze",
-    "team": "CHI",
-    "pos": "WR",
-    "rank": 57,
     "tier": 6
    },
    {
     "name": "Harold Fannin Jr.",
     "team": "CLE",
     "pos": "TE",
+    "rank": 57,
+    "tier": 6
+   },
+   {
+    "name": "Rome Odunze",
+    "team": "CHI",
+    "pos": "WR",
     "rank": 58,
     "tier": 6
    },
@@ -460,16 +460,16 @@
     "tier": 6
    },
    {
-    "name": "Brian Thomas Jr.",
-    "team": "JAC",
-    "pos": "WR",
+    "name": "Bucky Irving",
+    "team": "TB",
+    "pos": "RB",
     "rank": 66,
     "tier": 6
    },
    {
-    "name": "Bucky Irving",
-    "team": "TB",
-    "pos": "RB",
+    "name": "Brian Thomas Jr.",
+    "team": "JAC",
+    "pos": "WR",
     "rank": 67,
     "tier": 6
    },
@@ -481,9 +481,9 @@
     "tier": 6
    },
    {
-    "name": "Jadarian Price",
-    "team": "SEA",
-    "pos": "RB",
+    "name": "KC Concepcion Jr.",
+    "team": "CLE",
+    "pos": "WR",
     "rank": 69,
     "tier": 6
    },
@@ -495,93 +495,93 @@
     "tier": 6
    },
    {
-    "name": "KC Concepcion Jr.",
-    "team": "CLE",
-    "pos": "WR",
-    "rank": 71,
-    "tier": 6
-   },
-   {
     "name": "Bo Nix",
     "team": "DEN",
     "pos": "QB",
-    "rank": 72,
+    "rank": 71,
     "tier": 7
    },
    {
-    "name": "Marvin Harrison Jr.",
-    "team": "ARI",
-    "pos": "WR",
-    "rank": 73,
+    "name": "Jadarian Price",
+    "team": "SEA",
+    "pos": "RB",
+    "rank": 72,
     "tier": 7
    },
    {
     "name": "Jaxson Dart",
     "team": "NYG",
     "pos": "QB",
-    "rank": 74,
+    "rank": 73,
     "tier": 7
    },
    {
     "name": "Cam Skattebo",
     "team": "NYG",
     "pos": "RB",
-    "rank": 75,
+    "rank": 74,
     "tier": 7
    },
    {
-    "name": "Travis Etienne Jr.",
-    "team": "NO",
-    "pos": "RB",
-    "rank": 76,
+    "name": "Marvin Harrison Jr.",
+    "team": "ARI",
+    "pos": "WR",
+    "rank": 75,
     "tier": 7
    },
    {
     "name": "George Kittle",
     "team": "SF",
     "pos": "TE",
-    "rank": 77,
+    "rank": 76,
     "tier": 7
    },
    {
-    "name": "Derrick Henry",
-    "team": "BAL",
+    "name": "Travis Etienne Jr.",
+    "team": "NO",
     "pos": "RB",
-    "rank": 78,
-    "tier": 7
-   },
-   {
-    "name": "Terry McLaurin",
-    "team": "WAS",
-    "pos": "WR",
-    "rank": 79,
-    "tier": 7
-   },
-   {
-    "name": "Alec Pierce",
-    "team": "IND",
-    "pos": "WR",
-    "rank": 80,
-    "tier": 7
-   },
-   {
-    "name": "Kyle Pitts Sr.",
-    "team": "ATL",
-    "pos": "TE",
-    "rank": 81,
+    "rank": 77,
     "tier": 7
    },
    {
     "name": "Bhayshul Tuten",
     "team": "JAC",
     "pos": "RB",
-    "rank": 82,
+    "rank": 78,
+    "tier": 7
+   },
+   {
+    "name": "Derrick Henry",
+    "team": "BAL",
+    "pos": "RB",
+    "rank": 79,
     "tier": 7
    },
    {
     "name": "Denzel Boston",
     "team": "CLE",
     "pos": "WR",
+    "rank": 80,
+    "tier": 7
+   },
+   {
+    "name": "Terry McLaurin",
+    "team": "WAS",
+    "pos": "WR",
+    "rank": 81,
+    "tier": 7
+   },
+   {
+    "name": "Alec Pierce",
+    "team": "IND",
+    "pos": "WR",
+    "rank": 82,
+    "tier": 7
+   },
+   {
+    "name": "Kyle Pitts Sr.",
+    "team": "ATL",
+    "pos": "TE",
     "rank": 83,
     "tier": 7
    },
@@ -607,29 +607,29 @@
     "tier": 7
    },
    {
-    "name": "Jordan Addison",
-    "team": "MIN",
+    "name": "DK Metcalf",
+    "team": "PIT",
     "pos": "WR",
     "rank": 87,
     "tier": 7
    },
    {
-    "name": "DK Metcalf",
-    "team": "PIT",
+    "name": "Jordan Addison",
+    "team": "MIN",
     "pos": "WR",
     "rank": 88,
     "tier": 7
    },
    {
-    "name": "Michael Wilson",
-    "team": "ARI",
+    "name": "Josh Downs",
+    "team": "IND",
     "pos": "WR",
     "rank": 89,
     "tier": 7
    },
    {
-    "name": "Josh Downs",
-    "team": "IND",
+    "name": "Michael Wilson",
+    "team": "ARI",
     "pos": "WR",
     "rank": 90,
     "tier": 7
@@ -642,64 +642,64 @@
     "tier": 7
    },
    {
+    "name": "Jalen Coker",
+    "team": "CAR",
+    "pos": "WR",
+    "rank": 92,
+    "tier": 7
+   },
+   {
     "name": "Davante Adams",
     "team": "LAR",
     "pos": "WR",
-    "rank": 92,
+    "rank": 93,
     "tier": 7
    },
    {
     "name": "Jared Goff",
     "team": "DET",
     "pos": "QB",
-    "rank": 93,
+    "rank": 94,
     "tier": 7
    },
    {
     "name": "Matthew Golden",
     "team": "GB",
     "pos": "WR",
-    "rank": 94,
+    "rank": 95,
     "tier": 7
    },
    {
-    "name": "Jalen Coker",
-    "team": "CAR",
-    "pos": "WR",
-    "rank": 95,
+    "name": "Jaylen Warren",
+    "team": "PIT",
+    "pos": "RB",
+    "rank": 96,
     "tier": 8
    },
    {
     "name": "Jordan Love",
     "team": "GB",
     "pos": "QB",
-    "rank": 96,
+    "rank": 97,
     "tier": 8
    },
    {
     "name": "Wan'Dale Robinson",
     "team": "TEN",
     "pos": "WR",
-    "rank": 97,
+    "rank": 98,
     "tier": 8
    },
    {
     "name": "Mike Evans",
     "team": "SF",
     "pos": "WR",
-    "rank": 98,
+    "rank": 99,
     "tier": 8
    },
    {
     "name": "David Montgomery",
     "team": "HOU",
-    "pos": "RB",
-    "rank": 99,
-    "tier": 8
-   },
-   {
-    "name": "Jaylen Warren",
-    "team": "PIT",
     "pos": "RB",
     "rank": 100,
     "tier": 8
@@ -719,44 +719,44 @@
     "tier": 8
    },
    {
-    "name": "Jakobi Meyers",
-    "team": "JAC",
-    "pos": "WR",
+    "name": "Eli Stowers",
+    "team": "PHI",
+    "pos": "TE",
     "rank": 103,
     "tier": 8
    },
    {
-    "name": "Eli Stowers",
-    "team": "PHI",
-    "pos": "TE",
+    "name": "Chuba Hubbard",
+    "team": "CAR",
+    "pos": "RB",
     "rank": 104,
-    "tier": 8
-   },
-   {
-    "name": "Courtland Sutton",
-    "team": "DEN",
-    "pos": "WR",
-    "rank": 105,
     "tier": 8
    },
    {
     "name": "Brenton Strange",
     "team": "JAC",
     "pos": "TE",
+    "rank": 105,
+    "tier": 8
+   },
+   {
+    "name": "Courtland Sutton",
+    "team": "DEN",
+    "pos": "WR",
     "rank": 106,
     "tier": 8
    },
    {
-    "name": "Jayden Reed",
-    "team": "GB",
+    "name": "Jakobi Meyers",
+    "team": "JAC",
     "pos": "WR",
     "rank": 107,
     "tier": 8
    },
    {
-    "name": "Quentin Johnston",
-    "team": "LAC",
-    "pos": "WR",
+    "name": "Blake Corum",
+    "team": "LAR",
+    "pos": "RB",
     "rank": 108,
     "tier": 8
    },
@@ -768,30 +768,30 @@
     "tier": 8
    },
    {
-    "name": "Blake Corum",
-    "team": "LAR",
-    "pos": "RB",
+    "name": "Jayden Reed",
+    "team": "GB",
+    "pos": "WR",
     "rank": 110,
+    "tier": 8
+   },
+   {
+    "name": "Quentin Johnston",
+    "team": "LAC",
+    "pos": "WR",
+    "rank": 111,
     "tier": 8
    },
    {
     "name": "Terrance Ferguson",
     "team": "LAR",
     "pos": "TE",
-    "rank": 111,
+    "rank": 112,
     "tier": 8
    },
    {
     "name": "Michael Pittman Jr.",
     "team": "PIT",
     "pos": "WR",
-    "rank": 112,
-    "tier": 8
-   },
-   {
-    "name": "Chuba Hubbard",
-    "team": "CAR",
-    "pos": "RB",
     "rank": 113,
     "tier": 8
    },
@@ -824,23 +824,23 @@
     "tier": 8
    },
    {
+    "name": "Antonio Williams",
+    "team": "WAS",
+    "pos": "WR",
+    "rank": 118,
+    "tier": 8
+   },
+   {
     "name": "Chris Godwin Jr.",
     "team": "TB",
     "pos": "WR",
-    "rank": 118,
+    "rank": 119,
     "tier": 8
    },
    {
     "name": "RJ Harvey",
     "team": "DEN",
     "pos": "RB",
-    "rank": 119,
-    "tier": 8
-   },
-   {
-    "name": "Antonio Williams",
-    "team": "WAS",
-    "pos": "WR",
     "rank": 120,
     "tier": 8
    },
@@ -852,23 +852,23 @@
     "tier": 8
    },
    {
-    "name": "Jonah Coleman",
-    "team": "DEN",
-    "pos": "RB",
-    "rank": 122,
-    "tier": 8
-   },
-   {
     "name": "Kyle Monangai",
     "team": "CHI",
     "pos": "RB",
-    "rank": 123,
+    "rank": 122,
     "tier": 8
    },
    {
     "name": "Bryce Young",
     "team": "CAR",
     "pos": "QB",
+    "rank": 123,
+    "tier": 8
+   },
+   {
+    "name": "Jonah Coleman",
+    "team": "DEN",
+    "pos": "RB",
     "rank": 124,
     "tier": 8
    },
@@ -964,16 +964,16 @@
     "tier": 9
    },
    {
-    "name": "Zach Charbonnet",
-    "team": "SEA",
-    "pos": "RB",
+    "name": "Chris Bell",
+    "team": "MIA",
+    "pos": "WR",
     "rank": 138,
     "tier": 9
    },
    {
-    "name": "Chris Bell",
-    "team": "MIA",
-    "pos": "WR",
+    "name": "Zach Charbonnet",
+    "team": "SEA",
+    "pos": "RB",
     "rank": 139,
     "tier": 9
    },
@@ -985,37 +985,37 @@
     "tier": 9
    },
    {
+    "name": "Jacory Croskey-Merritt",
+    "team": "WAS",
+    "pos": "RB",
+    "rank": 141,
+    "tier": 9
+   },
+   {
     "name": "Tre' Harris",
     "team": "LAC",
     "pos": "WR",
-    "rank": 141,
+    "rank": 142,
     "tier": 9
    },
    {
     "name": "Dallas Goedert",
     "team": "PHI",
     "pos": "TE",
-    "rank": 142,
+    "rank": 143,
     "tier": 9
    },
    {
     "name": "Rico Dowdle",
     "team": "PIT",
     "pos": "RB",
-    "rank": 143,
+    "rank": 144,
     "tier": 9
    },
    {
     "name": "Malik Willis",
     "team": "MIA",
     "pos": "QB",
-    "rank": 144,
-    "tier": 9
-   },
-   {
-    "name": "Jacory Croskey-Merritt",
-    "team": "WAS",
-    "pos": "RB",
     "rank": 145,
     "tier": 9
    },
@@ -1034,72 +1034,72 @@
     "tier": 9
    },
    {
-    "name": "Jonathon Brooks",
-    "team": "CAR",
-    "pos": "RB",
-    "rank": 148,
-    "tier": 9
-   },
-   {
     "name": "Travis Kelce",
     "team": "KC",
     "pos": "TE",
-    "rank": 149,
+    "rank": 148,
     "tier": 9
    },
    {
     "name": "Tony Pollard",
     "team": "TEN",
     "pos": "RB",
-    "rank": 150,
+    "rank": 149,
     "tier": 9
    },
    {
     "name": "Ty Simpson",
     "team": "LAR",
     "pos": "QB",
-    "rank": 151,
+    "rank": 150,
     "tier": 9
    },
    {
     "name": "Rachaad White",
     "team": "WAS",
     "pos": "RB",
-    "rank": 152,
+    "rank": 151,
     "tier": 9
    },
    {
     "name": "J.K. Dobbins",
     "team": "DEN",
     "pos": "RB",
-    "rank": 153,
-    "tier": 9
-   },
-   {
-    "name": "Jordan Mason",
-    "team": "MIN",
-    "pos": "RB",
-    "rank": 154,
-    "tier": 9
-   },
-   {
-    "name": "Kenny Gainwell",
-    "team": "TB",
-    "pos": "RB",
-    "rank": 155,
-    "tier": 9
-   },
-   {
-    "name": "Michael Penix Jr.",
-    "team": "ATL",
-    "pos": "QB",
-    "rank": 156,
+    "rank": 152,
     "tier": 9
    },
    {
     "name": "Emmett Johnson",
     "team": "KC",
     "pos": "RB",
+    "rank": 153,
+    "tier": 9
+   },
+   {
+    "name": "Jonathon Brooks",
+    "team": "CAR",
+    "pos": "RB",
+    "rank": 154,
+    "tier": 9
+   },
+   {
+    "name": "Jordan Mason",
+    "team": "MIN",
+    "pos": "RB",
+    "rank": 155,
+    "tier": 9
+   },
+   {
+    "name": "Kenny Gainwell",
+    "team": "TB",
+    "pos": "RB",
+    "rank": 156,
+    "tier": 9
+   },
+   {
+    "name": "Michael Penix Jr.",
+    "team": "ATL",
+    "pos": "QB",
     "rank": 157,
     "tier": 9
    },
@@ -1167,30 +1167,30 @@
     "tier": 10
    },
    {
+    "name": "Braelon Allen",
+    "team": "NYJ",
+    "pos": "RB",
+    "rank": 167,
+    "tier": 10
+   },
+   {
     "name": "Gunnar Helm",
     "team": "TEN",
     "pos": "TE",
-    "rank": 167,
+    "rank": 168,
     "tier": 10
    },
    {
     "name": "Chris Rodriguez Jr.",
     "team": "JAC",
     "pos": "RB",
-    "rank": 168,
+    "rank": 169,
     "tier": 10
    },
    {
     "name": "Caleb Douglas",
     "team": "MIA",
     "pos": "WR",
-    "rank": 169,
-    "tier": 10
-   },
-   {
-    "name": "Braelon Allen",
-    "team": "NYJ",
-    "pos": "RB",
     "rank": 170,
     "tier": 10
    },
@@ -1237,22 +1237,22 @@
     "tier": 10
    },
    {
-    "name": "Dylan Sampson",
-    "team": "CLE",
+    "name": "Keaton Mitchell",
+    "team": "LAC",
     "pos": "RB",
     "rank": 177,
     "tier": 10
    },
    {
-    "name": "Keaton Mitchell",
-    "team": "LAC",
-    "pos": "RB",
+    "name": "Pat Bryant",
+    "team": "DEN",
+    "pos": "WR",
     "rank": 178,
     "tier": 10
    },
    {
-    "name": "Pat Bryant",
-    "team": "DEN",
+    "name": "Elijah Sarratt",
+    "team": "BAL",
     "pos": "WR",
     "rank": 179,
     "tier": 10
@@ -1265,9 +1265,9 @@
     "tier": 10
    },
    {
-    "name": "Elijah Sarratt",
-    "team": "BAL",
-    "pos": "WR",
+    "name": "Dylan Sampson",
+    "team": "CLE",
+    "pos": "RB",
     "rank": 181,
     "tier": 10
    },
@@ -1279,15 +1279,15 @@
     "tier": 10
    },
    {
-    "name": "Kayshon Boutte",
-    "team": "HOU",
+    "name": "Ted Hurst III",
+    "team": "TB",
     "pos": "WR",
     "rank": 183,
     "tier": 10
    },
    {
-    "name": "Ted Hurst III",
-    "team": "TB",
+    "name": "Kayshon Boutte",
+    "team": "HOU",
     "pos": "WR",
     "rank": 184,
     "tier": 10
@@ -1314,16 +1314,16 @@
     "tier": 10
    },
    {
-    "name": "Ja'Kobi Lane",
-    "team": "BAL",
-    "pos": "WR",
+    "name": "Max Klare",
+    "team": "LAR",
+    "pos": "TE",
     "rank": 188,
     "tier": 10
    },
    {
-    "name": "Max Klare",
-    "team": "LAR",
-    "pos": "TE",
+    "name": "Ja'Kobi Lane",
+    "team": "BAL",
+    "pos": "WR",
     "rank": 189,
     "tier": 10
    },
@@ -1440,37 +1440,37 @@
     "tier": 11
    },
    {
-    "name": "Alvin Kamara",
-    "team": "NO",
-    "pos": "RB",
-    "rank": 206,
-    "tier": 11
-   },
-   {
     "name": "Jerry Jeudy",
     "team": "CLE",
     "pos": "WR",
-    "rank": 207,
+    "rank": 206,
     "tier": 11
    },
    {
     "name": "Zachariah Branch",
     "team": "ATL",
     "pos": "WR",
-    "rank": 208,
-    "tier": 11
-   },
-   {
-    "name": "Denver Broncos",
-    "team": "DEN",
-    "pos": "DST",
-    "rank": 209,
+    "rank": 207,
     "tier": 11
    },
    {
     "name": "Kaleb Johnson",
     "team": "GB",
     "pos": "RB",
+    "rank": 208,
+    "tier": 11
+   },
+   {
+    "name": "Alvin Kamara",
+    "team": "NO",
+    "pos": "RB",
+    "rank": 209,
+    "tier": 11
+   },
+   {
+    "name": "Denver Broncos",
+    "team": "DEN",
+    "pos": "DST",
     "rank": 210,
     "tier": 11
    },
@@ -1496,15 +1496,15 @@
     "tier": 11
    },
    {
-    "name": "Isiah Pacheco",
-    "team": "DET",
+    "name": "Ollie Gordon II",
+    "team": "MIA",
     "pos": "RB",
     "rank": 214,
     "tier": 11
    },
    {
-    "name": "Kaytron Allen",
-    "team": "WAS",
+    "name": "Kaelon Black",
+    "team": "SF",
     "pos": "RB",
     "rank": 215,
     "tier": 11
@@ -1517,23 +1517,23 @@
     "tier": 11
    },
    {
+    "name": "Kaytron Allen",
+    "team": "WAS",
+    "pos": "RB",
+    "rank": 217,
+    "tier": 11
+   },
+   {
     "name": "Ryan Flournoy",
     "team": "DAL",
     "pos": "WR",
-    "rank": 217,
+    "rank": 218,
     "tier": 11
    },
    {
     "name": "Jack Bech",
     "team": "LV",
     "pos": "WR",
-    "rank": 218,
-    "tier": 11
-   },
-   {
-    "name": "Kaelon Black",
-    "team": "SF",
-    "pos": "RB",
     "rank": 219,
     "tier": 11
    },
@@ -1566,79 +1566,79 @@
     "tier": 11
    },
    {
-    "name": "Ollie Gordon II",
-    "team": "MIA",
-    "pos": "RB",
-    "rank": 224,
-    "tier": 11
-   },
-   {
     "name": "Greg Dulcich",
     "team": "MIA",
     "pos": "TE",
-    "rank": 225,
+    "rank": 224,
     "tier": 11
    },
    {
     "name": "Elic Ayomanor",
     "team": "TEN",
     "pos": "WR",
-    "rank": 226,
+    "rank": 225,
     "tier": 11
    },
    {
     "name": "Kyle Williams",
     "team": "NE",
     "pos": "WR",
-    "rank": 227,
+    "rank": 226,
     "tier": 11
    },
    {
     "name": "Los Angeles Rams",
     "team": "LAR",
     "pos": "DST",
-    "rank": 228,
+    "rank": 227,
     "tier": 11
    },
    {
     "name": "Darnell Mooney",
     "team": "NYG",
     "pos": "WR",
-    "rank": 229,
+    "rank": 228,
     "tier": 11
    },
    {
     "name": "Chimere Dike",
     "team": "TEN",
     "pos": "WR",
-    "rank": 230,
+    "rank": 229,
     "tier": 11
    },
    {
     "name": "Keon Coleman",
     "team": "BUF",
     "pos": "WR",
-    "rank": 231,
-    "tier": 11
-   },
-   {
-    "name": "Kimani Vidal",
-    "team": "LAC",
-    "pos": "RB",
-    "rank": 232,
+    "rank": 230,
     "tier": 11
    },
    {
     "name": "Rashod Bateman",
     "team": "BAL",
     "pos": "WR",
-    "rank": 233,
+    "rank": 231,
+    "tier": 11
+   },
+   {
+    "name": "Isiah Pacheco",
+    "team": "DET",
+    "pos": "RB",
+    "rank": 232,
     "tier": 11
    },
    {
     "name": "Pittsburgh Steelers",
     "team": "PIT",
     "pos": "DST",
+    "rank": 233,
+    "tier": 11
+   },
+   {
+    "name": "Kimani Vidal",
+    "team": "LAC",
+    "pos": "RB",
     "rank": 234,
     "tier": 11
    },
@@ -1664,16 +1664,16 @@
     "tier": 11
    },
    {
-    "name": "Jaylen Wright",
-    "team": "MIA",
-    "pos": "RB",
+    "name": "Tyreek Hill",
+    "team": "FA",
+    "pos": "WR",
     "rank": 238,
     "tier": 11
    },
    {
-    "name": "Tyreek Hill",
-    "team": "FA",
-    "pos": "WR",
+    "name": "Jaylen Wright",
+    "team": "MIA",
+    "pos": "RB",
     "rank": 239,
     "tier": 11
    },
@@ -1720,16 +1720,16 @@
     "tier": 12
    },
    {
-    "name": "Demond Claiborne",
-    "team": "MIN",
-    "pos": "RB",
+    "name": "Cam Little",
+    "team": "JAC",
+    "pos": "K",
     "rank": 246,
     "tier": 12
    },
    {
-    "name": "Cam Little",
-    "team": "JAC",
-    "pos": "K",
+    "name": "Demond Claiborne",
+    "team": "MIN",
+    "pos": "RB",
     "rank": 247,
     "tier": 12
    },
@@ -1741,16 +1741,16 @@
     "tier": 12
    },
    {
-    "name": "Emanuel Wilson",
-    "team": "SEA",
-    "pos": "RB",
+    "name": "Calvin Ridley",
+    "team": "TEN",
+    "pos": "WR",
     "rank": 249,
     "tier": 12
    },
    {
-    "name": "Calvin Ridley",
-    "team": "TEN",
-    "pos": "WR",
+    "name": "Emanuel Wilson",
+    "team": "SEA",
+    "pos": "RB",
     "rank": 250,
     "tier": 12
    },
@@ -1790,30 +1790,30 @@
     "tier": 12
    },
    {
-    "name": "Ray Davis",
-    "team": "BUF",
-    "pos": "RB",
-    "rank": 256,
-    "tier": 12
-   },
-   {
     "name": "Tank Dell",
     "team": "HOU",
     "pos": "WR",
-    "rank": 257,
+    "rank": 256,
     "tier": 12
    },
    {
     "name": "Harrison Butker",
     "team": "KC",
     "pos": "K",
-    "rank": 258,
+    "rank": 257,
     "tier": 12
    },
    {
     "name": "Keenan Allen",
     "team": "IND",
     "pos": "WR",
+    "rank": 258,
+    "tier": 12
+   },
+   {
+    "name": "Ray Davis",
+    "team": "BUF",
+    "pos": "RB",
     "rank": 259,
     "tier": 12
    },
@@ -1951,44 +1951,44 @@
     "tier": 12
    },
    {
-    "name": "Sean Tucker",
-    "team": "TB",
-    "pos": "RB",
-    "rank": 279,
-    "tier": 12
-   },
-   {
     "name": "Justin Fields",
     "team": "KC",
     "pos": "QB",
-    "rank": 280,
+    "rank": 279,
     "tier": 12
    },
    {
     "name": "Chase McLaughlin",
     "team": "TB",
     "pos": "K",
-    "rank": 281,
+    "rank": 280,
     "tier": 12
    },
    {
     "name": "Cole Payton",
     "team": "PHI",
     "pos": "QB",
-    "rank": 282,
+    "rank": 281,
     "tier": 12
    },
    {
     "name": "Darius Slayton",
     "team": "IND",
     "pos": "WR",
-    "rank": 283,
+    "rank": 282,
     "tier": 12
    },
    {
     "name": "Marcus Mariota",
     "team": "WAS",
     "pos": "QB",
+    "rank": 283,
+    "tier": 12
+   },
+   {
+    "name": "Sean Tucker",
+    "team": "TB",
+    "pos": "RB",
     "rank": 284,
     "tier": 12
    },
@@ -2028,93 +2028,93 @@
     "tier": 12
    },
    {
+    "name": "Kendre Miller",
+    "team": "NO",
+    "pos": "RB",
+    "rank": 290,
+    "tier": 12
+   },
+   {
     "name": "Brenen Thompson",
     "team": "LAC",
     "pos": "WR",
-    "rank": 290,
+    "rank": 291,
     "tier": 12
    },
    {
     "name": "Cole Kmet",
     "team": "CHI",
     "pos": "TE",
-    "rank": 291,
+    "rank": 292,
     "tier": 12
    },
    {
     "name": "Jacksonville Jaguars",
     "team": "JAC",
     "pos": "DST",
-    "rank": 292,
+    "rank": 293,
     "tier": 12
    },
    {
     "name": "Adam Randall",
     "team": "BAL",
     "pos": "RB",
-    "rank": 293,
+    "rank": 294,
     "tier": 12
    },
    {
     "name": "Colby Parkinson",
     "team": "LAR",
     "pos": "TE",
-    "rank": 294,
+    "rank": 295,
     "tier": 12
    },
    {
     "name": "Jalen Milroe",
     "team": "SEA",
     "pos": "QB",
-    "rank": 295,
+    "rank": 296,
     "tier": 12
    },
    {
     "name": "Theo Johnson",
     "team": "NYG",
     "pos": "TE",
-    "rank": 296,
+    "rank": 297,
     "tier": 12
    },
    {
     "name": "Tyquan Thornton",
     "team": "KC",
     "pos": "WR",
-    "rank": 297,
+    "rank": 298,
     "tier": 13
    },
    {
     "name": "Drew Allar",
     "team": "PIT",
     "pos": "QB",
-    "rank": 298,
+    "rank": 299,
     "tier": 13
    },
    {
     "name": "Buffalo Bills",
     "team": "BUF",
     "pos": "DST",
-    "rank": 299,
+    "rank": 300,
     "tier": 13
    },
    {
     "name": "Taylen Green",
     "team": "CLE",
     "pos": "QB",
-    "rank": 300,
+    "rank": 301,
     "tier": 13
    },
    {
     "name": "Jake Bates",
     "team": "DET",
     "pos": "K",
-    "rank": 301,
-    "tier": 13
-   },
-   {
-    "name": "Devin Neal",
-    "team": "MIN",
-    "pos": "RB",
     "rank": 302,
     "tier": 13
    },
@@ -2133,23 +2133,23 @@
     "tier": 13
    },
    {
+    "name": "Devin Neal",
+    "team": "MIN",
+    "pos": "RB",
+    "rank": 305,
+    "tier": 13
+   },
+   {
     "name": "New England Patriots",
     "team": "NE",
     "pos": "DST",
-    "rank": 305,
+    "rank": 306,
     "tier": 13
    },
    {
     "name": "San Francisco 49ers",
     "team": "SF",
     "pos": "DST",
-    "rank": 306,
-    "tier": 13
-   },
-   {
-    "name": "James Conner",
-    "team": "ARI",
-    "pos": "RB",
     "rank": 307,
     "tier": 13
    },
@@ -2161,16 +2161,16 @@
     "tier": 13
    },
    {
-    "name": "Jameis Winston",
-    "team": "NYG",
-    "pos": "QB",
+    "name": "James Conner",
+    "team": "ARI",
+    "pos": "RB",
     "rank": 309,
     "tier": 13
    },
    {
-    "name": "Kendre Miller",
-    "team": "NO",
-    "pos": "RB",
+    "name": "Jameis Winston",
+    "team": "NYG",
+    "pos": "QB",
     "rank": 310,
     "tier": 13
    },
@@ -2189,23 +2189,23 @@
     "tier": 13
    },
    {
-    "name": "Najee Harris",
-    "team": "NYG",
-    "pos": "RB",
-    "rank": 313,
-    "tier": 13
-   },
-   {
     "name": "Andy Borregales",
     "team": "NE",
     "pos": "K",
-    "rank": 314,
+    "rank": 313,
     "tier": 13
    },
    {
     "name": "Christian Kirk",
     "team": "SF",
     "pos": "WR",
+    "rank": 314,
+    "tier": 13
+   },
+   {
+    "name": "Najee Harris",
+    "team": "NYG",
+    "pos": "RB",
     "rank": 315,
     "tier": 13
    },
@@ -2217,16 +2217,16 @@
     "tier": 13
    },
    {
-    "name": "Chris Brooks",
-    "team": "GB",
-    "pos": "RB",
+    "name": "Mike Gesicki",
+    "team": "CIN",
+    "pos": "TE",
     "rank": 317,
     "tier": 13
    },
    {
-    "name": "Mike Gesicki",
-    "team": "CIN",
-    "pos": "TE",
+    "name": "Chris Brooks",
+    "team": "GB",
+    "pos": "RB",
     "rank": 318,
     "tier": 13
    },
@@ -2399,190 +2399,190 @@
     "tier": 13
    },
    {
+    "name": "Will Shipley",
+    "team": "PHI",
+    "pos": "RB",
+    "rank": 343,
+    "tier": 13
+   },
+   {
     "name": "Isaiah Bond",
     "team": "CLE",
     "pos": "WR",
-    "rank": 343,
+    "rank": 344,
     "tier": 13
    },
    {
     "name": "Tanner Koziol",
     "team": "JAC",
     "pos": "TE",
-    "rank": 344,
+    "rank": 345,
     "tier": 13
    },
    {
     "name": "Jarquez Hunter",
     "team": "MIA",
     "pos": "RB",
-    "rank": 345,
+    "rank": 346,
     "tier": 13
    },
    {
     "name": "Jake Elliott",
     "team": "PHI",
     "pos": "K",
-    "rank": 346,
+    "rank": 347,
     "tier": 13
    },
    {
     "name": "Ja'Tavion Sanders",
     "team": "CAR",
     "pos": "TE",
-    "rank": 347,
+    "rank": 348,
     "tier": 13
    },
    {
     "name": "Malik Benson",
     "team": "LV",
     "pos": "WR",
-    "rank": 348,
+    "rank": 349,
     "tier": 13
    },
    {
     "name": "Quinn Ewers",
     "team": "JAC",
     "pos": "QB",
-    "rank": 349,
+    "rank": 350,
     "tier": 13
    },
    {
     "name": "Dawson Knox",
     "team": "BUF",
     "pos": "TE",
-    "rank": 350,
+    "rank": 351,
     "tier": 13
    },
    {
     "name": "Justin Joly",
     "team": "MIA",
     "pos": "TE",
-    "rank": 351,
+    "rank": 352,
     "tier": 13
    },
    {
     "name": "New York Giants",
     "team": "NYG",
     "pos": "DST",
-    "rank": 352,
+    "rank": 353,
     "tier": 13
    },
    {
     "name": "Joe Flacco",
     "team": "CIN",
     "pos": "QB",
-    "rank": 353,
-    "tier": 13
+    "rank": 354,
+    "tier": 14
    },
    {
     "name": "George Holani",
     "team": "SEA",
     "pos": "RB",
-    "rank": 354,
+    "rank": 355,
     "tier": 14
    },
    {
     "name": "Washington Commanders",
     "team": "WAS",
     "pos": "DST",
-    "rank": 355,
+    "rank": 356,
     "tier": 14
    },
    {
     "name": "Blake Grupe",
-    "team": "FA",
+    "team": "NYJ",
     "pos": "K",
-    "rank": 356,
+    "rank": 357,
     "tier": 14
    },
    {
     "name": "Jahan Dotson",
     "team": "ATL",
     "pos": "WR",
-    "rank": 357,
+    "rank": 358,
     "tier": 14
    },
    {
     "name": "CJ Daniels",
     "team": "LAR",
     "pos": "WR",
-    "rank": 358,
+    "rank": 359,
     "tier": 14
    },
    {
     "name": "Noah Fant",
     "team": "NO",
     "pos": "TE",
-    "rank": 359,
+    "rank": 360,
     "tier": 14
    },
    {
     "name": "Barion Brown",
     "team": "NO",
     "pos": "WR",
-    "rank": 360,
+    "rank": 361,
     "tier": 14
    },
    {
     "name": "Savion Williams",
     "team": "GB",
     "pos": "WR",
-    "rank": 361,
+    "rank": 362,
     "tier": 14
    },
    {
     "name": "Cedric Tillman",
     "team": "NO",
     "pos": "WR",
-    "rank": 362,
+    "rank": 363,
     "tier": 14
    },
    {
     "name": "Brashard Smith",
     "team": "KC",
     "pos": "RB",
-    "rank": 363,
+    "rank": 364,
     "tier": 14
    },
    {
     "name": "Garrett Nussmeier",
     "team": "KC",
     "pos": "QB",
-    "rank": 364,
+    "rank": 365,
     "tier": 14
    },
    {
     "name": "Jaydon Blue",
     "team": "PHI",
     "pos": "RB",
-    "rank": 365,
-    "tier": 14
-   },
-   {
-    "name": "Jerome Ford",
-    "team": "FA",
-    "pos": "RB",
     "rank": 366,
-    "tier": 14
-   },
-   {
-    "name": "Trevor Etienne",
-    "team": "CAR",
-    "pos": "RB",
-    "rank": 367,
     "tier": 14
    },
    {
     "name": "Riley Leonard",
     "team": "IND",
     "pos": "QB",
-    "rank": 368,
+    "rank": 367,
     "tier": 14
    },
    {
     "name": "DJ Giddens",
     "team": "IND",
+    "pos": "RB",
+    "rank": 368,
+    "tier": 14
+   },
+   {
+    "name": "Trevor Etienne",
+    "team": "CAR",
     "pos": "RB",
     "rank": 369,
     "tier": 14
@@ -2665,15 +2665,15 @@
     "tier": 14
    },
    {
-    "name": "Will Shipley",
-    "team": "PHI",
+    "name": "Isaac Guerendo",
+    "team": "SF",
     "pos": "RB",
     "rank": 381,
     "tier": 14
    },
    {
-    "name": "Isaac Guerendo",
-    "team": "SF",
+    "name": "Raheim Sanders",
+    "team": "CLE",
     "pos": "RB",
     "rank": 382,
     "tier": 14
@@ -2735,16 +2735,16 @@
     "tier": 14
    },
    {
-    "name": "J'Mari Taylor",
-    "team": "JAC",
-    "pos": "RB",
+    "name": "Jack Strand",
+    "team": "ATL",
+    "pos": "QB",
     "rank": 391,
     "tier": 14
    },
    {
-    "name": "Jack Strand",
-    "team": "ATL",
-    "pos": "QB",
+    "name": "J'Mari Taylor",
+    "team": "JAC",
+    "pos": "RB",
     "rank": 392,
     "tier": 14
    },
@@ -2826,114 +2826,114 @@
     "tier": 14
    },
    {
+    "name": "Jerome Ford",
+    "team": "FA",
+    "pos": "RB",
+    "rank": 404,
+    "tier": 14
+   },
+   {
     "name": "Brandon McManus",
     "team": "FA",
     "pos": "K",
-    "rank": 404,
+    "rank": 405,
     "tier": 14
    },
    {
     "name": "John Metchie III",
     "team": "CAR",
     "pos": "WR",
-    "rank": 405,
+    "rank": 406,
     "tier": 14
    },
    {
     "name": "Jaylin Lane",
     "team": "WAS",
     "pos": "WR",
-    "rank": 406,
+    "rank": 407,
     "tier": 14
    },
    {
     "name": "Michael Trigg",
     "team": "DAL",
     "pos": "TE",
-    "rank": 407,
+    "rank": 408,
     "tier": 14
    },
    {
     "name": "Drew Lock",
     "team": "SEA",
     "pos": "QB",
-    "rank": 408,
+    "rank": 409,
     "tier": 14
    },
    {
     "name": "Zach Ertz",
     "team": "PHI",
     "pos": "TE",
-    "rank": 409,
+    "rank": 410,
     "tier": 14
    },
    {
     "name": "Mason Rudolph",
     "team": "PIT",
     "pos": "QB",
-    "rank": 410,
+    "rank": 411,
     "tier": 14
    },
    {
     "name": "Tai Felton",
     "team": "MIN",
     "pos": "WR",
-    "rank": 411,
+    "rank": 412,
     "tier": 14
    },
    {
     "name": "Noah Gray",
     "team": "KC",
     "pos": "TE",
-    "rank": 412,
+    "rank": 413,
     "tier": 14
    },
    {
     "name": "Dohnte Meyers",
     "team": "CIN",
     "pos": "WR",
-    "rank": 413,
+    "rank": 414,
     "tier": 14
    },
    {
     "name": "Tommy Tremble",
     "team": "CAR",
     "pos": "TE",
-    "rank": 414,
+    "rank": 415,
     "tier": 14
    },
    {
     "name": "Dont'e Thornton Jr.",
     "team": "LV",
     "pos": "WR",
-    "rank": 415,
+    "rank": 416,
     "tier": 14
    },
    {
     "name": "Dillon Gabriel",
     "team": "CLE",
     "pos": "QB",
-    "rank": 416,
+    "rank": 417,
     "tier": 14
    },
    {
     "name": "LeQuint Allen Jr.",
     "team": "JAC",
     "pos": "RB",
-    "rank": 417,
+    "rank": 418,
     "tier": 15
    },
    {
     "name": "Jordan Watkins",
     "team": "SF",
     "pos": "WR",
-    "rank": 418,
-    "tier": 15
-   },
-   {
-    "name": "Raheim Sanders",
-    "team": "CLE",
-    "pos": "RB",
     "rank": 419,
     "tier": 15
    },
@@ -2952,261 +2952,261 @@
     "tier": 15
    },
    {
-    "name": "Roman Hemby",
-    "team": "LV",
-    "pos": "RB",
-    "rank": 422,
-    "tier": 15
-   },
-   {
     "name": "Josh Cameron",
     "team": "JAC",
     "pos": "WR",
-    "rank": 423,
+    "rank": 422,
     "tier": 15
    },
    {
     "name": "Seydou Traore",
     "team": "MIA",
     "pos": "TE",
-    "rank": 424,
+    "rank": 423,
     "tier": 15
    },
    {
     "name": "Eric Rivers Jr.",
     "team": "TB",
     "pos": "WR",
-    "rank": 425,
+    "rank": 424,
     "tier": 15
    },
    {
     "name": "Will Levis",
     "team": "NYJ",
     "pos": "QB",
-    "rank": 426,
+    "rank": 425,
     "tier": 15
    },
    {
     "name": "Audric Estime",
     "team": "MIN",
     "pos": "RB",
-    "rank": 427,
+    "rank": 426,
     "tier": 15
    },
    {
     "name": "Jeff Caldwell",
     "team": "KC",
     "pos": "WR",
-    "rank": 428,
+    "rank": 427,
     "tier": 15
    },
    {
     "name": "J. Michael Sturdivant",
     "team": "GB",
     "pos": "WR",
-    "rank": 429,
+    "rank": 428,
     "tier": 15
    },
    {
     "name": "Joe Royer",
     "team": "CLE",
     "pos": "TE",
-    "rank": 430,
+    "rank": 429,
     "tier": 15
    },
    {
     "name": "Kenny Pickett",
     "team": "CAR",
     "pos": "QB",
-    "rank": 431,
+    "rank": 430,
     "tier": 15
    },
    {
     "name": "Kendrick Bourne",
     "team": "ARI",
     "pos": "WR",
-    "rank": 432,
+    "rank": 431,
     "tier": 15
    },
    {
     "name": "Tyren Montgomery",
     "team": "TEN",
     "pos": "WR",
-    "rank": 433,
+    "rank": 432,
     "tier": 15
    },
    {
     "name": "Austin Hooper",
     "team": "ATL",
     "pos": "TE",
-    "rank": 434,
+    "rank": 433,
     "tier": 15
    },
    {
     "name": "Jaren Kanak",
     "team": "TEN",
     "pos": "TE",
-    "rank": 435,
+    "rank": 434,
     "tier": 15
    },
    {
     "name": "Dallen Bentley",
     "team": "DEN",
     "pos": "TE",
-    "rank": 436,
+    "rank": 435,
     "tier": 15
    },
    {
     "name": "Kendrick Law",
     "team": "DET",
     "pos": "WR",
-    "rank": 437,
+    "rank": 436,
     "tier": 15
    },
    {
     "name": "Treylon Burks",
     "team": "WAS",
     "pos": "WR",
-    "rank": 438,
+    "rank": 437,
     "tier": 15
    },
    {
     "name": "Chase Roberts",
     "team": "FA",
     "pos": "WR",
-    "rank": 439,
+    "rank": 438,
     "tier": 15
    },
    {
     "name": "Gardner Minshew II",
     "team": "ARI",
     "pos": "QB",
-    "rank": 440,
+    "rank": 439,
     "tier": 15
    },
    {
     "name": "Foster Moreau",
     "team": "HOU",
     "pos": "TE",
-    "rank": 441,
+    "rank": 440,
     "tier": 15
    },
    {
     "name": "Cade Stover",
     "team": "HOU",
     "pos": "TE",
-    "rank": 442,
+    "rank": 441,
     "tier": 15
    },
    {
     "name": "Olamide Zaccheaus",
     "team": "ATL",
     "pos": "WR",
-    "rank": 443,
+    "rank": 442,
     "tier": 15
    },
    {
     "name": "Luke McCaffrey",
     "team": "WAS",
     "pos": "WR",
-    "rank": 444,
+    "rank": 443,
     "tier": 15
    },
    {
     "name": "Bam Knight",
     "team": "ARI",
     "pos": "RB",
-    "rank": 445,
+    "rank": 444,
     "tier": 15
    },
    {
     "name": "Demarcus Robinson",
     "team": "SF",
     "pos": "WR",
-    "rank": 446,
+    "rank": 445,
     "tier": 15
    },
    {
     "name": "Dyami Brown",
     "team": "WAS",
     "pos": "WR",
-    "rank": 447,
+    "rank": 446,
     "tier": 15
    },
    {
     "name": "Elijah Higgins",
     "team": "ARI",
     "pos": "TE",
-    "rank": 448,
+    "rank": 447,
     "tier": 15
    },
    {
     "name": "DeAndre Hopkins",
     "team": "BAL",
     "pos": "WR",
-    "rank": 449,
+    "rank": 448,
     "tier": 15
    },
    {
     "name": "KaVontae Turpin",
     "team": "DAL",
     "pos": "WR",
-    "rank": 450,
+    "rank": 449,
     "tier": 15
    },
    {
     "name": "Robert Henry Jr.",
     "team": "WAS",
     "pos": "RB",
-    "rank": 451,
+    "rank": 450,
     "tier": 15
    },
    {
     "name": "Josh Oliver",
     "team": "MIN",
     "pos": "TE",
-    "rank": 452,
+    "rank": 451,
     "tier": 15
    },
    {
     "name": "Elijah Moore",
     "team": "PHI",
     "pos": "WR",
-    "rank": 453,
+    "rank": 452,
     "tier": 15
    },
    {
     "name": "Dean Connors",
     "team": "LAR",
     "pos": "RB",
-    "rank": 454,
+    "rank": 453,
     "tier": 15
    },
    {
     "name": "Riley Nowakowski",
     "team": "PIT",
     "pos": "TE",
-    "rank": 455,
+    "rank": 454,
     "tier": 15
    },
    {
     "name": "Kalif Raymond",
     "team": "CHI",
     "pos": "WR",
-    "rank": 456,
+    "rank": 455,
     "tier": 15
    },
    {
     "name": "Tyler Badie",
     "team": "DEN",
     "pos": "RB",
-    "rank": 457,
+    "rank": 456,
     "tier": 15
    },
    {
     "name": "Jared Wiley",
     "team": "KC",
     "pos": "TE",
+    "rank": 457,
+    "tier": 15
+   },
+   {
+    "name": "Roman Hemby",
+    "team": "LV",
+    "pos": "RB",
     "rank": 458,
     "tier": 15
    },
