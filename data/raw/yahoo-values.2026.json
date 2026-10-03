@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-10-03T01:50:34.055Z",
+ "fetchedAt": "2026-10-03T15:02:25.512Z",
  "data": {
   "players": [
    {
@@ -28,7 +28,7 @@
     "name": "Brock Purdy",
     "team": "SF",
     "pos": "QB",
-    "avgPick": 95.9,
+    "avgPick": 95.8,
     "avgCost": 1.4
    },
    {
@@ -49,7 +49,7 @@
     "name": "Tyler Shough",
     "team": "NO",
     "pos": "QB",
-    "avgPick": 125.7,
+    "avgPick": 125.4,
     "avgCost": 1.2
    },
    {
@@ -63,14 +63,14 @@
     "name": "Bryce Young",
     "team": "CAR",
     "pos": "QB",
-    "avgPick": 113.2,
+    "avgPick": 113,
     "avgCost": 1.8
    },
    {
     "name": "Patrick Mahomes",
     "team": "KC",
     "pos": "QB",
-    "avgPick": 104.4,
+    "avgPick": 104.3,
     "avgCost": 2
    },
    {
@@ -79,6 +79,13 @@
     "pos": "QB",
     "avgPick": 110.1,
     "avgCost": 1.3
+   },
+   {
+    "name": "Aaron Rodgers",
+    "team": "PIT",
+    "pos": "QB",
+    "avgPick": 113.8,
+    "avgCost": 1.4
    },
    {
     "name": "Amon-Ra St. Brown",
@@ -154,7 +161,7 @@
     "name": "Trevor Lawrence",
     "team": "JAX",
     "pos": "QB",
-    "avgPick": 80.4,
+    "avgPick": 80.3,
     "avgCost": 2.5
    },
    {
@@ -186,6 +193,20 @@
     "avgCost": 59.5
    },
    {
+    "name": "Jaylen Warren",
+    "team": "PIT",
+    "pos": "RB",
+    "avgPick": 75.3,
+    "avgCost": 4.4
+   },
+   {
+    "name": "Denzel Boston",
+    "team": "CLE",
+    "pos": "WR",
+    "avgPick": 122.8,
+    "avgCost": 1.2
+   },
+   {
     "name": "Ashton Jeanty",
     "team": "LV",
     "pos": "RB",
@@ -196,7 +217,7 @@
     "name": "Chuba Hubbard",
     "team": "CAR",
     "pos": "RB",
-    "avgPick": 90.5,
+    "avgPick": 90.4,
     "avgCost": 3.2
    },
    {
@@ -266,7 +287,7 @@
     "name": "Jalen Coker",
     "team": "CAR",
     "pos": "WR",
-    "avgPick": 126.8,
+    "avgPick": 126.6,
     "avgCost": 1.2
    },
    {
@@ -280,7 +301,7 @@
     "name": "Travis Kelce",
     "team": "KC",
     "pos": "TE",
-    "avgPick": 94.5,
+    "avgPick": 94.4,
     "avgCost": 2
    },
    {
@@ -298,6 +319,13 @@
     "avgCost": 1.1
    },
    {
+    "name": "Harold Fannin Jr.",
+    "team": "CLE",
+    "pos": "TE",
+    "avgPick": 71,
+    "avgCost": 3.4
+   },
+   {
     "name": "Parker Washington",
     "team": "JAX",
     "pos": "WR",
@@ -312,13 +340,6 @@
     "avgCost": 3.2
    },
    {
-    "name": "Aaron Rodgers",
-    "team": "PIT",
-    "pos": "QB",
-    "avgPick": 113.8,
-    "avgCost": 1.4
-   },
-   {
     "name": "Malik Willis",
     "team": "MIA",
     "pos": "QB",
@@ -331,6 +352,13 @@
     "pos": "TE",
     "avgPick": 119.4,
     "avgCost": 1.1
+   },
+   {
+    "name": "Quinshon Judkins",
+    "team": "CLE",
+    "pos": "RB",
+    "avgPick": 55.1,
+    "avgCost": 11.3
    },
    {
     "name": "DeVonta Smith",
@@ -357,7 +385,7 @@
     "name": "Bhayshul Tuten",
     "team": "JAX",
     "pos": "RB",
-    "avgPick": 61.9,
+    "avgPick": 61.8,
     "avgCost": 9.4
    },
    {
@@ -371,14 +399,7 @@
     "name": "Spencer Shrader",
     "team": "IND",
     "pos": "K",
-    "avgPick": 131.9,
-    "avgCost": 1.2
-   },
-   {
-    "name": "Denzel Boston",
-    "team": "CLE",
-    "pos": "WR",
-    "avgPick": 123.3,
+    "avgPick": 131.8,
     "avgCost": 1.2
    },
    {
@@ -392,7 +413,7 @@
     "name": "Justin Herbert",
     "team": "LAC",
     "pos": "QB",
-    "avgPick": 70.6,
+    "avgPick": 70.7,
     "avgCost": 3.5
    },
    {
@@ -431,6 +452,13 @@
     "avgCost": 1.1
    },
    {
+    "name": "Steelers",
+    "team": "PIT",
+    "pos": "DST",
+    "avgPick": 137.5,
+    "avgCost": 1.2
+   },
+   {
     "name": "David Montgomery",
     "team": "HOU",
     "pos": "RB",
@@ -445,18 +473,18 @@
     "avgCost": 19.8
    },
    {
-    "name": "Jaylen Warren",
-    "team": "PIT",
-    "pos": "RB",
-    "avgPick": 75.3,
-    "avgCost": 4.4
-   },
-   {
     "name": "Deebo Samuel Sr.",
     "team": "SF",
     "pos": "WR",
-    "avgPick": 122,
+    "avgPick": 121.8,
     "avgCost": 1.3
+   },
+   {
+    "name": "DK Metcalf",
+    "team": "PIT",
+    "pos": "WR",
+    "avgPick": 84.9,
+    "avgCost": 2.3
    },
    {
     "name": "Drake London",
@@ -497,7 +525,7 @@
     "name": "Kenyon Sadiq",
     "team": "NYJ",
     "pos": "TE",
-    "avgPick": 129,
+    "avgPick": 128.9,
     "avgCost": 1.2
    },
    {
@@ -511,7 +539,7 @@
     "name": "Aaron Jones Sr.",
     "team": "MIN",
     "pos": "RB",
-    "avgPick": 122.8,
+    "avgPick": 122.7,
     "avgCost": 1.5
    },
    {
@@ -543,18 +571,18 @@
     "avgCost": 1.9
    },
    {
+    "name": "Pat Freiermuth",
+    "team": "PIT",
+    "pos": "TE",
+    "avgPick": 122.7,
+    "avgCost": 1.2
+   },
+   {
     "name": "Mike Evans",
     "team": "SF",
     "pos": "WR",
     "avgPick": 70.7,
     "avgCost": 5.5
-   },
-   {
-    "name": "Harold Fannin Jr.",
-    "team": "CLE",
-    "pos": "TE",
-    "avgPick": 71,
-    "avgCost": 3.4
    },
    {
     "name": "Rashee Rice",
@@ -578,17 +606,17 @@
     "avgCost": 1.9
    },
    {
-    "name": "Steelers",
+    "name": "Chris Boswell",
     "team": "PIT",
-    "pos": "DST",
-    "avgPick": 137.5,
+    "pos": "K",
+    "avgPick": 130.7,
     "avgCost": 1.2
    },
    {
     "name": "Devaughn Vele",
     "team": "NO",
     "pos": "WR",
-    "avgPick": 122.1,
+    "avgPick": 122.2,
     "avgCost": 1.3
    },
    {
@@ -616,7 +644,7 @@
     "name": "Jakobi Meyers",
     "team": "JAX",
     "pos": "WR",
-    "avgPick": 131.1,
+    "avgPick": 131,
     "avgCost": 1.1
    },
    {
@@ -630,7 +658,7 @@
     "name": "Sam Darnold",
     "team": "SEA",
     "pos": "QB",
-    "avgPick": 121.5,
+    "avgPick": 121.4,
     "avgCost": 1.2
    },
    {
@@ -665,7 +693,7 @@
     "name": "Dontayvion Wicks",
     "team": "PHI",
     "pos": "WR",
-    "avgPick": 121,
+    "avgPick": 120.3,
     "avgCost": 1.3
    },
    {
@@ -716,13 +744,6 @@
     "pos": "QB",
     "avgPick": 95.4,
     "avgCost": 2.3
-   },
-   {
-    "name": "Chris Boswell",
-    "team": "PIT",
-    "pos": "K",
-    "avgPick": 130.7,
-    "avgCost": 1.2
    },
    {
     "name": "Cairo Santos",
@@ -872,13 +893,6 @@
     "avgCost": 1.4
    },
    {
-    "name": "Pat Freiermuth",
-    "team": "PIT",
-    "pos": "TE",
-    "avgPick": 122.7,
-    "avgCost": 1.2
-   },
-   {
     "name": "Brock Bowers",
     "team": "LV",
     "pos": "TE",
@@ -900,17 +914,10 @@
     "avgCost": 1.1
    },
    {
-    "name": "Quinshon Judkins",
-    "team": "CLE",
-    "pos": "RB",
-    "avgPick": 55.1,
-    "avgCost": 11.3
-   },
-   {
     "name": "Jacory Croskey-Merritt",
     "team": "WAS",
     "pos": "RB",
-    "avgPick": 104.6,
+    "avgPick": 104.5,
     "avgCost": 2
    },
    {
@@ -928,11 +935,11 @@
     "avgCost": 20
    },
    {
-    "name": "DK Metcalf",
-    "team": "PIT",
+    "name": "KC Concepcion Jr.",
+    "team": "CLE",
     "pos": "WR",
-    "avgPick": 84.9,
-    "avgCost": 2.3
+    "avgPick": 122.1,
+    "avgCost": 1.3
    },
    {
     "name": "De'Von Achane",
@@ -956,10 +963,17 @@
     "avgCost": 1.7
    },
    {
+    "name": "Browns",
+    "team": "CLE",
+    "pos": "DST",
+    "avgPick": 129.6,
+    "avgCost": 1.2
+   },
+   {
     "name": "Chiefs",
     "team": "KC",
     "pos": "DST",
-    "avgPick": 129.7,
+    "avgPick": 129.8,
     "avgCost": 1.3
    },
    {
@@ -973,7 +987,7 @@
     "name": "Jordan Addison",
     "team": "MIN",
     "pos": "WR",
-    "avgPick": 115.1,
+    "avgPick": 115,
     "avgCost": 1.2
    },
    {
@@ -1029,14 +1043,14 @@
     "name": "Mark Andrews",
     "team": "BAL",
     "pos": "TE",
-    "avgPick": 113.7,
+    "avgPick": 113.8,
     "avgCost": 1.2
    },
    {
     "name": "T.J. Hockenson",
     "team": "MIN",
     "pos": "TE",
-    "avgPick": 127,
+    "avgPick": 126.9,
     "avgCost": 1.2
    },
    {
@@ -1113,7 +1127,7 @@
     "name": "Adonai Mitchell",
     "team": "NYJ",
     "pos": "WR",
-    "avgPick": 124.4,
+    "avgPick": 124.5,
     "avgCost": 1
    },
    {
@@ -1134,7 +1148,7 @@
     "name": "Rams",
     "team": "LAR",
     "pos": "DST",
-    "avgPick": 87.7,
+    "avgPick": 87.8,
     "avgCost": 3.8
    },
    {
@@ -1155,7 +1169,7 @@
     "name": "Braelon Allen",
     "team": "NYJ",
     "pos": "RB",
-    "avgPick": 122.8,
+    "avgPick": 122.6,
     "avgCost": 1.1
    },
    {
@@ -1183,7 +1197,7 @@
     "name": "Lions",
     "team": "DET",
     "pos": "DST",
-    "avgPick": 135.8,
+    "avgPick": 135.7,
     "avgCost": 1.2
    },
    {
@@ -1204,7 +1218,7 @@
     "name": "MarShawn Lloyd",
     "team": "GB",
     "pos": "RB",
-    "avgPick": 85.2,
+    "avgPick": 85.3,
     "avgCost": 5.3
    },
    {
@@ -1292,8 +1306,8 @@
     "avgCost": 2.6
    },
    {
-    "name": "KC Concepcion Jr.",
-    "team": "CLE",
+    "name": "Michael Pittman Jr.",
+    "team": "PIT",
     "pos": "WR",
     "avgPick": 122.1,
     "avgCost": 1.3
@@ -1302,7 +1316,7 @@
     "name": "Brian Thomas Jr.",
     "team": "JAX",
     "pos": "WR",
-    "avgPick": 84.5,
+    "avgPick": 84.6,
     "avgCost": 2.6
    },
    {
@@ -1325,13 +1339,6 @@
     "pos": "RB",
     "avgPick": 62.8,
     "avgCost": 10.4
-   },
-   {
-    "name": "Browns",
-    "team": "CLE",
-    "pos": "DST",
-    "avgPick": 129.6,
-    "avgCost": 1.2
    },
    {
     "name": "Tyjae Spears",
@@ -1397,13 +1404,6 @@
     "avgCost": 60.9
    },
    {
-    "name": "Michael Pittman Jr.",
-    "team": "PIT",
-    "pos": "WR",
-    "avgPick": 122.1,
-    "avgCost": 1.3
-   },
-   {
     "name": "Alec Pierce",
     "team": "IND",
     "pos": "WR",
@@ -1442,7 +1442,7 @@
     "name": "Rico Dowdle",
     "team": "PIT",
     "pos": "RB",
-    "avgPick": 88,
+    "avgPick": 88.1,
     "avgCost": 3.3
    },
    {
@@ -1484,7 +1484,7 @@
     "name": "Colston Loveland",
     "team": "CHI",
     "pos": "TE",
-    "avgPick": 40.2,
+    "avgPick": 40.3,
     "avgCost": 18.4
    },
    {
@@ -1505,7 +1505,7 @@
     "name": "A.J. Brown",
     "team": "NE",
     "pos": "WR",
-    "avgPick": 25.9,
+    "avgPick": 26,
     "avgCost": 32.7
    },
    {
@@ -1519,7 +1519,7 @@
     "name": "Kyle Pitts Sr.",
     "team": "ATL",
     "pos": "TE",
-    "avgPick": 72.9,
+    "avgPick": 73,
     "avgCost": 3.5
    },
    {
@@ -1542,6 +1542,13 @@
     "pos": "WR",
     "avgPick": 126.3,
     "avgCost": 1.2
+   },
+   {
+    "name": "Ray Davis",
+    "team": "BUF",
+    "pos": "RB",
+    "avgPick": 121.9,
+    "avgCost": 1.1
    }
   ]
  }
