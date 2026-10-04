@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-10-04T02:28:56.882Z",
+ "fetchedAt": "2026-10-04T15:38:37.747Z",
  "data": {
   "players": [
    {
@@ -67,7 +67,7 @@
     "name": "Puka Nacua",
     "pos": "WR",
     "team": "LAR",
-    "adpHalfPpr": 6.2,
+    "adpHalfPpr": 5.8,
     "adpPpr": 4,
     "adpStd": 8.9,
     "adp2qb": 5.7,
@@ -92,7 +92,7 @@
     "pos": "RB",
     "team": "BUF",
     "adpHalfPpr": 8.1,
-    "adpPpr": 8.6,
+    "adpPpr": 9.4,
     "adpStd": 5.1,
     "adp2qb": 11.4,
     "ptsHalfPpr": 245.3,
@@ -103,10 +103,10 @@
     "name": "Jaxon Smith-Njigba",
     "pos": "WR",
     "team": "SEA",
-    "adpHalfPpr": 8.3,
-    "adpPpr": 6.7,
+    "adpHalfPpr": 9.7,
+    "adpPpr": 5.3,
     "adpStd": 9.2,
-    "adp2qb": 6.2,
+    "adp2qb": 5.8,
     "ptsHalfPpr": 235.1,
     "ptsPpr": 284.6,
     "ptsStd": 185.6
@@ -124,28 +124,28 @@
     "ptsStd": 209.7
    },
    {
+    "name": "Justin Jefferson",
+    "pos": "WR",
+    "team": "MIN",
+    "adpHalfPpr": 11.2,
+    "adpPpr": 11.8,
+    "adpStd": 18.5,
+    "adp2qb": 15.9,
+    "ptsHalfPpr": 205.4,
+    "ptsPpr": 250.4,
+    "ptsStd": 160.4
+   },
+   {
     "name": "CeeDee Lamb",
     "pos": "WR",
     "team": "DAL",
     "adpHalfPpr": 11.7,
     "adpPpr": 10.7,
     "adpStd": 14.3,
-    "adp2qb": 13.3,
+    "adp2qb": 13.2,
     "ptsHalfPpr": 222.5,
     "ptsPpr": 270.5,
     "ptsStd": 174.5
-   },
-   {
-    "name": "Justin Jefferson",
-    "pos": "WR",
-    "team": "MIN",
-    "adpHalfPpr": 12.8,
-    "adpPpr": 12.2,
-    "adpStd": 18.5,
-    "adp2qb": 15.9,
-    "ptsHalfPpr": 205.4,
-    "ptsPpr": 250.4,
-    "ptsStd": 160.4
    },
    {
     "name": "De'Von Achane",
@@ -166,7 +166,7 @@
     "adpHalfPpr": 14.8,
     "adpPpr": 17.5,
     "adpStd": 7.4,
-    "adp2qb": 26.6,
+    "adp2qb": 26.5,
     "ptsHalfPpr": 238.4,
     "ptsPpr": 246.9,
     "ptsStd": 229.9
@@ -200,7 +200,7 @@
     "pos": "RB",
     "team": "LV",
     "adpHalfPpr": 17.4,
-    "adpPpr": 16.2,
+    "adpPpr": 16.1,
     "adpStd": 11.5,
     "adp2qb": 17.6,
     "ptsHalfPpr": 228.7,
@@ -214,7 +214,7 @@
     "adpHalfPpr": 17.9,
     "adpPpr": 19.8,
     "adpStd": 22.7,
-    "adp2qb": 19.1,
+    "adp2qb": 19,
     "ptsHalfPpr": 225.5,
     "ptsPpr": 244,
     "ptsStd": 207
@@ -226,7 +226,7 @@
     "adpHalfPpr": 19.3,
     "adpPpr": 17.9,
     "adpStd": 33.2,
-    "adp2qb": 24.8,
+    "adp2qb": 23.2,
     "ptsHalfPpr": 140,
     "ptsPpr": 167,
     "ptsStd": 113
@@ -238,7 +238,7 @@
     "adpHalfPpr": 20,
     "adpPpr": 21.9,
     "adpStd": 15,
-    "adp2qb": 3.4,
+    "adp2qb": 3.3,
     "ptsHalfPpr": 361.5,
     "ptsPpr": 361.5,
     "ptsStd": 361.5
@@ -248,9 +248,9 @@
     "pos": "WR",
     "team": "HOU",
     "adpHalfPpr": 21,
-    "adpPpr": 24.2,
+    "adpPpr": 23.8,
     "adpStd": 26.7,
-    "adp2qb": 30.1,
+    "adp2qb": 30,
     "ptsHalfPpr": 220,
     "ptsPpr": 262,
     "ptsStd": 178
@@ -262,58 +262,46 @@
     "adpHalfPpr": 22.1,
     "adpPpr": 20.4,
     "adpStd": 19.1,
-    "adp2qb": 29.7,
+    "adp2qb": 29.6,
     "ptsHalfPpr": 205.2,
     "ptsPpr": 250.2,
     "ptsStd": 160.2
+   },
+   {
+    "name": "Kyren Williams",
+    "pos": "RB",
+    "team": "LAR",
+    "adpHalfPpr": 23.5,
+    "adpPpr": 26.1,
+    "adpStd": 12.8,
+    "adp2qb": 37.6,
+    "ptsHalfPpr": 192,
+    "ptsPpr": 208,
+    "ptsStd": 176
    },
    {
     "name": "Brock Bowers",
     "pos": "TE",
     "team": "LV",
     "adpHalfPpr": 23.9,
-    "adpPpr": 23.1,
+    "adpPpr": 23,
     "adpStd": 30.2,
-    "adp2qb": 22.1,
+    "adp2qb": 22,
     "ptsHalfPpr": 180.5,
     "ptsPpr": 226.5,
     "ptsStd": 134.5
-   },
-   {
-    "name": "Kyren Williams",
-    "pos": "RB",
-    "team": "LAR",
-    "adpHalfPpr": 24.5,
-    "adpPpr": 26.1,
-    "adpStd": 12.8,
-    "adp2qb": 37.7,
-    "ptsHalfPpr": 192,
-    "ptsPpr": 208,
-    "ptsStd": 176
    },
    {
     "name": "George Pickens",
     "pos": "WR",
     "team": "DAL",
     "adpHalfPpr": 25.4,
-    "adpPpr": 22,
+    "adpPpr": 22.9,
     "adpStd": 28.6,
-    "adp2qb": 31.1,
+    "adp2qb": 31,
     "ptsHalfPpr": 205.7,
     "ptsPpr": 245.7,
     "ptsStd": 165.7
-   },
-   {
-    "name": "Jeremiyah Love",
-    "pos": "RB",
-    "team": "ARI",
-    "adpHalfPpr": 26.3,
-    "adpPpr": 28,
-    "adpStd": 15.2,
-    "adp2qb": 34.6,
-    "ptsHalfPpr": 188.3,
-    "ptsPpr": 211.8,
-    "ptsStd": 164.8
    },
    {
     "name": "Trey McBride",
@@ -328,13 +316,25 @@
     "ptsStd": 138.9
    },
    {
+    "name": "Jeremiyah Love",
+    "pos": "RB",
+    "team": "ARI",
+    "adpHalfPpr": 27.7,
+    "adpPpr": 28.9,
+    "adpStd": 15.2,
+    "adp2qb": 34.5,
+    "ptsHalfPpr": 188.3,
+    "ptsPpr": 211.8,
+    "ptsStd": 164.8
+   },
+   {
     "name": "Malik Nabers",
     "pos": "WR",
     "team": "NYG",
     "adpHalfPpr": 28.4,
-    "adpPpr": 26.9,
+    "adpPpr": 27.1,
     "adpStd": 30.3,
-    "adp2qb": 33.7,
+    "adp2qb": 33.6,
     "ptsHalfPpr": 193.7,
     "ptsPpr": 236.7,
     "ptsStd": 150.7
@@ -344,7 +344,7 @@
     "pos": "WR",
     "team": "NO",
     "adpHalfPpr": 29.1,
-    "adpPpr": 30.9,
+    "adpPpr": 29.2,
     "adpStd": 31.2,
     "adp2qb": 35.5,
     "ptsHalfPpr": 194.9,
@@ -355,10 +355,10 @@
     "name": "Javonte Williams",
     "pos": "RB",
     "team": "DAL",
-    "adpHalfPpr": 30.1,
+    "adpHalfPpr": 29.9,
     "adpPpr": 32.4,
     "adpStd": 32.1,
-    "adp2qb": 41.7,
+    "adp2qb": 41.6,
     "ptsHalfPpr": 193,
     "ptsPpr": 212,
     "ptsStd": 174
@@ -370,7 +370,7 @@
     "adpHalfPpr": 31.3,
     "adpPpr": 29.3,
     "adpStd": 34.2,
-    "adp2qb": 38.6,
+    "adp2qb": 38.5,
     "ptsHalfPpr": 185.3,
     "ptsPpr": 229.3,
     "ptsStd": 141.3
@@ -382,7 +382,7 @@
     "adpHalfPpr": 32.8,
     "adpPpr": 34.1,
     "adpStd": 27.1,
-    "adp2qb": 42.4,
+    "adp2qb": 41.6,
     "ptsHalfPpr": 192.5,
     "ptsPpr": 211,
     "ptsStd": 174
@@ -403,10 +403,10 @@
     "name": "Lamar Jackson",
     "pos": "QB",
     "team": "BAL",
-    "adpHalfPpr": 34.6,
-    "adpPpr": 31.1,
+    "adpHalfPpr": 34.5,
+    "adpPpr": 31,
     "adpStd": 23.4,
-    "adp2qb": 8.8,
+    "adp2qb": 9.2,
     "ptsHalfPpr": 326,
     "ptsPpr": 326,
     "ptsStd": 326
@@ -418,7 +418,7 @@
     "adpHalfPpr": 35.2,
     "adpPpr": 35.4,
     "adpStd": 46.8,
-    "adp2qb": 49.8,
+    "adp2qb": 49.7,
     "ptsHalfPpr": 187.7,
     "ptsPpr": 228.2,
     "ptsStd": 147.2
@@ -430,7 +430,7 @@
     "adpHalfPpr": 35.8,
     "adpPpr": 40.4,
     "adpStd": 41.3,
-    "adp2qb": 51.7,
+    "adp2qb": 51.6,
     "ptsHalfPpr": 180.2,
     "ptsPpr": 201.2,
     "ptsStd": 159.2
@@ -440,9 +440,9 @@
     "pos": "RB",
     "team": "NO",
     "adpHalfPpr": 37.3,
-    "adpPpr": 42.1,
+    "adpPpr": 42,
     "adpStd": 34.4,
-    "adp2qb": 53.7,
+    "adp2qb": 53.8,
     "ptsHalfPpr": 189.7,
     "ptsPpr": 207.7,
     "ptsStd": 171.7
@@ -454,7 +454,7 @@
     "adpHalfPpr": 38.1,
     "adpPpr": 37.8,
     "adpStd": 37.5,
-    "adp2qb": 44,
+    "adp2qb": 44.9,
     "ptsHalfPpr": 184.5,
     "ptsPpr": 223,
     "ptsStd": 146
@@ -464,9 +464,9 @@
     "pos": "WR",
     "team": "CIN",
     "adpHalfPpr": 39.3,
-    "adpPpr": 35.9,
+    "adpPpr": 36,
     "adpStd": 35.8,
-    "adp2qb": 48.8,
+    "adp2qb": 47.3,
     "ptsHalfPpr": 186.9,
     "ptsPpr": 224.4,
     "ptsStd": 149.4
@@ -475,13 +475,25 @@
     "name": "Zay Flowers",
     "pos": "WR",
     "team": "BAL",
-    "adpHalfPpr": 40.2,
+    "adpHalfPpr": 40.1,
     "adpPpr": 41.8,
     "adpStd": 50.8,
-    "adp2qb": 50.3,
+    "adp2qb": 50.2,
     "ptsHalfPpr": 187.7,
     "ptsPpr": 228.2,
     "ptsStd": 147.2
+   },
+   {
+    "name": "Emeka Egbuka",
+    "pos": "WR",
+    "team": "TB",
+    "adpHalfPpr": 41.7,
+    "adpPpr": 38.6,
+    "adpStd": 54.1,
+    "adp2qb": 58.5,
+    "ptsHalfPpr": 185.5,
+    "ptsPpr": 224,
+    "ptsStd": 147
    },
    {
     "name": "David Montgomery",
@@ -490,22 +502,10 @@
     "adpHalfPpr": 41.8,
     "adpPpr": 46.2,
     "adpStd": 48.3,
-    "adp2qb": 62.2,
+    "adp2qb": 63.7,
     "ptsHalfPpr": 190.1,
     "ptsPpr": 206.1,
     "ptsStd": 174.1
-   },
-   {
-    "name": "Emeka Egbuka",
-    "pos": "WR",
-    "team": "TB",
-    "adpHalfPpr": 42.3,
-    "adpPpr": 38.6,
-    "adpStd": 54.1,
-    "adp2qb": 58.6,
-    "ptsHalfPpr": 185.5,
-    "ptsPpr": 224,
-    "ptsStd": 147
    },
    {
     "name": "Colston Loveland",
@@ -526,7 +526,7 @@
     "adpHalfPpr": 44.1,
     "adpPpr": 44.2,
     "adpStd": 42.3,
-    "adp2qb": 57.1,
+    "adp2qb": 57,
     "ptsHalfPpr": 182.5,
     "ptsPpr": 221,
     "ptsStd": 144
@@ -535,10 +535,10 @@
     "name": "D'Andre Swift",
     "pos": "RB",
     "team": "CHI",
-    "adpHalfPpr": 44.8,
-    "adpPpr": 49.6,
+    "adpHalfPpr": 45.2,
+    "adpPpr": 49.5,
     "adpStd": 47.1,
-    "adp2qb": 60.3,
+    "adp2qb": 59.8,
     "ptsHalfPpr": 189.5,
     "ptsPpr": 208,
     "ptsStd": 171
@@ -548,36 +548,36 @@
     "pos": "WR",
     "team": "NYJ",
     "adpHalfPpr": 46.1,
-    "adpPpr": 44.3,
+    "adpPpr": 45.7,
     "adpStd": 38.4,
-    "adp2qb": 56.2,
+    "adp2qb": 56.1,
     "ptsHalfPpr": 183.4,
     "ptsPpr": 224.9,
     "ptsStd": 141.9
+   },
+   {
+    "name": "Quinshon Judkins",
+    "pos": "RB",
+    "team": "CLE",
+    "adpHalfPpr": 47.2,
+    "adpPpr": 53.6,
+    "adpStd": 44.8,
+    "adp2qb": 65.6,
+    "ptsHalfPpr": 180,
+    "ptsPpr": 196,
+    "ptsStd": 164
    },
    {
     "name": "Bucky Irving",
     "pos": "RB",
     "team": "TB",
     "adpHalfPpr": 47.9,
-    "adpPpr": 43.6,
+    "adpPpr": 43.5,
     "adpStd": 32.3,
-    "adp2qb": 53.2,
+    "adp2qb": 53.1,
     "ptsHalfPpr": 179.3,
     "ptsPpr": 197.3,
     "ptsStd": 161.3
-   },
-   {
-    "name": "Quinshon Judkins",
-    "pos": "RB",
-    "team": "CLE",
-    "adpHalfPpr": 48.8,
-    "adpPpr": 53.6,
-    "adpStd": 44.8,
-    "adp2qb": 65.7,
-    "ptsHalfPpr": 180,
-    "ptsPpr": 196,
-    "ptsStd": 164
    },
    {
     "name": "DJ Moore",
@@ -586,7 +586,7 @@
     "adpHalfPpr": 49.4,
     "adpPpr": 53.8,
     "adpStd": 58.5,
-    "adp2qb": 68.7,
+    "adp2qb": 68.5,
     "ptsHalfPpr": 147.5,
     "ptsPpr": 179,
     "ptsStd": 116
@@ -595,10 +595,10 @@
     "name": "Tyler Warren",
     "pos": "TE",
     "team": "IND",
-    "adpHalfPpr": 50,
-    "adpPpr": 48.7,
+    "adpHalfPpr": 50.9,
+    "adpPpr": 47.3,
     "adpStd": 56.8,
-    "adp2qb": 52.9,
+    "adp2qb": 52.8,
     "ptsHalfPpr": 159.6,
     "ptsPpr": 201.1,
     "ptsStd": 118.1
@@ -608,9 +608,9 @@
     "pos": "RB",
     "team": "SEA",
     "adpHalfPpr": 51.6,
-    "adpPpr": 60.6,
+    "adpPpr": 59.5,
     "adpStd": 80,
-    "adp2qb": 76.6,
+    "adp2qb": 76.5,
     "ptsHalfPpr": 160.5,
     "ptsPpr": 170,
     "ptsStd": 151
@@ -622,7 +622,7 @@
     "adpHalfPpr": 52.8,
     "adpPpr": 47.2,
     "adpStd": 49.6,
-    "adp2qb": 12.6,
+    "adp2qb": 11.4,
     "ptsHalfPpr": 320.76,
     "ptsPpr": 320.76,
     "ptsStd": 320.76
@@ -646,7 +646,7 @@
     "adpHalfPpr": 53.5,
     "adpPpr": 50.3,
     "adpStd": 45.6,
-    "adp2qb": 64.5,
+    "adp2qb": 64.4,
     "ptsHalfPpr": 161,
     "ptsPpr": 192.5,
     "ptsStd": 129.5
@@ -658,7 +658,7 @@
     "adpHalfPpr": 55,
     "adpPpr": 55.4,
     "adpStd": 55.6,
-    "adp2qb": 69.1,
+    "adp2qb": 69,
     "ptsHalfPpr": 176.8,
     "ptsPpr": 213.8,
     "ptsStd": 139.8
@@ -670,7 +670,7 @@
     "adpHalfPpr": 56.2,
     "adpPpr": 52.7,
     "adpStd": 20.2,
-    "adp2qb": 62,
+    "adp2qb": 62.9,
     "ptsHalfPpr": 127.9,
     "ptsPpr": 139.4,
     "ptsStd": 116.4
@@ -682,7 +682,7 @@
     "adpHalfPpr": 57.6,
     "adpPpr": 59.6,
     "adpStd": 52.6,
-    "adp2qb": 71.4,
+    "adp2qb": 71.2,
     "ptsHalfPpr": 176.2,
     "ptsPpr": 206.2,
     "ptsStd": 146.2
@@ -691,10 +691,10 @@
     "name": "Bhayshul Tuten",
     "pos": "RB",
     "team": "JAX",
-    "adpHalfPpr": 58.3,
+    "adpHalfPpr": 58.2,
     "adpPpr": 62.4,
     "adpStd": 43.6,
-    "adp2qb": 74.7,
+    "adp2qb": 74.6,
     "ptsHalfPpr": 158.8,
     "ptsPpr": 174.8,
     "ptsStd": 142.8
@@ -706,7 +706,7 @@
     "adpHalfPpr": 59.4,
     "adpPpr": 61.6,
     "adpStd": 39.4,
-    "adp2qb": 73.9,
+    "adp2qb": 73.8,
     "ptsHalfPpr": 153.5,
     "ptsPpr": 171,
     "ptsStd": 136
@@ -715,10 +715,10 @@
     "name": "Luther Burden",
     "pos": "WR",
     "team": "CHI",
-    "adpHalfPpr": 60.1,
+    "adpHalfPpr": 59.9,
     "adpPpr": 56.9,
     "adpStd": 39.7,
-    "adp2qb": 66.8,
+    "adp2qb": 65.3,
     "ptsHalfPpr": 173,
     "ptsPpr": 209,
     "ptsStd": 137
@@ -730,7 +730,7 @@
     "adpHalfPpr": 61.4,
     "adpPpr": 58.5,
     "adpStd": 69.4,
-    "adp2qb": 26.1,
+    "adp2qb": 27.9,
     "ptsHalfPpr": 310.54,
     "ptsPpr": 310.54,
     "ptsStd": 310.54
@@ -742,7 +742,7 @@
     "adpHalfPpr": 62.2,
     "adpPpr": 57.2,
     "adpStd": 79.4,
-    "adp2qb": 67.1,
+    "adp2qb": 67.9,
     "ptsHalfPpr": 158.5,
     "ptsPpr": 196.5,
     "ptsStd": 120.5
@@ -751,10 +751,10 @@
     "name": "Mike Evans",
     "pos": "WR",
     "team": "SF",
-    "adpHalfPpr": 62.5,
-    "adpPpr": 62.8,
+    "adpHalfPpr": 63.5,
+    "adpPpr": 63.1,
     "adpStd": 59.5,
-    "adp2qb": 77.5,
+    "adp2qb": 77.4,
     "ptsHalfPpr": 187.2,
     "ptsPpr": 222.2,
     "ptsStd": 152.2
@@ -766,7 +766,7 @@
     "adpHalfPpr": 64,
     "adpPpr": 65.8,
     "adpStd": 67.6,
-    "adp2qb": 79.4,
+    "adp2qb": 79.3,
     "ptsHalfPpr": 173.9,
     "ptsPpr": 207.9,
     "ptsStd": 139.9
@@ -778,7 +778,7 @@
     "adpHalfPpr": 65.4,
     "adpPpr": 66,
     "adpStd": 64.2,
-    "adp2qb": 82.2,
+    "adp2qb": 82.1,
     "ptsHalfPpr": 176.1,
     "ptsPpr": 207.6,
     "ptsStd": 144.6
@@ -787,10 +787,10 @@
     "name": "Tucker Kraft",
     "pos": "TE",
     "team": "GB",
-    "adpHalfPpr": 66.5,
+    "adpHalfPpr": 65.5,
     "adpPpr": 64.4,
     "adpStd": 70.7,
-    "adp2qb": 75.9,
+    "adp2qb": 75.8,
     "ptsHalfPpr": 140.9,
     "ptsPpr": 174.4,
     "ptsStd": 107.4
@@ -800,9 +800,9 @@
     "pos": "RB",
     "team": "PIT",
     "adpHalfPpr": 67.6,
-    "adpPpr": 70.9,
+    "adpPpr": 70.8,
     "adpStd": 51.9,
-    "adp2qb": 85.9,
+    "adp2qb": 85.8,
     "ptsHalfPpr": 152.6,
     "ptsPpr": 170.6,
     "ptsStd": 134.6
@@ -814,7 +814,7 @@
     "adpHalfPpr": 68.3,
     "adpPpr": 71.2,
     "adpStd": 74.4,
-    "adp2qb": 83.4,
+    "adp2qb": 83.3,
     "ptsHalfPpr": 176.4,
     "ptsPpr": 212.4,
     "ptsStd": 140.4
@@ -824,9 +824,9 @@
     "pos": "RB",
     "team": "NE",
     "adpHalfPpr": 69.2,
-    "adpPpr": 78.9,
+    "adpPpr": 77.2,
     "adpStd": 57.5,
-    "adp2qb": 88.3,
+    "adp2qb": 88.2,
     "ptsHalfPpr": 154.5,
     "ptsPpr": 169,
     "ptsStd": 140
@@ -836,9 +836,9 @@
     "pos": "WR",
     "team": "TEN",
     "adpHalfPpr": 70.1,
-    "adpPpr": 69.2,
+    "adpPpr": 69.1,
     "adpStd": 60.8,
-    "adp2qb": 84.5,
+    "adp2qb": 83.6,
     "ptsHalfPpr": 144.8,
     "ptsPpr": 177.3,
     "ptsStd": 112.3
@@ -850,7 +850,7 @@
     "adpHalfPpr": 71.1,
     "adpPpr": 68.9,
     "adpStd": 65.7,
-    "adp2qb": 21.1,
+    "adp2qb": 21,
     "ptsHalfPpr": 308.72,
     "ptsPpr": 308.72,
     "ptsStd": 308.72
@@ -862,7 +862,7 @@
     "adpHalfPpr": 71.7,
     "adpPpr": 67.9,
     "adpStd": 72.9,
-    "adp2qb": 80.2,
+    "adp2qb": 80.1,
     "ptsHalfPpr": 138.6,
     "ptsPpr": 171.6,
     "ptsStd": 105.6
@@ -872,9 +872,9 @@
     "pos": "WR",
     "team": "ARI",
     "adpHalfPpr": 73.4,
-    "adpPpr": 76.1,
+    "adpPpr": 76,
     "adpStd": 82.6,
-    "adp2qb": 87.1,
+    "adp2qb": 87.9,
     "ptsHalfPpr": 155.2,
     "ptsPpr": 186.2,
     "ptsStd": 124.2
@@ -898,7 +898,7 @@
     "adpHalfPpr": 75.5,
     "adpPpr": 74.3,
     "adpStd": 78.9,
-    "adp2qb": 89.4,
+    "adp2qb": 89.5,
     "ptsHalfPpr": 164.4,
     "ptsPpr": 195.4,
     "ptsStd": 133.4
@@ -908,9 +908,9 @@
     "pos": "RB",
     "team": "TEN",
     "adpHalfPpr": 76.6,
-    "adpPpr": 85.8,
+    "adpPpr": 85.7,
     "adpStd": 63.4,
-    "adp2qb": 96.6,
+    "adp2qb": 95.6,
     "ptsHalfPpr": 146.1,
     "ptsPpr": 160.1,
     "ptsStd": 132.1
@@ -920,9 +920,9 @@
     "pos": "TE",
     "team": "CLE",
     "adpHalfPpr": 77.5,
-    "adpPpr": 73.1,
+    "adpPpr": 73,
     "adpStd": 62.6,
-    "adp2qb": 78.5,
+    "adp2qb": 77.7,
     "ptsHalfPpr": 143.4,
     "ptsPpr": 180.4,
     "ptsStd": 106.4
@@ -931,10 +931,10 @@
     "name": "DK Metcalf",
     "pos": "WR",
     "team": "PIT",
-    "adpHalfPpr": 78.4,
+    "adpHalfPpr": 77.6,
     "adpPpr": 75.9,
     "adpStd": 73.3,
-    "adp2qb": 92.1,
+    "adp2qb": 92,
     "ptsHalfPpr": 152.3,
     "ptsPpr": 183.3,
     "ptsStd": 121.3
@@ -952,28 +952,28 @@
     "ptsStd": 295.48
    },
    {
-    "name": "Rico Dowdle",
-    "pos": "RB",
-    "team": "PIT",
-    "adpHalfPpr": 80.4,
-    "adpPpr": 86.7,
-    "adpStd": 65.2,
-    "adp2qb": 98.8,
-    "ptsHalfPpr": 142.1,
-    "ptsPpr": 161.1,
-    "ptsStd": 123.1
-   },
-   {
     "name": "Chuba Hubbard",
     "pos": "RB",
     "team": "CAR",
     "adpHalfPpr": 80.6,
-    "adpPpr": 80.2,
+    "adpPpr": 81.7,
     "adpStd": 66.3,
-    "adp2qb": 103,
+    "adp2qb": 103.8,
     "ptsHalfPpr": 136.9,
     "ptsPpr": 147.9,
     "ptsStd": 125.9
+   },
+   {
+    "name": "Rico Dowdle",
+    "pos": "RB",
+    "team": "PIT",
+    "adpHalfPpr": 81.6,
+    "adpPpr": 86.7,
+    "adpStd": 65.2,
+    "adp2qb": 98.7,
+    "ptsHalfPpr": 142.1,
+    "ptsPpr": 161.1,
+    "ptsStd": 123.1
    },
    {
     "name": "Courtland Sutton",
@@ -982,7 +982,7 @@
     "adpHalfPpr": 82.2,
     "adpPpr": 80.2,
     "adpStd": 71.9,
-    "adp2qb": 97.8,
+    "adp2qb": 97.7,
     "ptsHalfPpr": 144.8,
     "ptsPpr": 174.3,
     "ptsStd": 115.3
@@ -994,7 +994,7 @@
     "adpHalfPpr": 83.2,
     "adpPpr": 79.8,
     "adpStd": 99.2,
-    "adp2qb": 95,
+    "adp2qb": 95.8,
     "ptsHalfPpr": 138.3,
     "ptsPpr": 169.3,
     "ptsStd": 107.3
@@ -1003,10 +1003,10 @@
     "name": "J.K. Dobbins",
     "pos": "RB",
     "team": "DEN",
-    "adpHalfPpr": 84.3,
+    "adpHalfPpr": 83.7,
     "adpPpr": 91.3,
     "adpStd": 68.3,
-    "adp2qb": 102.2,
+    "adp2qb": 102,
     "ptsHalfPpr": 147.2,
     "ptsPpr": 160.2,
     "ptsStd": 134.2
@@ -1018,7 +1018,7 @@
     "adpHalfPpr": 85.5,
     "adpPpr": 82.2,
     "adpStd": 56.4,
-    "adp2qb": 91.9,
+    "adp2qb": 91.8,
     "ptsHalfPpr": 125.6,
     "ptsPpr": 144.1,
     "ptsStd": 107.1
@@ -1040,9 +1040,9 @@
     "pos": "RB",
     "team": "CAR",
     "adpHalfPpr": 87.2,
-    "adpPpr": 98.2,
+    "adpPpr": 98.1,
     "adpStd": 143.7,
-    "adp2qb": 109,
+    "adp2qb": 109.9,
     "ptsHalfPpr": 137.9,
     "ptsPpr": 154.9,
     "ptsStd": 120.9
@@ -1052,9 +1052,9 @@
     "pos": "WR",
     "team": "TB",
     "adpHalfPpr": 88.7,
-    "adpPpr": 92.5,
+    "adpPpr": 92.4,
     "adpStd": 88.4,
-    "adp2qb": 101.6,
+    "adp2qb": 101.4,
     "ptsHalfPpr": 139.6,
     "ptsPpr": 173.6,
     "ptsStd": 105.6
@@ -1066,7 +1066,7 @@
     "adpHalfPpr": 89.5,
     "adpPpr": 93.9,
     "adpStd": null,
-    "adp2qb": 105.4,
+    "adp2qb": 105.3,
     "ptsHalfPpr": 138.5,
     "ptsPpr": 168.5,
     "ptsStd": 108.5
@@ -1078,7 +1078,7 @@
     "adpHalfPpr": 89.8,
     "adpPpr": 87.9,
     "adpStd": 75.2,
-    "adp2qb": 100.7,
+    "adp2qb": 100.6,
     "ptsHalfPpr": 136.5,
     "ptsPpr": 166,
     "ptsStd": 107
@@ -1088,9 +1088,9 @@
     "pos": "RB",
     "team": "MIN",
     "adpHalfPpr": 91.8,
-    "adpPpr": 109.8,
+    "adpPpr": 109.7,
     "adpStd": 100.2,
-    "adp2qb": 115.3,
+    "adp2qb": 115.2,
     "ptsHalfPpr": 143.7,
     "ptsPpr": 153.7,
     "ptsStd": 133.7
@@ -1100,9 +1100,9 @@
     "pos": "WR",
     "team": "IND",
     "adpHalfPpr": 92,
-    "adpPpr": 96.3,
+    "adpPpr": 95.7,
     "adpStd": 93.6,
-    "adp2qb": 107.5,
+    "adp2qb": 107.6,
     "ptsHalfPpr": 150.9,
     "ptsPpr": 177.9,
     "ptsStd": 123.9
@@ -1114,7 +1114,7 @@
     "adpHalfPpr": 93,
     "adpPpr": 100.3,
     "adpStd": 68.1,
-    "adp2qb": 111,
+    "adp2qb": 111.9,
     "ptsHalfPpr": 127.8,
     "ptsPpr": 135.3,
     "ptsStd": 120.3
@@ -1126,7 +1126,7 @@
     "adpHalfPpr": 94.2,
     "adpPpr": 88,
     "adpStd": 81.1,
-    "adp2qb": 93.6,
+    "adp2qb": 93.4,
     "ptsHalfPpr": 130.6,
     "ptsPpr": 163.6,
     "ptsStd": 97.6
@@ -1136,9 +1136,9 @@
     "pos": "DST",
     "team": "LAR",
     "adpHalfPpr": 95,
-    "adpPpr": 84.5,
+    "adpPpr": 83.5,
     "adpStd": 110.1,
-    "adp2qb": 139.4,
+    "adp2qb": 139.3,
     "ptsHalfPpr": 106,
     "ptsPpr": 106,
     "ptsStd": 106
@@ -1147,10 +1147,10 @@
     "name": "Travis Kelce",
     "pos": "TE",
     "team": "KC",
-    "adpHalfPpr": 96.1,
+    "adpHalfPpr": 95.9,
     "adpPpr": 89.6,
     "adpStd": 106.1,
-    "adp2qb": 94.2,
+    "adp2qb": 94,
     "ptsHalfPpr": 136.4,
     "ptsPpr": 171.4,
     "ptsStd": 101.4
@@ -1162,7 +1162,7 @@
     "adpHalfPpr": 97.1,
     "adpPpr": 102,
     "adpStd": 94.6,
-    "adp2qb": 40.9,
+    "adp2qb": 40.8,
     "ptsHalfPpr": 303.42,
     "ptsPpr": 303.42,
     "ptsStd": 303.42
@@ -1174,7 +1174,7 @@
     "adpHalfPpr": 98.9,
     "adpPpr": 107.3,
     "adpStd": 118.6,
-    "adp2qb": 110.5,
+    "adp2qb": 110.4,
     "ptsHalfPpr": 162.6,
     "ptsPpr": 197.6,
     "ptsStd": 127.6
@@ -1184,9 +1184,9 @@
     "pos": "RB",
     "team": "GB",
     "adpHalfPpr": 99,
-    "adpPpr": 137.2,
+    "adpPpr": 137.1,
     "adpStd": null,
-    "adp2qb": 142.6,
+    "adp2qb": 142.5,
     "ptsHalfPpr": 137,
     "ptsPpr": 149,
     "ptsStd": 125
@@ -1195,13 +1195,25 @@
     "name": "Kyle Monangai",
     "pos": "RB",
     "team": "CHI",
-    "adpHalfPpr": 100.9,
-    "adpPpr": 107.9,
+    "adpHalfPpr": 100.8,
+    "adpPpr": 108,
     "adpStd": 61.2,
-    "adp2qb": 116.8,
+    "adp2qb": 116.6,
     "ptsHalfPpr": 143.1,
     "ptsPpr": 154.6,
     "ptsStd": 131.6
+   },
+   {
+    "name": "Jordan Addison",
+    "pos": "WR",
+    "team": "MIN",
+    "adpHalfPpr": 101.3,
+    "adpPpr": 101.2,
+    "adpStd": 98.9,
+    "adp2qb": 114,
+    "ptsHalfPpr": 141.7,
+    "ptsPpr": 171.7,
+    "ptsStd": 111.7
    },
    {
     "name": "Jacory Croskey-Merritt",
@@ -1210,22 +1222,10 @@
     "adpHalfPpr": 101.5,
     "adpPpr": 115.9,
     "adpStd": 94.8,
-    "adp2qb": 125.9,
+    "adp2qb": 125.7,
     "ptsHalfPpr": 118.4,
     "ptsPpr": 127.9,
     "ptsStd": 108.9
-   },
-   {
-    "name": "Jordan Addison",
-    "pos": "WR",
-    "team": "MIN",
-    "adpHalfPpr": 102.7,
-    "adpPpr": 101.2,
-    "adpStd": 98.9,
-    "adp2qb": 114.2,
-    "ptsHalfPpr": 141.7,
-    "ptsPpr": 171.7,
-    "ptsStd": 111.7
    },
    {
     "name": "Quentin Johnston",
@@ -1234,7 +1234,7 @@
     "adpHalfPpr": 103.2,
     "adpPpr": 112.5,
     "adpStd": 110.1,
-    "adp2qb": 121.2,
+    "adp2qb": 121,
     "ptsHalfPpr": 134.9,
     "ptsPpr": 163.9,
     "ptsStd": 105.9
@@ -1244,7 +1244,7 @@
     "pos": "DST",
     "team": "HOU",
     "adpHalfPpr": 104.9,
-    "adpPpr": 95,
+    "adpPpr": 95.9,
     "adpStd": 114.4,
     "adp2qb": 140.4,
     "ptsHalfPpr": 104,
@@ -1256,9 +1256,9 @@
     "pos": "QB",
     "team": "LAR",
     "adpHalfPpr": 105.1,
-    "adpPpr": 94.6,
+    "adpPpr": 94.5,
     "adpStd": 117.6,
-    "adp2qb": 59,
+    "adp2qb": 59.9,
     "ptsHalfPpr": 280.22,
     "ptsPpr": 280.22,
     "ptsStd": 280.22
@@ -1268,9 +1268,9 @@
     "pos": "RB",
     "team": "TB",
     "adpHalfPpr": 106.6,
-    "adpPpr": 111.3,
+    "adpPpr": 111.2,
     "adpStd": 86.1,
-    "adp2qb": 122.9,
+    "adp2qb": 122.8,
     "ptsHalfPpr": 128.8,
     "ptsPpr": 152.3,
     "ptsStd": 105.3
@@ -1280,9 +1280,9 @@
     "pos": "WR",
     "team": "PIT",
     "adpHalfPpr": 107.1,
-    "adpPpr": 106,
+    "adpPpr": 106.9,
     "adpStd": 107.5,
-    "adp2qb": 120.7,
+    "adp2qb": 119.5,
     "ptsHalfPpr": 136.4,
     "ptsPpr": 170.9,
     "ptsStd": 101.9
@@ -1294,7 +1294,7 @@
     "adpHalfPpr": 107.9,
     "adpPpr": 105.6,
     "adpStd": 113.2,
-    "adp2qb": 107.9,
+    "adp2qb": 107.7,
     "ptsHalfPpr": 126.3,
     "ptsPpr": 157.3,
     "ptsStd": 95.3
@@ -1303,10 +1303,10 @@
     "name": "Stefon Diggs",
     "pos": "WR",
     "team": "WAS",
-    "adpHalfPpr": 109.3,
+    "adpHalfPpr": 109.2,
     "adpPpr": 104.4,
     "adpStd": 115.5,
-    "adp2qb": 118.2,
+    "adp2qb": 118,
     "ptsHalfPpr": 125.3,
     "ptsPpr": 157.3,
     "ptsStd": 93.3
@@ -1318,7 +1318,7 @@
     "adpHalfPpr": 110.9,
     "adpPpr": 120,
     "adpStd": 129.3,
-    "adp2qb": 127.7,
+    "adp2qb": 127.5,
     "ptsHalfPpr": 127.4,
     "ptsPpr": 156.4,
     "ptsStd": 98.4
@@ -1328,9 +1328,9 @@
     "pos": "WR",
     "team": "SF",
     "adpHalfPpr": 111,
-    "adpPpr": 138.4,
+    "adpPpr": 137.6,
     "adpStd": 213.9,
-    "adp2qb": 128.4,
+    "adp2qb": 128.2,
     "ptsHalfPpr": 105.4,
     "ptsPpr": 128.4,
     "ptsStd": 82.4
@@ -1340,12 +1340,24 @@
     "pos": "QB",
     "team": "NYG",
     "adpHalfPpr": 112.1,
-    "adpPpr": 97.2,
+    "adpPpr": 97.1,
     "adpStd": 83.6,
     "adp2qb": 46.3,
     "ptsHalfPpr": 296.54,
     "ptsPpr": 296.54,
     "ptsStd": 296.54
+   },
+   {
+    "name": "Josh Downs",
+    "pos": "WR",
+    "team": "IND",
+    "adpHalfPpr": 113.3,
+    "adpPpr": 113.5,
+    "adpStd": 111.1,
+    "adp2qb": 125.8,
+    "ptsHalfPpr": 137.3,
+    "ptsPpr": 172.3,
+    "ptsStd": 102.3
    },
    {
     "name": "Seattle Seahawks",
@@ -1354,31 +1366,19 @@
     "adpHalfPpr": 113.9,
     "adpPpr": 103.7,
     "adpStd": 118,
-    "adp2qb": 141.1,
+    "adp2qb": 141,
     "ptsHalfPpr": 103,
     "ptsPpr": 103,
     "ptsStd": 103
-   },
-   {
-    "name": "Josh Downs",
-    "pos": "WR",
-    "team": "IND",
-    "adpHalfPpr": 114.7,
-    "adpPpr": 113.5,
-    "adpStd": 111.1,
-    "adp2qb": 125.6,
-    "ptsHalfPpr": 137.3,
-    "ptsPpr": 172.3,
-    "ptsStd": 102.3
    },
    {
     "name": "Aaron Jones",
     "pos": "RB",
     "team": "MIN",
     "adpHalfPpr": 115.8,
-    "adpPpr": 127.5,
+    "adpPpr": 127.4,
     "adpStd": 84.7,
-    "adp2qb": 132.5,
+    "adp2qb": 131.7,
     "ptsHalfPpr": 120.1,
     "ptsPpr": 137.1,
     "ptsStd": 103.1
@@ -1388,9 +1388,9 @@
     "pos": "QB",
     "team": "KC",
     "adpHalfPpr": 116,
-    "adpPpr": 110.1,
+    "adpPpr": 110,
     "adpStd": 102.3,
-    "adp2qb": 44.9,
+    "adp2qb": 45,
     "ptsHalfPpr": 286.68,
     "ptsPpr": 286.68,
     "ptsStd": 286.68
@@ -1399,10 +1399,10 @@
     "name": "Jake Ferguson",
     "pos": "TE",
     "team": "DAL",
-    "adpHalfPpr": 116.4,
-    "adpPpr": 98.6,
+    "adpHalfPpr": 117.6,
+    "adpPpr": 99.4,
     "adpStd": 96.9,
-    "adp2qb": 106.2,
+    "adp2qb": 106.1,
     "ptsHalfPpr": 124.8,
     "ptsPpr": 159.8,
     "ptsStd": 89.8
@@ -1412,9 +1412,9 @@
     "pos": "WR",
     "team": "GB",
     "adpHalfPpr": 118.3,
-    "adpPpr": 125.4,
+    "adpPpr": 125.5,
     "adpStd": 158.4,
-    "adp2qb": 130.5,
+    "adp2qb": 130.2,
     "ptsHalfPpr": 141,
     "ptsPpr": 170,
     "ptsStd": 112
@@ -1424,9 +1424,9 @@
     "pos": "QB",
     "team": "DEN",
     "adpHalfPpr": 119.4,
-    "adpPpr": 116.5,
+    "adpPpr": 116.4,
     "adpStd": 121.1,
-    "adp2qb": 47.7,
+    "adp2qb": 47.6,
     "ptsHalfPpr": 295.72,
     "ptsPpr": 295.72,
     "ptsStd": 295.72
@@ -1435,10 +1435,10 @@
     "name": "Jordyn Tyson",
     "pos": "WR",
     "team": "NO",
-    "adpHalfPpr": 120.1,
-    "adpPpr": 116.5,
+    "adpHalfPpr": 120,
+    "adpPpr": 117.5,
     "adpStd": 62.4,
-    "adp2qb": 124,
+    "adp2qb": 124.8,
     "ptsHalfPpr": 90.5,
     "ptsPpr": 111,
     "ptsStd": 70
@@ -1448,9 +1448,9 @@
     "pos": "DST",
     "team": "DEN",
     "adpHalfPpr": 121,
-    "adpPpr": 114.8,
+    "adpPpr": 113.2,
     "adpStd": 128.2,
-    "adp2qb": 143.8,
+    "adp2qb": 143.7,
     "ptsHalfPpr": 96,
     "ptsPpr": 96,
     "ptsStd": 96
@@ -1460,9 +1460,9 @@
     "pos": "WR",
     "team": "TEN",
     "adpHalfPpr": 122.6,
-    "adpPpr": 121.1,
+    "adpPpr": 121,
     "adpStd": 105.4,
-    "adp2qb": 129.5,
+    "adp2qb": 129.3,
     "ptsHalfPpr": 135.2,
     "ptsPpr": 170.7,
     "ptsStd": 99.7
@@ -1472,9 +1472,9 @@
     "pos": "RB",
     "team": "LV",
     "adpHalfPpr": 123.2,
-    "adpPpr": 140,
+    "adpPpr": 140.9,
     "adpStd": 138.5,
-    "adp2qb": 149.5,
+    "adp2qb": 149.2,
     "ptsHalfPpr": 89.5,
     "ptsPpr": 97.5,
     "ptsStd": 81.5
@@ -1486,7 +1486,7 @@
     "adpHalfPpr": 124.4,
     "adpPpr": 125.7,
     "adpStd": 95.9,
-    "adp2qb": 117,
+    "adp2qb": 117.8,
     "ptsHalfPpr": 132.5,
     "ptsPpr": 162.5,
     "ptsStd": 102.5
@@ -1498,7 +1498,7 @@
     "adpHalfPpr": 125.4,
     "adpPpr": 142,
     "adpStd": 142.5,
-    "adp2qb": 154.9,
+    "adp2qb": 154.7,
     "ptsHalfPpr": 125,
     "ptsPpr": 132.5,
     "ptsStd": 117.5
@@ -1508,9 +1508,9 @@
     "pos": "RB",
     "team": "WAS",
     "adpHalfPpr": 125.6,
-    "adpPpr": 139,
+    "adpPpr": 139.9,
     "adpStd": 124.8,
-    "adp2qb": 137.3,
+    "adp2qb": 137,
     "ptsHalfPpr": 111.1,
     "ptsPpr": 128.1,
     "ptsStd": 94.1
@@ -1520,9 +1520,9 @@
     "pos": "TE",
     "team": "PHI",
     "adpHalfPpr": 127.5,
-    "adpPpr": 119.5,
+    "adpPpr": 119.4,
     "adpStd": 93.6,
-    "adp2qb": 119.9,
+    "adp2qb": 119.7,
     "ptsHalfPpr": 109.5,
     "ptsPpr": 136,
     "ptsStd": 83
@@ -1532,9 +1532,9 @@
     "pos": "QB",
     "team": "SF",
     "adpHalfPpr": 128.9,
-    "adpPpr": 122.2,
+    "adpPpr": 122.1,
     "adpStd": 106.2,
-    "adp2qb": 55.8,
+    "adp2qb": 55.7,
     "ptsHalfPpr": 303.2,
     "ptsPpr": 303.2,
     "ptsStd": 303.2
@@ -1544,9 +1544,9 @@
     "pos": "WR",
     "team": "KC",
     "adpHalfPpr": 129.9,
-    "adpPpr": 134.5,
+    "adpPpr": 134.4,
     "adpStd": 121.5,
-    "adp2qb": 134.7,
+    "adp2qb": 134.4,
     "ptsHalfPpr": 134,
     "ptsPpr": 161.5,
     "ptsStd": 106.5
@@ -1558,7 +1558,7 @@
     "adpHalfPpr": 130.7,
     "adpPpr": 133.3,
     "adpStd": 116.6,
-    "adp2qb": 134.3,
+    "adp2qb": 135.5,
     "ptsHalfPpr": 132.7,
     "ptsPpr": 161.2,
     "ptsStd": 104.2
@@ -1568,9 +1568,9 @@
     "pos": "RB",
     "team": "ARI",
     "adpHalfPpr": 131.4,
-    "adpPpr": 145.8,
+    "adpPpr": 145.7,
     "adpStd": 89.4,
-    "adp2qb": 138.1,
+    "adp2qb": 137.1,
     "ptsHalfPpr": 72.7,
     "ptsPpr": 77.2,
     "ptsStd": 68.2
@@ -1579,7 +1579,7 @@
     "name": "Philadelphia Eagles",
     "pos": "DST",
     "team": "PHI",
-    "adpHalfPpr": 132.5,
+    "adpHalfPpr": 131.5,
     "adpPpr": 123,
     "adpStd": 125,
     "adp2qb": 145.6,
@@ -1592,9 +1592,9 @@
     "pos": "WR",
     "team": "SF",
     "adpHalfPpr": 133.9,
-    "adpPpr": 130.2,
+    "adpPpr": 130.1,
     "adpStd": 138.4,
-    "adp2qb": 136,
+    "adp2qb": 136.7,
     "ptsHalfPpr": 127.7,
     "ptsPpr": 155.7,
     "ptsStd": 99.7
@@ -1604,9 +1604,9 @@
     "pos": "RB",
     "team": "HOU",
     "adpHalfPpr": 134,
-    "adpPpr": 149.9,
+    "adpPpr": 149.8,
     "adpStd": 104.9,
-    "adp2qb": 155.7,
+    "adp2qb": 155.4,
     "ptsHalfPpr": 74.3,
     "ptsPpr": 83.8,
     "ptsStd": 64.8
@@ -1615,10 +1615,10 @@
     "name": "Jakobi Meyers",
     "pos": "WR",
     "team": "JAX",
-    "adpHalfPpr": 134.8,
-    "adpPpr": 129.4,
+    "adpHalfPpr": 135.2,
+    "adpPpr": 129.3,
     "adpStd": 77.2,
-    "adp2qb": 133.5,
+    "adp2qb": 133.3,
     "ptsHalfPpr": 137.3,
     "ptsPpr": 169.3,
     "ptsStd": 105.3
@@ -1628,9 +1628,9 @@
     "pos": "DST",
     "team": "BAL",
     "adpHalfPpr": 136,
-    "adpPpr": 134.4,
+    "adpPpr": 135.5,
     "adpStd": 138.8,
-    "adp2qb": 148.3,
+    "adp2qb": 148.2,
     "ptsHalfPpr": 95,
     "ptsPpr": 95,
     "ptsStd": 95
@@ -1640,9 +1640,9 @@
     "pos": "DST",
     "team": "NE",
     "adpHalfPpr": 137.3,
-    "adpPpr": 136.6,
+    "adpPpr": 136.5,
     "adpStd": 145.5,
-    "adp2qb": 168.1,
+    "adp2qb": 167.9,
     "ptsHalfPpr": 92,
     "ptsPpr": 92,
     "ptsStd": 92
@@ -1651,7 +1651,7 @@
     "name": "Brandon Aubrey",
     "pos": "K",
     "team": "DAL",
-    "adpHalfPpr": 138.2,
+    "adpHalfPpr": 137.8,
     "adpPpr": 90,
     "adpStd": 109.5,
     "adp2qb": 161.2,
@@ -1664,7 +1664,7 @@
     "pos": "K",
     "team": "LAC",
     "adpHalfPpr": 139.6,
-    "adpPpr": 118.5,
+    "adpPpr": 118.4,
     "adpStd": 129.2,
     "adp2qb": 161.2,
     "ptsHalfPpr": 106,
@@ -1678,7 +1678,7 @@
     "adpHalfPpr": 140,
     "adpPpr": 124.6,
     "adpStd": 131.9,
-    "adp2qb": 165,
+    "adp2qb": 165.9,
     "ptsHalfPpr": 111,
     "ptsPpr": 111,
     "ptsStd": 111
@@ -1690,7 +1690,7 @@
     "adpHalfPpr": 141.2,
     "adpPpr": 128.8,
     "adpStd": 156.5,
-    "adp2qb": 163.5,
+    "adp2qb": 163.4,
     "ptsHalfPpr": 113,
     "ptsPpr": 113,
     "ptsStd": 113
@@ -1702,7 +1702,7 @@
     "adpHalfPpr": 142.9,
     "adpPpr": 131,
     "adpStd": 132.9,
-    "adp2qb": 61.3,
+    "adp2qb": 61.2,
     "ptsHalfPpr": 283.46,
     "ptsPpr": 283.46,
     "ptsStd": 283.46
@@ -1712,9 +1712,9 @@
     "pos": "RB",
     "team": "SEA",
     "adpHalfPpr": 143.2,
-    "adpPpr": 151.7,
+    "adpPpr": 151.6,
     "adpStd": 100.9,
-    "adp2qb": 157.3,
+    "adp2qb": 157,
     "ptsHalfPpr": 61.7,
     "ptsPpr": 67.2,
     "ptsStd": 56.2
@@ -1724,9 +1724,9 @@
     "pos": "WR",
     "team": "CAR",
     "adpHalfPpr": 143.4,
-    "adpPpr": 147.7,
+    "adpPpr": 147.6,
     "adpStd": 131.8,
-    "adp2qb": 152.5,
+    "adp2qb": 152.1,
     "ptsHalfPpr": 135.9,
     "ptsPpr": 165.9,
     "ptsStd": 105.9
@@ -1736,7 +1736,7 @@
     "pos": "K",
     "team": "JAX",
     "adpHalfPpr": 145.5,
-    "adpPpr": 132.3,
+    "adpPpr": 131.8,
     "adpStd": 153.4,
     "adp2qb": 164,
     "ptsHalfPpr": 112,
@@ -1748,9 +1748,9 @@
     "pos": "RB",
     "team": "DEN",
     "adpHalfPpr": 146.1,
-    "adpPpr": 165.9,
+    "adpPpr": 165.8,
     "adpStd": 117.5,
-    "adp2qb": 158.6,
+    "adp2qb": 158.4,
     "ptsHalfPpr": 58.9,
     "ptsPpr": 63.9,
     "ptsStd": 53.9
@@ -1762,7 +1762,7 @@
     "adpHalfPpr": 147,
     "adpPpr": 159.6,
     "adpStd": 168.3,
-    "adp2qb": 159.9,
+    "adp2qb": 159.7,
     "ptsHalfPpr": 87.4,
     "ptsPpr": 104.9,
     "ptsStd": 69.9
@@ -1774,7 +1774,7 @@
     "adpHalfPpr": 148.9,
     "adpPpr": 141.1,
     "adpStd": 91.9,
-    "adp2qb": 131.8,
+    "adp2qb": 131.5,
     "ptsHalfPpr": 124.5,
     "ptsPpr": 153.5,
     "ptsStd": 95.5
@@ -1784,9 +1784,9 @@
     "pos": "WR",
     "team": "SEA",
     "adpHalfPpr": 149.7,
-    "adpPpr": 150.3,
+    "adpPpr": 149.8,
     "adpStd": 161.9,
-    "adp2qb": 156.9,
+    "adp2qb": 155.2,
     "ptsHalfPpr": 115.6,
     "ptsPpr": 138.1,
     "ptsStd": 93.1
@@ -1795,10 +1795,10 @@
     "name": "Kyler Murray",
     "pos": "QB",
     "team": "MIN",
-    "adpHalfPpr": 150.2,
+    "adpHalfPpr": 149.8,
     "adpPpr": 152.1,
     "adpStd": 154.5,
-    "adp2qb": 80.8,
+    "adp2qb": 81.1,
     "ptsHalfPpr": 283.06,
     "ptsPpr": 283.06,
     "ptsStd": 283.06
@@ -1810,7 +1810,7 @@
     "adpHalfPpr": 151.1,
     "adpPpr": 143.5,
     "adpStd": 120.2,
-    "adp2qb": 152.4,
+    "adp2qb": 153.4,
     "ptsHalfPpr": 135.2,
     "ptsPpr": 170.7,
     "ptsStd": 99.7
@@ -1819,10 +1819,10 @@
     "name": "Tyrone Tracy",
     "pos": "RB",
     "team": "NYG",
-    "adpHalfPpr": 152.1,
+    "adpHalfPpr": 152,
     "adpPpr": 183.4,
     "adpStd": 109.5,
-    "adp2qb": 181.7,
+    "adp2qb": 181.5,
     "ptsHalfPpr": 100.8,
     "ptsPpr": 111.3,
     "ptsStd": 90.3
@@ -1831,10 +1831,10 @@
     "name": "Tank Bigsby",
     "pos": "RB",
     "team": "PHI",
-    "adpHalfPpr": 152.5,
+    "adpHalfPpr": 153.5,
     "adpPpr": 181.6,
     "adpStd": 146.5,
-    "adp2qb": 186.3,
+    "adp2qb": 186,
     "ptsHalfPpr": 61.2,
     "ptsPpr": 65.2,
     "ptsStd": 57.2
@@ -1856,9 +1856,9 @@
     "pos": "K",
     "team": "CIN",
     "adpHalfPpr": 155.1,
-    "adpPpr": 179.9,
+    "adpPpr": 179.8,
     "adpStd": 207.4,
-    "adp2qb": 176,
+    "adp2qb": 176.9,
     "ptsHalfPpr": 106,
     "ptsPpr": 106,
     "ptsStd": 106
@@ -1867,10 +1867,10 @@
     "name": "Minnesota Vikings",
     "pos": "DST",
     "team": "MIN",
-    "adpHalfPpr": 156.3,
-    "adpPpr": 155.3,
+    "adpHalfPpr": 155.7,
+    "adpPpr": 155.2,
     "adpStd": 154.4,
-    "adp2qb": 174.5,
+    "adp2qb": 173.6,
     "ptsHalfPpr": 92,
     "ptsPpr": 92,
     "ptsStd": 92
@@ -1892,9 +1892,9 @@
     "pos": "DST",
     "team": "JAX",
     "adpHalfPpr": 158.2,
-    "adpPpr": 157,
+    "adpPpr": 157.9,
     "adpStd": 170.1,
-    "adp2qb": 177.7,
+    "adp2qb": 177.6,
     "ptsHalfPpr": 91,
     "ptsPpr": 91,
     "ptsStd": 91
@@ -1904,9 +1904,9 @@
     "pos": "K",
     "team": "LAR",
     "adpHalfPpr": 159.8,
-    "adpPpr": 156.9,
+    "adpPpr": 155.1,
     "adpStd": 154.2,
-    "adp2qb": 170.5,
+    "adp2qb": 171.5,
     "ptsHalfPpr": 106,
     "ptsPpr": 106,
     "ptsStd": 106
@@ -1916,9 +1916,9 @@
     "pos": "DST",
     "team": "PIT",
     "adpHalfPpr": 160.3,
-    "adpPpr": 154.2,
+    "adpPpr": 154.1,
     "adpStd": 178.4,
-    "adp2qb": 170.7,
+    "adp2qb": 170.6,
     "ptsHalfPpr": 88,
     "ptsPpr": 88,
     "ptsStd": 88
@@ -1928,9 +1928,9 @@
     "pos": "RB",
     "team": "SF",
     "adpHalfPpr": 161.1,
-    "adpPpr": 174.3,
+    "adpPpr": 173.8,
     "adpStd": null,
-    "adp2qb": 195.5,
+    "adp2qb": 195.9,
     "ptsHalfPpr": 67.2,
     "ptsPpr": 72.7,
     "ptsStd": 61.7
@@ -1942,7 +1942,7 @@
     "adpHalfPpr": 161.9,
     "adpPpr": 143.5,
     "adpStd": 143.6,
-    "adp2qb": 71.1,
+    "adp2qb": 71.2,
     "ptsHalfPpr": 274.88,
     "ptsPpr": 274.88,
     "ptsStd": 274.88
@@ -1952,9 +1952,9 @@
     "pos": "TE",
     "team": "NO",
     "adpHalfPpr": 163.6,
-    "adpPpr": 175.7,
+    "adpPpr": 175.5,
     "adpStd": 102.6,
-    "adp2qb": 151.4,
+    "adp2qb": 151,
     "ptsHalfPpr": 112.9,
     "ptsPpr": 140.9,
     "ptsStd": 84.9
@@ -1964,9 +1964,9 @@
     "pos": "QB",
     "team": "GB",
     "adpHalfPpr": 164.2,
-    "adpPpr": 158.9,
+    "adpPpr": 158.8,
     "adpStd": 126.8,
-    "adp2qb": 70.4,
+    "adp2qb": 70.3,
     "ptsHalfPpr": 278.52,
     "ptsPpr": 278.52,
     "ptsStd": 278.52
@@ -1978,7 +1978,7 @@
     "adpHalfPpr": 165.6,
     "adpPpr": 160.6,
     "adpStd": 103.7,
-    "adp2qb": 147.1,
+    "adp2qb": 147.9,
     "ptsHalfPpr": 129.5,
     "ptsPpr": 161,
     "ptsStd": 98
@@ -1988,9 +1988,9 @@
     "pos": "RB",
     "team": "NO",
     "adpHalfPpr": 166.2,
-    "adpPpr": 166.5,
+    "adpPpr": 166.4,
     "adpStd": 119.3,
-    "adp2qb": 183.7,
+    "adp2qb": 183.2,
     "ptsHalfPpr": 53,
     "ptsPpr": 63,
     "ptsStd": 43
@@ -2000,9 +2000,9 @@
     "pos": "RB",
     "team": "LAC",
     "adpHalfPpr": 167.8,
-    "adpPpr": 184,
+    "adpPpr": 184.9,
     "adpStd": 148.2,
-    "adp2qb": 184.2,
+    "adp2qb": 184.7,
     "ptsHalfPpr": 87.9,
     "ptsPpr": 96.9,
     "ptsStd": 78.9
@@ -2014,7 +2014,7 @@
     "adpHalfPpr": 168,
     "adpPpr": 164.7,
     "adpStd": 122.1,
-    "adp2qb": 179.2,
+    "adp2qb": 179.4,
     "ptsHalfPpr": 97.1,
     "ptsPpr": 114.6,
     "ptsStd": 79.6
@@ -2023,10 +2023,10 @@
     "name": "Denzel Boston",
     "pos": "WR",
     "team": "CLE",
-    "adpHalfPpr": 169.3,
-    "adpPpr": 170.3,
+    "adpHalfPpr": 169.2,
+    "adpPpr": 171.6,
     "adpStd": 153.3,
-    "adp2qb": 179.1,
+    "adp2qb": 179.6,
     "ptsHalfPpr": 108.2,
     "ptsPpr": 134.7,
     "ptsStd": 81.7
@@ -2036,9 +2036,9 @@
     "pos": "WR",
     "team": "LV",
     "adpHalfPpr": 170.6,
-    "adpPpr": 186.6,
+    "adpPpr": 185.4,
     "adpStd": 197.3,
-    "adp2qb": 182.7,
+    "adp2qb": 182.4,
     "ptsHalfPpr": 107.6,
     "ptsPpr": 130.6,
     "ptsStd": 84.6
@@ -2047,10 +2047,10 @@
     "name": "Brian Robinson",
     "pos": "RB",
     "team": "ATL",
-    "adpHalfPpr": 170.7,
+    "adpHalfPpr": 171.3,
     "adpPpr": 170.1,
     "adpStd": 80.1,
-    "adp2qb": 160.9,
+    "adp2qb": 160.6,
     "ptsHalfPpr": 63.4,
     "ptsPpr": 69.9,
     "ptsStd": 56.9
@@ -2062,7 +2062,7 @@
     "adpHalfPpr": 172.6,
     "adpPpr": 172.5,
     "adpStd": 174,
-    "adp2qb": 192.3,
+    "adp2qb": 191.8,
     "ptsHalfPpr": 109,
     "ptsPpr": 109,
     "ptsStd": 109
@@ -2072,9 +2072,9 @@
     "pos": "DST",
     "team": "DET",
     "adpHalfPpr": 173.5,
-    "adpPpr": 167.1,
+    "adpPpr": 167.9,
     "adpStd": 157.9,
-    "adp2qb": 188.4,
+    "adp2qb": 189.6,
     "ptsHalfPpr": 92,
     "ptsPpr": 92,
     "ptsStd": 92
@@ -2083,7 +2083,7 @@
     "name": "Eddy Pineiro",
     "pos": "K",
     "team": "SF",
-    "adpHalfPpr": 174.1,
+    "adpHalfPpr": 173.9,
     "adpPpr": 188.6,
     "adpStd": 178.7,
     "adp2qb": 196.1,
@@ -2096,9 +2096,9 @@
     "pos": "QB",
     "team": "SEA",
     "adpHalfPpr": 175.6,
-    "adpPpr": 161.9,
+    "adpPpr": 161.8,
     "adpStd": 168.4,
-    "adp2qb": 86.4,
+    "adp2qb": 86.2,
     "ptsHalfPpr": 262.74,
     "ptsPpr": 262.74,
     "ptsStd": 262.74
@@ -2110,7 +2110,7 @@
     "adpHalfPpr": 176,
     "adpPpr": 146.4,
     "adpStd": 83.1,
-    "adp2qb": 150.9,
+    "adp2qb": 149.3,
     "ptsHalfPpr": 113.8,
     "ptsPpr": 141.8,
     "ptsStd": 85.8
@@ -2122,7 +2122,7 @@
     "adpHalfPpr": 177.1,
     "adpPpr": 177.4,
     "adpStd": null,
-    "adp2qb": 200.9,
+    "adp2qb": 200.6,
     "ptsHalfPpr": 77.5,
     "ptsPpr": 94.5,
     "ptsStd": 60.5
@@ -2134,7 +2134,7 @@
     "adpHalfPpr": 178.4,
     "adpPpr": 163.8,
     "adpStd": 127.7,
-    "adp2qb": 169.1,
+    "adp2qb": 169.8,
     "ptsHalfPpr": 122,
     "ptsPpr": 155,
     "ptsStd": 89
@@ -2144,9 +2144,9 @@
     "pos": "RB",
     "team": "KC",
     "adpHalfPpr": 179.3,
-    "adpPpr": 207,
+    "adpPpr": 207.9,
     "adpStd": 112.5,
-    "adp2qb": 205.6,
+    "adp2qb": 205,
     "ptsHalfPpr": 59.2,
     "ptsPpr": 65.2,
     "ptsStd": 53.2
@@ -2158,7 +2158,7 @@
     "adpHalfPpr": 179.6,
     "adpPpr": 201.1,
     "adpStd": 164.2,
-    "adp2qb": 206.5,
+    "adp2qb": 207.3,
     "ptsHalfPpr": 104.7,
     "ptsPpr": 125.2,
     "ptsStd": 84.2
@@ -2168,36 +2168,36 @@
     "pos": "WR",
     "team": "MIA",
     "adpHalfPpr": 181.1,
-    "adpPpr": 176.3,
+    "adpPpr": 176.2,
     "adpStd": null,
-    "adp2qb": 197.5,
+    "adp2qb": 197.2,
     "ptsHalfPpr": 107.3,
     "ptsPpr": 131.3,
     "ptsStd": 83.3
    },
    {
-    "name": "Harrison Butker",
-    "pos": "K",
-    "team": "KC",
-    "adpHalfPpr": 182.4,
-    "adpPpr": 161.8,
-    "adpStd": 155.2,
-    "adp2qb": 188.5,
-    "ptsHalfPpr": 100,
-    "ptsPpr": 100,
-    "ptsStd": 100
-   },
-   {
     "name": "Tyler Shough",
     "pos": "QB",
     "team": "NO",
-    "adpHalfPpr": 183.4,
-    "adpPpr": 178.7,
+    "adpHalfPpr": 182.3,
+    "adpPpr": 178.5,
     "adpStd": 147.5,
-    "adp2qb": 89.3,
+    "adp2qb": 89.1,
     "ptsHalfPpr": 270.94,
     "ptsPpr": 270.94,
     "ptsStd": 270.94
+   },
+   {
+    "name": "Harrison Butker",
+    "pos": "K",
+    "team": "KC",
+    "adpHalfPpr": 183.4,
+    "adpPpr": 161.9,
+    "adpStd": 155.2,
+    "adp2qb": 188.4,
+    "ptsHalfPpr": 100,
+    "ptsPpr": 100,
+    "ptsStd": 100
    },
    {
     "name": "Keenan Allen",
@@ -2206,7 +2206,7 @@
     "adpHalfPpr": 184.8,
     "adpPpr": 200.6,
     "adpStd": 204.9,
-    "adp2qb": 199.7,
+    "adp2qb": 199.2,
     "ptsHalfPpr": 84.8,
     "ptsPpr": 106.8,
     "ptsStd": 62.8
@@ -2215,10 +2215,10 @@
     "name": "Kenyon Sadiq",
     "pos": "TE",
     "team": "NYJ",
-    "adpHalfPpr": 185.2,
-    "adpPpr": 168.2,
+    "adpHalfPpr": 185.1,
+    "adpPpr": 167,
     "adpStd": 108.5,
-    "adp2qb": 175.9,
+    "adp2qb": 175.4,
     "ptsHalfPpr": 80.2,
     "ptsPpr": 100.2,
     "ptsStd": 60.2
@@ -2227,10 +2227,10 @@
     "name": "Tre Tucker",
     "pos": "WR",
     "team": "LV",
-    "adpHalfPpr": 186.6,
-    "adpPpr": 204.6,
+    "adpHalfPpr": 185.4,
+    "adpPpr": 203.5,
     "adpStd": 187.5,
-    "adp2qb": 204.9,
+    "adp2qb": 203.7,
     "ptsHalfPpr": 102.9,
     "ptsPpr": 125.9,
     "ptsStd": 79.9
@@ -2240,9 +2240,9 @@
     "pos": "K",
     "team": "PIT",
     "adpHalfPpr": 187.1,
-    "adpPpr": 152.5,
+    "adpPpr": 153.5,
     "adpStd": 151.4,
-    "adp2qb": 187.9,
+    "adp2qb": 187.8,
     "ptsHalfPpr": 107,
     "ptsPpr": 107,
     "ptsStd": 107
@@ -2254,7 +2254,7 @@
     "adpHalfPpr": 188.1,
     "adpPpr": 169.7,
     "adpStd": 157.4,
-    "adp2qb": 185.8,
+    "adp2qb": 185.6,
     "ptsHalfPpr": 83.1,
     "ptsPpr": 100.6,
     "ptsStd": 65.6
@@ -2263,10 +2263,10 @@
     "name": "Isiah Pacheco",
     "pos": "RB",
     "team": "DET",
-    "adpHalfPpr": 188.2,
+    "adpHalfPpr": 189.8,
     "adpPpr": 190.7,
     "adpStd": 151.4,
-    "adp2qb": 210.3,
+    "adp2qb": 210,
     "ptsHalfPpr": 48.6,
     "ptsPpr": 53.6,
     "ptsStd": 43.6
@@ -2276,30 +2276,18 @@
     "pos": "TE",
     "team": "WAS",
     "adpHalfPpr": 190.7,
-    "adpPpr": 188.1,
+    "adpPpr": 189.9,
     "adpStd": 136.9,
-    "adp2qb": 178.3,
+    "adp2qb": 178,
     "ptsHalfPpr": 113.6,
     "ptsPpr": 144.1,
     "ptsStd": 83.1
    },
    {
-    "name": "Braelon Allen",
-    "pos": "RB",
-    "team": "NYJ",
-    "adpHalfPpr": 191.8,
-    "adpPpr": 209.9,
-    "adpStd": 134.7,
-    "adp2qb": 215.3,
-    "ptsHalfPpr": 47.2,
-    "ptsPpr": 52.2,
-    "ptsStd": 42.2
-   },
-   {
     "name": "Tank Dell",
     "pos": "WR",
     "team": "HOU",
-    "adpHalfPpr": 192.7,
+    "adpHalfPpr": 191.3,
     "adpPpr": 187.6,
     "adpStd": 186.8,
     "adp2qb": 213.2,
@@ -2308,13 +2296,25 @@
     "ptsStd": 34.9
    },
    {
+    "name": "Braelon Allen",
+    "pos": "RB",
+    "team": "NYJ",
+    "adpHalfPpr": 191.8,
+    "adpPpr": 209.5,
+    "adpStd": 134.7,
+    "adp2qb": 215.4,
+    "ptsHalfPpr": 47.2,
+    "ptsPpr": 52.2,
+    "ptsStd": 42.2
+   },
+   {
     "name": "Dylan Sampson",
     "pos": "RB",
     "team": "CLE",
     "adpHalfPpr": 193.3,
     "adpPpr": 208.6,
     "adpStd": 128.5,
-    "adp2qb": 209.5,
+    "adp2qb": 209.4,
     "ptsHalfPpr": 77.2,
     "ptsPpr": 88.7,
     "ptsStd": 65.7
@@ -2324,9 +2324,9 @@
     "pos": "K",
     "team": "BAL",
     "adpHalfPpr": 194.3,
-    "adpPpr": 179.4,
+    "adpPpr": 179.5,
     "adpStd": 150.4,
-    "adp2qb": 219,
+    "adp2qb": 219.9,
     "ptsHalfPpr": 106,
     "ptsPpr": 106,
     "ptsStd": 106
@@ -2336,9 +2336,9 @@
     "pos": "WR",
     "team": "NYJ",
     "adpHalfPpr": 195.9,
-    "adpPpr": 193.3,
+    "adpPpr": 193.2,
     "adpStd": 150.9,
-    "adp2qb": 206.3,
+    "adp2qb": 206.1,
     "ptsHalfPpr": 104.6,
     "ptsPpr": 127.1,
     "ptsStd": 82.1
@@ -2348,9 +2348,9 @@
     "pos": "K",
     "team": "GB",
     "adpHalfPpr": 196,
-    "adpPpr": 194.1,
+    "adpPpr": 194,
     "adpStd": 330,
-    "adp2qb": 250.2,
+    "adp2qb": 251.2,
     "ptsHalfPpr": 70,
     "ptsPpr": 70,
     "ptsStd": 70
@@ -2362,7 +2362,7 @@
     "adpHalfPpr": 197.4,
     "adpPpr": 196.2,
     "adpStd": 188.5,
-    "adp2qb": 143.4,
+    "adp2qb": 143.6,
     "ptsHalfPpr": 212.16,
     "ptsPpr": 212.16,
     "ptsStd": 212.16
@@ -2374,7 +2374,7 @@
     "adpHalfPpr": 197.5,
     "adpPpr": 240.9,
     "adpStd": 202.9,
-    "adp2qb": 230.7,
+    "adp2qb": 230.8,
     "ptsHalfPpr": 54.7,
     "ptsPpr": 67.2,
     "ptsStd": 42.2
@@ -2398,7 +2398,7 @@
     "adpHalfPpr": 200.2,
     "adpPpr": 199.3,
     "adpStd": null,
-    "adp2qb": 197.6,
+    "adp2qb": 197.1,
     "ptsHalfPpr": 77.8,
     "ptsPpr": 94.8,
     "ptsStd": 60.8
@@ -2408,7 +2408,7 @@
     "pos": "RB",
     "team": "GB",
     "adpHalfPpr": 201,
-    "adpPpr": 220.3,
+    "adpPpr": 220.2,
     "adpStd": 172.7,
     "adp2qb": 257.8,
     "ptsHalfPpr": 29.5,
@@ -2422,7 +2422,7 @@
     "adpHalfPpr": 202,
     "adpPpr": 206.7,
     "adpStd": 139.9,
-    "adp2qb": 104.2,
+    "adp2qb": 104.1,
     "ptsHalfPpr": 270.12,
     "ptsPpr": 270.12,
     "ptsStd": 270.12
@@ -2432,9 +2432,9 @@
     "pos": "QB",
     "team": "HOU",
     "adpHalfPpr": 203.2,
-    "adpPpr": 197.7,
+    "adpPpr": 197.8,
     "adpStd": 166.3,
-    "adp2qb": 98.1,
+    "adp2qb": 99.7,
     "ptsHalfPpr": 247.82,
     "ptsPpr": 247.82,
     "ptsStd": 247.82
@@ -2443,10 +2443,10 @@
     "name": "Terrance Ferguson",
     "pos": "TE",
     "team": "LAR",
-    "adpHalfPpr": 204.3,
+    "adpHalfPpr": 203.7,
     "adpPpr": 205.2,
     "adpStd": 141.1,
-    "adp2qb": 202.1,
+    "adp2qb": 202.9,
     "ptsHalfPpr": 82.8,
     "ptsPpr": 100.3,
     "ptsStd": 65.3
@@ -2458,7 +2458,7 @@
     "adpHalfPpr": 205,
     "adpPpr": 218.7,
     "adpStd": 210.2,
-    "adp2qb": 211.1,
+    "adp2qb": 211.8,
     "ptsHalfPpr": 86.2,
     "ptsPpr": 105.2,
     "ptsStd": 67.2
@@ -2470,7 +2470,7 @@
     "adpHalfPpr": 206.4,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 212.4,
+    "adp2qb": 212.2,
     "ptsHalfPpr": 57.4,
     "ptsPpr": 70.4,
     "ptsStd": 44.4
@@ -2480,9 +2480,9 @@
     "pos": "TE",
     "team": "HOU",
     "adpHalfPpr": 207,
-    "adpPpr": 182.2,
+    "adpPpr": 182,
     "adpStd": 97.6,
-    "adp2qb": 172.1,
+    "adp2qb": 172.7,
     "ptsHalfPpr": 118.9,
     "ptsPpr": 150.9,
     "ptsStd": 86.9
@@ -2491,37 +2491,37 @@
     "name": "Cooper Kupp",
     "pos": "WR",
     "team": "SEA",
-    "adpHalfPpr": 208.1,
-    "adpPpr": 197.2,
+    "adpHalfPpr": 208,
+    "adpPpr": 197.1,
     "adpStd": 206.4,
-    "adp2qb": 231.4,
+    "adp2qb": 231.3,
     "ptsHalfPpr": 70.4,
     "ptsPpr": 86.4,
     "ptsStd": 54.4
+   },
+   {
+    "name": "Green Bay Packers",
+    "pos": "DST",
+    "team": "GB",
+    "adpHalfPpr": 209.4,
+    "adpPpr": 202.5,
+    "adpStd": 199.5,
+    "adp2qb": 220.2,
+    "ptsHalfPpr": 86,
+    "ptsPpr": 86,
+    "ptsStd": 86
    },
    {
     "name": "AJ Barner",
     "pos": "TE",
     "team": "SEA",
     "adpHalfPpr": 209.8,
-    "adpPpr": 185.1,
+    "adpPpr": 185,
     "adpStd": 125.9,
-    "adp2qb": 193,
+    "adp2qb": 193.7,
     "ptsHalfPpr": 113.4,
     "ptsPpr": 142.4,
     "ptsStd": 84.4
-   },
-   {
-    "name": "Green Bay Packers",
-    "pos": "DST",
-    "team": "GB",
-    "adpHalfPpr": 210.6,
-    "adpPpr": 202.6,
-    "adpStd": 199.5,
-    "adp2qb": 220.4,
-    "ptsHalfPpr": 86,
-    "ptsPpr": 86,
-    "ptsStd": 86
    },
    {
     "name": "Ray Davis",
@@ -2530,7 +2530,7 @@
     "adpHalfPpr": 211.3,
     "adpPpr": 224,
     "adpStd": 167.3,
-    "adp2qb": 237,
+    "adp2qb": 237.6,
     "ptsHalfPpr": 60.6,
     "ptsPpr": 65.1,
     "ptsStd": 56.1
@@ -2542,7 +2542,7 @@
     "adpHalfPpr": 212.5,
     "adpPpr": 210,
     "adpStd": 165.4,
-    "adp2qb": 215.1,
+    "adp2qb": 215.9,
     "ptsHalfPpr": 105.4,
     "ptsPpr": 127.4,
     "ptsStd": 83.4
@@ -2554,7 +2554,7 @@
     "adpHalfPpr": 213.7,
     "adpPpr": 227.9,
     "adpStd": 166.7,
-    "adp2qb": 233.5,
+    "adp2qb": 233.3,
     "ptsHalfPpr": 57.7,
     "ptsPpr": 63.7,
     "ptsStd": 51.7
@@ -2564,9 +2564,9 @@
     "pos": "WR",
     "team": "CLE",
     "adpHalfPpr": 214.3,
-    "adpPpr": 192.5,
+    "adpPpr": 191.5,
     "adpStd": 159.5,
-    "adp2qb": 217.4,
+    "adp2qb": 217,
     "ptsHalfPpr": 98.1,
     "ptsPpr": 119.6,
     "ptsStd": 76.6
@@ -2576,9 +2576,9 @@
     "pos": "DST",
     "team": "SF",
     "adpHalfPpr": 215.4,
-    "adpPpr": 213,
+    "adpPpr": 213.8,
     "adpStd": 208.4,
-    "adp2qb": 251.8,
+    "adp2qb": 251.7,
     "ptsHalfPpr": 84,
     "ptsPpr": 84,
     "ptsStd": 84
@@ -2588,9 +2588,9 @@
     "pos": "DST",
     "team": "CHI",
     "adpHalfPpr": 216,
-    "adpPpr": 215.7,
+    "adpPpr": 215.8,
     "adpStd": 204.4,
-    "adp2qb": 656,
+    "adp2qb": 657,
     "ptsHalfPpr": 85,
     "ptsPpr": 85,
     "ptsStd": 85
@@ -2600,9 +2600,9 @@
     "pos": "K",
     "team": "TB",
     "adpHalfPpr": 217.5,
-    "adpPpr": 217.9,
+    "adpPpr": 217.5,
     "adpStd": 199.2,
-    "adp2qb": 255.4,
+    "adp2qb": 256.4,
     "ptsHalfPpr": 105,
     "ptsPpr": 105,
     "ptsStd": 105
@@ -2612,9 +2612,9 @@
     "pos": "QB",
     "team": "IND",
     "adpHalfPpr": 218.9,
-    "adpPpr": 203.7,
+    "adpPpr": 203.6,
     "adpStd": 197.1,
-    "adp2qb": 112,
+    "adp2qb": 112.8,
     "ptsHalfPpr": 223.54,
     "ptsPpr": 223.54,
     "ptsStd": 223.54
@@ -2624,9 +2624,9 @@
     "pos": "DST",
     "team": "KC",
     "adpHalfPpr": 219.2,
-    "adpPpr": 221.6,
+    "adpPpr": 221.5,
     "adpStd": 183.2,
-    "adp2qb": 254.2,
+    "adp2qb": 255.6,
     "ptsHalfPpr": 87,
     "ptsPpr": 87,
     "ptsStd": 87
@@ -2638,7 +2638,7 @@
     "adpHalfPpr": 220.6,
     "adpPpr": 219.7,
     "adpStd": 130.6,
-    "adp2qb": 227,
+    "adp2qb": 227.8,
     "ptsHalfPpr": 46.5,
     "ptsPpr": 58,
     "ptsStd": 35
@@ -2650,10 +2650,22 @@
     "adpHalfPpr": 221.5,
     "adpPpr": 227.2,
     "adpStd": 171.6,
-    "adp2qb": 240.2,
+    "adp2qb": 239.3,
     "ptsHalfPpr": 78.9,
     "ptsPpr": 96.4,
     "ptsStd": 61.4
+   },
+   {
+    "name": "Jayden Higgins",
+    "pos": "WR",
+    "team": "HOU",
+    "adpHalfPpr": 221.7,
+    "adpPpr": 226.8,
+    "adpStd": 126.3,
+    "adp2qb": 225.8,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
    },
    {
     "name": "Jordan James",
@@ -2668,52 +2680,40 @@
     "ptsStd": 24.4
    },
    {
-    "name": "Jayden Higgins",
-    "pos": "WR",
-    "team": "HOU",
-    "adpHalfPpr": 222.3,
-    "adpPpr": 226.8,
-    "adpStd": 126.3,
-    "adp2qb": 224.1,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
     "name": "Justice Hill",
     "pos": "RB",
     "team": "BAL",
     "adpHalfPpr": 223.4,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 242.7,
+    "adp2qb": 243.9,
     "ptsHalfPpr": 55.7,
     "ptsPpr": 67.7,
     "ptsStd": 43.7
    },
    {
-    "name": "Jaylen Wright",
-    "pos": "RB",
-    "team": "MIA",
-    "adpHalfPpr": 224.2,
-    "adpPpr": 247.9,
-    "adpStd": 173.8,
-    "adp2qb": 273.6,
-    "ptsHalfPpr": 41.1,
-    "ptsPpr": 44.1,
-    "ptsStd": 38.1
-   },
-   {
     "name": "Adonai Mitchell",
     "pos": "WR",
     "team": "NYJ",
-    "adpHalfPpr": 224.6,
+    "adpHalfPpr": 224.4,
     "adpPpr": 231,
     "adpStd": 162.2,
-    "adp2qb": 234,
+    "adp2qb": 233.5,
     "ptsHalfPpr": 80.8,
     "ptsPpr": 98.3,
     "ptsStd": 63.3
+   },
+   {
+    "name": "Jaylen Wright",
+    "pos": "RB",
+    "team": "MIA",
+    "adpHalfPpr": 225.8,
+    "adpPpr": 247.9,
+    "adpStd": 173.8,
+    "adp2qb": 272.5,
+    "ptsHalfPpr": 41.1,
+    "ptsPpr": 44.1,
+    "ptsStd": 38.1
    },
    {
     "name": "James Conner",
@@ -2722,7 +2722,7 @@
     "adpHalfPpr": 226.7,
     "adpPpr": 230.8,
     "adpStd": 92.4,
-    "adp2qb": 238.7,
+    "adp2qb": 238.6,
     "ptsHalfPpr": 51.7,
     "ptsPpr": 57.2,
     "ptsStd": 46.2
@@ -2734,10 +2734,22 @@
     "adpHalfPpr": 227.3,
     "adpPpr": 211.2,
     "adpStd": 185.1,
-    "adp2qb": 236.2,
+    "adp2qb": 236.9,
     "ptsHalfPpr": 63.5,
     "ptsPpr": 78.5,
     "ptsStd": 48.5
+   },
+   {
+    "name": "Tyreek Hill",
+    "pos": "WR",
+    "team": "FA",
+    "adpHalfPpr": 227.5,
+    "adpPpr": 225.2,
+    "adpStd": 145.9,
+    "adp2qb": 245.6,
+    "ptsHalfPpr": 77.2,
+    "ptsPpr": 93.7,
+    "ptsStd": 60.7
    },
    {
     "name": "Cam Ward",
@@ -2746,7 +2758,7 @@
     "adpHalfPpr": 228.1,
     "adpPpr": 229.8,
     "adpStd": 191.2,
-    "adp2qb": 113.3,
+    "adp2qb": 113.2,
     "ptsHalfPpr": 227.84,
     "ptsPpr": 227.84,
     "ptsStd": 227.84
@@ -2758,22 +2770,10 @@
     "adpHalfPpr": 228.2,
     "adpPpr": 230.5,
     "adpStd": 178.7,
-    "adp2qb": 241,
+    "adp2qb": 241.6,
     "ptsHalfPpr": 93.4,
     "ptsPpr": 112.9,
     "ptsStd": 73.9
-   },
-   {
-    "name": "Tyreek Hill",
-    "pos": "WR",
-    "team": "FA",
-    "adpHalfPpr": 228.5,
-    "adpPpr": 224.4,
-    "adpStd": 145.9,
-    "adp2qb": 247.1,
-    "ptsHalfPpr": 77.2,
-    "ptsPpr": 93.7,
-    "ptsStd": 60.7
    },
    {
     "name": "Isaac TeSlaa",
@@ -2782,7 +2782,7 @@
     "adpHalfPpr": 229.5,
     "adpPpr": 226.5,
     "adpStd": 183.7,
-    "adp2qb": 242.7,
+    "adp2qb": 242.1,
     "ptsHalfPpr": 73.1,
     "ptsPpr": 87.1,
     "ptsStd": 59.1
@@ -2794,7 +2794,7 @@
     "adpHalfPpr": 229.8,
     "adpPpr": 191.9,
     "adpStd": 157.2,
-    "adp2qb": 222.5,
+    "adp2qb": 221.5,
     "ptsHalfPpr": 96,
     "ptsPpr": 96,
     "ptsStd": 96
@@ -2806,7 +2806,7 @@
     "adpHalfPpr": 230.3,
     "adpPpr": 239.9,
     "adpStd": null,
-    "adp2qb": 224.6,
+    "adp2qb": 224.4,
     "ptsHalfPpr": 102.9,
     "ptsPpr": 128.4,
     "ptsStd": 77.4
@@ -2818,7 +2818,7 @@
     "adpHalfPpr": 230.7,
     "adpPpr": 237.8,
     "adpStd": 140.7,
-    "adp2qb": 246.6,
+    "adp2qb": 247.1,
     "ptsHalfPpr": 53,
     "ptsPpr": 60,
     "ptsStd": 46
@@ -2830,7 +2830,7 @@
     "adpHalfPpr": 231.4,
     "adpPpr": 212.9,
     "adpStd": 123.2,
-    "adp2qb": 214.1,
+    "adp2qb": 214.5,
     "ptsHalfPpr": 86.2,
     "ptsPpr": 105.7,
     "ptsStd": 66.7
@@ -2842,7 +2842,7 @@
     "adpHalfPpr": 231.7,
     "adpPpr": 230.7,
     "adpStd": 198.5,
-    "adp2qb": 239,
+    "adp2qb": 239.2,
     "ptsHalfPpr": 97.7,
     "ptsPpr": 121.2,
     "ptsStd": 74.2
@@ -2854,7 +2854,7 @@
     "adpHalfPpr": 232.3,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 575.7,
+    "adp2qb": 575.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -2890,7 +2890,7 @@
     "adpHalfPpr": 233.6,
     "adpPpr": 239.1,
     "adpStd": 156.6,
-    "adp2qb": 249,
+    "adp2qb": 250.8,
     "ptsHalfPpr": 41.9,
     "ptsPpr": 45.9,
     "ptsStd": 37.9
@@ -2914,7 +2914,7 @@
     "adpHalfPpr": 234.6,
     "adpPpr": 226.3,
     "adpStd": 197.9,
-    "adp2qb": 123,
+    "adp2qb": 123.8,
     "ptsHalfPpr": 235.58,
     "ptsPpr": 235.58,
     "ptsStd": 235.58
@@ -2938,7 +2938,7 @@
     "adpHalfPpr": 235.5,
     "adpPpr": 228.8,
     "adpStd": null,
-    "adp2qb": 146.3,
+    "adp2qb": 146,
     "ptsHalfPpr": 177,
     "ptsPpr": 177,
     "ptsStd": 177
@@ -2986,10 +2986,22 @@
     "adpHalfPpr": 238.2,
     "adpPpr": 235.8,
     "adpStd": 155.5,
-    "adp2qb": 244.5,
+    "adp2qb": 244.6,
     "ptsHalfPpr": 61.2,
     "ptsPpr": 75.2,
     "ptsStd": 47.2
+   },
+   {
+    "name": "Michael Herzog",
+    "pos": "RB",
+    "team": "FA",
+    "adpHalfPpr": 239.2,
+    "adpPpr": 416.4,
+    "adpStd": null,
+    "adp2qb": 500.8,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
    },
    {
     "name": "Garett Maag",
@@ -3010,22 +3022,10 @@
     "adpHalfPpr": 239.6,
     "adpPpr": 239.6,
     "adpStd": 196.2,
-    "adp2qb": 260.9,
+    "adp2qb": 249.7,
     "ptsHalfPpr": 79.9,
     "ptsPpr": 97.9,
     "ptsStd": 61.9
-   },
-   {
-    "name": "Michael Herzog",
-    "pos": "RB",
-    "team": "FA",
-    "adpHalfPpr": 240.8,
-    "adpPpr": 416.4,
-    "adpStd": null,
-    "adp2qb": 500.8,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
    },
    {
     "name": "Noah Short",
@@ -3046,7 +3046,7 @@
     "adpHalfPpr": 241.4,
     "adpPpr": 229.8,
     "adpStd": 193.6,
-    "adp2qb": 245.3,
+    "adp2qb": 245.4,
     "ptsHalfPpr": 80.9,
     "ptsPpr": 98.9,
     "ptsStd": 62.9
@@ -3070,7 +3070,7 @@
     "adpHalfPpr": 242.2,
     "adpPpr": 234.8,
     "adpStd": 205.5,
-    "adp2qb": 271.7,
+    "adp2qb": 271.4,
     "ptsHalfPpr": 71.3,
     "ptsPpr": 85.8,
     "ptsStd": 56.8
@@ -3082,7 +3082,7 @@
     "adpHalfPpr": 242.8,
     "adpPpr": 229.7,
     "adpStd": null,
-    "adp2qb": 228.8,
+    "adp2qb": 228,
     "ptsHalfPpr": 87.4,
     "ptsPpr": 110.9,
     "ptsStd": 63.9
@@ -3106,7 +3106,7 @@
     "adpHalfPpr": 243.6,
     "adpPpr": 242,
     "adpStd": 175.7,
-    "adp2qb": 274.3,
+    "adp2qb": 275,
     "ptsHalfPpr": 22.8,
     "ptsPpr": 24.8,
     "ptsStd": 20.8
@@ -3118,7 +3118,7 @@
     "adpHalfPpr": 244.1,
     "adpPpr": 233.1,
     "adpStd": 152.6,
-    "adp2qb": 223.7,
+    "adp2qb": 223.2,
     "ptsHalfPpr": 101.8,
     "ptsPpr": 130.3,
     "ptsStd": 73.3
@@ -3148,6 +3148,18 @@
     "ptsStd": null
    },
    {
+    "name": "Connor Bazelak",
+    "pos": "QB",
+    "team": "FA",
+    "adpHalfPpr": 245.7,
+    "adpPpr": 656.4,
+    "adpStd": null,
+    "adp2qb": 382.5,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Cade Otton",
     "pos": "TE",
     "team": "TB",
@@ -3158,18 +3170,6 @@
     "ptsHalfPpr": 95.8,
     "ptsPpr": 122.3,
     "ptsStd": 69.3
-   },
-   {
-    "name": "Connor Bazelak",
-    "pos": "QB",
-    "team": "FA",
-    "adpHalfPpr": 246.3,
-    "adpPpr": 656.4,
-    "adpStd": null,
-    "adp2qb": 382.5,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
    },
    {
     "name": "Micah Bernard",
@@ -3202,7 +3202,7 @@
     "adpHalfPpr": 248.9,
     "adpPpr": 238.9,
     "adpStd": 139.8,
-    "adp2qb": 260.4,
+    "adp2qb": 261.2,
     "ptsHalfPpr": 65.9,
     "ptsPpr": 81.4,
     "ptsStd": 50.4
@@ -3214,7 +3214,7 @@
     "adpHalfPpr": 249.2,
     "adpPpr": 243.9,
     "adpStd": 154.5,
-    "adp2qb": 282.5,
+    "adp2qb": 281.5,
     "ptsHalfPpr": 48.5,
     "ptsPpr": 52.5,
     "ptsStd": 44.5
@@ -3226,7 +3226,7 @@
     "adpHalfPpr": 249.5,
     "adpPpr": 700.7,
     "adpStd": null,
-    "adp2qb": 687.3,
+    "adp2qb": 688.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -3236,7 +3236,7 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 250,
-    "adpPpr": 671.7,
+    "adpPpr": 671.3,
     "adpStd": null,
     "adp2qb": 587.5,
     "ptsHalfPpr": null,
@@ -3250,7 +3250,7 @@
     "adpHalfPpr": 250.7,
     "adpPpr": 253.2,
     "adpStd": 180.2,
-    "adp2qb": 272.2,
+    "adp2qb": 273.2,
     "ptsHalfPpr": 63.8,
     "ptsPpr": 77.3,
     "ptsStd": 50.3
@@ -3262,7 +3262,7 @@
     "adpHalfPpr": 251.2,
     "adpPpr": 243,
     "adpStd": 203.4,
-    "adp2qb": 166.9,
+    "adp2qb": 166.5,
     "ptsHalfPpr": 160,
     "ptsPpr": 160,
     "ptsStd": 160
@@ -3272,9 +3272,9 @@
     "pos": "FB",
     "team": "FA",
     "adpHalfPpr": 251.5,
-    "adpPpr": 282.3,
+    "adpPpr": 281.7,
     "adpStd": null,
-    "adp2qb": 446,
+    "adp2qb": 447,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -3308,7 +3308,7 @@
     "pos": "QB",
     "team": "FA",
     "adpHalfPpr": 253.3,
-    "adpPpr": 564.8,
+    "adpPpr": 563.2,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -3322,7 +3322,7 @@
     "adpHalfPpr": 254,
     "adpPpr": 619.7,
     "adpStd": null,
-    "adp2qb": 395,
+    "adp2qb": 396,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -3346,7 +3346,7 @@
     "adpHalfPpr": 255.9,
     "adpPpr": 669,
     "adpStd": null,
-    "adp2qb": 451,
+    "adp2qb": 452,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -3368,7 +3368,7 @@
     "pos": "QB",
     "team": "FA",
     "adpHalfPpr": 257,
-    "adpPpr": 648,
+    "adpPpr": 649,
     "adpStd": null,
     "adp2qb": 691.2,
     "ptsHalfPpr": null,
@@ -3382,7 +3382,7 @@
     "adpHalfPpr": 257,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 167.1,
+    "adp2qb": 167.8,
     "ptsHalfPpr": 222.48,
     "ptsPpr": 222.48,
     "ptsStd": 222.48
@@ -3418,7 +3418,7 @@
     "adpHalfPpr": 258.4,
     "adpPpr": 236.5,
     "adpStd": 238.8,
-    "adp2qb": 194.4,
+    "adp2qb": 194.3,
     "ptsHalfPpr": 92.96,
     "ptsPpr": 92.96,
     "ptsStd": 92.96
@@ -3454,7 +3454,7 @@
     "adpHalfPpr": 259.3,
     "adpPpr": 249.2,
     "adpStd": 194.4,
-    "adp2qb": 287.3,
+    "adp2qb": 287.8,
     "ptsHalfPpr": 60.9,
     "ptsPpr": 73.4,
     "ptsStd": 48.4
@@ -3490,7 +3490,7 @@
     "adpHalfPpr": 260.2,
     "adpPpr": 228.7,
     "adpStd": 199.4,
-    "adp2qb": 286.8,
+    "adp2qb": 286.9,
     "ptsHalfPpr": 76.5,
     "ptsPpr": 92,
     "ptsStd": 61
@@ -3499,7 +3499,7 @@
     "name": "Desmond Martin",
     "pos": "RB",
     "team": "FA",
-    "adpHalfPpr": 260.7,
+    "adpHalfPpr": 261.3,
     "adpPpr": 370.1,
     "adpStd": null,
     "adp2qb": null,
@@ -3514,7 +3514,7 @@
     "adpHalfPpr": 261.8,
     "adpPpr": 251.4,
     "adpStd": 135.7,
-    "adp2qb": 264.2,
+    "adp2qb": 263.5,
     "ptsHalfPpr": 61.8,
     "ptsPpr": 76.3,
     "ptsStd": 47.3
@@ -3568,13 +3568,25 @@
     "ptsStd": null
    },
    {
+    "name": "Miller Moss",
+    "pos": "QB",
+    "team": "CHI",
+    "adpHalfPpr": 263.5,
+    "adpPpr": 497.9,
+    "adpStd": null,
+    "adp2qb": 501.2,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Troy Franklin",
     "pos": "WR",
     "team": "DEN",
     "adpHalfPpr": 263.6,
     "adpPpr": 241.8,
     "adpStd": 170.5,
-    "adp2qb": 285.9,
+    "adp2qb": 285.4,
     "ptsHalfPpr": 54.1,
     "ptsPpr": 66.1,
     "ptsStd": 42.1
@@ -3587,18 +3599,6 @@
     "adpPpr": 255.2,
     "adpStd": 114.3,
     "adp2qb": 284.8,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "Miller Moss",
-    "pos": "QB",
-    "team": "CHI",
-    "adpHalfPpr": 264.5,
-    "adpPpr": 497.9,
-    "adpStd": null,
-    "adp2qb": 501.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -3646,7 +3646,7 @@
     "adpHalfPpr": 266.3,
     "adpPpr": 666.4,
     "adpStd": null,
-    "adp2qb": 386.2,
+    "adp2qb": 387.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -3682,7 +3682,7 @@
     "adpHalfPpr": 267.9,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 428.2,
+    "adp2qb": 429.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -3766,7 +3766,7 @@
     "adpHalfPpr": 272,
     "adpPpr": 699.7,
     "adpStd": null,
-    "adp2qb": 692,
+    "adp2qb": 693,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -3802,7 +3802,7 @@
     "adpHalfPpr": 275.5,
     "adpPpr": 341.6,
     "adpStd": null,
-    "adp2qb": 483.3,
+    "adp2qb": 484.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -3826,7 +3826,7 @@
     "adpHalfPpr": 278,
     "adpPpr": 566.1,
     "adpStd": null,
-    "adp2qb": 407.9,
+    "adp2qb": 407.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -3862,7 +3862,7 @@
     "adpHalfPpr": 280.4,
     "adpPpr": 410,
     "adpStd": null,
-    "adp2qb": 503.1,
+    "adp2qb": 503.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -3910,7 +3910,7 @@
     "adpHalfPpr": 284,
     "adpPpr": 605.5,
     "adpStd": null,
-    "adp2qb": 668.3,
+    "adp2qb": 669.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -3992,7 +3992,7 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 287.4,
-    "adpPpr": 534.1,
+    "adpPpr": 533.9,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -4102,7 +4102,7 @@
     "adpHalfPpr": 295,
     "adpPpr": 637.9,
     "adpStd": null,
-    "adp2qb": 664.1,
+    "adp2qb": 665.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4136,7 +4136,7 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 296,
-    "adpPpr": 672.2,
+    "adpPpr": 673.2,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -4147,7 +4147,7 @@
     "name": "Ryan Tannehill",
     "pos": "QB",
     "team": "FA",
-    "adpHalfPpr": 296.5,
+    "adpHalfPpr": 297.5,
     "adpPpr": 623.1,
     "adpStd": null,
     "adp2qb": 699.6,
@@ -4192,6 +4192,18 @@
     "ptsStd": null
    },
    {
+    "name": "Jonathan Garibay",
+    "pos": "K",
+    "team": "FA",
+    "adpHalfPpr": 299.3,
+    "adpPpr": null,
+    "adpStd": null,
+    "adp2qb": 571.3,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Jalen Morton",
     "pos": "QB",
     "team": "IND",
@@ -4199,18 +4211,6 @@
     "adpPpr": 646.7,
     "adpStd": null,
     "adp2qb": null,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "Jonathan Garibay",
-    "pos": "K",
-    "team": "FA",
-    "adpHalfPpr": 300.7,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": 570.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4234,7 +4234,7 @@
     "adpHalfPpr": 302,
     "adpPpr": 346.6,
     "adpStd": null,
-    "adp2qb": 566.1,
+    "adp2qb": 569.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4354,7 +4354,7 @@
     "adpHalfPpr": 310.4,
     "adpPpr": 529,
     "adpStd": null,
-    "adp2qb": 374.9,
+    "adp2qb": 375.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4388,21 +4388,9 @@
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 313.7,
-    "adpPpr": 242.4,
+    "adpPpr": 243.6,
     "adpStd": null,
-    "adp2qb": 487.5,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "De'Chavon Hayes",
-    "pos": "RB",
-    "team": "FA",
-    "adpHalfPpr": 314.3,
-    "adpPpr": 642.5,
-    "adpStd": null,
-    "adp2qb": 515.4,
+    "adp2qb": 488.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4414,7 +4402,7 @@
     "adpHalfPpr": 314.5,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 429,
+    "adp2qb": 430,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4427,6 +4415,18 @@
     "adpPpr": 249,
     "adpStd": null,
     "adp2qb": null,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "De'Chavon Hayes",
+    "pos": "RB",
+    "team": "FA",
+    "adpHalfPpr": 315.7,
+    "adpPpr": 642.5,
+    "adpStd": null,
+    "adp2qb": 515.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4510,7 +4510,7 @@
     "adpHalfPpr": 321,
     "adpPpr": 457.8,
     "adpStd": null,
-    "adp2qb": 593.3,
+    "adp2qb": 593.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4570,7 +4570,7 @@
     "adpHalfPpr": 325.7,
     "adpPpr": 464.5,
     "adpStd": null,
-    "adp2qb": 489,
+    "adp2qb": 490,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4594,7 +4594,7 @@
     "adpHalfPpr": 327.2,
     "adpPpr": 665.7,
     "adpStd": null,
-    "adp2qb": 499,
+    "adp2qb": 500,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4699,7 +4699,7 @@
     "name": "Anthony Boone",
     "pos": "QB",
     "team": "FA",
-    "adpHalfPpr": 336.3,
+    "adpHalfPpr": 335.7,
     "adpPpr": 656,
     "adpStd": null,
     "adp2qb": null,
@@ -4714,7 +4714,7 @@
     "adpHalfPpr": 337.7,
     "adpPpr": 580.4,
     "adpStd": null,
-    "adp2qb": 420.7,
+    "adp2qb": 421.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4726,7 +4726,7 @@
     "adpHalfPpr": 338.7,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 426.8,
+    "adp2qb": 427.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4738,7 +4738,7 @@
     "adpHalfPpr": 339.3,
     "adpPpr": 594,
     "adpStd": null,
-    "adp2qb": 615.9,
+    "adp2qb": 616.9,
     "ptsHalfPpr": 22,
     "ptsPpr": 26,
     "ptsStd": 18
@@ -4786,7 +4786,7 @@
     "adpHalfPpr": 343.5,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 449.5,
+    "adp2qb": 451.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4822,7 +4822,7 @@
     "adpHalfPpr": 346.3,
     "adpPpr": 679.9,
     "adpStd": null,
-    "adp2qb": 686.9,
+    "adp2qb": 687.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4834,7 +4834,7 @@
     "adpHalfPpr": 347.4,
     "adpPpr": 521.5,
     "adpStd": null,
-    "adp2qb": 431.7,
+    "adp2qb": 431.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4858,7 +4858,7 @@
     "adpHalfPpr": 349.8,
     "adpPpr": 307.3,
     "adpStd": null,
-    "adp2qb": 362.3,
+    "adp2qb": 363.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -4988,9 +4988,9 @@
     "pos": "K",
     "team": "FA",
     "adpHalfPpr": 359.5,
-    "adpPpr": 668.3,
+    "adpPpr": 669.3,
     "adpStd": null,
-    "adp2qb": 370,
+    "adp2qb": 371,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5014,7 +5014,7 @@
     "adpHalfPpr": 362.8,
     "adpPpr": 671.5,
     "adpStd": null,
-    "adp2qb": 312.8,
+    "adp2qb": 311.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5038,7 +5038,7 @@
     "adpHalfPpr": 364,
     "adpPpr": 690.5,
     "adpStd": null,
-    "adp2qb": 527,
+    "adp2qb": 528,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5059,7 +5059,7 @@
     "name": "Zach Horton",
     "pos": "TE",
     "team": "FA",
-    "adpHalfPpr": 366.3,
+    "adpHalfPpr": 365.7,
     "adpPpr": 691.3,
     "adpStd": null,
     "adp2qb": null,
@@ -5098,7 +5098,7 @@
     "adpHalfPpr": 369,
     "adpPpr": 700.6,
     "adpStd": null,
-    "adp2qb": 449.7,
+    "adp2qb": 449.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5116,25 +5116,25 @@
     "ptsStd": null
    },
    {
+    "name": "Elijah Cooks",
+    "pos": "WR",
+    "team": "FA",
+    "adpHalfPpr": 371.2,
+    "adpPpr": 651.9,
+    "adpStd": null,
+    "adp2qb": 638.1,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Hunter Long",
     "pos": "TE",
     "team": "ARI",
     "adpHalfPpr": 371.6,
     "adpPpr": 673.3,
     "adpStd": null,
-    "adp2qb": 384.6,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "Elijah Cooks",
-    "pos": "WR",
-    "team": "FA",
-    "adpHalfPpr": 372.8,
-    "adpPpr": 651.9,
-    "adpStd": null,
-    "adp2qb": 638.1,
+    "adp2qb": 385.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5182,7 +5182,7 @@
     "adpHalfPpr": 376.8,
     "adpPpr": 379.6,
     "adpStd": null,
-    "adp2qb": 497.4,
+    "adp2qb": 497.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5206,7 +5206,7 @@
     "adpHalfPpr": 377.1,
     "adpPpr": 616,
     "adpStd": null,
-    "adp2qb": 621,
+    "adp2qb": 622,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5252,7 +5252,7 @@
     "pos": "RB",
     "team": "FA",
     "adpHalfPpr": 381,
-    "adpPpr": 584.2,
+    "adpPpr": 585.8,
     "adpStd": null,
     "adp2qb": 694.7,
     "ptsHalfPpr": null,
@@ -5266,7 +5266,7 @@
     "adpHalfPpr": 382,
     "adpPpr": 695.5,
     "adpStd": null,
-    "adp2qb": 691,
+    "adp2qb": 692,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5290,7 +5290,7 @@
     "adpHalfPpr": 384,
     "adpPpr": 511.6,
     "adpStd": null,
-    "adp2qb": 373.3,
+    "adp2qb": 374.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5344,6 +5344,18 @@
     "ptsStd": null
    },
    {
+    "name": "Dee Eskridge",
+    "pos": "WR",
+    "team": "FA",
+    "adpHalfPpr": 389.5,
+    "adpPpr": null,
+    "adpStd": null,
+    "adp2qb": 666,
+    "ptsHalfPpr": 3.9,
+    "ptsPpr": 4.9,
+    "ptsStd": 2.9
+   },
+   {
     "name": "Demario Richard",
     "pos": "RB",
     "team": "FA",
@@ -5356,25 +5368,13 @@
     "ptsStd": null
    },
    {
-    "name": "Dee Eskridge",
-    "pos": "WR",
-    "team": "FA",
-    "adpHalfPpr": 390.5,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": 666,
-    "ptsHalfPpr": 3.9,
-    "ptsPpr": 4.9,
-    "ptsStd": 2.9
-   },
-   {
     "name": "Master Teague",
     "pos": "RB",
     "team": "FA",
     "adpHalfPpr": 391.5,
     "adpPpr": 617.5,
     "adpStd": null,
-    "adp2qb": 458.5,
+    "adp2qb": 460.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5410,7 +5410,7 @@
     "adpHalfPpr": 394.8,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 556.3,
+    "adp2qb": 557.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5434,7 +5434,7 @@
     "adpHalfPpr": 395.7,
     "adpPpr": 669.8,
     "adpStd": null,
-    "adp2qb": 676.5,
+    "adp2qb": 677.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5446,7 +5446,7 @@
     "adpHalfPpr": 396,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 413,
+    "adp2qb": 414,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5458,7 +5458,7 @@
     "adpHalfPpr": 397.5,
     "adpPpr": 519.5,
     "adpStd": null,
-    "adp2qb": 462.7,
+    "adp2qb": 463.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5500,6 +5500,18 @@
     "ptsStd": null
    },
    {
+    "name": "E.J. Horton",
+    "pos": "WR",
+    "team": "FA",
+    "adpHalfPpr": 401.2,
+    "adpPpr": 628,
+    "adpStd": null,
+    "adp2qb": 636,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Ryan Willis",
     "pos": "QB",
     "team": "FA",
@@ -5519,18 +5531,6 @@
     "adpPpr": 607,
     "adpStd": null,
     "adp2qb": null,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "E.J. Horton",
-    "pos": "WR",
-    "team": "FA",
-    "adpHalfPpr": 402.8,
-    "adpPpr": 628,
-    "adpStd": null,
-    "adp2qb": 635,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5563,10 +5563,10 @@
     "name": "Corey Acosta",
     "pos": "K",
     "team": "FA",
-    "adpHalfPpr": 404.3,
+    "adpHalfPpr": 405.7,
     "adpPpr": 286.8,
     "adpStd": null,
-    "adp2qb": 422,
+    "adp2qb": 423,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5596,6 +5596,18 @@
     "ptsStd": null
    },
    {
+    "name": "Matt McCrane",
+    "pos": "K",
+    "team": "FA",
+    "adpHalfPpr": 407.4,
+    "adpPpr": 699.4,
+    "adpStd": null,
+    "adp2qb": 353.5,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Jaden Bradley",
     "pos": "WR",
     "team": "WAS",
@@ -5603,18 +5615,6 @@
     "adpPpr": 658.5,
     "adpStd": null,
     "adp2qb": 692.6,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "Matt McCrane",
-    "pos": "K",
-    "team": "FA",
-    "adpHalfPpr": 408.6,
-    "adpPpr": 699.4,
-    "adpStd": null,
-    "adp2qb": 352.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5686,7 +5686,7 @@
     "adpHalfPpr": 411,
     "adpPpr": 268,
     "adpStd": null,
-    "adp2qb": 423,
+    "adp2qb": 424,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5708,7 +5708,7 @@
     "pos": "WR",
     "team": "NO",
     "adpHalfPpr": 413,
-    "adpPpr": 426.3,
+    "adpPpr": 425.7,
     "adpStd": null,
     "adp2qb": 656,
     "ptsHalfPpr": null,
@@ -5792,7 +5792,7 @@
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 416.3,
-    "adpPpr": 669.5,
+    "adpPpr": 670.5,
     "adpStd": null,
     "adp2qb": 694,
     "ptsHalfPpr": null,
@@ -5818,7 +5818,7 @@
     "adpHalfPpr": 417,
     "adpPpr": 692.5,
     "adpStd": null,
-    "adp2qb": 320,
+    "adp2qb": 321,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5830,7 +5830,7 @@
     "adpHalfPpr": 418.7,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 671.4,
+    "adp2qb": 671.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5851,10 +5851,10 @@
     "name": "Parker White",
     "pos": "K",
     "team": "FA",
-    "adpHalfPpr": 420.5,
+    "adpHalfPpr": 419.5,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 670.6,
+    "adp2qb": 671.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5866,7 +5866,7 @@
     "adpHalfPpr": 421.2,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 566.5,
+    "adp2qb": 568.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5878,7 +5878,7 @@
     "adpHalfPpr": 422.2,
     "adpPpr": 652.3,
     "adpStd": null,
-    "adp2qb": 427,
+    "adp2qb": 428,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5896,18 +5896,6 @@
     "ptsStd": null
    },
    {
-    "name": "Danny Amendola",
-    "pos": "WR",
-    "team": "FA",
-    "adpHalfPpr": 422.5,
-    "adpPpr": 670.7,
-    "adpStd": null,
-    "adp2qb": 477.7,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
     "name": "Montrell Johnson",
     "pos": "RB",
     "team": "FA",
@@ -5915,6 +5903,18 @@
     "adpPpr": 386,
     "adpStd": null,
     "adp2qb": null,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Danny Amendola",
+    "pos": "WR",
+    "team": "FA",
+    "adpHalfPpr": 423.5,
+    "adpPpr": 671.7,
+    "adpStd": null,
+    "adp2qb": 477.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5932,13 +5932,25 @@
     "ptsStd": null
    },
    {
+    "name": "Desmond Ridder",
+    "pos": "QB",
+    "team": "FA",
+    "adpHalfPpr": 425.2,
+    "adpPpr": null,
+    "adpStd": null,
+    "adp2qb": 683.9,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Cole Murphy",
     "pos": "K",
     "team": "FA",
     "adpHalfPpr": 425.5,
     "adpPpr": 651.9,
     "adpStd": null,
-    "adp2qb": 400.5,
+    "adp2qb": 401.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -5963,18 +5975,6 @@
     "adpPpr": null,
     "adpStd": null,
     "adp2qb": 675.4,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "Desmond Ridder",
-    "pos": "QB",
-    "team": "FA",
-    "adpHalfPpr": 426.8,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": 683.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6070,7 +6070,7 @@
     "adpHalfPpr": 431.1,
     "adpPpr": 673.1,
     "adpStd": null,
-    "adp2qb": 647.1,
+    "adp2qb": 647.9,
     "ptsHalfPpr": 3,
     "ptsPpr": 4,
     "ptsStd": 2
@@ -6142,7 +6142,7 @@
     "adpHalfPpr": 434.3,
     "adpPpr": 337.4,
     "adpStd": null,
-    "adp2qb": 516.2,
+    "adp2qb": 517.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6166,7 +6166,7 @@
     "adpHalfPpr": 435.7,
     "adpPpr": 678.1,
     "adpStd": null,
-    "adp2qb": 447.2,
+    "adp2qb": 448.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6199,7 +6199,7 @@
     "name": "Elijah Collins",
     "pos": "RB",
     "team": "FA",
-    "adpHalfPpr": 438.1,
+    "adpHalfPpr": 437.9,
     "adpPpr": 316.4,
     "adpStd": null,
     "adp2qb": 608.4,
@@ -6226,7 +6226,7 @@
     "adpHalfPpr": 439.9,
     "adpPpr": 459,
     "adpStd": null,
-    "adp2qb": 380.8,
+    "adp2qb": 381.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6250,7 +6250,7 @@
     "adpHalfPpr": 441,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 530.5,
+    "adp2qb": 532.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6319,7 +6319,7 @@
     "name": "Isaiah Washington",
     "pos": "WR",
     "team": "FA",
-    "adpHalfPpr": 444.5,
+    "adpHalfPpr": 443.5,
     "adpPpr": 484.7,
     "adpStd": null,
     "adp2qb": null,
@@ -6370,7 +6370,7 @@
     "adpHalfPpr": 447.3,
     "adpPpr": 600,
     "adpStd": null,
-    "adp2qb": 542.4,
+    "adp2qb": 544.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6586,7 +6586,7 @@
     "adpHalfPpr": 457.8,
     "adpPpr": 682.6,
     "adpStd": null,
-    "adp2qb": 502,
+    "adp2qb": 503,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6610,7 +6610,7 @@
     "adpHalfPpr": 458.2,
     "adpPpr": 434.4,
     "adpStd": null,
-    "adp2qb": 602,
+    "adp2qb": 603,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6694,7 +6694,7 @@
     "adpHalfPpr": 460,
     "adpPpr": 608,
     "adpStd": null,
-    "adp2qb": 517.4,
+    "adp2qb": 518.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6718,7 +6718,7 @@
     "adpHalfPpr": 461.4,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 476.4,
+    "adp2qb": 478.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6788,9 +6788,9 @@
     "pos": "QB",
     "team": "FA",
     "adpHalfPpr": 463,
-    "adpPpr": 312.2,
+    "adpPpr": 311.8,
     "adpStd": null,
-    "adp2qb": 393.2,
+    "adp2qb": 394.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6800,9 +6800,9 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 463.6,
-    "adpPpr": 246.4,
+    "adpPpr": 245.6,
     "adpStd": null,
-    "adp2qb": 416,
+    "adp2qb": 417,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6860,9 +6860,9 @@
     "pos": "K",
     "team": "FA",
     "adpHalfPpr": 465.5,
-    "adpPpr": 510.4,
+    "adpPpr": 509.6,
     "adpStd": null,
-    "adp2qb": 440.1,
+    "adp2qb": 442.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -6898,7 +6898,7 @@
     "adpHalfPpr": 467.3,
     "adpPpr": 590.3,
     "adpStd": null,
-    "adp2qb": 613.2,
+    "adp2qb": 614.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7018,7 +7018,7 @@
     "adpHalfPpr": 470.6,
     "adpPpr": 650.5,
     "adpStd": null,
-    "adp2qb": 507,
+    "adp2qb": 508,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7054,7 +7054,7 @@
     "adpHalfPpr": 472.3,
     "adpPpr": 437.8,
     "adpStd": null,
-    "adp2qb": 601,
+    "adp2qb": 602,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7067,6 +7067,18 @@
     "adpPpr": 588.2,
     "adpStd": null,
     "adp2qb": null,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Khalil Dinkins",
+    "pos": "TE",
+    "team": "SF",
+    "adpHalfPpr": 473.3,
+    "adpPpr": 612.7,
+    "adpStd": null,
+    "adp2qb": 594,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7120,25 +7132,13 @@
     "ptsStd": null
    },
    {
-    "name": "Khalil Dinkins",
-    "pos": "TE",
-    "team": "SF",
-    "adpHalfPpr": 474.7,
-    "adpPpr": 612.7,
-    "adpStd": null,
-    "adp2qb": 594,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
     "name": "Parker Romo",
     "pos": "K",
     "team": "FA",
     "adpHalfPpr": 475.2,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 402,
+    "adp2qb": 403,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7180,18 +7180,6 @@
     "ptsStd": null
    },
    {
-    "name": "Blake Haubeil",
-    "pos": "K",
-    "team": "FA",
-    "adpHalfPpr": 476.5,
-    "adpPpr": 662.6,
-    "adpStd": null,
-    "adp2qb": 297,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
     "name": "Josh Bellamy",
     "pos": "WR",
     "team": "FA",
@@ -7223,6 +7211,18 @@
     "adpPpr": 325.5,
     "adpStd": null,
     "adp2qb": null,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Blake Haubeil",
+    "pos": "K",
+    "team": "FA",
+    "adpHalfPpr": 477.5,
+    "adpPpr": 663.6,
+    "adpStd": null,
+    "adp2qb": 297,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7280,9 +7280,21 @@
     "pos": "QB",
     "team": "FA",
     "adpHalfPpr": 479.1,
-    "adpPpr": 476.5,
+    "adpPpr": 477.5,
     "adpStd": null,
     "adp2qb": 301.3,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Kevin Marks",
+    "pos": "RB",
+    "team": "FA",
+    "adpHalfPpr": 479.4,
+    "adpPpr": null,
+    "adpStd": null,
+    "adp2qb": 347.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7324,25 +7336,13 @@
     "ptsStd": null
    },
    {
-    "name": "Kevin Marks",
-    "pos": "RB",
-    "team": "FA",
-    "adpHalfPpr": 480.6,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": 347.5,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
     "name": "Travis Dye",
     "pos": "RB",
     "team": "FA",
     "adpHalfPpr": 481,
     "adpPpr": 694.1,
     "adpStd": null,
-    "adp2qb": 501,
+    "adp2qb": 502,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7402,7 +7402,7 @@
     "adpHalfPpr": 482.3,
     "adpPpr": 587.3,
     "adpStd": null,
-    "adp2qb": 361.2,
+    "adp2qb": 362.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7522,7 +7522,7 @@
     "adpHalfPpr": 485.3,
     "adpPpr": 319.2,
     "adpStd": null,
-    "adp2qb": 473,
+    "adp2qb": 474,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7606,7 +7606,7 @@
     "adpHalfPpr": 488.3,
     "adpPpr": 675,
     "adpStd": null,
-    "adp2qb": 500,
+    "adp2qb": 501,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7640,7 +7640,7 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 489,
-    "adpPpr": 462.5,
+    "adpPpr": 461.5,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -7738,7 +7738,7 @@
     "adpHalfPpr": 492,
     "adpPpr": 572,
     "adpStd": null,
-    "adp2qb": 688.8,
+    "adp2qb": 689.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7810,7 +7810,7 @@
     "adpHalfPpr": 493,
     "adpPpr": 657,
     "adpStd": null,
-    "adp2qb": 364.9,
+    "adp2qb": 365.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7906,7 +7906,7 @@
     "adpHalfPpr": 495.8,
     "adpPpr": 577.5,
     "adpStd": null,
-    "adp2qb": 469,
+    "adp2qb": 470,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -7972,13 +7972,25 @@
     "ptsStd": null
    },
    {
+    "name": "Nick Sciba",
+    "pos": "K",
+    "team": "FA",
+    "adpHalfPpr": 497.4,
+    "adpPpr": null,
+    "adpStd": null,
+    "adp2qb": 687.3,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Mason Crosby",
     "pos": "K",
     "team": "FA",
     "adpHalfPpr": 497.9,
-    "adpPpr": 673.3,
+    "adpPpr": 642,
     "adpStd": null,
-    "adp2qb": 355.4,
+    "adp2qb": 356.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8014,19 +8026,7 @@
     "adpHalfPpr": 498.5,
     "adpPpr": 661,
     "adpStd": null,
-    "adp2qb": 539.7,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "Nick Sciba",
-    "pos": "K",
-    "team": "FA",
-    "adpHalfPpr": 498.6,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": 687.3,
+    "adp2qb": 542.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8050,7 +8050,7 @@
     "adpHalfPpr": 499.7,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 509,
+    "adp2qb": 510,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8098,7 +8098,7 @@
     "adpHalfPpr": 500,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 606.5,
+    "adp2qb": 607.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8398,7 +8398,7 @@
     "adpHalfPpr": 507,
     "adpPpr": 635.8,
     "adpStd": null,
-    "adp2qb": 433.4,
+    "adp2qb": 434.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8467,7 +8467,7 @@
     "name": "Cole Beasley",
     "pos": "WR",
     "team": "FA",
-    "adpHalfPpr": 510.1,
+    "adpHalfPpr": 509.9,
     "adpPpr": null,
     "adpStd": null,
     "adp2qb": null,
@@ -8528,7 +8528,7 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 511.9,
-    "adpPpr": 480.4,
+    "adpPpr": 479.6,
     "adpStd": null,
     "adp2qb": 538.8,
     "ptsHalfPpr": null,
@@ -8541,18 +8541,6 @@
     "team": "FA",
     "adpHalfPpr": 512,
     "adpPpr": 650,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "Phillip Andersen",
-    "pos": "K",
-    "team": "FA",
-    "adpHalfPpr": 512.1,
-    "adpPpr": 492,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -8596,13 +8584,25 @@
     "ptsStd": null
    },
    {
+    "name": "Phillip Andersen",
+    "pos": "K",
+    "team": "FA",
+    "adpHalfPpr": 513.9,
+    "adpPpr": 492,
+    "adpStd": null,
+    "adp2qb": null,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Diontae Johnson",
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 514.1,
     "adpPpr": 623.1,
     "adpStd": null,
-    "adp2qb": 323.6,
+    "adp2qb": 323.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8626,7 +8626,7 @@
     "adpHalfPpr": 515.2,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 436,
+    "adp2qb": 437,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8639,6 +8639,18 @@
     "adpPpr": null,
     "adpStd": null,
     "adp2qb": null,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Mason Tipton",
+    "pos": "WR",
+    "team": "NO",
+    "adpHalfPpr": 515.7,
+    "adpPpr": 490,
+    "adpStd": null,
+    "adp2qb": 653.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8680,25 +8692,13 @@
     "ptsStd": null
    },
    {
-    "name": "Mason Tipton",
-    "pos": "WR",
-    "team": "NO",
-    "adpHalfPpr": 516.3,
-    "adpPpr": 490,
-    "adpStd": null,
-    "adp2qb": 653.8,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
     "name": "Bryan Thompson",
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 517,
     "adpPpr": 448.3,
     "adpStd": null,
-    "adp2qb": 371,
+    "adp2qb": 372,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8782,7 +8782,7 @@
     "adpHalfPpr": 518.8,
     "adpPpr": 467.8,
     "adpStd": null,
-    "adp2qb": 403,
+    "adp2qb": 404,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8794,7 +8794,7 @@
     "adpHalfPpr": 519,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 430,
+    "adp2qb": 431,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8842,7 +8842,7 @@
     "adpHalfPpr": 519.7,
     "adpPpr": 390.8,
     "adpStd": null,
-    "adp2qb": 411,
+    "adp2qb": 412,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8866,7 +8866,7 @@
     "adpHalfPpr": 520,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 626.4,
+    "adp2qb": 627.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -8878,7 +8878,7 @@
     "adpHalfPpr": 521,
     "adpPpr": 377.8,
     "adpStd": null,
-    "adp2qb": 442,
+    "adp2qb": 443,
     "ptsHalfPpr": 6,
     "ptsPpr": 6,
     "ptsStd": 6
@@ -8962,7 +8962,7 @@
     "adpHalfPpr": 524,
     "adpPpr": 676.9,
     "adpStd": null,
-    "adp2qb": 677.3,
+    "adp2qb": 677.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9046,7 +9046,7 @@
     "adpHalfPpr": 526.1,
     "adpPpr": 668.5,
     "adpStd": null,
-    "adp2qb": 417.1,
+    "adp2qb": 418.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9127,10 +9127,10 @@
     "name": "Jason Bean",
     "pos": "QB",
     "team": "FA",
-    "adpHalfPpr": 528.1,
+    "adpHalfPpr": 527.9,
     "adpPpr": 662,
     "adpStd": null,
-    "adp2qb": 649.9,
+    "adp2qb": 650.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9164,7 +9164,7 @@
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 529,
-    "adpPpr": 645.7,
+    "adpPpr": 646.7,
     "adpStd": null,
     "adp2qb": 655.8,
     "ptsHalfPpr": null,
@@ -9178,7 +9178,7 @@
     "adpHalfPpr": 529.3,
     "adpPpr": 614.1,
     "adpStd": null,
-    "adp2qb": 344.1,
+    "adp2qb": 345.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9196,25 +9196,13 @@
     "ptsStd": null
    },
    {
-    "name": "Carson Towt",
-    "pos": "TE",
-    "team": "IND",
-    "adpHalfPpr": 530.2,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
     "name": "Kalil Pimpleton",
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 530.3,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 368.3,
+    "adp2qb": 369.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9299,6 +9287,18 @@
     "adpPpr": 605.3,
     "adpStd": null,
     "adp2qb": 621.8,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Carson Towt",
+    "pos": "TE",
+    "team": "IND",
+    "adpHalfPpr": 531.8,
+    "adpPpr": null,
+    "adpStd": null,
+    "adp2qb": null,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9430,7 +9430,7 @@
     "adpHalfPpr": 536,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 674,
+    "adp2qb": 675,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9514,7 +9514,7 @@
     "adpHalfPpr": 538.3,
     "adpPpr": 313.9,
     "adpStd": null,
-    "adp2qb": 395.9,
+    "adp2qb": 397.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9560,9 +9560,9 @@
     "pos": "P",
     "team": "FA",
     "adpHalfPpr": 539.3,
-    "adpPpr": 408.4,
+    "adpPpr": 407.6,
     "adpStd": null,
-    "adp2qb": 410,
+    "adp2qb": 411,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9598,7 +9598,7 @@
     "adpHalfPpr": 539.9,
     "adpPpr": 603.2,
     "adpStd": null,
-    "adp2qb": 697.5,
+    "adp2qb": 698.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9634,7 +9634,7 @@
     "adpHalfPpr": 540.9,
     "adpPpr": 636,
     "adpStd": null,
-    "adp2qb": 571,
+    "adp2qb": 572,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9694,7 +9694,7 @@
     "adpHalfPpr": 541.7,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 575.9,
+    "adp2qb": 577.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9718,7 +9718,7 @@
     "adpHalfPpr": 542,
     "adpPpr": 675.5,
     "adpStd": null,
-    "adp2qb": 569,
+    "adp2qb": 343.5,
     "ptsHalfPpr": 9.6,
     "ptsPpr": 13.6,
     "ptsStd": 5.6
@@ -9802,7 +9802,19 @@
     "adpHalfPpr": 544.4,
     "adpPpr": 693.2,
     "adpStd": null,
-    "adp2qb": 587.1,
+    "adp2qb": 587.9,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Aaron Shampklin",
+    "pos": "RB",
+    "team": "FA",
+    "adpHalfPpr": 545.6,
+    "adpPpr": null,
+    "adpStd": null,
+    "adp2qb": null,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9814,7 +9826,7 @@
     "adpHalfPpr": 545.7,
     "adpPpr": 345.5,
     "adpStd": null,
-    "adp2qb": 526,
+    "adp2qb": 527,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9827,18 +9839,6 @@
     "adpPpr": 699.3,
     "adpStd": null,
     "adp2qb": 458.8,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "Aaron Shampklin",
-    "pos": "RB",
-    "team": "FA",
-    "adpHalfPpr": 546.4,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9874,7 +9874,7 @@
     "adpHalfPpr": 548,
     "adpPpr": 619.8,
     "adpStd": null,
-    "adp2qb": 508,
+    "adp2qb": 509,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9884,7 +9884,7 @@
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 548,
-    "adpPpr": 644.2,
+    "adpPpr": 645.2,
     "adpStd": null,
     "adp2qb": 557.7,
     "ptsHalfPpr": null,
@@ -9916,11 +9916,11 @@
     "ptsStd": null
    },
    {
-    "name": "Sammy Watkins",
+    "name": "Velus Jones",
     "pos": "WR",
-    "team": "FA",
-    "adpHalfPpr": 548.9,
-    "adpPpr": 679.9,
+    "team": "SEA",
+    "adpHalfPpr": 549,
+    "adpPpr": 693.3,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -9928,11 +9928,11 @@
     "ptsStd": null
    },
    {
-    "name": "Velus Jones",
+    "name": "Sammy Watkins",
     "pos": "WR",
-    "team": "SEA",
-    "adpHalfPpr": 549,
-    "adpPpr": 693.3,
+    "team": "FA",
+    "adpHalfPpr": 549.1,
+    "adpPpr": 679.9,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -9958,7 +9958,7 @@
     "adpHalfPpr": 549.4,
     "adpPpr": 697.5,
     "adpStd": null,
-    "adp2qb": 559.8,
+    "adp2qb": 561.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -9970,7 +9970,7 @@
     "adpHalfPpr": 550.2,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 394.3,
+    "adp2qb": 395.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -10040,7 +10040,19 @@
     "pos": "RB",
     "team": "FA",
     "adpHalfPpr": 551.5,
-    "adpPpr": 368.5,
+    "adpPpr": 369.5,
+    "adpStd": null,
+    "adp2qb": null,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Nyqwan Murray",
+    "pos": "WR",
+    "team": "FA",
+    "adpHalfPpr": 551.5,
+    "adpPpr": 452.6,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -10065,18 +10077,6 @@
     "team": "FA",
     "adpHalfPpr": 551.7,
     "adpPpr": 454.8,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "Nyqwan Murray",
-    "pos": "WR",
-    "team": "FA",
-    "adpHalfPpr": 552.5,
-    "adpPpr": 452.6,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -10162,7 +10162,7 @@
     "adpHalfPpr": 554.8,
     "adpPpr": 289.5,
     "adpStd": null,
-    "adp2qb": 365.4,
+    "adp2qb": 365.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -10282,7 +10282,7 @@
     "adpHalfPpr": 558,
     "adpPpr": 523.1,
     "adpStd": null,
-    "adp2qb": 476.3,
+    "adp2qb": 477.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -10354,7 +10354,7 @@
     "adpHalfPpr": 560.1,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 560.1,
+    "adp2qb": 562.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -10366,7 +10366,7 @@
     "adpHalfPpr": 560.3,
     "adpPpr": 683,
     "adpStd": null,
-    "adp2qb": 439,
+    "adp2qb": 440,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -10426,7 +10426,7 @@
     "adpHalfPpr": 561.9,
     "adpPpr": 699.5,
     "adpStd": null,
-    "adp2qb": 350.5,
+    "adp2qb": 351.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -10528,6 +10528,18 @@
     "ptsStd": null
    },
    {
+    "name": "David Wells",
+    "pos": "TE",
+    "team": "FA",
+    "adpHalfPpr": 563.7,
+    "adpPpr": null,
+    "adpStd": null,
+    "adp2qb": null,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Ronald Jones",
     "pos": "RB",
     "team": "FA",
@@ -10535,18 +10547,6 @@
     "adpPpr": 490,
     "adpStd": null,
     "adp2qb": 554.3,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "David Wells",
-    "pos": "TE",
-    "team": "FA",
-    "adpHalfPpr": 564.3,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -10628,7 +10628,7 @@
     "pos": "K",
     "team": "FA",
     "adpHalfPpr": 565.6,
-    "adpPpr": 643.1,
+    "adpPpr": 644.1,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -10676,7 +10676,7 @@
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 566.2,
-    "adpPpr": 372.3,
+    "adpPpr": 371.7,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -10702,7 +10702,7 @@
     "adpHalfPpr": 566.5,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 680.8,
+    "adp2qb": 681.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -10726,7 +10726,7 @@
     "adpHalfPpr": 567,
     "adpPpr": 635,
     "adpStd": null,
-    "adp2qb": 625,
+    "adp2qb": 626,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -10930,7 +10930,7 @@
     "adpHalfPpr": 572.3,
     "adpPpr": 687.8,
     "adpStd": null,
-    "adp2qb": 421,
+    "adp2qb": 422,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11002,7 +11002,7 @@
     "adpHalfPpr": 573.7,
     "adpPpr": 601.3,
     "adpStd": null,
-    "adp2qb": 317,
+    "adp2qb": 318,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11098,7 +11098,7 @@
     "adpHalfPpr": 577,
     "adpPpr": 684.4,
     "adpStd": null,
-    "adp2qb": 629.7,
+    "adp2qb": 631.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11134,7 +11134,7 @@
     "adpHalfPpr": 578,
     "adpPpr": 578,
     "adpStd": null,
-    "adp2qb": 616,
+    "adp2qb": 617,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11170,7 +11170,7 @@
     "adpHalfPpr": 579.3,
     "adpPpr": 655.6,
     "adpStd": null,
-    "adp2qb": 415,
+    "adp2qb": 416,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11194,7 +11194,7 @@
     "adpHalfPpr": 579.8,
     "adpPpr": 586,
     "adpStd": null,
-    "adp2qb": 488.1,
+    "adp2qb": 489.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11218,7 +11218,7 @@
     "adpHalfPpr": 580.1,
     "adpPpr": 347.7,
     "adpStd": null,
-    "adp2qb": 357.8,
+    "adp2qb": 358.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11266,7 +11266,7 @@
     "adpHalfPpr": 581.2,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 419.8,
+    "adp2qb": 419.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11290,7 +11290,7 @@
     "adpHalfPpr": 581.5,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 379.3,
+    "adp2qb": 380.3,
     "ptsHalfPpr": 1.4,
     "ptsPpr": 1.9,
     "ptsStd": 0.9
@@ -11303,6 +11303,18 @@
     "adpPpr": 439,
     "adpStd": null,
     "adp2qb": 699.3,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "James Turner",
+    "pos": "K",
+    "team": "FA",
+    "adpHalfPpr": 581.6,
+    "adpPpr": 690.2,
+    "adpStd": null,
+    "adp2qb": 391.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11330,18 +11342,6 @@
     "ptsHalfPpr": 90,
     "ptsPpr": 90,
     "ptsStd": 90
-   },
-   {
-    "name": "James Turner",
-    "pos": "K",
-    "team": "FA",
-    "adpHalfPpr": 582.4,
-    "adpPpr": 690.2,
-    "adpStd": null,
-    "adp2qb": 390.7,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
    },
    {
     "name": "Keytaon Thompson",
@@ -11398,7 +11398,7 @@
     "adpHalfPpr": 583.5,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 611.8,
+    "adp2qb": 611.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11408,7 +11408,7 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 583.7,
-    "adpPpr": 667.3,
+    "adpPpr": 668.3,
     "adpStd": null,
     "adp2qb": 674.1,
     "ptsHalfPpr": null,
@@ -11434,7 +11434,7 @@
     "adpHalfPpr": 584,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 368.8,
+    "adp2qb": 370.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11646,7 +11646,7 @@
    {
     "name": "Xavier Smith",
     "pos": "WR",
-    "team": "LAR",
+    "team": "FA",
     "adpHalfPpr": 588.8,
     "adpPpr": 551,
     "adpStd": null,
@@ -11698,7 +11698,7 @@
     "adpHalfPpr": 589.7,
     "adpPpr": 695.2,
     "adpStd": null,
-    "adp2qb": 518.7,
+    "adp2qb": 519.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11770,7 +11770,7 @@
     "adpHalfPpr": 590.8,
     "adpPpr": 465.5,
     "adpStd": null,
-    "adp2qb": 471,
+    "adp2qb": 472,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11782,7 +11782,7 @@
     "adpHalfPpr": 591,
     "adpPpr": 653.7,
     "adpStd": null,
-    "adp2qb": 579.7,
+    "adp2qb": 580.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11866,7 +11866,7 @@
     "adpHalfPpr": 592.7,
     "adpPpr": 560.7,
     "adpStd": null,
-    "adp2qb": 672.5,
+    "adp2qb": 673.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -11890,7 +11890,7 @@
     "adpHalfPpr": 593.1,
     "adpPpr": 682.4,
     "adpStd": null,
-    "adp2qb": 463.3,
+    "adp2qb": 464.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -12010,7 +12010,7 @@
     "adpHalfPpr": 595,
     "adpPpr": 685.1,
     "adpStd": null,
-    "adp2qb": 546.1,
+    "adp2qb": 548.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -12046,7 +12046,7 @@
     "adpHalfPpr": 595.7,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 564.5,
+    "adp2qb": 566.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -12058,7 +12058,7 @@
     "adpHalfPpr": 596.5,
     "adpPpr": 643.4,
     "adpStd": null,
-    "adp2qb": 345.5,
+    "adp2qb": 346.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -12166,7 +12166,7 @@
     "adpHalfPpr": 598.1,
     "adpPpr": 627,
     "adpStd": null,
-    "adp2qb": 694.5,
+    "adp2qb": 695.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -12310,7 +12310,7 @@
     "adpHalfPpr": 600.4,
     "adpPpr": 421.8,
     "adpStd": null,
-    "adp2qb": 349,
+    "adp2qb": 350,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -12320,9 +12320,9 @@
     "pos": "K",
     "team": "FA",
     "adpHalfPpr": 601,
-    "adpPpr": 654.2,
+    "adpPpr": 655.2,
     "adpStd": null,
-    "adp2qb": 528,
+    "adp2qb": 529,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -12392,7 +12392,7 @@
     "pos": "RB",
     "team": "FA",
     "adpHalfPpr": 602.3,
-    "adpPpr": 656.5,
+    "adpPpr": 657.5,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -12466,7 +12466,7 @@
     "adpHalfPpr": 603.7,
     "adpPpr": 674.6,
     "adpStd": null,
-    "adp2qb": 381,
+    "adp2qb": 382,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -12502,7 +12502,7 @@
     "adpHalfPpr": 604,
     "adpPpr": 662.8,
     "adpStd": null,
-    "adp2qb": 552.8,
+    "adp2qb": 555.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -12514,7 +12514,7 @@
     "adpHalfPpr": 604,
     "adpPpr": 642,
     "adpStd": null,
-    "adp2qb": 590,
+    "adp2qb": 591,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -12538,7 +12538,7 @@
     "adpHalfPpr": 604.2,
     "adpPpr": 646,
     "adpStd": null,
-    "adp2qb": 659.6,
+    "adp2qb": 659.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -12596,7 +12596,7 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 605,
-    "adpPpr": 402.7,
+    "adpPpr": 401.3,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -12718,7 +12718,7 @@
     "adpHalfPpr": 606.5,
     "adpPpr": 695.7,
     "adpStd": null,
-    "adp2qb": 565,
+    "adp2qb": 567,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -12982,7 +12982,7 @@
     "adpHalfPpr": 610.3,
     "adpPpr": 655.9,
     "adpStd": null,
-    "adp2qb": 598.8,
+    "adp2qb": 599.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13148,7 +13148,7 @@
     "pos": "RB",
     "team": "FA",
     "adpHalfPpr": 612.9,
-    "adpPpr": 582.5,
+    "adpPpr": 581.5,
     "adpStd": null,
     "adp2qb": 669.8,
     "ptsHalfPpr": null,
@@ -13162,7 +13162,7 @@
     "adpHalfPpr": 613,
     "adpPpr": 253,
     "adpStd": null,
-    "adp2qb": 535.3,
+    "adp2qb": 536.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13234,7 +13234,7 @@
     "adpHalfPpr": 614.1,
     "adpPpr": 674.6,
     "adpStd": null,
-    "adp2qb": 322,
+    "adp2qb": 323,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13282,7 +13282,7 @@
     "adpHalfPpr": 615,
     "adpPpr": 681.9,
     "adpStd": null,
-    "adp2qb": 382.6,
+    "adp2qb": 383.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13316,9 +13316,9 @@
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 615.4,
-    "adpPpr": 240.7,
+    "adpPpr": 239.3,
     "adpStd": null,
-    "adp2qb": 617.7,
+    "adp2qb": 617.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13342,7 +13342,7 @@
     "adpHalfPpr": 615.5,
     "adpPpr": 582.1,
     "adpStd": null,
-    "adp2qb": 696.1,
+    "adp2qb": 697.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13414,7 +13414,7 @@
     "adpHalfPpr": 616.5,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 524.8,
+    "adp2qb": 525.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13450,7 +13450,7 @@
     "adpHalfPpr": 617,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 470,
+    "adp2qb": 471,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13534,7 +13534,7 @@
     "adpHalfPpr": 618,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 641.4,
+    "adp2qb": 641.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13546,7 +13546,7 @@
     "adpHalfPpr": 618,
     "adpPpr": 339,
     "adpStd": 314,
-    "adp2qb": 532.5,
+    "adp2qb": 533.5,
     "ptsHalfPpr": 18,
     "ptsPpr": 18,
     "ptsStd": 18
@@ -13558,7 +13558,7 @@
     "adpHalfPpr": 618.1,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 388.7,
+    "adp2qb": 389.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13582,7 +13582,7 @@
     "adpHalfPpr": 618.5,
     "adpPpr": 700.4,
     "adpStd": null,
-    "adp2qb": 336.9,
+    "adp2qb": 335.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13690,7 +13690,7 @@
     "adpHalfPpr": 620,
     "adpPpr": 344.6,
     "adpStd": null,
-    "adp2qb": 663,
+    "adp2qb": 664,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13756,18 +13756,6 @@
     "ptsStd": 5.3
    },
    {
-    "name": "Riley Lees",
-    "pos": "WR",
-    "team": "FA",
-    "adpHalfPpr": 620.5,
-    "adpPpr": 539.7,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
     "name": "Payne Durham",
     "pos": "TE",
     "team": "TB",
@@ -13816,6 +13804,18 @@
     "ptsStd": 2.7
    },
    {
+    "name": "Riley Lees",
+    "pos": "WR",
+    "team": "FA",
+    "adpHalfPpr": 621.5,
+    "adpPpr": 539.7,
+    "adpStd": null,
+    "adp2qb": null,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Kyron Drones",
     "pos": "QB",
     "team": "FA",
@@ -13834,7 +13834,7 @@
     "adpHalfPpr": 622.3,
     "adpPpr": 667.1,
     "adpStd": null,
-    "adp2qb": 356.1,
+    "adp2qb": 357.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13880,7 +13880,7 @@
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 622.9,
-    "adpPpr": 264.2,
+    "adpPpr": 263.8,
     "adpStd": null,
     "adp2qb": 699.8,
     "ptsHalfPpr": null,
@@ -13906,7 +13906,7 @@
     "adpHalfPpr": 623,
     "adpPpr": 649.3,
     "adpStd": null,
-    "adp2qb": 551.3,
+    "adp2qb": 554.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13918,7 +13918,7 @@
     "adpHalfPpr": 623.3,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 685.5,
+    "adp2qb": 686.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -13946,6 +13946,18 @@
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
+   },
+   {
+    "name": "Craig Reynolds",
+    "pos": "RB",
+    "team": "WAS",
+    "adpHalfPpr": 623.5,
+    "adpPpr": 646,
+    "adpStd": null,
+    "adp2qb": 603.2,
+    "ptsHalfPpr": 3.4,
+    "ptsPpr": 4.4,
+    "ptsStd": 2.4
    },
    {
     "name": "Joshua Palmer",
@@ -14006,18 +14018,6 @@
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
-   },
-   {
-    "name": "Craig Reynolds",
-    "pos": "RB",
-    "team": "WAS",
-    "adpHalfPpr": 624.5,
-    "adpPpr": 646,
-    "adpStd": null,
-    "adp2qb": 603.2,
-    "ptsHalfPpr": 3.4,
-    "ptsPpr": 4.4,
-    "ptsStd": 2.4
    },
    {
     "name": "Reggie Gilliam",
@@ -14146,7 +14146,7 @@
     "adpHalfPpr": 626.5,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 418.3,
+    "adp2qb": 419.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -14156,7 +14156,7 @@
     "pos": "TE",
     "team": "BUF",
     "adpHalfPpr": 626.9,
-    "adpPpr": 663.8,
+    "adpPpr": 664.8,
     "adpStd": null,
     "adp2qb": 431.3,
     "ptsHalfPpr": null,
@@ -14182,7 +14182,7 @@
     "adpHalfPpr": 627.3,
     "adpPpr": 509.4,
     "adpStd": null,
-    "adp2qb": 353.1,
+    "adp2qb": 353.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -14206,7 +14206,7 @@
     "adpHalfPpr": 627.5,
     "adpPpr": 381.2,
     "adpStd": null,
-    "adp2qb": 557.5,
+    "adp2qb": 560.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -14230,7 +14230,7 @@
     "adpHalfPpr": 627.6,
     "adpPpr": 374.6,
     "adpStd": null,
-    "adp2qb": 512.5,
+    "adp2qb": 514.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -14374,7 +14374,7 @@
     "adpHalfPpr": 629.6,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 262.2,
+    "adp2qb": 262.8,
     "ptsHalfPpr": 62.8,
     "ptsPpr": 69.8,
     "ptsStd": 55.8
@@ -14398,7 +14398,7 @@
     "adpHalfPpr": 629.8,
     "adpPpr": 695.4,
     "adpStd": null,
-    "adp2qb": 627.6,
+    "adp2qb": 628.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -14410,7 +14410,7 @@
     "adpHalfPpr": 629.9,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 583.2,
+    "adp2qb": 584.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -14554,7 +14554,7 @@
     "adpHalfPpr": 631.2,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 545,
+    "adp2qb": 547,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -14770,7 +14770,7 @@
     "adpHalfPpr": 633.4,
     "adpPpr": 662.1,
     "adpStd": null,
-    "adp2qb": 658.4,
+    "adp2qb": 659.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -14860,13 +14860,25 @@
     "ptsStd": null
    },
    {
+    "name": "Ethan Sanchez",
+    "pos": "K",
+    "team": "FA",
+    "adpHalfPpr": 635.1,
+    "adpPpr": 511.6,
+    "adpStd": null,
+    "adp2qb": 428,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Max Duggan",
     "pos": "QB",
     "team": "FA",
     "adpHalfPpr": 635.1,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 599,
+    "adp2qb": 600,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -14890,7 +14902,7 @@
     "adpHalfPpr": 635.7,
     "adpPpr": 536.3,
     "adpStd": null,
-    "adp2qb": 698.2,
+    "adp2qb": 699.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -14938,7 +14950,7 @@
     "adpHalfPpr": 636,
     "adpPpr": 622.9,
     "adpStd": null,
-    "adp2qb": 412,
+    "adp2qb": 413,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -14998,7 +15010,7 @@
     "adpHalfPpr": 636.6,
     "adpPpr": 615.3,
     "adpStd": null,
-    "adp2qb": 624,
+    "adp2qb": 625,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15016,25 +15028,13 @@
     "ptsStd": 1.5
    },
    {
-    "name": "Ethan Sanchez",
-    "pos": "K",
-    "team": "FA",
-    "adpHalfPpr": 636.9,
-    "adpPpr": 511.6,
-    "adpStd": null,
-    "adp2qb": 428,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
     "name": "Spencer Nigh",
     "pos": "FB",
     "team": "FA",
     "adpHalfPpr": 637,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 474.5,
+    "adp2qb": 475.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15056,7 +15056,7 @@
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 637,
-    "adpPpr": 300.5,
+    "adpPpr": 299.5,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -15130,7 +15130,7 @@
     "adpHalfPpr": 638.2,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 493.3,
+    "adp2qb": 494.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15141,18 +15141,6 @@
     "team": "FA",
     "adpHalfPpr": 638.2,
     "adpPpr": 659.8,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "Malik Williams",
-    "pos": "RB",
-    "team": "FA",
-    "adpHalfPpr": 638.5,
-    "adpPpr": 632.6,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -15178,7 +15166,7 @@
     "adpHalfPpr": 638.6,
     "adpPpr": 638.3,
     "adpStd": null,
-    "adp2qb": 595,
+    "adp2qb": 596,
     "ptsHalfPpr": 2.1,
     "ptsPpr": 2.1,
     "ptsStd": 2.1
@@ -15190,7 +15178,7 @@
     "adpHalfPpr": 639,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 618.8,
+    "adp2qb": 619.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15202,7 +15190,7 @@
     "adpHalfPpr": 639,
     "adpPpr": 697.7,
     "adpStd": null,
-    "adp2qb": 634,
+    "adp2qb": 635,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15215,6 +15203,18 @@
     "adpPpr": null,
     "adpStd": null,
     "adp2qb": 575.5,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Malik Williams",
+    "pos": "RB",
+    "team": "FA",
+    "adpHalfPpr": 639.5,
+    "adpPpr": 632.6,
+    "adpStd": null,
+    "adp2qb": null,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15250,7 +15250,7 @@
     "adpHalfPpr": 639.6,
     "adpPpr": 352.2,
     "adpStd": null,
-    "adp2qb": 557.7,
+    "adp2qb": 559.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15274,7 +15274,7 @@
     "adpHalfPpr": 640,
     "adpPpr": 627.9,
     "adpStd": null,
-    "adp2qb": 300.4,
+    "adp2qb": 299.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15286,7 +15286,7 @@
     "adpHalfPpr": 640.1,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 544.3,
+    "adp2qb": 545.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15298,7 +15298,7 @@
     "adpHalfPpr": 640.5,
     "adpPpr": 695.9,
     "adpStd": null,
-    "adp2qb": 457,
+    "adp2qb": 458,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15394,7 +15394,7 @@
     "adpHalfPpr": 641.2,
     "adpPpr": 696,
     "adpStd": null,
-    "adp2qb": 657,
+    "adp2qb": 658,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15460,6 +15460,18 @@
     "ptsStd": null
    },
    {
+    "name": "Jake Retzlaff",
+    "pos": "QB",
+    "team": "FA",
+    "adpHalfPpr": 641.6,
+    "adpPpr": null,
+    "adpStd": null,
+    "adp2qb": 669,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Cade York",
     "pos": "K",
     "team": "FA",
@@ -15508,18 +15520,6 @@
     "ptsStd": 21.6
    },
    {
-    "name": "Jake Retzlaff",
-    "pos": "QB",
-    "team": "FA",
-    "adpHalfPpr": 642.4,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": 669,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
     "name": "Patrick Taylor",
     "pos": "RB",
     "team": "FA",
@@ -15548,7 +15548,7 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 643,
-    "adpPpr": 653.2,
+    "adpPpr": 653.8,
     "adpStd": null,
     "adp2qb": 674.3,
     "ptsHalfPpr": null,
@@ -15694,7 +15694,7 @@
     "adpHalfPpr": 644.5,
     "adpPpr": 625.8,
     "adpStd": null,
-    "adp2qb": 554.6,
+    "adp2qb": 556.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15706,7 +15706,7 @@
     "adpHalfPpr": 644.7,
     "adpPpr": 565.1,
     "adpStd": null,
-    "adp2qb": 652.3,
+    "adp2qb": 653.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15718,7 +15718,7 @@
     "adpHalfPpr": 644.8,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 562.2,
+    "adp2qb": 563.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15814,7 +15814,7 @@
     "adpHalfPpr": 645.8,
     "adpPpr": 554.3,
     "adpStd": null,
-    "adp2qb": 548.2,
+    "adp2qb": 551.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15838,7 +15838,7 @@
     "adpHalfPpr": 645.9,
     "adpPpr": 358.3,
     "adpStd": null,
-    "adp2qb": 608,
+    "adp2qb": 609,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15898,7 +15898,7 @@
     "adpHalfPpr": 646.5,
     "adpPpr": 689,
     "adpStd": null,
-    "adp2qb": 580,
+    "adp2qb": 581,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -15946,7 +15946,7 @@
     "adpHalfPpr": 647,
     "adpPpr": 674.5,
     "adpStd": null,
-    "adp2qb": 408.3,
+    "adp2qb": 409.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16018,7 +16018,7 @@
     "adpHalfPpr": 647.4,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 409,
+    "adp2qb": 410,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16054,7 +16054,7 @@
     "adpHalfPpr": 647.5,
     "adpPpr": 698.2,
     "adpStd": null,
-    "adp2qb": 640,
+    "adp2qb": 641,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16102,7 +16102,7 @@
     "adpHalfPpr": 647.7,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 458.1,
+    "adp2qb": 459.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16126,7 +16126,7 @@
     "adpHalfPpr": 647.8,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 643.8,
+    "adp2qb": 644.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16150,7 +16150,7 @@
     "adpHalfPpr": 648,
     "adpPpr": 574.7,
     "adpStd": null,
-    "adp2qb": 550,
+    "adp2qb": 552,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16162,7 +16162,7 @@
     "adpHalfPpr": 648.4,
     "adpPpr": 676.6,
     "adpStd": null,
-    "adp2qb": 674.2,
+    "adp2qb": 676.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16174,7 +16174,7 @@
     "adpHalfPpr": 648.8,
     "adpPpr": 241.2,
     "adpStd": 236.6,
-    "adp2qb": 584.7,
+    "adp2qb": 586.3,
     "ptsHalfPpr": 79,
     "ptsPpr": 79,
     "ptsStd": 79
@@ -16546,7 +16546,7 @@
     "adpHalfPpr": 651.2,
     "adpPpr": 638.9,
     "adpStd": null,
-    "adp2qb": 398.8,
+    "adp2qb": 399.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16582,7 +16582,7 @@
     "adpHalfPpr": 651.8,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 432,
+    "adp2qb": 433,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16678,7 +16678,7 @@
     "adpHalfPpr": 652.8,
     "adpPpr": 684,
     "adpStd": null,
-    "adp2qb": 647.2,
+    "adp2qb": 649.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16738,7 +16738,19 @@
     "adpHalfPpr": 653.4,
     "adpPpr": 654.3,
     "adpStd": null,
-    "adp2qb": 610.8,
+    "adp2qb": 611.8,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
+    "name": "Gabe Brkic",
+    "pos": "K",
+    "team": "FA",
+    "adpHalfPpr": 653.5,
+    "adpPpr": 694,
+    "adpStd": null,
+    "adp2qb": null,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16846,7 +16858,7 @@
     "adpHalfPpr": 653.9,
     "adpPpr": 224.2,
     "adpStd": 227.1,
-    "adp2qb": 275.6,
+    "adp2qb": 274.3,
     "ptsHalfPpr": 13.62,
     "ptsPpr": 13.62,
     "ptsStd": 13.62
@@ -16858,7 +16870,7 @@
     "adpHalfPpr": 654,
     "adpPpr": 320.5,
     "adpStd": null,
-    "adp2qb": 386.8,
+    "adp2qb": 388.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16880,7 +16892,7 @@
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 654,
-    "adpPpr": 546.4,
+    "adpPpr": 545.6,
     "adpStd": null,
     "adp2qb": 570.7,
     "ptsHalfPpr": null,
@@ -16894,7 +16906,7 @@
     "adpHalfPpr": 654.1,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 577.6,
+    "adp2qb": 578.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -16905,18 +16917,6 @@
     "team": "FA",
     "adpHalfPpr": 654.5,
     "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": null,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
-    "name": "Gabe Brkic",
-    "pos": "K",
-    "team": "FA",
-    "adpHalfPpr": 654.5,
-    "adpPpr": 694,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -17026,7 +17026,7 @@
     "adpHalfPpr": 655,
     "adpPpr": 516.1,
     "adpStd": null,
-    "adp2qb": 679.5,
+    "adp2qb": 680.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17098,7 +17098,7 @@
     "adpHalfPpr": 655.5,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 201.2,
+    "adp2qb": 201.3,
     "ptsHalfPpr": 102.06,
     "ptsPpr": 102.06,
     "ptsStd": 102.06
@@ -17122,7 +17122,7 @@
     "adpHalfPpr": 655.6,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 481.9,
+    "adp2qb": 482.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17218,7 +17218,7 @@
     "adpHalfPpr": 656,
     "adpPpr": 451.5,
     "adpStd": null,
-    "adp2qb": 440.5,
+    "adp2qb": 441.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17228,7 +17228,7 @@
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 656.2,
-    "adpPpr": 566.7,
+    "adpPpr": 567.3,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -17242,7 +17242,7 @@
     "adpHalfPpr": 656.2,
     "adpPpr": 389.3,
     "adpStd": null,
-    "adp2qb": 465,
+    "adp2qb": 466,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17266,7 +17266,7 @@
     "adpHalfPpr": 656.5,
     "adpPpr": 640.3,
     "adpStd": null,
-    "adp2qb": 472,
+    "adp2qb": 473,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17278,7 +17278,7 @@
     "adpHalfPpr": 656.5,
     "adpPpr": 442.3,
     "adpStd": null,
-    "adp2qb": 678.3,
+    "adp2qb": 679.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17350,7 +17350,7 @@
     "adpHalfPpr": 657,
     "adpPpr": 562.3,
     "adpStd": null,
-    "adp2qb": 591,
+    "adp2qb": 592,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17384,9 +17384,9 @@
     "pos": "RB",
     "team": "NYG",
     "adpHalfPpr": 657.2,
-    "adpPpr": 222.7,
+    "adpPpr": 221.3,
     "adpStd": 169.8,
-    "adp2qb": 226.7,
+    "adp2qb": 226.2,
     "ptsHalfPpr": 23.8,
     "ptsPpr": 26.3,
     "ptsStd": 21.3
@@ -17398,7 +17398,7 @@
     "adpHalfPpr": 657.3,
     "adpPpr": 232.4,
     "adpStd": 228.5,
-    "adp2qb": 692.9,
+    "adp2qb": 694.1,
     "ptsHalfPpr": 81,
     "ptsPpr": 81,
     "ptsStd": 81
@@ -17470,7 +17470,7 @@
     "adpHalfPpr": 657.5,
     "adpPpr": 668.8,
     "adpStd": null,
-    "adp2qb": 604.7,
+    "adp2qb": 605.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17482,7 +17482,7 @@
     "adpHalfPpr": 657.7,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 651.3,
+    "adp2qb": 652.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17662,7 +17662,7 @@
     "adpHalfPpr": 659.3,
     "adpPpr": 654.7,
     "adpStd": null,
-    "adp2qb": 354.3,
+    "adp2qb": 355.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17710,7 +17710,7 @@
     "adpHalfPpr": 659.5,
     "adpPpr": 658.3,
     "adpStd": null,
-    "adp2qb": 607,
+    "adp2qb": 608,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17734,7 +17734,7 @@
     "adpHalfPpr": 659.5,
     "adpPpr": 471.3,
     "adpStd": null,
-    "adp2qb": 510,
+    "adp2qb": 511,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17758,7 +17758,7 @@
     "adpHalfPpr": 659.6,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 259.4,
+    "adp2qb": 260.6,
     "ptsHalfPpr": 83.9,
     "ptsPpr": 104.9,
     "ptsStd": 62.9
@@ -17818,7 +17818,7 @@
     "adpHalfPpr": 660,
     "adpPpr": 527,
     "adpStd": null,
-    "adp2qb": 541.4,
+    "adp2qb": 543.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17878,7 +17878,7 @@
     "adpHalfPpr": 660.5,
     "adpPpr": 593.9,
     "adpStd": null,
-    "adp2qb": 494.5,
+    "adp2qb": 496.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17890,7 +17890,7 @@
     "adpHalfPpr": 660.5,
     "adpPpr": 541.5,
     "adpStd": null,
-    "adp2qb": 581,
+    "adp2qb": 582,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -17998,7 +17998,7 @@
     "adpHalfPpr": 661.7,
     "adpPpr": 692.4,
     "adpStd": null,
-    "adp2qb": 385.7,
+    "adp2qb": 386.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18034,7 +18034,7 @@
     "adpHalfPpr": 661.8,
     "adpPpr": 488,
     "adpStd": null,
-    "adp2qb": 511,
+    "adp2qb": 512,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18128,9 +18128,9 @@
     "pos": "K",
     "team": "FA",
     "adpHalfPpr": 662.4,
-    "adpPpr": 366.5,
+    "adpPpr": 365.5,
     "adpStd": null,
-    "adp2qb": 496.3,
+    "adp2qb": 497.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18214,7 +18214,7 @@
     "adpHalfPpr": 663,
     "adpPpr": 610.3,
     "adpStd": null,
-    "adp2qb": 376,
+    "adp2qb": 377,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18382,7 +18382,7 @@
     "adpHalfPpr": 663.8,
     "adpPpr": 494.8,
     "adpStd": null,
-    "adp2qb": 537,
+    "adp2qb": 538,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18394,7 +18394,7 @@
     "adpHalfPpr": 663.9,
     "adpPpr": 455,
     "adpStd": null,
-    "adp2qb": 520,
+    "adp2qb": 521,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18442,7 +18442,7 @@
     "adpHalfPpr": 664,
     "adpPpr": 665.7,
     "adpStd": null,
-    "adp2qb": 360,
+    "adp2qb": 361,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18478,7 +18478,7 @@
     "adpHalfPpr": 664.2,
     "adpPpr": 670.7,
     "adpStd": null,
-    "adp2qb": 503.7,
+    "adp2qb": 505.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18490,7 +18490,7 @@
     "adpHalfPpr": 664.2,
     "adpPpr": 213.7,
     "adpStd": 190.1,
-    "adp2qb": 269.8,
+    "adp2qb": 269.5,
     "ptsHalfPpr": 69.2,
     "ptsPpr": 85.2,
     "ptsStd": 53.2
@@ -18502,7 +18502,7 @@
     "adpHalfPpr": 664.3,
     "adpPpr": 614,
     "adpStd": null,
-    "adp2qb": 646,
+    "adp2qb": 647,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18514,7 +18514,7 @@
     "adpHalfPpr": 664.3,
     "adpPpr": 669.5,
     "adpStd": null,
-    "adp2qb": 455.7,
+    "adp2qb": 455.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18526,7 +18526,7 @@
     "adpHalfPpr": 664.3,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 619.2,
+    "adp2qb": 620.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18610,7 +18610,7 @@
     "adpHalfPpr": 664.7,
     "adpPpr": 662,
     "adpStd": null,
-    "adp2qb": 325,
+    "adp2qb": 317.7,
     "ptsHalfPpr": 10.76,
     "ptsPpr": 10.76,
     "ptsStd": 10.76
@@ -18622,7 +18622,7 @@
     "adpHalfPpr": 664.7,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 609.6,
+    "adp2qb": 610.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18874,7 +18874,7 @@
     "adpHalfPpr": 666,
     "adpPpr": 681.3,
     "adpStd": null,
-    "adp2qb": 452.3,
+    "adp2qb": 453.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18920,7 +18920,7 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 666.9,
-    "adpPpr": 636.8,
+    "adpPpr": 635.2,
     "adpStd": null,
     "adp2qb": 681.7,
     "ptsHalfPpr": null,
@@ -18958,7 +18958,7 @@
     "adpHalfPpr": 667.2,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 602.7,
+    "adp2qb": 604.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -18982,7 +18982,7 @@
     "adpHalfPpr": 667.3,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 628.8,
+    "adp2qb": 629.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -19078,7 +19078,7 @@
     "adpHalfPpr": 668,
     "adpPpr": 656,
     "adpStd": null,
-    "adp2qb": 536,
+    "adp2qb": 537,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -19246,7 +19246,7 @@
     "adpHalfPpr": 668.8,
     "adpPpr": 669.5,
     "adpStd": null,
-    "adp2qb": 319.3,
+    "adp2qb": 320.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -19306,7 +19306,7 @@
     "adpHalfPpr": 669,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 366,
+    "adp2qb": 367,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -19318,7 +19318,7 @@
     "adpHalfPpr": 669.2,
     "adpPpr": 687.8,
     "adpStd": null,
-    "adp2qb": 654.7,
+    "adp2qb": 655.7,
     "ptsHalfPpr": 14,
     "ptsPpr": 14,
     "ptsStd": 14
@@ -19342,7 +19342,7 @@
     "adpHalfPpr": 669.4,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 555.2,
+    "adp2qb": 557.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -19402,7 +19402,7 @@
     "adpHalfPpr": 669.6,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 486,
+    "adp2qb": 487,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -19450,7 +19450,7 @@
     "adpHalfPpr": 670.1,
     "adpPpr": 650.7,
     "adpStd": null,
-    "adp2qb": 435.3,
+    "adp2qb": 436.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -19472,9 +19472,9 @@
     "pos": "K",
     "team": "FA",
     "adpHalfPpr": 670.3,
-    "adpPpr": 530.7,
+    "adpPpr": 531.3,
     "adpStd": null,
-    "adp2qb": 485.8,
+    "adp2qb": 485.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -19594,7 +19594,7 @@
     "adpHalfPpr": 671.1,
     "adpPpr": 544,
     "adpStd": null,
-    "adp2qb": 505.7,
+    "adp2qb": 506.7,
     "ptsHalfPpr": 12.4,
     "ptsPpr": 12.4,
     "ptsStd": 12.4
@@ -19618,7 +19618,7 @@
     "adpHalfPpr": 671.2,
     "adpPpr": 253.3,
     "adpStd": 177.2,
-    "adp2qb": 253,
+    "adp2qb": 254,
     "ptsHalfPpr": 100,
     "ptsPpr": 100,
     "ptsStd": 100
@@ -19642,7 +19642,7 @@
     "adpHalfPpr": 671.3,
     "adpPpr": 363.4,
     "adpStd": null,
-    "adp2qb": 665.3,
+    "adp2qb": 665.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -19798,7 +19798,7 @@
     "adpHalfPpr": 671.9,
     "adpPpr": 287.6,
     "adpStd": null,
-    "adp2qb": 632.6,
+    "adp2qb": 633.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -19906,7 +19906,7 @@
     "adpHalfPpr": 672.6,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 467.6,
+    "adp2qb": 469.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -19978,7 +19978,7 @@
     "adpHalfPpr": 673.1,
     "adpPpr": 241.8,
     "adpStd": 243.2,
-    "adp2qb": 248.6,
+    "adp2qb": 248.4,
     "ptsHalfPpr": 13.62,
     "ptsPpr": 13.62,
     "ptsStd": 13.62
@@ -20110,7 +20110,7 @@
     "adpHalfPpr": 674,
     "adpPpr": 665.8,
     "adpStd": null,
-    "adp2qb": 519,
+    "adp2qb": 520,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -20182,7 +20182,7 @@
     "adpHalfPpr": 674.5,
     "adpPpr": 697,
     "adpStd": null,
-    "adp2qb": 375.7,
+    "adp2qb": 376.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -20230,7 +20230,7 @@
     "adpHalfPpr": 674.8,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 276.5,
+    "adp2qb": 276,
     "ptsHalfPpr": 68.6,
     "ptsPpr": 85.1,
     "ptsStd": 52.1
@@ -20242,7 +20242,7 @@
     "adpHalfPpr": 674.8,
     "adpPpr": 632,
     "adpStd": null,
-    "adp2qb": 506.6,
+    "adp2qb": 507.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -20494,7 +20494,7 @@
     "adpHalfPpr": 676.4,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 637.4,
+    "adp2qb": 638.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -20506,7 +20506,7 @@
     "adpHalfPpr": 676.4,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 638.9,
+    "adp2qb": 639.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -20518,7 +20518,7 @@
     "adpHalfPpr": 676.4,
     "adpPpr": 610.5,
     "adpStd": null,
-    "adp2qb": 492,
+    "adp2qb": 493,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -20542,7 +20542,7 @@
     "adpHalfPpr": 676.5,
     "adpPpr": 694.8,
     "adpStd": null,
-    "adp2qb": 448,
+    "adp2qb": 449,
     "ptsHalfPpr": 4.9,
     "ptsPpr": 6.4,
     "ptsStd": 3.4
@@ -20662,7 +20662,7 @@
     "adpHalfPpr": 677,
     "adpPpr": 264,
     "adpStd": null,
-    "adp2qb": 661,
+    "adp2qb": 662,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -20674,7 +20674,7 @@
     "adpHalfPpr": 677.2,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 529.6,
+    "adp2qb": 530.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -20770,7 +20770,7 @@
     "adpHalfPpr": 677.5,
     "adpPpr": 530.2,
     "adpStd": null,
-    "adp2qb": 655.7,
+    "adp2qb": 656.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -20786,6 +20786,18 @@
     "ptsHalfPpr": 5.7,
     "ptsPpr": 6.2,
     "ptsStd": 5.2
+   },
+   {
+    "name": "Albert Okwuegbunam",
+    "pos": "TE",
+    "team": "FA",
+    "adpHalfPpr": 677.6,
+    "adpPpr": null,
+    "adpStd": null,
+    "adp2qb": 587.4,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
    },
    {
     "name": "Moliki Matavao",
@@ -20878,7 +20890,7 @@
     "adpHalfPpr": 678,
     "adpPpr": 355.3,
     "adpStd": 330.4,
-    "adp2qb": 689.4,
+    "adp2qb": 689.6,
     "ptsHalfPpr": 66,
     "ptsPpr": 66,
     "ptsStd": 66
@@ -20920,25 +20932,13 @@
     "ptsStd": 25.7
    },
    {
-    "name": "Albert Okwuegbunam",
-    "pos": "TE",
-    "team": "FA",
-    "adpHalfPpr": 678.4,
-    "adpPpr": null,
-    "adpStd": null,
-    "adp2qb": 586.4,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
-   },
-   {
     "name": "Taulia Tagovailoa",
     "pos": "QB",
     "team": "FA",
     "adpHalfPpr": 678.4,
     "adpPpr": 690.4,
     "adpStd": null,
-    "adp2qb": 438.7,
+    "adp2qb": 439.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -20950,7 +20950,7 @@
     "adpHalfPpr": 678.5,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 690,
+    "adp2qb": 691,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -20998,7 +20998,7 @@
     "adpHalfPpr": 678.6,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 645,
+    "adp2qb": 646,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -21118,7 +21118,7 @@
     "adpHalfPpr": 679.1,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 633.7,
+    "adp2qb": 634.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -21214,7 +21214,7 @@
     "adpHalfPpr": 679.7,
     "adpPpr": 677.2,
     "adpStd": null,
-    "adp2qb": 425.7,
+    "adp2qb": 425.3,
     "ptsHalfPpr": 3.3,
     "ptsPpr": 4.3,
     "ptsStd": 2.3
@@ -21358,7 +21358,7 @@
     "adpHalfPpr": 680.5,
     "adpPpr": 563,
     "adpStd": null,
-    "adp2qb": 543,
+    "adp2qb": 545,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -21454,7 +21454,7 @@
     "adpHalfPpr": 681.2,
     "adpPpr": 681,
     "adpStd": null,
-    "adp2qb": 525.1,
+    "adp2qb": 526.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -21502,7 +21502,7 @@
     "adpHalfPpr": 681.4,
     "adpPpr": 625.5,
     "adpStd": null,
-    "adp2qb": 498.6,
+    "adp2qb": 499.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -21514,7 +21514,7 @@
     "adpHalfPpr": 681.4,
     "adpPpr": 698.5,
     "adpStd": null,
-    "adp2qb": 321.1,
+    "adp2qb": 322.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -21550,7 +21550,7 @@
     "adpHalfPpr": 681.7,
     "adpPpr": 238.2,
     "adpStd": null,
-    "adp2qb": 323.1,
+    "adp2qb": 325.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -21586,7 +21586,7 @@
     "adpHalfPpr": 682.2,
     "adpPpr": 236.1,
     "adpStd": 227.4,
-    "adp2qb": 208,
+    "adp2qb": 208.8,
     "ptsHalfPpr": 97.12,
     "ptsPpr": 97.12,
     "ptsStd": 97.12
@@ -21622,7 +21622,7 @@
     "adpHalfPpr": 682.5,
     "adpPpr": 688.3,
     "adpStd": null,
-    "adp2qb": 593.8,
+    "adp2qb": 595.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -21632,7 +21632,7 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 682.5,
-    "adpPpr": 638.3,
+    "adpPpr": 639.7,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -21766,7 +21766,7 @@
     "adpHalfPpr": 683.2,
     "adpPpr": 659,
     "adpStd": null,
-    "adp2qb": 466,
+    "adp2qb": 467,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -21826,7 +21826,7 @@
     "adpHalfPpr": 683.4,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 534,
+    "adp2qb": 535,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -21836,9 +21836,9 @@
     "pos": "DST",
     "team": "BUF",
     "adpHalfPpr": 683.5,
-    "adpPpr": 215.8,
+    "adpPpr": 215.7,
     "adpStd": 220,
-    "adp2qb": 251.1,
+    "adp2qb": 253.9,
     "ptsHalfPpr": 84,
     "ptsPpr": 84,
     "ptsStd": 84
@@ -21920,7 +21920,7 @@
     "pos": "TE",
     "team": "LV",
     "adpHalfPpr": 683.7,
-    "adpPpr": 652,
+    "adpPpr": 653,
     "adpStd": null,
     "adp2qb": 564.5,
     "ptsHalfPpr": null,
@@ -21946,7 +21946,7 @@
     "adpHalfPpr": 683.7,
     "adpPpr": 624.7,
     "adpStd": null,
-    "adp2qb": 494.4,
+    "adp2qb": 495.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -21958,7 +21958,7 @@
     "adpHalfPpr": 683.7,
     "adpPpr": 663.8,
     "adpStd": null,
-    "adp2qb": 515.7,
+    "adp2qb": 515.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22102,7 +22102,7 @@
     "adpHalfPpr": 685,
     "adpPpr": 299,
     "adpStd": 299,
-    "adp2qb": 612,
+    "adp2qb": 613,
     "ptsHalfPpr": 62,
     "ptsPpr": 62,
     "ptsStd": 62
@@ -22162,7 +22162,7 @@
     "adpHalfPpr": 685.2,
     "adpPpr": 695.5,
     "adpStd": null,
-    "adp2qb": 573.5,
+    "adp2qb": 574.5,
     "ptsHalfPpr": 10.3,
     "ptsPpr": 13.8,
     "ptsStd": 6.8
@@ -22172,7 +22172,7 @@
     "pos": "RB",
     "team": "FA",
     "adpHalfPpr": 685.3,
-    "adpPpr": 664.9,
+    "adpPpr": 665.9,
     "adpStd": null,
     "adp2qb": 660.9,
     "ptsHalfPpr": null,
@@ -22198,7 +22198,7 @@
     "adpHalfPpr": 685.4,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 512.7,
+    "adp2qb": 513.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22270,7 +22270,7 @@
     "adpHalfPpr": 685.6,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 699.2,
+    "adp2qb": 700.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22282,7 +22282,7 @@
     "adpHalfPpr": 685.6,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 191.2,
+    "adp2qb": 191.5,
     "ptsHalfPpr": 39.16,
     "ptsPpr": 39.16,
     "ptsStd": 39.16
@@ -22318,7 +22318,7 @@
     "adpHalfPpr": 685.8,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 281.7,
+    "adp2qb": 281,
     "ptsHalfPpr": 26.72,
     "ptsPpr": 26.72,
     "ptsStd": 26.72
@@ -22330,7 +22330,7 @@
     "adpHalfPpr": 685.8,
     "adpPpr": 686.2,
     "adpStd": null,
-    "adp2qb": 404.7,
+    "adp2qb": 405.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22366,7 +22366,7 @@
     "adpHalfPpr": 685.9,
     "adpPpr": 653.7,
     "adpStd": null,
-    "adp2qb": 650,
+    "adp2qb": 651,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22510,7 +22510,7 @@
     "adpHalfPpr": 686.7,
     "adpPpr": 629.2,
     "adpStd": null,
-    "adp2qb": 596.3,
+    "adp2qb": 597.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22546,7 +22546,7 @@
     "adpHalfPpr": 686.9,
     "adpPpr": 279.3,
     "adpStd": 275,
-    "adp2qb": 605.3,
+    "adp2qb": 605.7,
     "ptsHalfPpr": 65,
     "ptsPpr": 65,
     "ptsStd": 65
@@ -22582,7 +22582,7 @@
     "adpHalfPpr": 687,
     "adpPpr": 628.8,
     "adpStd": null,
-    "adp2qb": 372,
+    "adp2qb": 373,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22594,7 +22594,7 @@
     "adpHalfPpr": 687,
     "adpPpr": 685,
     "adpStd": null,
-    "adp2qb": 548.9,
+    "adp2qb": 550.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22616,7 +22616,7 @@
     "pos": "K",
     "team": "FA",
     "adpHalfPpr": 687,
-    "adpPpr": 620.1,
+    "adpPpr": 621.9,
     "adpStd": null,
     "adp2qb": 665,
     "ptsHalfPpr": null,
@@ -22678,7 +22678,7 @@
     "adpHalfPpr": 687.5,
     "adpPpr": 674.7,
     "adpStd": null,
-    "adp2qb": 539.6,
+    "adp2qb": 539.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22690,7 +22690,7 @@
     "adpHalfPpr": 687.6,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 343,
+    "adp2qb": 344,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22738,7 +22738,7 @@
     "adpHalfPpr": 687.8,
     "adpPpr": 670,
     "adpStd": null,
-    "adp2qb": 383.9,
+    "adp2qb": 383.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22760,7 +22760,7 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 688,
-    "adpPpr": 498.9,
+    "adpPpr": 497.1,
     "adpStd": null,
     "adp2qb": 696.7,
     "ptsHalfPpr": null,
@@ -22774,7 +22774,7 @@
     "adpHalfPpr": 688,
     "adpPpr": 696.8,
     "adpStd": null,
-    "adp2qb": 480,
+    "adp2qb": 481,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22810,7 +22810,7 @@
     "adpHalfPpr": 688.2,
     "adpPpr": 589,
     "adpStd": null,
-    "adp2qb": 695.7,
+    "adp2qb": 695.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22834,7 +22834,7 @@
     "adpHalfPpr": 688.3,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 533.6,
+    "adp2qb": 533.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -22844,7 +22844,7 @@
     "pos": "K",
     "team": "FA",
     "adpHalfPpr": 688.4,
-    "adpPpr": 588.9,
+    "adpPpr": 587.1,
     "adpStd": null,
     "adp2qb": 340.3,
     "ptsHalfPpr": null,
@@ -23098,7 +23098,7 @@
     "adpHalfPpr": 689.9,
     "adpPpr": 691.1,
     "adpStd": null,
-    "adp2qb": 620.5,
+    "adp2qb": 621.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -23146,7 +23146,7 @@
     "adpHalfPpr": 690,
     "adpPpr": 282.2,
     "adpStd": 278,
-    "adp2qb": 673.9,
+    "adp2qb": 674.9,
     "ptsHalfPpr": 64,
     "ptsPpr": 64,
     "ptsStd": 64
@@ -23254,7 +23254,7 @@
     "adpHalfPpr": 690.4,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 256.9,
+    "adp2qb": 257.9,
     "ptsHalfPpr": 23,
     "ptsPpr": 28,
     "ptsStd": 18
@@ -23314,7 +23314,7 @@
     "adpHalfPpr": 690.7,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 597.6,
+    "adp2qb": 598.6,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -23324,7 +23324,7 @@
     "pos": "RB",
     "team": "FA",
     "adpHalfPpr": 690.8,
-    "adpPpr": 624.6,
+    "adpPpr": 623.4,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -23362,7 +23362,7 @@
     "adpHalfPpr": 691,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 280.1,
+    "adp2qb": 280.6,
     "ptsHalfPpr": 52.6,
     "ptsPpr": 63.6,
     "ptsStd": 41.6
@@ -23458,7 +23458,7 @@
     "adpHalfPpr": 691.5,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 568.5,
+    "adp2qb": 569.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -23482,7 +23482,7 @@
     "adpHalfPpr": 691.7,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 397.8,
+    "adp2qb": 398.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -23494,7 +23494,7 @@
     "adpHalfPpr": 691.8,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 561.4,
+    "adp2qb": 563.4,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -23542,7 +23542,7 @@
     "adpHalfPpr": 692,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 475.1,
+    "adp2qb": 476.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -23566,7 +23566,7 @@
     "adpHalfPpr": 692,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 667.1,
+    "adp2qb": 668.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -23602,7 +23602,7 @@
     "adpHalfPpr": 692.3,
     "adpPpr": 680.3,
     "adpStd": null,
-    "adp2qb": 639,
+    "adp2qb": 640,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -23674,7 +23674,7 @@
     "adpHalfPpr": 692.5,
     "adpPpr": 671.9,
     "adpStd": null,
-    "adp2qb": 461.9,
+    "adp2qb": 461.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -23698,7 +23698,7 @@
     "adpHalfPpr": 692.6,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 263.1,
+    "adp2qb": 263.9,
     "ptsHalfPpr": 32.8,
     "ptsPpr": 36.3,
     "ptsStd": 29.3
@@ -23734,7 +23734,7 @@
     "adpHalfPpr": 692.7,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 232.1,
+    "adp2qb": 232.8,
     "ptsHalfPpr": 54.92,
     "ptsPpr": 54.92,
     "ptsStd": 54.92
@@ -23806,7 +23806,7 @@
     "adpHalfPpr": 693,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 514.3,
+    "adp2qb": 515.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -23924,7 +23924,7 @@
     "pos": "TE",
     "team": "FA",
     "adpHalfPpr": 693.8,
-    "adpPpr": 390.1,
+    "adpPpr": 389.9,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -23938,7 +23938,7 @@
     "adpHalfPpr": 693.9,
     "adpPpr": 244.7,
     "adpStd": null,
-    "adp2qb": 584.1,
+    "adp2qb": 585.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -23986,7 +23986,7 @@
     "adpHalfPpr": 694,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 666,
+    "adp2qb": 667,
     "ptsHalfPpr": 12.52,
     "ptsPpr": 12.52,
     "ptsStd": 12.52
@@ -24106,7 +24106,7 @@
     "adpHalfPpr": 694.5,
     "adpPpr": 636.3,
     "adpStd": null,
-    "adp2qb": 614.7,
+    "adp2qb": 615.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -24130,7 +24130,7 @@
     "adpHalfPpr": 694.6,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 669.5,
+    "adp2qb": 670.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -24142,7 +24142,7 @@
     "adpHalfPpr": 694.7,
     "adpPpr": 227.9,
     "adpStd": 230.6,
-    "adp2qb": 203.9,
+    "adp2qb": 203,
     "ptsHalfPpr": 143.16,
     "ptsPpr": 143.16,
     "ptsStd": 143.16
@@ -24176,7 +24176,7 @@
     "pos": "WR",
     "team": "FA",
     "adpHalfPpr": 694.9,
-    "adpPpr": 438.7,
+    "adpPpr": 437.3,
     "adpStd": null,
     "adp2qb": null,
     "ptsHalfPpr": null,
@@ -24304,6 +24304,18 @@
     "ptsStd": null
    },
    {
+    "name": "Gabriel Plascencia",
+    "pos": "K",
+    "team": "FA",
+    "adpHalfPpr": 695.4,
+    "adpPpr": 640.1,
+    "adpStd": null,
+    "adp2qb": 565,
+    "ptsHalfPpr": null,
+    "ptsPpr": null,
+    "ptsStd": null
+   },
+   {
     "name": "Isaiah Davis",
     "pos": "RB",
     "team": "NYJ",
@@ -24394,7 +24406,7 @@
     "adpHalfPpr": 695.6,
     "adpPpr": 484.2,
     "adpStd": null,
-    "adp2qb": 367.7,
+    "adp2qb": 368.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -24406,7 +24418,7 @@
     "adpHalfPpr": 695.8,
     "adpPpr": 380.8,
     "adpStd": null,
-    "adp2qb": 631.7,
+    "adp2qb": 632.7,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -24430,7 +24442,7 @@
     "adpHalfPpr": 695.9,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 278.3,
+    "adp2qb": 279.1,
     "ptsHalfPpr": 63.8,
     "ptsPpr": 80.8,
     "ptsStd": 46.8
@@ -24466,7 +24478,7 @@
     "adpHalfPpr": 696.2,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 629,
+    "adp2qb": 630,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -24482,18 +24494,6 @@
     "ptsHalfPpr": 34.9,
     "ptsPpr": 40.4,
     "ptsStd": 29.4
-   },
-   {
-    "name": "Gabriel Plascencia",
-    "pos": "K",
-    "team": "FA",
-    "adpHalfPpr": 696.6,
-    "adpPpr": 640.1,
-    "adpStd": null,
-    "adp2qb": 563,
-    "ptsHalfPpr": null,
-    "ptsPpr": null,
-    "ptsStd": null
    },
    {
     "name": "Calvin Tyler",
@@ -24742,7 +24742,7 @@
     "adpHalfPpr": 697.8,
     "adpPpr": 395,
     "adpStd": null,
-    "adp2qb": 644.8,
+    "adp2qb": 645.8,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -24862,7 +24862,7 @@
     "adpHalfPpr": 698.4,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 681.9,
+    "adp2qb": 682.9,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -24874,7 +24874,7 @@
     "adpHalfPpr": 698.4,
     "adpPpr": 643.4,
     "adpStd": null,
-    "adp2qb": 622.3,
+    "adp2qb": 623.3,
     "ptsHalfPpr": 7.1,
     "ptsPpr": 9.6,
     "ptsStd": 4.6
@@ -24934,7 +24934,7 @@
     "adpHalfPpr": 698.6,
     "adpPpr": 699.8,
     "adpStd": null,
-    "adp2qb": 700,
+    "adp2qb": 541.2,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -24994,7 +24994,7 @@
     "adpHalfPpr": 698.8,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 444.5,
+    "adp2qb": 445.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -25018,7 +25018,7 @@
     "adpHalfPpr": 698.8,
     "adpPpr": 581.1,
     "adpStd": null,
-    "adp2qb": 574.5,
+    "adp2qb": 575.5,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -25054,7 +25054,7 @@
     "adpHalfPpr": 699,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 389.7,
+    "adp2qb": 389.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -25066,7 +25066,7 @@
     "adpHalfPpr": 699,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 460.8,
+    "adp2qb": 461.8,
     "ptsHalfPpr": 22.8,
     "ptsPpr": 28.3,
     "ptsStd": 17.3
@@ -25234,7 +25234,7 @@
     "adpHalfPpr": 699.5,
     "adpPpr": 700.3,
     "adpStd": null,
-    "adp2qb": 478.3,
+    "adp2qb": 479.3,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -25258,7 +25258,7 @@
     "adpHalfPpr": 699.6,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 258.6,
+    "adp2qb": 259.4,
     "ptsHalfPpr": 55.2,
     "ptsPpr": 70.7,
     "ptsStd": 39.7
@@ -25270,7 +25270,7 @@
     "adpHalfPpr": 699.6,
     "adpPpr": 420,
     "adpStd": null,
-    "adp2qb": 538,
+    "adp2qb": 539,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -25378,7 +25378,7 @@
     "adpHalfPpr": 700,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 266.5,
+    "adp2qb": 266,
     "ptsHalfPpr": 23.2,
     "ptsPpr": 25.2,
     "ptsStd": 21.2
@@ -25390,7 +25390,7 @@
     "adpHalfPpr": 700,
     "adpPpr": null,
     "adpStd": null,
-    "adp2qb": 346,
+    "adp2qb": 347,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -25510,7 +25510,7 @@
     "adpHalfPpr": 700.8,
     "adpPpr": 697.4,
     "adpStd": null,
-    "adp2qb": 456.1,
+    "adp2qb": 457.1,
     "ptsHalfPpr": null,
     "ptsPpr": null,
     "ptsStd": null
@@ -25534,7 +25534,7 @@
     "adpHalfPpr": 700.9,
     "adpPpr": 232.7,
     "adpStd": 203.3,
-    "adp2qb": 268.2,
+    "adp2qb": 268.1,
     "ptsHalfPpr": 84.3,
     "ptsPpr": 102.3,
     "ptsStd": 66.3
