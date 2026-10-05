@@ -111,7 +111,11 @@ export function Header({
       const fullW = full.getBoundingClientRect().width;
       const shortW = short.getBoundingClientRect().width;
       if (!showingFull) needed += fullW - shortW;
-      setCompactLogo(needed > row.clientWidth + 0.5);
+      // Hysteresis: drop to FFA the moment the full row overflows, but only
+      // return to the wordmark with a clear margin. The two modes measure a
+      // pixel or two apart (the truncated name's scrollWidth rounds), so a
+      // single threshold flickered between them at the boundary width.
+      setCompactLogo(showingFull ? needed > row.clientWidth + 0.5 : needed > row.clientWidth - 12);
     };
     measure();
     const ro = new ResizeObserver(measure);
