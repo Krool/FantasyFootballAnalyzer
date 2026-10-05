@@ -394,7 +394,7 @@ export function DraftTable({
       return Math.max(0, best - (pick.seasonPoints ?? 0));
     };
 
-    return [...byTeam.entries()]
+    const rows = [...byTeam.entries()]
       .map(([teamId, picks]) => {
         const live = picks.filter(isGraded);
         const hits = live.filter(p => p.grade === 'great' || p.grade === 'good').length;
@@ -433,6 +433,12 @@ export function DraftTable({
         };
       })
       .sort((a, b) => (hasResults ? b.points - a.points : b.projStarters - a.projStarters));
+    // The raw sum is always a big negative for every team (each pick is
+    // measured against the best same-position breakout drafted after it), so
+    // it only means something next to the league: positive = left fewer
+    // points on the board than the average team.
+    const avgRegret = rows.reduce((sum, r) => sum + r.regret, 0) / Math.max(1, rows.length);
+    return rows.map(r => ({ ...r, regretVsAvg: avgRegret - r.regret }));
   }, [
     gradedPicks,
     hasResults,
@@ -521,10 +527,16 @@ export function DraftTable({
                 )}
                 {hasResults && (
                   <span
-                    className={styles.lbRegret}
-                    title="Points left on the board: how much better the best same-position player drafted later turned out, summed over this team's picks"
+                    className={
+                      Math.round(row.regretVsAvg) > 0
+                        ? styles.lbGood
+                        : Math.round(row.regretVsAvg) < 0
+                          ? styles.lbRegret
+                          : styles.lbStat
+                    }
+                    title={`Points left on the board vs the league average. For each pick, how much better the best same-position player drafted later turned out, summed over the team: ${row.regret.toFixed(0)} here. Positive means this team left fewer points on the board than the average team.`}
                   >
-                    −{row.regret.toFixed(0)} left
+                    {row.regretVsAvg >= 0 ? '+' : '−'}{Math.abs(row.regretVsAvg).toFixed(0)} vs avg
                   </span>
                 )}
               </button>
