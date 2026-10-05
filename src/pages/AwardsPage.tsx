@@ -7,6 +7,7 @@ import { seasonRecords, seasonTimeline } from '@/utils/seasonStory';
 import { exportAwardCard } from '@/utils/exportAwardCard';
 import { awardIconSrc } from '@/utils/awardIcons';
 import { TeamLink, LuckIcon } from '@/components';
+import { logger } from '@/utils/logger';
 import styles from './AwardsPage.module.css';
 
 interface AwardsPageProps {
@@ -226,33 +227,11 @@ export function AwardsPage({ league }: AwardsPageProps) {
 
 function AwardCard({ award, league }: { award: Award; league: League }) {
   const iconSrc = awardIconSrc(award.id);
-  // Drawing the card takes a beat; without a pending state the arrow gives no
-  // sign the click landed.
-  const [isSaving, setIsSaving] = useState(false);
+  // Drawing the card takes a beat; the label carries the pending state and
+  // then the outcome, same as the Draft page's copy buttons.
+  const [shareState, setShareState] = useState<'busy' | 'copied' | 'saved' | 'failed' | null>(null);
   return (
     <div className={styles.awardCard}>
-      <button
-        type="button"
-        className={styles.awardShareBtn}
-        disabled={isSaving}
-        aria-busy={isSaving}
-        onClick={async () => {
-          if (isSaving) return;
-          setIsSaving(true);
-          try {
-            const ok = await exportAwardCard(award, league.name, league.season);
-            if (!ok) {
-              window.alert("Couldn't generate the award image. Your browser may have blocked it; try a different browser.");
-            }
-          } finally {
-            setIsSaving(false);
-          }
-        }}
-        title="Download this award as a shareable image"
-        aria-label={`Download ${award.name} as an image`}
-      >
-        {isSaving ? '…' : '↓'}
-      </button>
       <div className={styles.awardIcon}>
         {iconSrc
           ? <img src={iconSrc} alt="" className={styles.awardIconImg} loading="lazy" />
@@ -267,6 +246,32 @@ function AwardCard({ award, league }: { award: Award; league: League }) {
         <div className={styles.awardDetail}>{award.detail}</div>
       )}
       <div className={styles.awardDescription}>{award.description}</div>
+      <button
+        type="button"
+        className={styles.awardShareBtn}
+        disabled={shareState === 'busy'}
+        aria-busy={shareState === 'busy'}
+        onClick={async () => {
+          if (shareState === 'busy') return;
+          setShareState('busy');
+          let result: 'copied' | 'saved' | false = false;
+          try {
+            result = await exportAwardCard(award, league.name, league.season);
+          } catch (err) {
+            logger.error('[awardCard] export threw:', err);
+          }
+          setShareState(result === false ? 'failed' : result);
+          setTimeout(() => setShareState(current => (current === 'busy' ? current : null)), 2500);
+        }}
+        title="Copy this award as an image for the group chat"
+        aria-label={`Copy ${award.name} as an image`}
+      >
+        {shareState === 'busy' && '…'}
+        {shareState === 'copied' && 'Copied!'}
+        {shareState === 'saved' && 'Saved PNG'}
+        {shareState === 'failed' && "Couldn't export"}
+        {shareState === null && 'Copy image'}
+      </button>
     </div>
   );
 }
