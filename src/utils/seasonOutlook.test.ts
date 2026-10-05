@@ -70,7 +70,10 @@ describe('seasonOutlooks', () => {
   it('fills missed games at replacement and adds the projected rest of season', () => {
     // Star after 4 weeks: 30 points in 2 games, weeks 2-3 missed.
     const o = seasonOutlooks([pick(1, 'wr1-wr', 30)], POOL, SHAPE, ctx).get('WR-wr1-wr')!;
-    expect(o.basis).toBe('projection');
+    // Two games played: his own 15 a game is the rate from here.
+    expect(o.basis).toBe('pace');
+    expect(o.perGame).toBe(15);
+    expect(o.projectedGames).toBe(12);
     expect(o.missedWeeks).toBe(2);
     expect(o.missedPoints).toBeCloseTo(2 * repl, 5);
     // Weeks 5-17 less the week-11 bye: 12 weeks at 15.
@@ -159,9 +162,12 @@ describe('grading on the season outlook', () => {
     const graded = gradeAllPicks(league as never, undefined, undefined, undefined, outlook);
     const starPick = graded.find(p => p.player.id === 'wr1-wr')!;
     const steadyPick = graded.find(p => p.player.id === 'wr2-wr')!;
-    expect(starPick.positionRank).toBe(1);
-    expect(steadyPick.positionRank).toBeGreaterThan(1);
-    expect(explainGrade(starPick)).toContain('on track for WR1');
+    // The outlook ranks the star first, and the grade uses that...
+    expect(starPick.outlookRank).toBe(1);
+    expect(steadyPick.outlookRank).toBeGreaterThan(1);
+    // ...while the placement column stays on points alone (30 each).
+    expect([starPick.positionRank, steadyPick.positionRank].sort()).toEqual([1, 2]);
+    expect(explainGrade(starPick)).toContain('Graded on where he is on track to finish: WR1');
     expect(explainGrade(starPick)).toContain('2 missed games at replacement');
   });
 
@@ -192,16 +198,27 @@ describe('games played (Sleeper weekly stats)', () => {
     const o = seasonOutlooks([pick(1, 'wr1-wr', 40)], POOL, SHAPE, live).get('WR-wr1-wr')!;
     expect(o.games).toBe(2);
     expect(o.missedWeeks).toBe(2);
-    // Week 4 is history for him: projections start at week 5.
+    // Week 4 is history for him: 12 games left (weeks 5-17 less the bye),
+    // at his own 20 a game.
     expect(o.remainingWeeks).toBe(13);
-    expect(o.projectedPoints).toBeCloseTo(12 * 15, 5);
+    expect(o.projectedGames).toBe(12);
+    expect(o.projectedPoints).toBeCloseTo(12 * 20, 5);
   });
 
-  it('projects this week for a player who has not played it yet', () => {
+  it("values the rest of the season at his own scoring, not the projection's", () => {
+    // Owner-reported 2026-10-04: Walker outscoring backs projected higher.
+    // Steady projects 10 a game but has scored 60 in his 3: 20 a game.
+    const o = seasonOutlooks([pick(2, 'wr2-wr', 60)], POOL, SHAPE, live).get('WR-wr2-wr')!;
+    expect(o.basis).toBe('pace');
+    expect(o.projectedPoints).toBeCloseTo(13 * 20, 5);
+  });
+
+  it('counts this week as still to play for a player who has not played it yet', () => {
     const o = seasonOutlooks([pick(2, 'wr2-wr', 30)], POOL, SHAPE, live).get('WR-wr2-wr')!;
     expect(o.games).toBe(3);
     expect(o.missedWeeks).toBe(0);
     expect(o.remainingWeeks).toBe(14);
+    expect(o.projectedGames).toBe(13);
     expect(o.projectedPoints).toBeCloseTo(13 * 10, 5);
   });
 

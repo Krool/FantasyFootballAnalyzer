@@ -29,6 +29,9 @@ export interface GradedPick extends DraftPick {
   // Live season with weekly projections: the season value he was ranked on
   // (points so far, missed weeks at replacement, projected rest of season).
   outlook?: SeasonOutlook;
+  // With an outlook: his rank at the position on it, which is what the
+  // grade judged. positionRank stays the points-only placement.
+  outlookRank?: number;
 }
 
 // True for picks that carry a verdict: not a keeper, not pending.
@@ -159,15 +162,25 @@ export function calculateAuctionRounds(
 // RB's slot by 4 is a bust; missing the 22nd WR's by 4 is a fair outcome,
 // and the old fixed cutoffs (an auction $15-39 player needed a top-5 finish
 // for Great, past 15th was Terrible) graded a 14-team, 3-WR league's WR12 on
-// a WR22 price as Bad (owner-reported, 2026-10-04). A top-3 finish at the
-// position is always Great.
+// a WR22 price as Bad (owner-reported, 2026-10-04). A finish in the top
+// third of a league's worth of teams at the position (top 5 in 14 teams,
+// never fewer than 3) is always Great: an RB4 season is a great outcome at
+// any price (owner, 2026-10-04: Taylor priced RB3 on track for RB4).
 export function resultBand(expectedRank: number): number {
   return Math.max(2, expectedRank / 4);
 }
 
-export function gradeAgainstSlot(positionRank: number, expectedRank: number): DraftGrade {
+export function eliteFinish(teamCount = 12): number {
+  return Math.max(3, Math.round(teamCount / 3));
+}
+
+export function gradeAgainstSlot(
+  positionRank: number,
+  expectedRank: number,
+  teamCount = 12,
+): DraftGrade {
   const band = resultBand(expectedRank);
-  if (positionRank <= 3 || positionRank <= expectedRank - band) return 'great';
+  if (positionRank <= eliteFinish(teamCount) || positionRank <= expectedRank - band) return 'great';
   if (positionRank <= expectedRank + band) return 'good';
   if (positionRank <= expectedRank + 3 * band) return 'bad';
   return 'terrible';
@@ -177,8 +190,9 @@ export function gradePick(
   _pick: DraftPick,
   positionRank: number,
   expectedRank: number,
+  teamCount = 12,
 ): DraftGrade {
-  return gradeAgainstSlot(positionRank, expectedRank);
+  return gradeAgainstSlot(positionRank, expectedRank, teamCount);
 }
 
 // Grade a pick against the FantasyPros consensus (pre-season, no results yet).
@@ -224,8 +238,9 @@ const AUCTION_RESULT_LABEL: Record<DraftGrade, string> = {
 export function gradeAuctionPick(
   positionRank: number,
   priceRank: number,
+  teamCount = 12,
 ): { grade: DraftGrade; auctionValueGrade: string } {
-  const grade = gradeAgainstSlot(positionRank, priceRank);
+  const grade = gradeAgainstSlot(positionRank, priceRank, teamCount);
   return { grade, auctionValueGrade: AUCTION_RESULT_LABEL[grade] };
 }
 
@@ -326,13 +341,16 @@ export function gradeAllPicks(
   // Calculate position ranks
   const outlookFor = (pick: DraftPick) =>
     positionRanksOverride ? undefined : seasonOutlook?.get(`${pick.player.position}-${pick.player.id}`);
-  const positionRanks =
-    positionRanksOverride ??
-    calculatePositionRanks(
-      allPicks,
-      allPicks,
-      seasonOutlook ? pick => outlookFor(pick)?.total ?? pick.seasonPoints ?? 0 : undefined,
-    );
+  // Two rankings. positionRanks is the objective column: where he stands at
+  // his position on points scored, full stop. gradeRanks is what the grade
+  // judges: with a season outlook, points plus missed games at replacement
+  // plus the rest of season. The outlook moves the grade, never the
+  // placement shown (owner, 2026-10-04).
+  const positionRanks = positionRanksOverride ?? calculatePositionRanks(allPicks, allPicks);
+  const gradeRanks =
+    !positionRanksOverride && seasonOutlook
+      ? calculatePositionRanks(allPicks, allPicks, pick => outlookFor(pick)?.total ?? pick.seasonPoints ?? 0)
+      : positionRanks;
 
   // Detect if this is an auction draft
   const isAuction = league.draftType === 'auction' || allPicks.some(p => p.auctionValue !== undefined && p.auctionValue > 0);
@@ -350,6 +368,7 @@ export function gradeAllPicks(
       ? auctionExpectedRanks.get(`${pick.player.position}-${pick.player.id}`) || 999
       : calculateExpectedRank(pick, allPicks);
     const valueOverExpected = expectedRank - positionRank;
+    const gradeRank = gradeRanks.get(`${pick.player.position}-${pick.player.id}`) || 999;
 
     if (isAuction) {
       // Pre-season (consensus override): gradeAuctionPick's bands ask "did a
@@ -388,7 +407,7 @@ export function gradeAllPicks(
               : valueOverExpected >= -5 ? 'Slight Overpay'
               : 'Overpay',
           }
-        : gradeAuctionPick(positionRank, expectedRank);
+        : gradeAuctionPick(gradeRank, expectedRank, league.totalTeams || league.teams.length || 12);
       return {
         ...pick,
         round: auctionRound ?? pick.round,
@@ -427,7 +446,7 @@ export function gradeAllPicks(
     }
     const grade = positionRanksOverride
       ? gradeConsensusPick(valueOverExpected)
-      : gradePick(pick, positionRank, expectedRank);
+      : gradePick(pick, gradeRank, expectedRank, league.totalTeams || league.teams.length || 12);
 
     return {
       ...pick,
@@ -448,7 +467,9 @@ export function gradeAllPicks(
     // A projection judges him on what he is expected to add (Jacobs back
     // from the exempt list, an IR rookie's return); only a live pick with
     // neither points nor a projection waits.
-    if (outlook) return { ...pick, outlook };
+    if (outlook) {
+      return { ...pick, outlook, outlookRank: gradeRanks.get(`${pick.player.position}-${pick.player.id}`) };
+    }
     if (league.status !== 'live' || (pick.seasonPoints ?? 0) > 0) return pick;
     return { ...pick, pending: true, valueOverExpected: 0 };
   });
@@ -487,10 +508,11 @@ export function describeOutlook(o: SeasonOutlook): string {
       : o.outWeeks > 0
         ? ` (${o.outWeeks} week${o.outWeeks === 1 ? '' : 's'} projected out: 0)`
         : '';
+    const g = `${o.projectedGames} game${o.projectedGames === 1 ? '' : 's'} left`;
     const rest = {
-      projection: `${f(o.projectedPoints)} projected for the rest of the season${out}`,
-      'season-projection': `${f(o.projectedPoints)} from his season projection for the rest of the season${out}`,
-      pace: `${f(o.projectedPoints)} at his points per game for the rest of the season${out} (no projection)`,
+      projection: `${f(o.projectedPoints)} projected over ${g}${out}`,
+      'season-projection': `${f(o.projectedPoints)} from his season projection over ${g}${out}`,
+      pace: `${f(o.projectedPoints)} at his ${f(o.perGame ?? 0)} a game over ${g}${out}`,
     }[o.basis];
     parts.push(rest);
   }
@@ -532,7 +554,7 @@ export function describeGradeBasis(
 // together.
 export function explainGrade(
   pick: GradedPick,
-  opts: { budget?: number; picksPerRound?: number } = {},
+  opts: { budget?: number; picksPerRound?: number; teamCount?: number } = {},
 ): string {
   if (pick.pending) {
     return 'No points yet (held out, suspended, or on IR). He gets a grade once he plays, or at season end.';
@@ -540,7 +562,14 @@ export function explainGrade(
   const pos = pick.player.position;
   const ranked = pick.positionRank < 999;
   const finish = ranked ? `${pos}${pick.positionRank}` : 'no points yet';
-  const finishVerb = pick.outlook && !pick.outlook.final ? 'on track for' : 'finished';
+  const finishVerb = pick.outlook && !pick.outlook.final ? 'is' : 'finished';
+  // "RB2 so far (+3); graded as on track for RB4" when the outlook moved him.
+  const gradedOn =
+    pick.outlook && pick.outlookRank !== undefined
+      ? pick.outlook.final
+        ? ` Graded on season value (missed games at replacement): ${pos}${pick.outlookRank}.`
+        : ` Graded on where he is on track to finish: ${pos}${pick.outlookRank}.`
+      : '';
   const outlookLine = pick.outlook ? ` ${describeOutlook(pick.outlook)}` : '';
   const vs = ranked ? ` (${signed(pick.valueOverExpected)})` : '';
 
@@ -550,11 +579,12 @@ export function explainGrade(
       const slot = `${pos}${pick.expectedRank}`;
       const head =
         pick.gradeBasis === 'auction-results'
-          ? `Paid $${pick.auctionValue ?? 0}, the price of a ${slot}; ${finishVerb} ${finish}${vs}.${outlookLine}`
-          : `Drafted as the ${slot}; ${finishVerb} ${finish}${vs}.${outlookLine}`;
+          ? `Paid $${pick.auctionValue ?? 0}, the price of a ${slot}; ${finishVerb} ${finish}${pick.outlook && !pick.outlook.final ? ' so far' : ''}${vs}.${gradedOn}${outlookLine}`
+          : `Drafted as the ${slot}; ${finishVerb} ${finish}${pick.outlook && !pick.outlook.final ? ' so far' : ''}${vs}.${gradedOn}${outlookLine}`;
       const band = resultBand(pick.expectedRank);
       const b = Number.isInteger(band) ? String(band) : band.toFixed(1);
-      return `${head} Judged against his ${slot} slot, give or take ${b} spots: ${b}+ better (or a top-3 finish) Great, within ${b} Good, up to ${Number((band * 3).toFixed(1))} worse Bad, worse Terrible.`;
+      const top = eliteFinish(opts.teamCount ?? 12);
+      return `${head} Judged against his ${slot} slot, give or take ${b} spots: ${b}+ better (or a top-${top} finish) Great, within ${b} Good, up to ${Number((band * 3).toFixed(1))} worse Bad, worse Terrible.`;
     }
     case 'auction-market': {
       const market = describeAuctionMarket(pick.auctionValue ?? 0, pick.marketValue ?? 1);

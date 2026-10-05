@@ -789,7 +789,7 @@ export function DraftTable({
                   Proj Pts{getSortIndicator('proj')}
                 </th>
               )}
-              <th onClick={() => handleSort('posRank')} onKeyDown={handleSortKeyDown('posRank')} tabIndex={0} aria-sort={ariaSortFor('posRank')} className={styles.sortable} role="button" aria-label={hasResults ? 'Sort by Position Rank' : 'Sort by Consensus Rank'} title={hasResults ? (outlookMode === 'live' ? 'Where he ranks at his position among drafted players on season outlook: points so far, weeks without a game at replacement, and projected points for the rest of the season' : outlookMode === 'final' ? 'Where he finished at his position among drafted players on season value: points scored plus replacement for weeks without a game' : 'Where he finished at his position among drafted players') : 'Where the FantasyPros consensus ranked him at his position among drafted players'}>
+              <th onClick={() => handleSort('posRank')} onKeyDown={handleSortKeyDown('posRank')} tabIndex={0} aria-sort={ariaSortFor('posRank')} className={styles.sortable} role="button" aria-label={hasResults ? 'Sort by Position Rank' : 'Sort by Consensus Rank'} title={hasResults ? 'Where he stands at his position among drafted players on points scored. The grade can also weigh missed games and the rest of the season; hover a grade to see it.' : 'Where the FantasyPros consensus ranked him at his position among drafted players'}>
                 {hasResults ? 'Pos Rank' : 'Consensus'}{getSortIndicator('posRank')}
               </th>
               {(!isAuction || valuesInDollars) && (
@@ -886,6 +886,7 @@ export function DraftTable({
                       title={explainGrade(pick, {
                         budget: auctionBudget ?? 200,
                         picksPerRound: totalTeams || teams.length,
+                        teamCount: totalTeams || teams.length,
                       })}
                     >
                       {valuesInDollars

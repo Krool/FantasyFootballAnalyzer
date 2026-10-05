@@ -109,13 +109,22 @@ describe('gradePick (results vs draft slot)', () => {
     expect(gradePick(makePick({}), 3, 30)).toBe('great');
   });
 
+  it('calls a top-third-of-the-league finish great at any price', () => {
+    // 12 teams: top 4. 14 teams: top 5 (owner, 2026-10-04: Walker RB5,
+    // Taylor RB4). Never fewer than 3.
+    expect(gradePick(makePick({}), 4, 2)).toBe('great');
+    expect(gradePick(makePick({}), 5, 5, 14)).toBe('great');
+    expect(gradePick(makePick({}), 4, 3, 14)).toBe('great');
+    expect(gradePick(makePick({}), 3, 1, 6)).toBe('great');
+    expect(gradePick(makePick({}), 4, 2, 6)).toBe('good');
+  });
+
   it('grades an early slot tightly (band of 2)', () => {
-    // Slot 2, band 2: RB4 is within it, RB5-8 a miss, RB9 a bust.
-    expect(gradePick(makePick({}), 3, 1)).toBe('great');
-    expect(gradePick(makePick({}), 4, 2)).toBe('good');
-    expect(gradePick(makePick({}), 6, 2)).toBe('bad');
-    expect(gradePick(makePick({}), 8, 2)).toBe('bad');
-    expect(gradePick(makePick({}), 9, 2)).toBe('terrible');
+    // Slot 3, band 2: RB5 is within it, RB6-9 a miss, RB10 a bust.
+    expect(gradePick(makePick({}), 5, 3)).toBe('good');
+    expect(gradePick(makePick({}), 6, 3)).toBe('bad');
+    expect(gradePick(makePick({}), 9, 3)).toBe('bad');
+    expect(gradePick(makePick({}), 10, 3)).toBe('terrible');
   });
 
   it('gives a deep slot a proportionally wider band', () => {
@@ -538,7 +547,7 @@ describe('explainGrade', () => {
   it('shows an auction result against his price rank and the band', () => {
     const text = explainGrade(graded({ gradeBasis: 'auction-results', auctionValue: 67 }));
     expect(text).toContain('Paid $67, the price of a WR2; finished WR55 (-53).');
-    expect(text).toContain('give or take 2 spots: 2+ better (or a top-3 finish) Great, within 2 Good, up to 6 worse Bad');
+    expect(text).toContain('give or take 2 spots: 2+ better (or a top-4 finish) Great, within 2 Good, up to 6 worse Bad');
   });
 
   it('shows a snake result against draft order at the position', () => {
@@ -546,7 +555,7 @@ describe('explainGrade', () => {
       graded({ gradeBasis: 'snake-results', expectedRank: 22, positionRank: 12, valueOverExpected: 10 }),
     );
     expect(text).toBe(
-      'Drafted as the WR22; finished WR12 (+10). Judged against his WR22 slot, give or take 5.5 spots: 5.5+ better (or a top-3 finish) Great, within 5.5 Good, up to 16.5 worse Bad, worse Terrible.',
+      'Drafted as the WR22; finished WR12 (+10). Judged against his WR22 slot, give or take 5.5 spots: 5.5+ better (or a top-4 finish) Great, within 5.5 Good, up to 16.5 worse Bad, worse Terrible.',
     );
   });
 
