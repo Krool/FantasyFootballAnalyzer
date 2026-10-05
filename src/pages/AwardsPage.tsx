@@ -6,7 +6,8 @@ import { completedMatchups } from '@/utils/completedMatchups';
 import { seasonRecords, seasonTimeline } from '@/utils/seasonStory';
 import { exportAwardCard } from '@/utils/exportAwardCard';
 import { awardIconSrc } from '@/utils/awardIcons';
-import { TeamLink, LuckIcon } from '@/components';
+import { Link } from 'react-router-dom';
+import { TeamLink } from '@/components';
 import { logger } from '@/utils/logger';
 import styles from './AwardsPage.module.css';
 
@@ -103,6 +104,12 @@ export function AwardsPage({ league }: AwardsPageProps) {
               <h2 className={styles.categoryTitle}>
                 {getCategoryDisplayName(category)}
               </h2>
+              {category === 'luck' && (
+                <p className={styles.categoryNote}>
+                  Full breakdown (expected wins, points against, schedule
+                  swaps, injuries) is on the <Link to="/luck">Luck</Link> tab.
+                </p>
+              )}
               <div className={styles.awardsGrid}>
                 {categoryAwards.map(award => (
                   <AwardCard key={award.id} award={award} league={league} />
@@ -144,82 +151,6 @@ export function AwardsPage({ league }: AwardsPageProps) {
           </section>
         )}
 
-        {luckMetrics.length > 0 && (
-          <section className={styles.luckSection}>
-            <h2 className={styles.categoryTitle}>Luck Analysis</h2>
-            {league.hasMedianMatchup && (
-              <p className={styles.categoryNote}>
-                Median league — luck compares head-to-head results only; the
-                extra weekly median win is excluded.
-              </p>
-            )}
-            <div className={`${styles.luckTable} scroll-x-hint`}>
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Team</th>
-                    <th scope="col">Record</th>
-                    <th scope="col">Expected</th>
-                    <th scope="col">Luck</th>
-                    <th scope="col" title="Points-for rank vs wins rank: scoring like the #2 team while sitting #7 in wins is the schedule's fault">
-                      PF vs W
-                    </th>
-                    <th scope="col">All-Play</th>
-                    <th scope="col">Close Games</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...luckMetrics]
-                    .sort((a, b) => b.luckScore - a.luckScore)
-                    .map(metrics => (
-                      <tr key={metrics.teamId}>
-                        <td className={styles.teamName}>{metrics.teamName}</td>
-                        <td>
-                          {metrics.actualWins}-{metrics.actualLosses}
-                          {metrics.actualTies > 0 && `-${metrics.actualTies}`}
-                        </td>
-                        <td>{metrics.expectedWins.toFixed(1)}</td>
-                        <td className={getLuckClass(metrics.luckScore)}>
-                          {metrics.luckScore >= 0 ? '+' : ''}{metrics.luckScore.toFixed(1)}
-                          {' '}<LuckIcon rating={metrics.luckRating} />
-                        </td>
-                        <td
-                          title={`Ranked #${metrics.pointsForRank} in scoring, #${metrics.winsRank} in wins`}
-                        >
-                          #{metrics.pointsForRank} / #{metrics.winsRank}
-                          {metrics.rankDifference !== 0 && (
-                            <span className={metrics.rankDifference > 0 ? styles.rankLucky : styles.rankUnlucky}>
-                              {' '}
-                              {metrics.rankDifference > 0 ? '▲' : '▼'}
-                              {Math.abs(metrics.rankDifference)}
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          {metrics.allPlayWins}-{metrics.allPlayLosses}
-                          <span className={styles.winPct}>
-                            ({(metrics.allPlayWinPct * 100).toFixed(0)}%)
-                          </span>
-                        </td>
-                        <td>
-                          {metrics.closeWins + metrics.closeLosses > 0 ? (
-                            <>
-                              {metrics.closeWins}-{metrics.closeLosses}
-                              <span className={styles.winPct}>
-                                ({(metrics.closeGamePct * 100).toFixed(0)}%)
-                              </span>
-                            </>
-                          ) : (
-                            <span className={styles.noData}>-</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
       </div>
     </div>
   );
@@ -274,12 +205,4 @@ function AwardCard({ award, league }: { award: Award; league: League }) {
       </button>
     </div>
   );
-}
-
-function getLuckClass(luckScore: number): string {
-  if (luckScore >= 2) return styles.veryLucky;
-  if (luckScore >= 1) return styles.lucky;
-  if (luckScore <= -2) return styles.veryUnlucky;
-  if (luckScore <= -1) return styles.unlucky;
-  return styles.neutral;
 }

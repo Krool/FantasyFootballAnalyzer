@@ -1,0 +1,252 @@
+/* ─────────────────────────────────────────────
+   GRIDIRON · Luck
+   ───────────────────────────────────────────── */
+
+.luckPage {
+  padding: 3rem 0 5rem;
+}
+
+.header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 3px solid var(--bone);
+}
+
+.title {
+  font-family: var(--font-headline);
+  font-size: var(--page-title);
+  font-weight: 400;
+  line-height: 0.82;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  color: var(--bone);
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+.subtitle::before {
+  content: '★ ';
+}
+
+.empty {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--bone-dim);
+  padding: 2rem 0;
+  border-top: 1px dashed var(--rule);
+  border-bottom: 1px dashed var(--rule);
+}
+
+.note {
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #888);
+  margin: 0.25rem 0 0.9rem;
+}
+
+/* ── Headline cards ── */
+.headlines {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0 3.5rem;
+}
+
+.headline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.9rem 1rem 1rem;
+  border: 2px solid var(--bone);
+  background: var(--ink);
+  box-shadow: 4px 4px 0 var(--bone);
+}
+.headline:nth-child(1) {
+  background: var(--lime);
+  border-color: var(--lime);
+  color: var(--ink);
+}
+.headline:nth-child(1) .headlineLabel,
+.headline:nth-child(1) .headlineTeam,
+.headline:nth-child(1) .headlineTeam a,
+.headline:nth-child(1) .headlineValue,
+.headline:nth-child(1) .headlineDetail {
+  color: var(--ink);
+}
+
+.headlineLabel {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.headlineTeam {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.05rem;
+  color: var(--bone);
+}
+
+.headlineValue {
+  font-family: var(--font-headline);
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--bone);
+}
+
+.headlineDetail {
+  font-size: 0.78rem;
+  color: var(--bone-dim);
+}
+
+/* ── Sections and tables ── */
+.section {
+  margin-bottom: 3.5rem;
+}
+
+.sectionTitle {
+  font-family: var(--font-headline);
+  font-size: 2.25rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 0.9;
+  color: var(--bone);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px dashed var(--bone-dim);
+}
+
+.table {
+  overflow-x: auto;
+  border: 2px solid var(--bone);
+  box-shadow: 5px 5px 0 var(--bone);
+  /* background-color, not the shorthand, so the global scroll-x-hint
+     gradient layers show through on touch screens. */
+  background-color: var(--ink);
+}
+
+.table table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.table th,
+.table td {
+  padding: 0.85rem 1.1rem;
+  text-align: left;
+  border-bottom: 1px dashed var(--rule);
+  vertical-align: top;
+}
+
+.table th {
+  background: var(--ink);
+  font-weight: 700;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--bone-dim);
+  border-bottom: 2px solid var(--bone);
+}
+
+.table tbody tr {
+  transition: background .15s ease;
+}
+.table tbody tr:hover {
+  background: var(--ink-2);
+}
+.table tbody tr:hover td:first-child {
+  box-shadow: inset 4px 0 0 var(--lime);
+}
+
+.teamName {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--bone);
+}
+
+.dim {
+  color: var(--bone-dim);
+  font-size: 0.7rem;
+  margin-left: 0.4rem;
+  font-style: normal;
+  letter-spacing: 0.05em;
+}
+
+.good { color: var(--color-good); font-weight: 700; }
+.bad  { color: var(--blood-text); font-weight: 700; }
+
+/* Luck score colors */
+.veryLucky   { color: var(--lime); font-weight: 700; }
+.lucky       { color: var(--color-good); font-weight: 700; }
+.neutral     { color: var(--bone-dim); }
+.unlucky     { color: var(--color-bad); font-weight: 700; }
+.veryUnlucky { color: var(--blood-text); font-weight: 700; }
+
+.who {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+}
+.missed {
+  white-space: nowrap;
+}
+
+/* ── Schedule grid ── */
+.matrix {
+  margin-top: 1.5rem;
+}
+.matrix summary {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin-bottom: 0.75rem;
+}
+.matrix .table td,
+.matrix .table th {
+  padding: 0.5rem 0.6rem;
+  text-align: center;
+  white-space: nowrap;
+}
+.matrix .table td:first-child,
+.matrix .table th:first-child {
+  text-align: left;
+}
+.matrixHead {
+  max-width: 7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.05em !important;
+}
+.diagonal {
+  color: var(--ink);
+  background: var(--bone);
+  font-weight: 700;
+}
+.dimCell {
+  color: var(--bone-dim);
+}
+
+@media (max-width: 640px) {
+  .title { font-size: 56px; }
+  .sectionTitle { font-size: 1.6rem; }
+  .headlineValue { font-size: 1.6rem; }
+  .table th, .table td { padding: 0.55rem 0.65rem; font-size: 0.75rem; }
+}

@@ -315,6 +315,14 @@ export function Header({
               Awards
             </Link>
             <Link
+              to="/luck"
+              className={`${styles.navLink} ${location.pathname === '/luck' ? styles.active : ''}`}
+              onClick={handleNavClick}
+              aria-current={location.pathname === '/luck' ? 'page' : undefined}
+            >
+              Luck
+            </Link>
+            <Link
               to="/players"
               className={`${styles.navLink} ${location.pathname === '/players' ? styles.active : ''}`}
               onClick={handleNavClick}

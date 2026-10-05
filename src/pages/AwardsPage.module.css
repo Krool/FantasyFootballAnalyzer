@@ -217,103 +217,12 @@
   opacity: 0.7;
 }
 
-/* ── Luck Section ── */
-.luckSection {
-  margin-top: 4rem;
-  padding-top: 2rem;
-  border-top: 3px solid var(--bone);
-}
-
-.luckTable {
-  overflow-x: auto;
-  border: 2px solid var(--bone);
-  box-shadow: 5px 5px 0 var(--bone);
-  /* Ink lives on the wrapper (background-color, not the shorthand) so the
-     global scroll-x-hint gradient layers show through the table on touch
-     screens; an opaque table background would mask them. */
-  background-color: var(--ink);
-}
-
-.luckTable table {
-  width: 100%;
-  min-width: 720px;
-  border-collapse: collapse;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-}
-
-.luckTable th,
-.luckTable td {
-  padding: 0.85rem 1.1rem;
-  text-align: left;
-  border-bottom: 1px dashed var(--rule);
-}
-
-.luckTable th {
-  background: var(--ink);
-  font-weight: 700;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--bone-dim);
-  border-bottom: 2px solid var(--bone);
-}
-
-.luckTable tbody tr {
-  transition: background .15s ease;
-}
-.luckTable tbody tr:hover {
-  background: var(--ink-2);
-}
-.luckTable tbody tr:hover td:first-child {
-  box-shadow: inset 4px 0 0 var(--lime);
-}
-
-.teamName {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 500;
-  font-size: 1rem;
-  color: var(--bone);
-}
-
-.winPct {
-  color: var(--bone-dim);
-  font-size: 0.7rem;
-  margin-left: 0.4rem;
-  font-style: normal;
-  letter-spacing: 0.1em;
-}
-
-.noData {
-  color: var(--bone-dim);
-  font-style: italic;
-}
-
-/* Luck Score Colors */
-.veryLucky   { color: var(--lime); font-weight: 700; }
-.lucky       { color: var(--color-good);     font-weight: 700; }
-.neutral     { color: var(--bone-dim); }
-.unlucky     { color: var(--color-bad);     font-weight: 700; }
-.veryUnlucky { color: var(--blood-text);font-weight: 700; }
-
 @media (max-width: 640px) {
   .awardsGrid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; }
   .title { font-size: 56px; }
   .categoryTitle { font-size: 1.6rem; }
   .awardCard { padding: 0.85rem 0.7rem 0.9rem; }
   .awardValue { font-size: 1.5rem; }
-  .luckTable th, .luckTable td { padding: 0.55rem 0.65rem; font-size: 0.75rem; }
-}
-
-.rankLucky {
-  color: var(--color-good);
-  font-weight: 700;
-}
-
-.rankUnlucky {
-  color: var(--blood-text);
-  font-weight: 700;
 }
 
 .recordsGrid {

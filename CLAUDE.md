@@ -102,7 +102,7 @@ whose CTAs point at the guest routes above or at league connect. Nothing there
 touches `guestLeague.ts`.
 
 The league-analysis routes require a real loaded league and redirect guests to
-`/rankings`: `/draft`, `/trades`, `/waivers`, `/teams`, `/history`, `/awards`,
+`/rankings`: `/draft`, `/trades`, `/waivers`, `/teams`, `/history`, `/awards`, `/luck`,
 `/players`. `/yahoo-success` and `/yahoo-error` handle the OAuth round trip.
 
 **Share links**: `?league=sleeper:<id>` or `?league=espn:<id>` on any URL
