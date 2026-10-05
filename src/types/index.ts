@@ -199,6 +199,9 @@ export interface League {
   // players who changed teams (capped). Player Journey uses it to score each
   // stint of a player's season ("6.2 ppg for you, 18.4 after the trade").
   playerWeeklyPoints?: Record<string, Record<number, number>>;
+  // Which NFL weeks each player has played (live or finished seasons), from
+  // Sleeper's weekly stats (any platform; see api/sleeperGamesPlayed.ts).
+  gamesPlayed?: GamesPlayed;
   // What pointsSincePickup actually holds for this load: real since-pickup
   // sums, or season totals standing in because the weekly fetch failed.
   // Set by the Yahoo adapter; the waiver column labels itself from this.
@@ -620,4 +623,13 @@ export namespace ESPNAPI {
     toTeamId: number;
     type: string;
   }
+}
+
+// Weeks each player has played this season, keyed by Sleeper player id
+// (defenses by team code). `weeks` lists the weeks that actually loaded;
+// a week missing from it is unknown, not "nobody played".
+export interface GamesPlayed {
+  season: number;
+  weeks: number[];
+  bySleeperId: Record<string, number[]>;
 }

@@ -3,6 +3,7 @@ import * as sleeper from './sleeper';
 import * as espn from './espn';
 import * as yahoo from './yahoo';
 import { applySeasonTeams } from './seasonTeams';
+import { fetchGamesPlayed } from './sleeperGamesPlayed';
 import { logger } from '@/utils/logger';
 
 export interface ProgressCallback {
@@ -51,6 +52,17 @@ export async function loadLeague(
 
     default:
       throw new Error(`Unknown platform: ${credentials.platform}`);
+  }
+
+  // Draft grades credit a week without a game at replacement, so they need
+  // to know who actually played which weeks: live through the current week,
+  // a finished season through week 17. Best-effort: without it, live grades
+  // infer games from projections and finished ones rank on points alone.
+  const throughWeek =
+    league.status === 'final' ? 17 : league.status === 'live' ? league.currentWeek : undefined;
+  if (throughWeek) {
+    onProgress?.({ stage: 'Checking games played', current: 0, total: 1 });
+    league.gamesPlayed = await fetchGamesPlayed(league.season, throughWeek).catch(() => undefined);
   }
 
   // Past-season leagues report players on their CURRENT NFL team; rewrite the

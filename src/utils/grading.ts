@@ -549,31 +549,44 @@ function signed(n: number): string {
   return n > 0 ? `+${n}` : `${n}`;
 }
 
-// "Season outlook 188: 52.1 so far + 2 missed weeks at replacement (16.0) +
-// 120.4 projected over the last 13 weeks (1 projected out)."
+// Live: "Season outlook 328: 12.4 in 1 game + 2 weeks without a game at
+// replacement (20.1) + 295.3 projected over the last 14 weeks (1 projected
+// out, at replacement)." Final: "Season value 250: 220.0 in 15 games + 2
+// weeks without a game (bye or missed) at replacement (20.0)."
 export function describeOutlook(o: SeasonOutlook): string {
   const f = (n: number) => n.toFixed(1);
-  const parts = [`${f(o.soFar)} so far`];
+  const parts = [
+    o.games !== undefined
+      ? `${f(o.soFar)} in ${o.games} game${o.games === 1 ? '' : 's'}`
+      : `${f(o.soFar)} ${o.final ? 'scored' : 'so far'}`,
+  ];
   if (o.missedWeeks > 0) {
-    parts.push(`${o.missedWeeks} missed week${o.missedWeeks === 1 ? '' : 's'} at replacement (${f(o.missedPoints)})`);
+    parts.push(
+      `${o.missedWeeks} week${o.missedWeeks === 1 ? '' : 's'} without a game (bye or missed) at replacement (${f(o.missedPoints)})`,
+    );
   }
-  if (o.remainingWeeks > 0) {
+  if (o.remainingWeeks > 0 && o.basis !== 'none') {
     const weeks = `the last ${o.remainingWeeks} week${o.remainingWeeks === 1 ? '' : 's'}`;
     const rest = {
       projection: `${f(o.projectedPoints)} projected over ${weeks}${o.outWeeks > 0 ? ` (${o.outWeeks} projected out, at replacement)` : ''}`,
       'season-projection': `${f(o.projectedPoints)} from his season projection over ${weeks}`,
-      pace: `${f(o.projectedPoints)} at his pace over ${weeks} (no projection)`,
-      replacement: `${f(o.projectedPoints)} at replacement over ${weeks} (no projection, pace below the waiver wire)`,
+      pace: `${f(o.projectedPoints)} at his points per game over ${weeks} (no projection)`,
+      replacement: `${f(o.projectedPoints)} at replacement over ${weeks} (no projection, scoring below the waiver wire)`,
     }[o.basis];
     parts.push(rest);
   }
-  return `Season outlook ${o.total.toFixed(0)}: ${parts.join(' + ')}.`;
+  return `${o.final ? 'Season value' : 'Season outlook'} ${o.total.toFixed(0)}: ${parts.join(' + ')}.`;
 }
 
 // One line on the Grade column header: what the grades in this table measure.
-export function describeGradeBasis(basis: GradeBasis | undefined, outlook = false): string {
+export function describeGradeBasis(
+  basis: GradeBasis | undefined,
+  outlook?: 'live' | 'final',
+): string {
   if (outlook && (basis === 'auction-results' || basis === 'snake-results')) {
-    return 'Season in progress: ranked on points so far, missed weeks at replacement, and projected points for the rest of the season (injury timelines included). Hover a grade for the math.';
+    return outlook === 'live'
+      ? 'Season in progress: ranked on points so far, weeks without a game at replacement, and projected points for the rest of the season (injury timelines included). Hover a grade for the math.'
+      : 'Ranked on points scored plus a replacement-level starter for each week without a game, so points per game counts too. Hover a grade for the math.';
   }
   switch (basis) {
     case 'auction-results':
@@ -607,7 +620,7 @@ export function explainGrade(
   const pos = pick.player.position;
   const ranked = pick.positionRank < 999;
   const finish = ranked ? `${pos}${pick.positionRank}` : 'no points yet';
-  const finishVerb = pick.outlook ? 'on track for' : 'finished';
+  const finishVerb = pick.outlook && !pick.outlook.final ? 'on track for' : 'finished';
   const outlookLine = pick.outlook ? ` ${describeOutlook(pick.outlook)}` : '';
   const vs = ranked ? ` (${signed(pick.valueOverExpected)})` : '';
 

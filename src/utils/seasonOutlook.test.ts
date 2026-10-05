@@ -11,6 +11,7 @@ import { DEFAULT_ROSTER_SLOTS, replacementPerGame } from './projectedRoster';
 function wr(i: number, extra: Partial<PoolPlayer> = {}): PoolPlayer {
   return {
     id: `wr${i}-wr`,
+    sleeperId: `s${i}`,
     name: `Receiver ${i}`,
     team: 'LAR',
     pos: 'WR',
@@ -126,7 +127,7 @@ describe('grading on the season outlook', () => {
     expect(starPick.positionRank).toBe(1);
     expect(steadyPick.positionRank).toBeGreaterThan(1);
     expect(explainGrade(starPick)).toContain('on track for WR1');
-    expect(explainGrade(starPick)).toContain('2 missed weeks at replacement');
+    expect(explainGrade(starPick)).toContain('2 weeks without a game (bye or missed) at replacement');
   });
 
   it('grades a not-yet-played player on his projection instead of holding him', () => {
@@ -137,8 +138,77 @@ describe('grading on the season outlook', () => {
     expect(out.outlook?.basis).toBe('projection');
   });
 
-  it('does not apply to a finished season or another season', () => {
+  it('skips a finished season without games played, and projections from another season', () => {
     expect(leagueOutlooks({ ...league, status: 'final' }, POOL, SHAPE)).toBeUndefined();
-    expect(leagueOutlooks({ ...league, season: 2025 }, POOL, SHAPE)).toBeUndefined();
+    const other = leagueOutlooks({ ...league, season: 2025 }, POOL, SHAPE)!;
+    expect(other.get('WR-wr1-wr')?.basis).not.toBe('projection');
+  });
+});
+
+describe('games played (Sleeper weekly stats)', () => {
+  const repl = replacementPerGame(POOL, DEFAULT_ROSTER_SLOTS, 12, 'half_ppr')('WR');
+  // Weeks 1-4 loaded. Star played 1 and 4 (already this week); steady
+  // played 1-3 and his week-4 game hasn't happened yet.
+  const gamesPlayed = { season: 2026, weeks: [1, 2, 3, 4], bySleeperId: { s1: [1, 4], s2: [1, 2, 3] } };
+  const live = { ...ctx, currentWeek: 4, gamesPlayed };
+
+  it('keeps real points for a week he already played and projects the rest', () => {
+    const o = seasonOutlooks([pick(1, 'wr1-wr', 40)], POOL, SHAPE, live).get('WR-wr1-wr')!;
+    expect(o.games).toBe(2);
+    expect(o.missedWeeks).toBe(2);
+    // Week 4 is history for him: projections start at week 5 (12 x 15 + bye).
+    expect(o.remainingWeeks).toBe(13);
+    expect(o.projectedPoints).toBeCloseTo(12 * 15 + repl, 5);
+  });
+
+  it('projects this week for a player who has not played it yet', () => {
+    const o = seasonOutlooks([pick(2, 'wr2-wr', 30)], POOL, SHAPE, live).get('WR-wr2-wr')!;
+    expect(o.games).toBe(3);
+    expect(o.missedWeeks).toBe(0);
+    expect(o.remainingWeeks).toBe(14);
+    expect(o.projectedPoints).toBeCloseTo(13 * 10 + repl, 5);
+  });
+
+  it('uses points per game, not per week, when there is no projection', () => {
+    // Sleeper league player the pool lacks: 45 points in 3 of 4 weeks.
+    const gp = { season: 2026, weeks: [1, 2, 3, 4], bySleeperId: { '777': [1, 2, 3] } };
+    const o = seasonOutlooks([pick(9, '777', 45)], POOL, SHAPE, {
+      ...ctx,
+      currentWeek: 5,
+      gamesPlayed: gp,
+      platform: 'sleeper',
+    }).get('WR-777')!;
+    expect(o.basis).toBe('pace');
+    expect(o.games).toBe(3);
+    expect(o.projectedPoints).toBeCloseTo(15 * 13, 5);
+  });
+
+  it('finished season: points plus replacement for weeks without a game, no projection', () => {
+    const allWeeks = Array.from({ length: 17 }, (_, i) => i + 1);
+    const gp = {
+      season: 2026,
+      weeks: allWeeks,
+      bySleeperId: { s1: allWeeks.filter(w => w !== 11 && w !== 2 && w !== 3), s2: allWeeks.filter(w => w !== 11) },
+    };
+    const outlooks = seasonOutlooks([pick(1, 'wr1-wr', 210), pick(2, 'wr2-wr', 230)], POOL, SHAPE, {
+      ...ctx,
+      final: true,
+      gamesPlayed: gp,
+    });
+    const star = outlooks.get('WR-wr1-wr')!;
+    const steady = outlooks.get('WR-wr2-wr')!;
+    expect(star.final).toBe(true);
+    expect(star.basis).toBe('none');
+    expect(star.games).toBe(14);
+    expect(star.total).toBeCloseTo(210 + 3 * repl, 5);
+    expect(steady.total).toBeCloseTo(230 + repl, 5);
+    // 15/game over 14 games beats ~14.4/game over 16 once the missed weeks
+    // are filled, when replacement is worth more than the 20-point gap / 2.
+    expect(star.total > steady.total).toBe(2 * repl > 20);
+  });
+
+  it('a finished season without games-played data stays on plain points', () => {
+    const league = { status: 'final' as const, season: 2026, teams: [{ draftPicks: [pick(1, 'wr1-wr', 210)] }] };
+    expect(leagueOutlooks(league, POOL, SHAPE)).toBeUndefined();
   });
 });

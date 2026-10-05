@@ -65,6 +65,10 @@ interface DraftTableProps {
   // week, and no results either, so the data heuristic answers it alone.
   leagueStatus?: League['status'];
   currentWeek?: number;
+  // Which weeks each player played (Sleeper weekly stats) and the platform,
+  // for grading on season value rather than raw points.
+  gamesPlayed?: League['gamesPlayed'];
+  platform?: League['platform'];
 }
 
 type SortField = 'pick' | 'round' | 'player' | 'position' | 'team' | 'points' | 'posRank' | 'value' | 'grade' | 'cost' | 'proj';
@@ -86,6 +90,8 @@ export function DraftTable({
   tePremiumPerReception,
   leagueStatus,
   currentWeek,
+  gamesPlayed,
+  platform,
 }: DraftTableProps) {
   const { playFilter, playSort } = useSounds();
 
@@ -147,7 +153,7 @@ export function DraftTable({
     // Live season: rank on points so far plus the projected rest of season.
     const outlook = hasResults
       ? leagueOutlooks(
-          { status: leagueStatus, season, currentWeek, scoringType, rosterSlots, totalTeams, teams, passTdPoints, tePremiumPerReception },
+          { status: leagueStatus, platform, season, currentWeek, scoringType, rosterSlots, totalTeams, teams, passTdPoints, tePremiumPerReception, gamesPlayed },
           POOL,
         )
       : undefined;
@@ -159,7 +165,14 @@ export function DraftTable({
       board,
       outlook,
     ).filter(pick => !isPlaceholderPlayer(pick.player.name));
-  }, [teams, totalTeams, isAuction, auctionBudget, hasResults, allPicks, scoringType, rosterSlots, leagueStatus, season, currentWeek, passTdPoints, tePremiumPerReception]);
+  }, [teams, totalTeams, isAuction, auctionBudget, hasResults, allPicks, scoringType, rosterSlots, leagueStatus, season, currentWeek, passTdPoints, tePremiumPerReception, gamesPlayed, platform]);
+
+  // Whether grades rank on season value (live outlook, or a finished
+  // season with games played) rather than raw points.
+  const outlookMode = useMemo(() => {
+    const o = gradedPicks.find(p => p.outlook)?.outlook;
+    return o ? (o.final ? 'final' as const : 'live' as const) : undefined;
+  }, [gradedPicks]);
 
   // True when the value/grade numbers are dollar deltas, not rank deltas.
   const valuesInDollars = !hasResults && isAuction;
@@ -714,7 +727,7 @@ export function DraftTable({
                   Proj Pts{getSortIndicator('proj')}
                 </th>
               )}
-              <th onClick={() => handleSort('posRank')} onKeyDown={handleSortKeyDown('posRank')} tabIndex={0} aria-sort={ariaSortFor('posRank')} className={styles.sortable} role="button" aria-label={hasResults ? 'Sort by Position Rank' : 'Sort by Consensus Rank'} title={hasResults ? (gradedPicks.some(p => p.outlook) ? 'Where he ranks at his position among drafted players on season outlook: points so far, missed weeks at replacement, and projected points for the rest of the season' : 'Where he finished at his position among drafted players') : 'Where the FantasyPros consensus ranked him at his position among drafted players'}>
+              <th onClick={() => handleSort('posRank')} onKeyDown={handleSortKeyDown('posRank')} tabIndex={0} aria-sort={ariaSortFor('posRank')} className={styles.sortable} role="button" aria-label={hasResults ? 'Sort by Position Rank' : 'Sort by Consensus Rank'} title={hasResults ? (outlookMode === 'live' ? 'Where he ranks at his position among drafted players on season outlook: points so far, weeks without a game at replacement, and projected points for the rest of the season' : outlookMode === 'final' ? 'Where he finished at his position among drafted players on season value: points scored plus replacement for weeks without a game' : 'Where he finished at his position among drafted players') : 'Where the FantasyPros consensus ranked him at his position among drafted players'}>
                 {hasResults ? 'Pos Rank' : 'Consensus'}{getSortIndicator('posRank')}
               </th>
               {(!isAuction || valuesInDollars) && (
@@ -722,7 +735,7 @@ export function DraftTable({
                   Value{getSortIndicator('value')}
                 </th>
               )}
-              <th onClick={() => handleSort('grade')} onKeyDown={handleSortKeyDown('grade')} tabIndex={0} aria-sort={ariaSortFor('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade" title={describeGradeBasis(gradedPicks[0]?.gradeBasis, gradedPicks.some(p => p.outlook))}>
+              <th onClick={() => handleSort('grade')} onKeyDown={handleSortKeyDown('grade')} tabIndex={0} aria-sort={ariaSortFor('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade" title={describeGradeBasis(gradedPicks[0]?.gradeBasis, outlookMode)}>
                 Grade{getSortIndicator('grade')}
               </th>
             </tr>
