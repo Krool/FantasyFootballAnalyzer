@@ -1,5 +1,5 @@
 // Renders the draft as shareable PNGs, canvas-drawn in the GRIDIRON palette.
-// Built for the group chat, same as the award card - one pasteable image
+// Built for the group chat, same as the awards board - one pasteable image
 // beats a four-page PDF and beats screenshotting a scrolling table.
 //
 // Two boards ship: by-team (each roster's haul) and by-order (every pick in
@@ -170,7 +170,7 @@ function drawBlocks(data: DraftBoardData, blocks: Block[], blockW: number, cols:
   }
   ctx.scale(scale, scale);
 
-  // Field + faint yard-line grid, same stage the award card sets.
+  // Field + faint yard-line grid, same stage the awards board sets.
   ctx.fillStyle = INK;
   ctx.fillRect(0, 0, w, h);
   ctx.strokeStyle = INK2;

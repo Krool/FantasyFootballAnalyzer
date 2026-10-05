@@ -4,7 +4,7 @@ import { calculateAllAwards, groupAwardsByCategory, getCategoryDisplayName, type
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
 import { completedMatchups } from '@/utils/completedMatchups';
 import { seasonRecords, seasonTimeline } from '@/utils/seasonStory';
-import { exportAwardCard } from '@/utils/exportAwardCard';
+import { exportAwardsBoard } from '@/utils/exportAwardsBoard';
 import { awardIconSrc } from '@/utils/awardIcons';
 import { Link } from 'react-router-dom';
 import { TeamLink } from '@/components';
@@ -71,14 +71,55 @@ export function AwardsPage({ league }: AwardsPageProps) {
     [league.teams],
   );
 
+  // Drawing the image takes a beat; the label carries the pending state and
+  // then the outcome, same as the Draft page's copy buttons.
+  const [shareState, setShareState] = useState<'busy' | 'copied' | 'saved' | 'failed' | null>(null);
+  const copyImage = async () => {
+    if (shareState === 'busy') return;
+    setShareState('busy');
+    let result: 'copied' | 'saved' | false = false;
+    try {
+      result = await exportAwardsBoard({
+        leagueName: league.name,
+        season: league.season,
+        sections: categoryOrder.map(category => ({
+          category,
+          awards: groupedAwards.get(category) ?? [],
+        })),
+      });
+    } catch (err) {
+      logger.error('[awardsBoard] export threw:', err);
+    }
+    setShareState(result === false ? 'failed' : result);
+    setTimeout(() => setShareState(current => (current === 'busy' ? current : null)), 2500);
+  };
+
   return (
     <div className={styles.awardsPage}>
       <div className="container">
         <div className={styles.header}>
-          <h1 className={styles.title}>Season Awards</h1>
-          <p className={styles.subtitle}>
-            {league.name} · {awards.length} Awards
-          </p>
+          <div>
+            <h1 className={styles.title}>Season Awards</h1>
+            <p className={styles.subtitle}>
+              {league.name} · {awards.length} Awards
+            </p>
+          </div>
+          {awards.length > 0 && (
+            <button
+              type="button"
+              className={styles.shareBoard}
+              disabled={shareState === 'busy'}
+              aria-busy={shareState === 'busy'}
+              onClick={copyImage}
+              title="Every award as one image for the group chat"
+            >
+              {shareState === 'busy' && '…'}
+              {shareState === 'copied' && 'Copied!'}
+              {shareState === 'saved' && 'Saved PNG'}
+              {shareState === 'failed' && "Couldn't export"}
+              {shareState === null && 'Copy image'}
+            </button>
+          )}
         </div>
 
         {awards.length === 0 && (
@@ -112,7 +153,7 @@ export function AwardsPage({ league }: AwardsPageProps) {
               )}
               <div className={styles.awardsGrid}>
                 {categoryAwards.map(award => (
-                  <AwardCard key={award.id} award={award} league={league} />
+                  <AwardCard key={award.id} award={award} />
                 ))}
               </div>
             </section>
@@ -156,11 +197,8 @@ export function AwardsPage({ league }: AwardsPageProps) {
   );
 }
 
-function AwardCard({ award, league }: { award: Award; league: League }) {
+function AwardCard({ award }: { award: Award }) {
   const iconSrc = awardIconSrc(award.id);
-  // Drawing the card takes a beat; the label carries the pending state and
-  // then the outcome, same as the Draft page's copy buttons.
-  const [shareState, setShareState] = useState<'busy' | 'copied' | 'saved' | 'failed' | null>(null);
   return (
     <div className={styles.awardCard}>
       <div className={styles.awardIcon}>
@@ -177,32 +215,6 @@ function AwardCard({ award, league }: { award: Award; league: League }) {
         <div className={styles.awardDetail}>{award.detail}</div>
       )}
       <div className={styles.awardDescription}>{award.description}</div>
-      <button
-        type="button"
-        className={styles.awardShareBtn}
-        disabled={shareState === 'busy'}
-        aria-busy={shareState === 'busy'}
-        onClick={async () => {
-          if (shareState === 'busy') return;
-          setShareState('busy');
-          let result: 'copied' | 'saved' | false = false;
-          try {
-            result = await exportAwardCard(award, league.name, league.season);
-          } catch (err) {
-            logger.error('[awardCard] export threw:', err);
-          }
-          setShareState(result === false ? 'failed' : result);
-          setTimeout(() => setShareState(current => (current === 'busy' ? current : null)), 2500);
-        }}
-        title="Copy this award as an image for the group chat"
-        aria-label={`Copy ${award.name} as an image`}
-      >
-        {shareState === 'busy' && '…'}
-        {shareState === 'copied' && 'Copied!'}
-        {shareState === 'saved' && 'Saved PNG'}
-        {shareState === 'failed' && "Couldn't export"}
-        {shareState === null && 'Copy image'}
-      </button>
     </div>
   );
 }
