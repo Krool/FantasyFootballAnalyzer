@@ -1,4 +1,4 @@
-﻿import type { DraftPick, DraftGrade, League } from '@/types';
+import type { DraftPick, DraftGrade, League } from '@/types';
 import type { SeasonOutlook } from './seasonOutlook';
 
 // Grading now considers draft position - early picks are judged on hitting,
