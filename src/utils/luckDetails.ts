@@ -219,6 +219,11 @@ export function summarizeScheduleSwap(swap: ScheduleSwap): ScheduleSwapSummary[]
 // week is priced at max(0, his per-game rate - replacement per game at his
 // position). A sub-replacement player missing time costs nothing (you'd have
 // streamed that slot anyway); a stud missing time costs the gap.
+//
+// Only weeks after his first game count. A player who hadn't played yet was
+// hurt (or suspended, or holding out) before the season, which the drafter
+// knew or could have known; that's a draft call, not luck. The week in
+// progress counts when the injury report already has him out.
 
 // Sleeper's per-week `gp` flags (league.gamesPlayed). Structural so this file
 // doesn't depend on where the type lives.
@@ -238,6 +243,11 @@ export interface MissedPlayer {
   replacementPerGame: number;
   // weeksMissed * max(0, perGame - replacementPerGame).
   valueLost: number;
+  // One of weeksMissed is the week in progress, counted off the injury report.
+  outThisWeek?: boolean;
+  // The injury report calls it season-ending (ACL, Achilles, ...), so the
+  // count will keep climbing.
+  seasonEnding?: boolean;
 }
 
 export interface InjuryLuck {
@@ -256,6 +266,13 @@ export interface InjuryLuckContext {
   // and supplies a projection for a player who hasn't played.
   sleeperIdOf?: (p: Player) => string | undefined;
   projectedPerGame?: (p: Player) => number | undefined;
+  // The week in progress, and the current injury report for it: whether he
+  // is ruled out, and whether that's season-ending.
+  currentWeek?: number;
+  injuryNow?: (p: Player) => { outNow: boolean; seasonEnding: boolean } | undefined;
+  // His NFL team's bye week, when known (the week in progress has no
+  // played-games evidence to infer it from).
+  byeWeek?: (p: Player) => number | undefined;
 }
 
 // Week a team let the player go (drop or trade), or Infinity if he stayed.
@@ -338,11 +355,25 @@ export function injuryLuck(
       // No known NFL team means no bye to exclude; skip rather than guess.
       if (!played || !nflWeeks) continue;
       const until = releaseWeek(team, p, league.trades);
+      // Missing before his first game is a preseason absence, not luck.
+      const firstPlayed = judged.find(w => played.has(w));
+      if (firstPlayed === undefined) continue;
       let weeksMissed = 0;
       for (const w of judged) {
-        if (w >= until || !nflWeeks.has(w)) continue;
+        if (w <= firstPlayed || w >= until || !nflWeeks.has(w)) continue;
         if (!played.has(w)) weeksMissed++;
       }
+      const injury = ctx.injuryNow?.(p);
+      const cur = ctx.currentWeek;
+      const outThisWeek =
+        cur !== undefined &&
+        !judged.includes(cur) &&
+        cur > firstPlayed &&
+        cur < until &&
+        injury?.outNow === true &&
+        !played.has(cur) &&
+        ctx.byeWeek?.(p) !== cur;
+      if (outThisWeek) weeksMissed++;
       if (weeksMissed === 0) continue;
 
       const playedJudged = judged.filter(w => played.has(w));
@@ -367,6 +398,8 @@ export function injuryLuck(
         perGame: round1(perGame),
         replacementPerGame: round1(repl),
         valueLost: round1(valueLost),
+        ...(outThisWeek && { outThisWeek: true }),
+        ...(injury?.seasonEnding && { seasonEnding: true }),
       });
     }
     players.sort((a, b) => b.valueLost - a.valueLost);

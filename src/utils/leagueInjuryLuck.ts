@@ -10,13 +10,19 @@ import { injuryLuck, type InjuryLuck } from './luckDetails';
 import { indexPool, resolvePoolPlayer } from './consensusGrade';
 import { projectedPoints } from './projectionValues';
 import { DEFAULT_ROSTER_SLOTS, replacementPerGame } from './projectedRoster';
+import { injuryOf } from './seasonOutlook';
 
 // `weeks`: the finished weeks to judge (from completedMatchups()).
 export function leagueInjuryLuck(league: League, weeks: number[]): InjuryLuck[] {
   const scoring = league.scoringType ?? 'ppr';
   const index = indexPool(POOL);
   const pooled = (p: Player) => resolvePoolPlayer(p, index);
+  // The bundled injury report and byes describe the pool's season only.
+  const thisSeason = POOL.season === league.season;
   return injuryLuck(league, weeks, {
+    currentWeek: thisSeason && league.status === 'live' ? league.currentWeek : undefined,
+    injuryNow: p => (thisSeason ? injuryOf(pooled(p)) : undefined),
+    byeWeek: p => (thisSeason ? pooled(p)?.bye ?? undefined : undefined),
     replacementPerGame: replacementPerGame(
       POOL,
       league.rosterSlots ?? DEFAULT_ROSTER_SLOTS,

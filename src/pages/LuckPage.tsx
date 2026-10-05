@@ -366,7 +366,10 @@ export function LuckPage({ league }: LuckPageProps) {
               Weeks a drafted player sat out (byes excluded) while still on the
               roster, priced at what he scores per game above a replacement-level
               pickup at his position. A player no better than the waiver wire
-              costs nothing when he sits; a stud costs the gap.
+              costs nothing when he sits; a stud costs the gap. Only weeks after
+              his first game count: a player drafted while already hurt (or
+              suspended, or holding out) was a draft call, not bad luck. The week
+              in progress counts once the injury report has him out.
             </p>
             <div className={`${styles.table} scroll-x-hint`}>
               <table>
@@ -398,9 +401,9 @@ export function LuckPage({ league }: LuckPageProps) {
                               <span
                                 key={p.name}
                                 className={styles.missed}
-                                title={`${p.perGame.toFixed(1)} per game vs ${p.replacementPerGame.toFixed(1)} replacement: ${p.valueLost.toFixed(1)} lost over ${p.weeksMissed} game${p.weeksMissed === 1 ? '' : 's'}`}
+                                title={`${p.perGame.toFixed(1)} per game vs ${p.replacementPerGame.toFixed(1)} replacement: ${p.valueLost.toFixed(1)} lost over ${p.weeksMissed} game${p.weeksMissed === 1 ? '' : 's'}${p.outThisWeek ? ', including this week (ruled out on the injury report)' : ''}`}
                               >
-                                {p.name} <span className={styles.dim}>{p.position} · {p.weeksMissed}g · -{p.valueLost.toFixed(1)}</span>
+                                {p.name} <span className={styles.dim}>{p.position} · {p.weeksMissed}g · -{p.valueLost.toFixed(1)}{p.seasonEnding ? ' · out for season' : ''}</span>
                               </span>
                             ))
                           )}

@@ -152,15 +152,46 @@ describe('injuryLuck', () => {
     expect(without.find(r => r.teamId === 'A')!.players.map(p => p.name)).toContain('P2');
   });
 
-  it('uses the projection for a player who never played', () => {
+  it('ignores a player who has not played yet: he was drafted hurt, not unlucky', () => {
     const neverPlayed = {
       ...league,
       playerWeeklyPoints: { ...league.playerWeeklyPoints, '1': {} },
     } as League;
     const a = injuryLuck(neverPlayed, [1, 2, 3], { ...ctx, projectedPerGame: () => 14 })
       .find(r => r.teamId === 'A')!;
+    expect(a.gamesMissed).toBe(0);
+    expect(a.players).toEqual([]);
+  });
+
+  it('counts only the weeks after his first game when he missed the opener too', () => {
+    // Missed W1 (preseason injury), played W2, missed W3: only W3 counts.
+    const lateStart = {
+      ...league,
+      playerWeeklyPoints: { ...league.playerWeeklyPoints, '1': { 2: 20 } },
+    } as League;
+    const a = injuryLuck(lateStart, [1, 2, 3], ctx).find(r => r.teamId === 'A')!;
+    expect(a.gamesMissed).toBe(1);
+  });
+
+  it('counts the week in progress when the injury report has him out', () => {
+    // Star played W1, missed W2-W3; W4 is in progress and he is on IR with a
+    // torn ACL. Judging W1-W3 only, W4 comes off the injury report.
+    const out = { outNow: true, seasonEnding: true };
+    const a = injuryLuck(league, [1, 2, 3], { ...ctx, currentWeek: 4, injuryNow: p => (p.id === '1' ? out : undefined) })
+      .find(r => r.teamId === 'A')!;
     expect(a.gamesMissed).toBe(3);
-    expect(a.valueLost).toBe(18);
+    expect(a.players[0]).toMatchObject({ name: 'P1', outThisWeek: true, seasonEnding: true });
+  });
+
+  it('does not count the week in progress when it is his bye', () => {
+    const out = { outNow: true, seasonEnding: false };
+    const a = injuryLuck(league, [1, 2, 3], {
+      ...ctx,
+      currentWeek: 4,
+      injuryNow: p => (p.id === '1' ? out : undefined),
+      byeWeek: () => 4,
+    }).find(r => r.teamId === 'A')!;
+    expect(a.gamesMissed).toBe(2);
   });
 
   it('returns nothing with no way to tell played from missed (Yahoo, no gp)', () => {
