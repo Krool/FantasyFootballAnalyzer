@@ -157,7 +157,7 @@ describe('useLeague.load - cache behavior', () => {
 });
 
 describe('useLeague.load - incomplete (throttled) loads', () => {
-  it('shows an incomplete league but never caches it', async () => {
+  it('shows an incomplete league and caches it (isStale gives it a short TTL)', async () => {
     mockedLoadCachedLeague.mockReturnValue(null);
     const partial = makeLeague({ name: 'Partial', loadIncomplete: 'missing week 3' });
     mockedLoadLeague.mockResolvedValue(partial);
@@ -168,7 +168,7 @@ describe('useLeague.load - incomplete (throttled) loads', () => {
     });
 
     expect(result.current.league?.loadIncomplete).toBe('missing week 3');
-    expect(mockedCacheLeague).not.toHaveBeenCalled();
+    expect(mockedCacheLeague).toHaveBeenCalledWith(partial);
   });
 
   it('keeps a stale snapshot on screen when the background refresh came back partial', async () => {

@@ -255,6 +255,19 @@ describe('isStale', () => {
     }
   });
 
+  it('gives a partial (throttled) load a 15-minute TTL, even for a final season', () => {
+    vi.useFakeTimers();
+    try {
+      const now = Date.now();
+      vi.setSystemTime(now);
+      const partial = { status: 'final' as const, loadIncomplete: 'missing week 3' };
+      expect(isStale(makeLeague({ ...partial, loadedAt: now - 10 * 60 * 1000 }))).toBe(false);
+      expect(isStale(makeLeague({ ...partial, loadedAt: now - 20 * 60 * 1000 }))).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('uses preseason TTL (4h)', () => {
     vi.useFakeTimers();
     try {

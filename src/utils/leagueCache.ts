@@ -183,8 +183,13 @@ const FRESHNESS_MS: Record<NonNullable<League['status']>, number> = {
   final: 30 * 24 * 60 * 60 * 1000, // 30 days
 };
 
+// A load that came back with throttled gaps is cached briefly, not skipped:
+// skipping the cache made every reload re-run the whole ~150-call load at
+// exactly the moment the platform was asking us to slow down.
+const INCOMPLETE_TTL_MS = 15 * 60 * 1000;
+
 export function isStale(league: League): boolean {
   if (!league.loadedAt) return true;
-  const ttl = FRESHNESS_MS[league.status ?? 'live'];
+  const ttl = league.loadIncomplete ? INCOMPLETE_TTL_MS : FRESHNESS_MS[league.status ?? 'live'];
   return Date.now() - league.loadedAt > ttl;
 }

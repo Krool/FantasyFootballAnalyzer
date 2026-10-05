@@ -14,6 +14,7 @@ import {
   getRefreshToken,
   isAuthenticated,
   yahooPosition,
+  clearYahooHistoryCache,
 } from './yahoo';
 
 describe('NFL_GAME_KEYS', () => {
@@ -747,7 +748,7 @@ describe('yahoo league history', () => {
 
   function seasonBody(opts: {
     season: number; renew?: string; finished: boolean;
-    teams: Array<{ key: string; name: string; guid: string; rank: number; wins: number }>;
+    teams: Array<{ key: string; name: string; guid: string; rank: number; wins: number; teamId?: number }>;
   }) {
     return {
       fantasy_content: {
@@ -763,6 +764,7 @@ describe('yahoo league history', () => {
             teams: {
               team: opts.teams.map(t => ({
                 team_key: t.key,
+                team_id: t.teamId,
                 name: t.name,
                 managers: { manager: { guid: t.guid, nickname: '--hidden--' } },
                 team_standings: {
@@ -832,10 +834,62 @@ describe('yahoo league history', () => {
   }
 
   beforeEach(() => {
+    clearYahooHistoryCache();
     localStorage.setItem('yahoo_access_token', 'test-token');
     localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
       jsonResponse(route(decodeURIComponent(String(input).match(/endpoint=([^&]+)/)![1])))));
+  });
+
+  it('keeps managers apart when Yahoo hides their guids', async () => {
+    // Other managers' guids come back as "--"; the team slot keeps them apart.
+    const hidden = seasonBody({
+      season: 2025, finished: true,
+      teams: [
+        { key: TEAM_1, name: 'Mine', guid: 'REALGUID1', rank: 1, wins: 10, teamId: 1 },
+        { key: TEAM_2, name: 'Theirs', guid: '--', rank: 2, wins: 4, teamId: 2 },
+        { key: '461.l.777.t.3', name: 'Third', guid: '--', rank: 3, wins: 3, teamId: 3 },
+      ],
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(hidden)));
+    const history = await loadLeagueHistory(K25, 1);
+    expect(history[0].teams.map(t => t.ownerId)).toEqual(['REALGUID1', 'team:2', 'team:3']);
+  });
+
+  it('fetches a finished season once, however many teams are picked', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) =>
+      jsonResponse(route(decodeURIComponent(String(input).match(/endpoint=([^&]+)/)![1]))));
+    vi.stubGlobal('fetch', fetchMock);
+    await loadHeadToHeadRecords(K25, TEAM_1, 2);
+    const first = fetchMock.mock.calls.length;
+    await loadHeadToHeadRecords(K25, TEAM_2, 2);
+    expect(fetchMock.mock.calls.length).toBe(first);
+  });
+
+  it('does not count a game that is still being played', async () => {
+    const live = seasonBody({
+      season: 2025, finished: false,
+      teams: [
+        { key: TEAM_1, name: 'A', guid: 'G1', rank: 1, wins: 1 },
+        { key: TEAM_2, name: 'B', guid: 'G2', rank: 2, wins: 0 },
+      ],
+    });
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const endpoint = decodeURIComponent(String(input).match(/endpoint=([^&]+)/)![1]);
+      const week = endpoint.match(/scoreboard;week=(\d+)$/);
+      if (!week) return jsonResponse(live);
+      const w = parseInt(week[1]);
+      return jsonResponse({ fantasy_content: { league: { scoreboard: { matchups: { matchup: [{
+        is_playoffs: '0', is_consolation: '0', status: w === 1 ? 'postevent' : 'midevent',
+        teams: { team: [
+          { team_key: TEAM_1, team_points: { total: '100' } },
+          { team_key: TEAM_2, team_points: { total: w === 1 ? '90' : '40' } },
+        ] },
+      }] } } } } });
+    }));
+    const { records } = await loadHeadToHeadRecords(K25, TEAM_1, 1);
+    const vs = records.get('G2')!;
+    expect(vs.wins + vs.losses + vs.ties).toBe(1);
   });
 
   afterEach(() => {

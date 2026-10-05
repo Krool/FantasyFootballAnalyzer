@@ -3,6 +3,7 @@ import { logger } from '@/utils/logger';
 import { decideTradeWinner } from '@/utils/tradeVerdict';
 import { calculateGamesPAR, calculateReplacementLevels } from '@/utils/par';
 import { safeLocalStorage, safeSessionStorage } from '@/utils/safeStorage';
+import { pacedYahooFetch } from './yahooPacing';
 
 // Backend API URL - Vercel deployment
 const API_BASE = import.meta.env.VITE_YAHOO_API_URL || 'https://fantasy-football-analyzer-mu.vercel.app';
@@ -292,21 +293,9 @@ export function yahooPosition(p: { display_position?: string; primary_position?:
   return raw.split(',')[0].trim();
 }
 
-// Yahoo throttles bursts with 429 (or its own 999). The enrichment pass makes
-// ~150 calls and swallows per-week failures, so an unretried throttle quietly
-// drops a week of scores. Two backed-off retries ride out a burst.
-const THROTTLE_STATUSES = new Set([429, 999, 502, 503, 504]);
-const THROTTLE_RETRY_MS = [800, 2000];
-
-async function fetchWithThrottleRetry(url: string, init: RequestInit): Promise<Response> {
-  let response = await fetch(url, init);
-  for (const delay of THROTTLE_RETRY_MS) {
-    if (!THROTTLE_STATUSES.has(response.status)) break;
-    await new Promise(resolve => setTimeout(resolve, delay));
-    response = await fetch(url, init);
-  }
-  return response;
-}
+// Every request goes through pacedYahooFetch (yahooPacing.ts): at most two
+// in flight, spaced starts, and one retry after a shared cooldown when Yahoo
+// throttles. Nothing here should call fetch() for Yahoo directly.
 
 // Make authenticated API request
 async function yahooFetch<T>(endpoint: string): Promise<T> {
@@ -320,7 +309,7 @@ async function yahooFetch<T>(endpoint: string): Promise<T> {
     throw new Error('Not authenticated with Yahoo (401)');
   }
 
-  const response = await fetchWithThrottleRetry(
+  const response = await pacedYahooFetch(
     `${API_BASE}/api/yahoo-api?endpoint=${encodeURIComponent(endpoint)}`,
     {
       headers: {
@@ -333,7 +322,7 @@ async function yahooFetch<T>(endpoint: string): Promise<T> {
     // Token expired, try refresh once
     await refreshAccessToken();
     const newToken = getAccessToken();
-    const retryResponse = await fetchWithThrottleRetry(
+    const retryResponse = await pacedYahooFetch(
       `${API_BASE}/api/yahoo-api?endpoint=${encodeURIComponent(endpoint)}`,
       {
         headers: {
@@ -1760,6 +1749,12 @@ function renewToLeagueKey(renew: unknown): string | null {
   return m ? `${m[1]}.l.${m[2]}` : null;
 }
 
+// Real Yahoo guids are alphanumeric; hidden ones come back as placeholders
+// like "--".
+function isRealGuid(guid: string): boolean {
+  return /^[A-Za-z0-9]+$/.test(guid);
+}
+
 interface HistoryTeam {
   key: string;
   ownerIds: string[]; // manager guids: the only stable identity across seasons
@@ -1787,7 +1782,133 @@ interface HistorySeason {
 // One call per season: league metadata, settings, and standings with each
 // team's managers. Throws on a failed fetch; callers decide whether that ends
 // the walk.
-async function fetchHistorySeason(leagueKey: string): Promise<HistorySeason> {
+const HISTORY_STORE = 'yahoo_history_v1:';
+const LIVE_SEASON_MEMO_MS = 10 * 60 * 1000;
+const historySeasonMemo = new Map<string, { at: number; value: Promise<HistorySeason> }>();
+
+function readStored<T>(key: string): T | null {
+  try {
+    const raw = safeLocalStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStored(key: string, value: unknown): void {
+  try {
+    safeLocalStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Quota or privacy mode: the in-memory memo still saves the calls.
+  }
+}
+
+function fetchHistorySeason(leagueKey: string): Promise<HistorySeason> {
+  const memo = historySeasonMemo.get(leagueKey);
+  if (memo && Date.now() - memo.at < LIVE_SEASON_MEMO_MS) return memo.value;
+  const stored = readStored<HistorySeason>(`${HISTORY_STORE}season:${leagueKey}`);
+  if (stored?.isFinished) {
+    const value = Promise.resolve(stored);
+    historySeasonMemo.set(leagueKey, { at: Infinity, value });
+    return value;
+  }
+  const value = fetchHistorySeasonFromYahoo(leagueKey).then(season => {
+    if (season.isFinished) {
+      writeStored(`${HISTORY_STORE}season:${leagueKey}`, season);
+      historySeasonMemo.set(leagueKey, { at: Infinity, value });
+    }
+    return season;
+  });
+  value.catch(() => historySeasonMemo.delete(leagueKey));
+  historySeasonMemo.set(leagueKey, { at: Date.now(), value });
+  return value;
+}
+
+// One season's regular-season results, reduced to what rivalries need.
+// `final` is false for a game still being played (Yahoo status other than
+// postevent), which must not count as a win or loss yet.
+interface SlimMatchup {
+  week: number;
+  a: string;
+  ap: number;
+  b: string;
+  bp: number;
+  final: boolean;
+}
+
+const scoreboardMemo = new Map<string, { at: number; value: Promise<{ matchups: SlimMatchup[]; failedWeeks: number }> }>();
+
+// Every regular-season scoreboard for a season, fetched once and shared by
+// every team's rivalry view (picking another team costs no calls). Finished
+// seasons with no failed weeks persist to localStorage.
+function seasonMatchups(season: HistorySeason): Promise<{ matchups: SlimMatchup[]; failedWeeks: number }> {
+  const memo = scoreboardMemo.get(season.leagueKey);
+  if (memo && Date.now() - memo.at < LIVE_SEASON_MEMO_MS) return memo.value;
+  const storeKey = `${HISTORY_STORE}matchups:${season.leagueKey}`;
+  const stored = season.isFinished ? readStored<SlimMatchup[]>(storeKey) : null;
+  if (stored) {
+    const value = Promise.resolve({ matchups: stored, failedWeeks: 0 });
+    scoreboardMemo.set(season.leagueKey, { at: Infinity, value });
+    return value;
+  }
+  const value = (async () => {
+    const weeks = Array.from(
+      { length: Math.max(0, season.lastRegularWeek - season.startWeek + 1) },
+      (_, i) => season.startWeek + i,
+    );
+    let failedWeeks = 0;
+    const matchups: SlimMatchup[] = [];
+    const fetched = await runBatched(weeks.map(week => async () => {
+      try {
+        return { week, data: await yahooFetch<any>(`/league/${season.leagueKey}/scoreboard;week=${week}`) };
+      } catch (e) {
+        if (isRetryableFailure(e)) failedWeeks++;
+        return { week, data: null as any };
+      }
+    }));
+    for (const { week, data } of fetched) {
+      const node = data?.fantasy_content?.league?.scoreboard?.matchups?.matchup;
+      if (!node) continue;
+      for (const m of Array.isArray(node) ? node : [node]) {
+        // Playoff and consolation games aren't rivalry games in the H2H
+        // sense and skew the totals (same rule as the other platforms).
+        if (String(m.is_playoffs) === '1' || String(m.is_consolation) === '1') continue;
+        const pair = Array.isArray(m.teams?.team) ? m.teams.team : [m.teams?.team];
+        if (pair.length !== 2 || !pair[0]?.team_key || !pair[1]?.team_key) continue;
+        matchups.push({
+          week,
+          a: String(pair[0].team_key),
+          ap: parseFloat(pair[0].team_points?.total ?? '0') || 0,
+          b: String(pair[1].team_key),
+          bp: parseFloat(pair[1].team_points?.total ?? '0') || 0,
+          // No status field (older payloads): trust a finished season.
+          final: m.status != null ? String(m.status) === 'postevent' : season.isFinished,
+        });
+      }
+    }
+    if (season.isFinished && failedWeeks === 0) writeStored(storeKey, matchups);
+    return { matchups, failedWeeks };
+  })();
+  value.catch(() => scoreboardMemo.delete(season.leagueKey));
+  scoreboardMemo.set(season.leagueKey, { at: season.isFinished ? Infinity : Date.now(), value });
+  return value;
+}
+
+// Test hook: drop the history memos and the persisted finished seasons.
+export function clearYahooHistoryCache(): void {
+  historySeasonMemo.clear();
+  scoreboardMemo.clear();
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(HISTORY_STORE)) localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage unavailable: nothing persisted to clear.
+  }
+}
+
+async function fetchHistorySeasonFromYahoo(leagueKey: string): Promise<HistorySeason> {
   const data = await yahooFetch<any>(`/league/${leagueKey};out=settings,standings`);
   const info = data?.fantasy_content?.league;
   if (!info) throw new Error('Yahoo history: league data missing');
@@ -1802,9 +1923,14 @@ async function fetchHistorySeason(leagueKey: string): Promise<HistorySeason> {
       const managers = t.managers?.manager;
       const mgrList: any[] = Array.isArray(managers) ? managers : managers ? [managers] : [];
       const rank = parseInt(st.rank);
+      const guids = mgrList.map(m => String(m?.guid ?? '')).filter(isRealGuid);
       return {
         key: String(t.team_key),
-        ownerIds: mgrList.map(m => (m?.guid != null ? String(m.guid) : '')).filter(Boolean),
+        // Yahoo hides other managers' guids behind a placeholder ("--"), and
+        // taking that at face value merged every manager into one. A real
+        // guid is the best identity; otherwise the team slot (team_id), which
+        // a renewed Yahoo league carries over with its manager.
+        ownerIds: guids.length > 0 ? guids : t.team_id != null ? [`team:${t.team_id}`] : [],
         name: String(t.name ?? t.team_key),
         wins: parseInt(out.wins) || 0,
         losses: parseInt(out.losses) || 0,
@@ -1903,7 +2029,8 @@ export async function loadLeagueHistory(leagueKey: string, maxSeasons: number = 
       teams,
     });
 
-    currentKey = await nextHistoryKey(season);
+    // Don't look up a season we won't read: the name fallback costs a call.
+    currentKey = history.length < maxSeasons ? await nextHistoryKey(season) : null;
   }
 
   return history;
@@ -1947,46 +2074,30 @@ export async function loadHeadToHeadRecords(
 
     if (ours) {
       const ourKey = ours.key;
-      const weeks = Array.from(
-        { length: Math.max(0, season.lastRegularWeek - season.startWeek + 1) },
-        (_, i) => season.startWeek + i,
-      );
       const byKey = new Map(season.teams.map(t => [t.key, t]));
-      const fetched = await runBatched(weeks.map(week => async () => {
-        try {
-          const data = await yahooFetch<any>(`/league/${season.leagueKey}/scoreboard;week=${week}`);
-          return { week, data };
-        } catch (e) {
-          if (isRetryableFailure(e)) failedWeeks++;
-          return { week, data: null as any };
-        }
-      }));
+      const result = await seasonMatchups(season);
+      failedWeeks += result.failedWeeks;
 
-      for (const { week, data } of fetched) {
-        const node = data?.fantasy_content?.league?.scoreboard?.matchups?.matchup;
-        if (!node) continue;
-        for (const m of Array.isArray(node) ? node : [node]) {
-          // Playoff and consolation games aren't rivalry games in the H2H
-          // sense and skew the totals (same rule as the other platforms).
-          if (String(m.is_playoffs) === '1' || String(m.is_consolation) === '1') continue;
-          const pair = Array.isArray(m.teams?.team) ? m.teams.team : [m.teams?.team];
-          if (pair.length !== 2 || !pair[0]?.team_key || !pair[1]?.team_key) continue;
-          const mine = pair.find((t: any) => t.team_key === ourKey);
-          const theirs = pair.find((t: any) => t.team_key !== ourKey);
-          if (!mine || !theirs) continue;
-          const ourScore = parseFloat(mine.team_points?.total ?? '0') || 0;
-          const oppScore = parseFloat(theirs.team_points?.total ?? '0') || 0;
+      for (const m of result.matchups) {
+        {
+          // A game still being played isn't a result yet.
+          if (!m.final) continue;
+          if (m.a !== ourKey && m.b !== ourKey) continue;
+          const week = m.week;
+          const theirKey = m.a === ourKey ? m.b : m.a;
+          const ourScore = m.a === ourKey ? m.ap : m.bp;
+          const oppScore = m.a === ourKey ? m.bp : m.ap;
           // A 0-0 "matchup" is an unplayed week, not a tie.
           if (ourScore === 0 && oppScore === 0) continue;
 
-          const opp = byKey.get(theirs.team_key);
-          const opponentId = opp?.ownerIds[0] ?? String(theirs.team_key);
+          const opp = byKey.get(theirKey);
+          const opponentId = opp?.ownerIds[0] ?? theirKey;
           let record = records.get(opponentId);
           if (!record) {
             record = {
               opponentId,
               // Seasons walk newest first, so the first name seen is the latest.
-              opponentName: opp?.name ?? String(theirs.name ?? opponentId),
+              opponentName: opp?.name ?? opponentId,
               wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0, matchups: [],
             };
             records.set(opponentId, record);
@@ -2003,7 +2114,7 @@ export async function loadHeadToHeadRecords(
     }
 
     seasonsSeen++;
-    currentKey = await nextHistoryKey(season);
+    currentKey = seasonsSeen < maxSeasons ? await nextHistoryKey(season) : null;
   }
 
   if (failedWeeks > 0) {
