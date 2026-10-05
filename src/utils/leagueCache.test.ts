@@ -1,7 +1,6 @@
 ﻿import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   cacheLeague,
-  clearAllCachedLeagues,
   clearCachedLeague,
   isStale,
   keyForCredentials,
@@ -212,7 +211,7 @@ describe('keyForCredentials', () => {
   });
 });
 
-describe('clearCachedLeague + clearAllCachedLeagues', () => {
+describe('clearCachedLeague', () => {
   it('clears a single entry, leaving siblings intact', () => {
     cacheLeague(makeLeague({ season: 2024 }));
     cacheLeague(makeLeague({ season: 2023 }));
@@ -221,18 +220,6 @@ describe('clearCachedLeague + clearAllCachedLeagues', () => {
 
     expect(loadCachedLeague('sleeper', 'L1', 2024)).toBeNull();
     expect(loadCachedLeague('sleeper', 'L1', 2023)).not.toBeNull();
-  });
-
-  it('clears every cached league but leaves unrelated keys alone', () => {
-    cacheLeague(makeLeague({ season: 2024 }));
-    cacheLeague(makeLeague({ season: 2023 }));
-    localStorage.setItem('unrelated', 'keep me');
-
-    clearAllCachedLeagues();
-
-    expect(loadCachedLeague('sleeper', 'L1', 2024)).toBeNull();
-    expect(loadCachedLeague('sleeper', 'L1', 2023)).toBeNull();
-    expect(localStorage.getItem('unrelated')).toBe('keep me');
   });
 });
 

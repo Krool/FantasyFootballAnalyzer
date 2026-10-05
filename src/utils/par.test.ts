@@ -4,9 +4,7 @@ import {
   calculateReplacementLevels,
   calculateReplacementPoints,
   normalizePosition,
-  calculatePlayerPAR,
   calculateGamesPAR,
-  buildPlayerPARMap,
   type PositionStats,
 } from './par';
 
@@ -216,38 +214,6 @@ describe('calculateReplacementPoints', () => {
   });
 });
 
-describe('calculatePlayerPAR', () => {
-  it('calculates positive PAR for above-replacement player', () => {
-    const replacementPoints = new Map<string, number>([
-      ['QB', 250],
-      ['RB', 150],
-    ]);
-
-    // Player scored 300 with 1 game, replacement is 250/17 per game
-    const par = calculatePlayerPAR(300, 'QB', replacementPoints, 17);
-    expect(par).toBeCloseTo(50, 0); // 300 - 250 = 50
-  });
-
-  it('calculates zero/negative PAR for replacement-level player', () => {
-    const replacementPoints = new Map<string, number>([
-      ['QB', 250],
-    ]);
-
-    const par = calculatePlayerPAR(250, 'QB', replacementPoints, 17);
-    expect(par).toBeCloseTo(0, 0);
-  });
-
-  it('handles missing position in replacement map', () => {
-    const replacementPoints = new Map<string, number>([
-      ['QB', 250],
-    ]);
-
-    const par = calculatePlayerPAR(200, 'WR', replacementPoints);
-    // No WR in map, defaults to 0 replacement
-    expect(par).toBe(200);
-  });
-});
-
 describe('calculateGamesPAR', () => {
   it('calculates PAR prorated for games started', () => {
     const replacementPoints = new Map<string, number>([
@@ -261,6 +227,13 @@ describe('calculateGamesPAR', () => {
     expect(par).toBeCloseTo(20, 0);
   });
 
+  it('pro-rates a season-to-date baseline over the weeks it covers', () => {
+    // Week 5: the baseline is 4 weeks of points (40 = 10 ppg). Dividing by 17
+    // would read replacement as 2.35 ppg and credit nearly all 30 points.
+    const replacementPoints = new Map<string, number>([['RB', 40]]);
+    expect(calculateGamesPAR(30, 'RB', 2, replacementPoints, 4)).toBeCloseTo(10, 5);
+  });
+
   it('returns 0 for 0 games started', () => {
     const replacementPoints = new Map<string, number>([
       ['RB', 170],
@@ -268,38 +241,5 @@ describe('calculateGamesPAR', () => {
 
     const par = calculateGamesPAR(0, 'RB', 0, replacementPoints);
     expect(par).toBe(0);
-  });
-});
-
-describe('buildPlayerPARMap', () => {
-  it('builds a map of player PAR values', () => {
-    const playerStats: PositionStats[] = [
-      { playerId: 'p1', position: 'QB', seasonPoints: 300 },
-      { playerId: 'p2', position: 'RB', seasonPoints: 200 },
-    ];
-
-    const replacementPoints = new Map<string, number>([
-      ['QB', 250],
-      ['RB', 150],
-    ]);
-
-    const parMap = buildPlayerPARMap(playerStats, replacementPoints);
-
-    expect(parMap.get('p1')).toBe(50); // 300 - 250
-    expect(parMap.get('p2')).toBe(50); // 200 - 150
-  });
-
-  it('handles players with negative PAR', () => {
-    const playerStats: PositionStats[] = [
-      { playerId: 'p1', position: 'QB', seasonPoints: 200 },
-    ];
-
-    const replacementPoints = new Map<string, number>([
-      ['QB', 250],
-    ]);
-
-    const parMap = buildPlayerPARMap(playerStats, replacementPoints);
-
-    expect(parMap.get('p1')).toBe(-50); // 200 - 250
   });
 });

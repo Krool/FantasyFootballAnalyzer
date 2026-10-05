@@ -3,6 +3,7 @@ import { lineupPosition } from '@/utils/lineups';
 import { logger } from '@/utils/logger';
 import { decideTradeWinner } from '@/utils/tradeVerdict';
 import { calculateReplacementLevels } from '@/utils/par';
+import { seasonOverByCalendar } from '@/utils/leaguePhase';
 
 // Direct ESPN API for public leagues
 const ESPN_DIRECT_URL = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons';
@@ -305,7 +306,7 @@ export async function loadLeague(
     { currentMatchupPeriod?: number; latestScoringPeriod?: number; finalScoringPeriod?: number } | undefined;
   const finalPeriod = statusBlock?.finalScoringPeriod || 17;
   const seasonOverForWeeks =
-    season < new Date().getFullYear() ||
+    seasonOverByCalendar(season) ||
     (leagueData.teams.length > 0 && leagueData.teams.every(t => (t.rankCalculatedFinal || 0) > 0));
   const livePeriod = Math.max(
     statusBlock?.latestScoringPeriod || 0,
@@ -1401,7 +1402,7 @@ export async function loadLeague(
   // by a fixed 17 mid-season undercounts the per-game baseline (3x at week
   // 5) and inflates every since-pickup and post-trade PAR.
   const matchupPeriod = leagueData.status?.currentMatchupPeriod || 0;
-  const seasonOver = season < new Date().getFullYear() || matchupPeriod === 0 || matchupPeriod >= 17;
+  const seasonOver = seasonOverByCalendar(season) || matchupPeriod === 0 || matchupPeriod >= 17;
   const baselineWeeks = seasonOver ? 17 : Math.max(1, matchupPeriod - 1);
 
   // Points, starts and PAR a player produced in this team's lineup from
@@ -1709,11 +1710,10 @@ export async function loadLeague(
 
   // Derive lifecycle status. ESPN sets rankCalculatedFinal once playoffs end
   // (1 = champion), and currentMatchupPeriod is 0 before week 1.
-  const currentYear = new Date().getFullYear();
   const allTeamsRanked = leagueData.teams.length > 0 &&
     leagueData.teams.every(t => (t.rankCalculatedFinal || 0) > 0);
   let status: LeagueStatus;
-  if (season < currentYear) {
+  if (seasonOverByCalendar(season)) {
     status = 'final';
   } else if (allTeamsRanked) {
     status = 'final';
@@ -1785,7 +1785,7 @@ export async function getAvailableSeasons(
       if (!data.teams || data.teams.length === 0) return null;
       const allTeamsRanked = data.teams.every(t => (t.rankCalculatedFinal || 0) > 0);
       let status: LeagueStatus;
-      if (year < currentYear) status = 'final';
+      if (seasonOverByCalendar(year)) status = 'final';
       else if (allTeamsRanked) status = 'final';
       else if (
         (data.status?.currentMatchupPeriod || 0) === 0 ||

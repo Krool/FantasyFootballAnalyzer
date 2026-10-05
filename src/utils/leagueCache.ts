@@ -86,6 +86,12 @@ export function loadCachedLeagueForCredentials(
 }
 
 export function cacheLeague(league: League): void {
+  // A throttled (loadIncomplete) load must not overwrite a complete snapshot:
+  // Refresh during a Yahoo slowdown would otherwise swap good data for gaps.
+  if (league.loadIncomplete) {
+    const existing = loadCachedLeague(league.platform, league.id, league.season);
+    if (existing && !existing.loadIncomplete) return;
+  }
   const entry: CacheEntry = { league, savedAt: Date.now() };
   const payload = JSON.stringify(entry);
   try {
@@ -158,19 +164,6 @@ export function clearCachedLeague(
     localStorage.removeItem(keyFor(platform, leagueId, year));
   } catch (err) {
     logger.warn('[leagueCache] Failed to clear cached league:', err);
-  }
-}
-
-export function clearAllCachedLeagues(): void {
-  try {
-    const toRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith(KEY_PREFIX)) toRemove.push(key);
-    }
-    toRemove.forEach(key => localStorage.removeItem(key));
-  } catch (err) {
-    logger.warn('[leagueCache] Failed to clear all cached leagues:', err);
   }
 }
 

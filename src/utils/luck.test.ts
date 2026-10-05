@@ -1,13 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   calculateLuckMetrics,
-  getLuckiestTeam,
-  getUnluckiestTeam,
-  getBiggestBlowout,
-  getNarrowestVictory,
-  getHeartbreakLoss,
-  getClutchTeam,
-  formatLuckScore,
 } from './luck';
 import type { MatchupData } from './luck';
 
@@ -199,102 +192,5 @@ describe('calculateLuckMetrics median-league mode', () => {
     // The displayed record stays the platform record.
     expect(t1Adj.actualWins).toBe(6);
     expect(t1Adj.h2hWins).toBe(3);
-  });
-});
-
-describe('getLuckiestTeam', () => {
-  it('returns team with highest luck score', () => {
-    const { teams, matchups } = makeTestData();
-    const metrics = calculateLuckMetrics(matchups, teams);
-    const luckiest = getLuckiestTeam(metrics);
-    expect(luckiest).toBeDefined();
-  });
-
-  it('returns undefined for empty array', () => {
-    expect(getLuckiestTeam([])).toBeUndefined();
-  });
-});
-
-describe('getUnluckiestTeam', () => {
-  it('returns team with lowest luck score', () => {
-    const { teams, matchups } = makeTestData();
-    const metrics = calculateLuckMetrics(matchups, teams);
-    const unluckiest = getUnluckiestTeam(metrics);
-    expect(unluckiest).toBeDefined();
-  });
-});
-
-describe('getBiggestBlowout', () => {
-  it('returns team with biggest winning margin', () => {
-    const { teams, matchups } = makeTestData();
-    const metrics = calculateLuckMetrics(matchups, teams);
-    const blowout = getBiggestBlowout(metrics);
-
-    expect(blowout).toBeDefined();
-    expect(blowout!.margin).toBe(50); // t1 beat t4 by 50 in week 3
-  });
-});
-
-describe('getNarrowestVictory', () => {
-  it('returns the smallest winning margin', () => {
-    const { teams, matchups } = makeTestData();
-    const metrics = calculateLuckMetrics(matchups, teams);
-    const narrow = getNarrowestVictory(metrics);
-
-    expect(narrow).toBeDefined();
-    // Smallest win: t3 beat t4 100-90 = 10 in week 1, or t1 beat t3 130-120 = 10 in week 2
-    expect(narrow!.margin).toBe(10);
-  });
-});
-
-describe('getHeartbreakLoss', () => {
-  it('returns the smallest losing margin', () => {
-    const { teams, matchups } = makeTestData();
-    const metrics = calculateLuckMetrics(matchups, teams);
-    const heartbreak = getHeartbreakLoss(metrics);
-
-    expect(heartbreak).toBeDefined();
-    expect(heartbreak!.margin).toBe(10); // narrowest loss is 10 pts
-  });
-});
-
-describe('getClutchTeam', () => {
-  it('returns undefined when no team has 3+ close games', () => {
-    // Smallest margin in the fixture is 10, so threshold=5 means zero close
-    // games for any team, which falls below the 3-game eligibility cutoff.
-    const { teams, matchups } = makeTestData();
-    const metrics = calculateLuckMetrics(matchups, teams, 5);
-    expect(getClutchTeam(metrics)).toBeUndefined();
-  });
-
-  it('returns team with best close-game win pct among eligible teams', () => {
-    const teams = [
-      { id: 't1', name: 'Clutch', wins: 3, losses: 0, ties: 0, pointsFor: 300 },
-      { id: 't2', name: 'Choker', wins: 0, losses: 3, ties: 0, pointsFor: 290 },
-    ];
-    const matchups: MatchupData[] = [
-      { week: 1, team1Id: 't1', team1Points: 100, team2Id: 't2', team2Points: 95 },
-      { week: 2, team1Id: 't1', team1Points: 100, team2Id: 't2', team2Points: 99 },
-      { week: 3, team1Id: 't1', team1Points: 100, team2Id: 't2', team2Points: 96 },
-    ];
-    const metrics = calculateLuckMetrics(matchups, teams, 10);
-    const clutch = getClutchTeam(metrics);
-    expect(clutch).toBeDefined();
-    expect(clutch!.teamId).toBe('t1');
-    expect(clutch!.closeGamePct).toBe(1);
-  });
-});
-
-describe('formatLuckScore', () => {
-  it('formats positive scores with + prefix', () => {
-    expect(formatLuckScore(2.5)).toBe('+2.5');
-  });
-
-  it('formats negative scores with - prefix', () => {
-    expect(formatLuckScore(-1.3)).toBe('-1.3');
-  });
-
-  it('formats zero with + prefix', () => {
-    expect(formatLuckScore(0)).toBe('+0.0');
   });
 });

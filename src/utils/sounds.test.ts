@@ -175,7 +175,6 @@ describe('sounds', () => {
     const master = ctx().gains[0];
     expect(sounds.toggleMute()).toBe(true);
     expect(master.gain.value).toBe(0);
-    expect(sounds.getMuted()).toBe(true);
     expect(sounds.toggleMute()).toBe(false);
     expect(master.gain.value).toBeGreaterThan(0);
   });

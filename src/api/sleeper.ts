@@ -277,7 +277,8 @@ function calculatePlayerPARFromMatchups(
   weekMap: Map<number, number> | undefined,
   transactionWeek: number,
   position: string,
-  replacementPoints: Map<string, number>
+  replacementPoints: Map<string, number>,
+  baselineWeeks: number
 ): PlayerMatchupStats {
   let pointsSinceTransaction = 0;
   let gamesSinceTransaction = 0;
@@ -297,7 +298,8 @@ function calculatePlayerPARFromMatchups(
     pointsSinceTransaction,
     position,
     gamesSinceTransaction,
-    replacementPoints
+    replacementPoints,
+    baselineWeeks
   );
 
   return {
@@ -550,6 +552,11 @@ export async function loadLeague(leagueId: string): Promise<League> {
 
   // Calculate replacement-level points for each position
   const replacementPoints = calculateReplacementPoints(allPlayerStats, replacementLevels);
+  // The baseline is season-to-date, so pro-rate it over the weeks it covers.
+  // A fixed 17 mid-season shrank replacement level ~4x at week 5 and made
+  // every pickup look like pure profit (ESPN fixed the same thing in espn.ts).
+  const inSeason = leagueData.season === nflState.season && nflState.season_type === 'regular';
+  const baselineWeeks = inSeason ? Math.min(17, Math.max(1, (nflState.week || 1) - 1)) : 17;
 
   // Build a map of player starts by roster and week for waiver impact tracking
   // Key: `${rosterId}-${playerId}`, Value: Map<week, points>
@@ -632,7 +639,8 @@ export async function loadLeague(leagueId: string): Promise<League> {
           weekMap,
           pickupWeek,
           player.position,
-          replacementPoints
+          replacementPoints,
+          baselineWeeks
         );
 
         totalPointsGenerated += stats.pointsSinceTransaction;
@@ -717,7 +725,8 @@ export async function loadLeague(leagueId: string): Promise<League> {
             weekMap,
             tradeWeek,
             player ? fantasyPosition(player) : 'Unknown',
-            replacementPoints
+            replacementPoints,
+            baselineWeeks
           );
 
           pointsGained += stats.pointsSinceTransaction;
@@ -738,7 +747,8 @@ export async function loadLeague(leagueId: string): Promise<League> {
                   weekMap,
                   tradeWeek,
                   player ? fantasyPosition(player) : 'Unknown',
-                  replacementPoints
+                  replacementPoints,
+                  baselineWeeks
                 );
 
                 pointsLost += stats.pointsSinceTransaction;

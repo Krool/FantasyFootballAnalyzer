@@ -19,7 +19,7 @@ interface DraftRecapProps {
 export function DraftRecap({ room }: DraftRecapProps) {
   const { config, derived, scaledValues } = room;
   const { playClick, playGrade } = useSounds();
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   const recaps = useMemo(
     () => gradeDraftSession(config, derived, scaledValues),
@@ -35,13 +35,18 @@ export function DraftRecap({ room }: DraftRecapProps) {
   const copyRoster = () => {
     if (!mine) return;
     playClick();
-    navigator.clipboard
-      .writeText(rosterAsText(mine, config.season))
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      })
-      .catch(err => logger.warn('Clipboard write failed:', err));
+    // A silent failure reads as success, so say so (same as RecapShare).
+    const show = (state: 'copied' | 'failed') => {
+      setCopyState(state);
+      setTimeout(() => setCopyState('idle'), state === 'failed' ? 2500 : 2000);
+    };
+    Promise.resolve()
+      .then(() => navigator.clipboard.writeText(rosterAsText(mine, config.season)))
+      .then(() => show('copied'))
+      .catch(err => {
+        logger.warn('Clipboard write failed:', err);
+        show('failed');
+      });
   };
 
   const gradeSound = (grade: string) => {
@@ -103,7 +108,7 @@ export function DraftRecap({ room }: DraftRecapProps) {
                 )}
               </div>
               <button type="button" className={styles.btn} onClick={copyRoster}>
-                {copied ? 'Copied' : 'Copy Roster'}
+                {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy Roster'}
               </button>
             </div>
             <ul className={styles.mineRoster}>

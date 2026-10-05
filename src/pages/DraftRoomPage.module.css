@@ -39,17 +39,6 @@
   content: '◆ ';
 }
 
-.completeBanner {
-  border: 2px solid var(--bone);
-  border-left: 6px solid var(--lime);
-  box-shadow: 5px 5px 0 var(--bone);
-  padding: 1.2rem 1.4rem;
-  font-family: var(--font-display);
-  font-style: italic;
-  color: var(--bone);
-  margin-bottom: 1.5rem;
-}
-
 .statusBar {
   display: flex;
   align-items: center;

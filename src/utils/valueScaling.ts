@@ -127,6 +127,3 @@ export function siteMarketValues(
   }
   return out;
 }
-
-export const espnMarketValues = (players: PoolPlayer[], target: LeagueShape) =>
-  siteMarketValues('espn', players, target);

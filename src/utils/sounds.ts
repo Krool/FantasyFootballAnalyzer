@@ -228,10 +228,6 @@ export function toggleMute(): boolean {
   return isMuted;
 }
 
-export function getMuted(): boolean {
-  return isMuted;
-}
-
 export function setMuted(muted: boolean): void {
   isMuted = muted;
   if (masterGain) {

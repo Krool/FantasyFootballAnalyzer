@@ -2,6 +2,7 @@ import type { League, LeagueCredentials, LeagueStatus, SeasonOption, Team, Draft
 import { logger } from '@/utils/logger';
 import { decideTradeWinner } from '@/utils/tradeVerdict';
 import { calculateGamesPAR, calculateReplacementLevels } from '@/utils/par';
+import { seasonOverByCalendar } from '@/utils/leaguePhase';
 import { safeLocalStorage, safeSessionStorage } from '@/utils/safeStorage';
 import { pacedYahooFetch } from './yahooPacing';
 
@@ -410,7 +411,7 @@ export async function getAvailableSeasons(
         // Past years are necessarily final. Current year we leave as 'live'
         // until the user actually loads it (cheap heuristic; pages re-derive
         // from the real response on load).
-        const status: LeagueStatus = year < currentYear ? 'final' : 'live';
+        const status: LeagueStatus = seasonOverByCalendar(year) ? 'final' : 'live';
         return { year, leagueId: match.id, status, leagueName: match.name } as SeasonOption;
       } catch (err) {
         logger.debug(`[Yahoo] getAvailableSeasons: year ${year} failed:`, err);
@@ -647,11 +648,12 @@ export async function loadLeague(leagueKey: string): Promise<League> {
   }
 
   // Yahoo signals: draft_status ('predraft' | 'postdraft'), is_finished (1 = done).
-  // Past seasons are always final regardless of what the response says.
-  const currentYear = new Date().getFullYear();
+  // Past seasons are final regardless of what the response says - but season
+  // N's week 17 is played in January of N+1, so the calendar only decides from
+  // February on; before that, is_finished does.
   const isFinished = String(leagueInfo.is_finished) === '1';
   let status: LeagueStatus;
-  if (season < currentYear) {
+  if (seasonOverByCalendar(season)) {
     status = 'final';
   } else if (isFinished) {
     status = 'final';
@@ -1370,6 +1372,12 @@ export async function enrichPlayersWithStats(
   // Three fetch phases, each individually best-effort: a failure just leaves
   // that capability degraded to the old season-totals behavior.
   const replacementMap = new Map(Object.entries(replacementBaseline));
+  // Baselines are season-to-date totals: pro-rate them over the weeks they
+  // cover, not a fixed 17, or mid-season replacement level shrinks ~4x and
+  // every pickup reads as pure profit (same fix as espn.ts baselineWeeks).
+  const baselineWeeks = league.status === 'live'
+    ? Math.min(17, Math.max(1, (league.currentWeek || 1) - 1))
+    : 17;
   let weeklyPoints: Record<string, Record<number, number>> | null = null;
   // Players whose weekly fetch actually landed (requested, no errored batch).
   // Everyone else - capped out, batch failed, or never requested - falls back
@@ -1575,7 +1583,7 @@ export async function enrichPlayersWithStats(
             const starts = sumStartsSince(team.id, player.id, tx.week);
             const { points, games } =
               starts ?? sumWeeksSince(player.id, tx.week, ownedUntilWeek(team, tx, player.id));
-            const par = calculateGamesPAR(points, playerInfo.position, games, replacementMap);
+            const par = calculateGamesPAR(points, playerInfo.position, games, replacementMap, baselineWeeks);
             player.pointsSincePickup = Math.round(points * 10) / 10;
             player.pointsAboveReplacement = Math.round(par * 10) / 10;
             // Lineups make this a real start count; without them it is only
@@ -1629,14 +1637,14 @@ export async function enrichPlayersWithStats(
           const { points, games } = sumWeeksSince(p.id, trade.week);
           rawGained += points;
           parGained += calculateGamesPAR(
-            points, playerMap.get(p.id)?.position || p.position, games, replacementMap,
+            points, playerMap.get(p.id)?.position || p.position, games, replacementMap, baselineWeeks,
           );
         }
         for (const p of tradeTeam.playersSent) {
           const { points, games } = sumWeeksSince(p.id, trade.week);
           rawLost += points;
           parLost += calculateGamesPAR(
-            points, playerMap.get(p.id)?.position || p.position, games, replacementMap,
+            points, playerMap.get(p.id)?.position || p.position, games, replacementMap, baselineWeeks,
           );
         }
       } else {

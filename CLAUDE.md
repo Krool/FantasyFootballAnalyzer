@@ -58,8 +58,8 @@ changes do.
   trailing slash) and, via `api/_cors.js`, the sole allowed production CORS
   origin. It must equal `https://fantasyfootballanalyzer.app`. If it lags the
   frontend domain, Yahoo login breaks on the new origin while ESPN/Sleeper and
-  guest mode keep working. The in-code default is the old github.io URL, so the
-  Vercel value is what matters.
+  guest mode keep working. The in-code default matches it (since 2026-10-04),
+  but the Vercel value is what production reads.
 - Yahoo client id/secret live in Vercel env (never in the bundle).
 - `ALLOW_DEV_OAUTH=1` (optional, dev/preview only) lets `yahoo-callback`
   redirect OAuth tokens to `localhost:5173`/`4173` instead of `FRONTEND_URL`.
@@ -80,7 +80,10 @@ changes do.
 - `npm run deploy` - build + push `dist/` to `gh-pages` (manual fallback).
 - `npm run fetch:rankings` - pull fresh ranking snapshots into `data/raw/`.
 - `npm run build:draft-data` - rebuild the bundled pool from `data/raw/`.
-- `npm run update:rankings` - `fetch:rankings` then `build:draft-data`.
+- `npm run build:weekly-shape` - rebuild `src/data/weeklyShape.<season>.json`
+  (per-week projection shape; see `scripts/CLAUDE.md`).
+- `npm run update:rankings` - `fetch:rankings`, `build:draft-data`, then
+  `build:weekly-shape`.
 
 ## Routing, guest mode, and SEO
 
@@ -201,7 +204,8 @@ slugs (name+pos, `dst-<team>`); saved Draft Room sessions depend on that.
 is a dense rank, not a true ADP — mechanics in `scripts/CLAUDE.md`.
 Do not change the id scheme without a session migration.
 
-`src/data/draftPool.<season>.json`, `src/data/draftPool.ts`, and everything in
+`src/data/draftPool.<season>.json`, `src/data/draftPool.ts`,
+`src/data/weeklyShape.<season>.json`, `src/data/weeklyShape.ts`, and everything in
 `data/raw/` are bot-owned generated data: the twice-daily Update rankings Action
 rebuilds and commits them. Do not hand-commit a locally-built pool, and never
 let one ride along in an unrelated commit — a stale local pool once clobbered
@@ -291,4 +295,7 @@ LAST season during draft prep; the Draft Room targets the upcoming season
 - `docs/DESIGN_SYSTEM.md` - the GRIDIRON visual language.
 - `docs/PROJECT_REVIEW_2026-06.md`, `docs/YAHOO_DATA_COMPARISON_2026-06.md` -
   dated review snapshots (historical).
+- `docs/redesign-proposal.html` - design exploration, referenced from DESIGN_SYSTEM.md.
 - `docs/archive/` - superseded docs kept for history.
+- Nested memories: `scripts/CLAUDE.md` (pipeline), `extension/CLAUDE.md` and
+  `extension/README.md` (extension), `data/award-sheets/README.md` (award icons).

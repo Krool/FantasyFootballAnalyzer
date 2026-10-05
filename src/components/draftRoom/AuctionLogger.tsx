@@ -206,6 +206,12 @@ export function AuctionLogger({ room, selected, onLogged }: AuctionLoggerProps) 
         className={styles.submit}
         onClick={submit}
         disabled={!selected || !winnerId || !price}
+        title={
+          !selected ? 'Pick a player from the board'
+            : !winnerId ? 'Choose the winning team'
+              : !price ? 'Enter the price'
+                : undefined
+        }
       >
         Sold
       </button>

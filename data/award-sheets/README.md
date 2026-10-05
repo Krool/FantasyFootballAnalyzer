@@ -4,7 +4,7 @@ Source sheets for the award sticker icons in `src/images/awards/`. Generated
 with ChatGPT image generation (July 2026), sliced by
 `npm run build:award-icons` (`scripts/sliceAwardIcons.ts`): magenta
 chroma-key, connected-component crop (floating bits like the alarm clock's
-"Zzz" attach to the nearest sticker), square pad, 256px quantized PNG named
+"Zzz" attach to the nearest sticker), square pad, 128px quantized PNG named
 by award id.
 
 Cell-to-award-id mapping lives in the `SHEETS` table in the script. The

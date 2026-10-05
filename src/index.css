@@ -449,16 +449,7 @@ html {
 /* ─── Utilities ─── */
 .text-center { text-align: center; }
 .text-right  { text-align: right; }
-.text-secondary { color: var(--bone-dim); }
 .font-mono   { font-family: var(--font-mono); }
-.font-headline { font-family: var(--font-headline); }
-.mt-1 { margin-top: 0.25rem; } .mt-2 { margin-top: 0.5rem; }
-.mt-4 { margin-top: 1rem; }
-.mb-2 { margin-bottom: 0.5rem; } .mb-4 { margin-bottom: 1rem; }
-.flex { display: flex; } .flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.gap-2 { gap: 0.5rem; } .gap-4 { gap: 1rem; }
 
 /* ─── Footer ─── */
 .site-footer {

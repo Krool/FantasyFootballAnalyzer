@@ -345,7 +345,7 @@ function lateSwing(done: ReturnType<typeof completedMatchups>, winner: WinnerFn)
     const last = list.slice(-SWING_WINDOW).reduce((s, g) => s + g.result, 0);
     rows.push({ teamId, value: last - first, tiebreak: last, first, last });
   }
-  const rec = (w: number) => `${w}-${SWING_WINDOW - w}`.replace('.5', '½');
+  const rec = (w: number) => `${w}-${SWING_WINDOW - w}`.replace(/\.5/g, '½');
   const awards: Award[] = [];
   const surge = soleLeader(rows, 'max') as (typeof rows)[number] | undefined;
   if (surge && surge.value >= 2) {

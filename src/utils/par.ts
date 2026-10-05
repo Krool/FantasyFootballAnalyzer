@@ -200,49 +200,6 @@ export function normalizePosition(position: string): string {
 }
 
 /**
- * Calculate PAR for a single player
- */
-export function calculatePlayerPAR(
-  playerPoints: number,
-  position: string,
-  replacementPoints: Map<string, number>,
-  gamesPlayed: number = 1
-): number {
-  const normalizedPos = normalizePosition(position);
-  const replacementPts = replacementPoints.get(normalizedPos) || 0;
-
-  // If we have games played, calculate per-game PAR and extrapolate
-  // Otherwise, just use total points
-  if (gamesPlayed > 0) {
-    const playerPPG = playerPoints / gamesPlayed;
-    // Assume a 17-game season for replacement level baseline
-    const replacementPPG = replacementPts / 17;
-    return (playerPPG - replacementPPG) * gamesPlayed;
-  }
-
-  return playerPoints - replacementPts;
-}
-
-/**
- * Build a map of player ID -> season PAR for quick lookups
- */
-export function buildPlayerPARMap(
-  playerStats: PositionStats[],
-  replacementPoints: Map<string, number>
-): Map<string, number> {
-  const parMap = new Map<string, number>();
-
-  playerStats.forEach(player => {
-    const normalizedPos = normalizePosition(player.position);
-    const replacementPts = replacementPoints.get(normalizedPos) || 0;
-    const par = player.seasonPoints - replacementPts;
-    parMap.set(player.playerId, par);
-  });
-
-  return parMap;
-}
-
-/**
  * Calculate PAR for points scored in specific games
  * Used for waiver pickups and trades where we track actual starts
  */

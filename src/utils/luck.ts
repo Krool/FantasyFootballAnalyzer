@@ -223,7 +223,10 @@ export function calculateLuckMetrics(
     // Luck score: actual wins vs the median expectation. In a median league
     // the platform record already contains median wins, so use the h2h
     // record — same basis as expectedWins — or everyone reads as lucky.
-    const winsForLuck = options?.medianMatchup ? h2hWins : team.wins;
+    // A tie is half a win, matching expectedWins' credit for a median tie.
+    const winsForLuck = options?.medianMatchup
+      ? h2hWins + 0.5 * h2hTies
+      : (team.wins ?? 0) + 0.5 * (team.ties ?? 0);
     const luckScore = winsForLuck - expectedWins;
 
     // Determine luck rating
@@ -277,95 +280,4 @@ export function calculateLuckMetrics(
   });
 
   return metrics;
-}
-
-/**
- * Get the luckiest team
- */
-export function getLuckiestTeam(metrics: LuckMetrics[]): LuckMetrics | undefined {
-  return metrics.reduce((best, current) =>
-    !best || current.luckScore > best.luckScore ? current : best
-  , undefined as LuckMetrics | undefined);
-}
-
-/**
- * Get the unluckiest team
- */
-export function getUnluckiestTeam(metrics: LuckMetrics[]): LuckMetrics | undefined {
-  return metrics.reduce((worst, current) =>
-    !worst || current.luckScore < worst.luckScore ? current : worst
-  , undefined as LuckMetrics | undefined);
-}
-
-/**
- * Get team with biggest blowout win
- */
-export function getBiggestBlowout(metrics: LuckMetrics[]): { team: LuckMetrics; margin: number } | undefined {
-  let best: { team: LuckMetrics; margin: number } | undefined;
-  metrics.forEach(m => {
-    if (!best || m.biggestWin > best.margin) {
-      best = { team: m, margin: m.biggestWin };
-    }
-  });
-  return best;
-}
-
-/**
- * Get team with narrowest win
- */
-export function getNarrowestVictory(metrics: LuckMetrics[]): { team: LuckMetrics; margin: number; week: number } | undefined {
-  let best: { team: LuckMetrics; margin: number; week: number } | undefined;
-
-  metrics.forEach(m => {
-    m.weeklyScores.forEach(score => {
-      if (score.won && score.margin > 0) {
-        if (!best || score.margin < best.margin) {
-          best = { team: m, margin: score.margin, week: score.week };
-        }
-      }
-    });
-  });
-
-  return best;
-}
-
-/**
- * Get team with heartbreak loss (narrowest loss)
- */
-export function getHeartbreakLoss(metrics: LuckMetrics[]): { team: LuckMetrics; margin: number; week: number } | undefined {
-  let worst: { team: LuckMetrics; margin: number; week: number } | undefined;
-
-  metrics.forEach(m => {
-    m.weeklyScores.forEach(score => {
-      if (!score.won && !score.tied && score.margin < 0) {
-        const absMargin = Math.abs(score.margin);
-        if (!worst || absMargin < worst.margin) {
-          worst = { team: m, margin: absMargin, week: score.week };
-        }
-      }
-    });
-  });
-
-  return worst;
-}
-
-/**
- * Get team with best close game record
- */
-export function getClutchTeam(metrics: LuckMetrics[]): LuckMetrics | undefined {
-  // Only consider teams with at least 3 close games
-  const eligible = metrics.filter(m => m.closeWins + m.closeLosses >= 3);
-  if (eligible.length === 0) return undefined;
-
-  return eligible.reduce((best, current) =>
-    !best || current.closeGamePct > best.closeGamePct ? current : best
-  , undefined as LuckMetrics | undefined);
-}
-
-/**
- * Format luck score for display
- */
-export function formatLuckScore(score: number): string {
-  const prefix = score >= 0 ? '+' : '';
-  return `${prefix}${score.toFixed(1)}`;
 }

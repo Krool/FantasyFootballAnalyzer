@@ -171,20 +171,6 @@
   padding: 0.5rem 0;
 }
 
-.tierBreak {
-  font-family: var(--font-mono);
-  font-style: normal;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--ink);
-  background: var(--lime);
-  padding: 0.08rem 0.3rem;
-  margin-left: 0.4rem;
-  vertical-align: middle;
-  white-space: nowrap;
-}
-
 .budget {
   display: flex;
   flex-direction: column;

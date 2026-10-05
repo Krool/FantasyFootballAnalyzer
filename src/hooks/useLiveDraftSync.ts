@@ -398,10 +398,18 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
     };
 
     void syncOnce();
-    const timer = setInterval(syncOnce, POLL_MS);
+    // A background tab doesn't need picks every 10s; catch up on return.
+    const timer = setInterval(() => {
+      if (!document.hidden) void syncOnce();
+    }, POLL_MS);
+    const onVisible = () => {
+      if (!document.hidden) void syncOnce();
+    };
+    document.addEventListener('visibilitychange', onVisible);
     return () => {
       cancelled = true;
       clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, [enabled, available, league.id, watchId, shapeMismatch, detectSlot, seatForSlot, slotSeats, config.myTeamId, derived.draftedPlayerIds, bySleeperId, teamIds, config.draftType, logEvents, setLiveKeepers, stop]);
 

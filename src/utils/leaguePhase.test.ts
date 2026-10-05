@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { League, Team } from '@/types';
-import { isEmptyPreseason } from './leaguePhase';
+import { isEmptyPreseason, seasonOverByCalendar } from './leaguePhase';
 
 function makeLeague(overrides: Partial<League> = {}): League {
   return {
@@ -67,5 +67,20 @@ describe('isEmptyPreseason', () => {
   it('is false when status is missing (older cached snapshots)', () => {
     const league = makeLeague({ teams: [makeTeam()] });
     expect(isEmptyPreseason(league)).toBe(false);
+  });
+});
+
+describe('seasonOverByCalendar', () => {
+  it('keeps last season open through January (week 17 is played then)', () => {
+    expect(seasonOverByCalendar(2026, new Date(2027, 0, 3))).toBe(false);
+  });
+
+  it('closes last season from February on', () => {
+    expect(seasonOverByCalendar(2026, new Date(2027, 1, 1))).toBe(true);
+  });
+
+  it('never closes the current calendar season, always closes older ones', () => {
+    expect(seasonOverByCalendar(2026, new Date(2026, 9, 4))).toBe(false);
+    expect(seasonOverByCalendar(2024, new Date(2026, 0, 3))).toBe(true);
   });
 });

@@ -17,12 +17,6 @@ export function injuryAbbrev(status: string): string {
   return ABBREVS[status.toLowerCase()] ?? status.slice(0, 3).toUpperCase();
 }
 
-// Out-for-a-while statuses get the loud styling; questionable stays mild.
-export function injuryIsSevere(status: string): boolean {
-  const s = status.toLowerCase();
-  return s !== 'questionable' && s !== 'na';
-}
-
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 interface InjuryFields {

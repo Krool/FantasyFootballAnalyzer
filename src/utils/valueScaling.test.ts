@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PoolPlayer } from '@/types/draft';
-import { scaleValues, scoringScalar, espnMarketValues, siteMarketValues } from './valueScaling';
+import { scaleValues, scoringScalar, siteMarketValues } from './valueScaling';
 
 function player(id: string, baseValue: number | null, pos = 'RB'): PoolPlayer {
   return { id, name: id, team: 'FA', pos, posRank: 1, overallRank: 1, tier: 1, bye: null, baseValue };
@@ -62,7 +62,9 @@ describe('scaleValues', () => {
   });
 });
 
-describe('espnMarketValues', () => {
+describe('siteMarketValues (espn)', () => {
+  const espnMarketValues = (players: PoolPlayer[], target: { budget: number; teams: number; rounds: number }) =>
+    siteMarketValues('espn', players, target);
   const espn = (id: string, espnValue: number | undefined, pos = 'RB'): PoolPlayer => ({
     ...player(id, null, pos),
     espnValue,

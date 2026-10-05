@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { injuryAbbrev, injuryIsSevere, injuryTitle } from './injury';
+import { injuryAbbrev, injuryTitle } from './injury';
 
 describe('injuryAbbrev', () => {
   it('maps known statuses', () => {
@@ -9,14 +9,6 @@ describe('injuryAbbrev', () => {
 
   it('falls back to first three letters uppercased', () => {
     expect(injuryAbbrev('Probable')).toBe('PRO');
-  });
-});
-
-describe('injuryIsSevere', () => {
-  it('treats questionable and na as mild', () => {
-    expect(injuryIsSevere('Questionable')).toBe(false);
-    expect(injuryIsSevere('NA')).toBe(false);
-    expect(injuryIsSevere('IR')).toBe(true);
   });
 });
 

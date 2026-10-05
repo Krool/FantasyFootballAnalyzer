@@ -380,10 +380,15 @@ export function injuryLuck(
       const pts = pointsOf(p);
       let perGame: number | undefined;
       if (playedJudged.length > 0) {
-        const total = pts
-          ? playedJudged.reduce((s, w) => s + (pts[w] ?? 0), 0)
-          : (pk.seasonPoints ?? p.seasonPoints);
-        if (total !== undefined) perGame = total / playedJudged.length;
+        if (pts) {
+          perGame = playedJudged.reduce((s, w) => s + (pts[w] ?? 0), 0) / playedJudged.length;
+        } else {
+          // A season total covers every game to date: the in-progress week
+          // (Yahoo adds it back) and playoff weeks, which judged leaves out.
+          // Divide by every game played, or the rate inflates.
+          const total = pk.seasonPoints ?? p.seasonPoints;
+          if (total !== undefined) perGame = total / Math.max(played.size, playedJudged.length);
+        }
       }
       perGame ??= ctx.projectedPerGame?.(p);
       if (perGame === undefined) continue;

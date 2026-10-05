@@ -630,21 +630,6 @@ export function calculateDraftSummary(picks: GradedPick[]): DraftGradeSummary {
   return summary;
 }
 
-// Get color class for a grade
-export function getGradeColorClass(grade: DraftGrade): string {
-  switch (grade) {
-    case 'great':
-      return 'grade-great';
-    case 'good':
-      return 'grade-good';
-    case 'bad':
-      return 'grade-bad';
-    case 'terrible':
-      return 'grade-terrible';
-    default:
-      return '';
-  }
-}
 
 // Get display text for a grade
 // Dollar-mode badge word for the five market bands. The grade colors stay

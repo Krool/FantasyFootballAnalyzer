@@ -4,7 +4,7 @@
 // finds each sticker as a connected component (small satellites like the
 // alarm clock's "Zzz", the dizzy stars, and the bomb spark attach to their
 // nearest big sticker, so nothing gets clipped by a fixed grid), and writes
-// each one as a square, centered, transparent 256px PNG named by award id.
+// each one as a square, centered, transparent 128px PNG named by award id.
 //
 // Re-run after regenerating a sheet: npx tsx scripts/sliceAwardIcons.ts
 
@@ -17,7 +17,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SHEET_DIR = path.join(ROOT, 'data', 'award-sheets');
 const OUT_DIR = path.join(ROOT, 'src', 'images', 'awards');
 
-const OUT_SIZE = 256;
+const OUT_SIZE = 128; // 2x the largest draw (52px share board); 256 was ~3x the bytes
 // Sticker anchors are ~50k px on a 1.5M px sheet; satellites (stars, Zzz,
 // spark) run a few hundred to a few thousand. Anything under NOISE_AREA is
 // a stray speck and gets dropped instead of attached.

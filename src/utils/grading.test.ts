@@ -11,7 +11,6 @@ import {
   calculateDraftSummary,
   getGradeDisplayText,
   formatValueOverExpected,
-  getGradeColorClass,
   gradeAuctionDollarDelta,
   auctionRelativeDelta,
   auctionOverpayDamage,
@@ -392,15 +391,6 @@ describe('getGradeDisplayText', () => {
 });
 
 
-
-describe('getGradeColorClass', () => {
-  it('maps each grade to its CSS class', () => {
-    expect(getGradeColorClass('great')).toBe('grade-great');
-    expect(getGradeColorClass('good')).toBe('grade-good');
-    expect(getGradeColorClass('bad')).toBe('grade-bad');
-    expect(getGradeColorClass('terrible')).toBe('grade-terrible');
-  });
-});
 
 describe('formatValueOverExpected', () => {
   it('adds + prefix for positive values', () => {
