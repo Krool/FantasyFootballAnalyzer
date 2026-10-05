@@ -4,8 +4,8 @@
 //    relative to those opponents' own norms ("they saved their best for you").
 //  - Schedule swap: every team's record had it played every other team's
 //    schedule. The cleanest picture of how much the schedule decided.
-//  - Injury luck: weeks each team's early draft picks sat out (not a bye)
-//    while still on the roster, priced at that player's own per-game rate.
+//  - Injury luck: weeks each team's draft picks sat out (not a bye) while
+//    still on the roster, priced at what they score above replacement.
 //
 // All of it runs on finished weeks only (pass completedMatchups()).
 
@@ -213,54 +213,49 @@ export function summarizeScheduleSwap(swap: ScheduleSwap): ScheduleSwapSummary[]
 }
 
 // ─── Injury luck ──────────────────────────────────────────────────────────
+//
+// What a manager actually loses when a drafted player sits: the roster spot
+// stops producing above what the waiver wire would have given. So each missed
+// week is priced at max(0, his per-game rate - replacement per game at his
+// position). A sub-replacement player missing time costs nothing (you'd have
+// streamed that slot anyway); a stud missing time costs the gap.
 
-// How many of each team's draft picks count as its "core": the ones a
-// manager plans a season around. K and DST are skipped (streamable).
-export const INJURY_CORE_PICKS = 8;
+// Sleeper's per-week `gp` flags (league.gamesPlayed). Structural so this file
+// doesn't depend on where the type lives.
+export interface GamesPlayedLike {
+  season: number;
+  weeks: number[];
+  bySleeperId: Record<string, number[]>;
+}
 
 export interface MissedPlayer {
   name: string;
   position: string;
   weeksMissed: number;
-  // Per-game points in the weeks he did play (league-wide fallback for a
-  // player who never suited up).
+  // Per game in the weeks he played (0-point games included), or his
+  // projection when he hasn't played at all.
   perGame: number;
-  pointsLost: number;
+  replacementPerGame: number;
+  // weeksMissed * max(0, perGame - replacementPerGame).
+  valueLost: number;
 }
 
 export interface InjuryLuck {
   teamId: string;
+  // Missed weeks by players who were worth more than replacement.
   gamesMissed: number;
-  pointsLost: number;
-  // Core players who missed time, biggest loss first.
+  valueLost: number;
   players: MissedPlayer[];
 }
 
-// Bye weeks are inferred from the data: the finished week in which no
-// player on a given NFL team logged a game. A week of missing data (a failed
-// fetch) reads as everyone's bye, which is the safe direction.
-function inferByes(
-  weekly: Record<string, Record<number, number>>,
-  nflTeamOf: Map<string, string>,
-  weeks: number[],
-): Map<string, Set<number>> {
-  const played = new Map<string, Set<number>>();
-  nflTeamOf.forEach((nfl, pid) => {
-    const games = weekly[pid];
-    if (!games) return;
-    const set = played.get(nfl) ?? new Set<number>();
-    for (const w of Object.keys(games)) set.add(Number(w));
-    played.set(nfl, set);
-  });
-  const byes = new Map<string, Set<number>>();
-  played.forEach((set, nfl) => {
-    byes.set(nfl, new Set(weeks.filter(w => !set.has(w))));
-  });
-  return byes;
-}
-
-function pointsFor(weekly: Record<string, Record<number, number>>, p: Player): Record<number, number> | undefined {
-  return weekly[p.id] ?? weekly[p.platformId];
+export interface InjuryLuckContext {
+  // Replacement points per game for a position, in league scoring.
+  replacementPerGame: (pos: string) => number;
+  gamesPlayed?: GamesPlayedLike;
+  // Joins ESPN/Yahoo players to Sleeper ids (gamesPlayed is keyed by them)
+  // and supplies a projection for a player who hasn't played.
+  sleeperIdOf?: (p: Player) => string | undefined;
+  projectedPerGame?: (p: Player) => number | undefined;
 }
 
 // Week a team let the player go (drop or trade), or Infinity if he stayed.
@@ -277,92 +272,108 @@ function releaseWeek(team: League['teams'][number], player: Player, trades: Leag
   return week;
 }
 
-// Returns [] when the platform has no per-player weekly points (Yahoo) or
-// there are no draft picks to judge, so the page can hide the section.
+// Returns [] when there is no way to tell played weeks from missed ones (no
+// games-played feed and no per-player weekly points), so the page hides it.
 export function injuryLuck(
-  league: Pick<League, 'teams' | 'trades' | 'playerWeeklyPoints' | 'draftType'>,
+  league: Pick<League, 'teams' | 'trades' | 'playerWeeklyPoints' | 'season'>,
   weeks: number[],
+  ctx: InjuryLuckContext,
 ): InjuryLuck[] {
-  const weekly = league.playerWeeklyPoints;
-  if (!weekly || weeks.length === 0) return [];
+  const weekly = league.playerWeeklyPoints ?? {};
+  const gp = ctx.gamesPlayed && ctx.gamesPlayed.season === league.season ? ctx.gamesPlayed : undefined;
+  // Judge only weeks the played-games source actually covers.
+  const judged = gp ? weeks.filter(w => gp.weeks.includes(w)) : weeks;
+  if (judged.length === 0) return [];
 
-  const nflTeamOf = new Map<string, string>();
-  const note = (p: Player) => {
-    if (p.team && p.team !== 'FA') {
-      const games = pointsFor(weekly, p);
-      if (games) nflTeamOf.set(weekly[p.id] ? p.id : p.platformId, p.team);
+  const pointsOf = (p: Player) => weekly[p.id] ?? weekly[p.platformId];
+
+  // Weeks a player played. The gp feed counts a 0-point game as played;
+  // weekly points can't (Sleeper drops zero entries), so they're the fallback.
+  const playedCache = new Map<string, Set<number> | undefined>();
+  const playedWeeks = (p: Player): Set<number> | undefined => {
+    if (playedCache.has(p.id)) return playedCache.get(p.id);
+    let set: Set<number> | undefined;
+    const sid = gp ? ctx.sleeperIdOf?.(p) : undefined;
+    if (gp && sid) set = new Set(gp.bySleeperId[sid] ?? []);
+    else if (!gp) {
+      const pts = pointsOf(p);
+      if (pts) set = new Set(Object.keys(pts).map(Number));
     }
+    playedCache.set(p.id, set);
+    return set;
   };
-  for (const t of league.teams) {
-    t.roster?.forEach(note);
-    t.draftPicks?.forEach(pk => note(pk.player));
-    t.transactions?.forEach(tx => { tx.adds.forEach(note); tx.drops.forEach(note); });
-  }
-  const byes = inferByes(weekly, nflTeamOf, weeks);
 
   const isCore = (pos: string) => pos !== 'K' && pos !== 'DST' && pos !== 'DEF';
-  const cores = league.teams.map(team => {
-    const picks = (team.draftPicks ?? []).filter(pk => isCore(pk.player.position));
-    const ordered = league.draftType === 'auction'
-      ? [...picks].sort((a, b) => (b.auctionValue ?? 0) - (a.auctionValue ?? 0))
-      : [...picks].sort((a, b) => a.pickNumber - b.pickNumber);
-    return { team, core: ordered.slice(0, INJURY_CORE_PICKS) };
-  });
+  const picksByTeam = league.teams.map(team => ({
+    team,
+    picks: (team.draftPicks ?? []).filter(pk => isCore(pk.player.position)),
+  }));
+  const allPicks = picksByTeam.flatMap(t => t.picks);
+  const covered = allPicks.filter(pk => playedWeeks(pk.player)).length;
+  if (allPicks.length === 0 || covered < allPicks.length / 2) return [];
 
-  // Must have weekly points for most core players, or the platform isn't
-  // feeding this data (or it is a partial cache) and every week looks missed.
-  const corePlayers = cores.flatMap(c => c.core);
-  const covered = corePlayers.filter(pk => pointsFor(weekly, pk.player)).length;
-  if (corePlayers.length === 0 || covered < corePlayers.length / 2) return [];
-
-  // Fallback per-game rate by position, for a player who never played.
-  const posRates = new Map<string, number[]>();
-  for (const pk of corePlayers) {
-    const games = pointsFor(weekly, pk.player);
-    const vals = games ? Object.values(games) : [];
-    if (vals.length === 0) continue;
-    const list = posRates.get(pk.player.position) ?? [];
-    list.push(vals.reduce((s, v) => s + v, 0) / vals.length);
-    posRates.set(pk.player.position, list);
-  }
-  const posFallback = (pos: string) => {
-    const list = posRates.get(pos);
-    return list && list.length ? median(list) : 0;
+  // Bye weeks, inferred: the judged week in which no player we know of on
+  // that NFL team played. A week of missing data reads as everyone's bye,
+  // which is the safe direction.
+  const nflPlayed = new Map<string, Set<number>>();
+  const noteTeam = (p: Player) => {
+    if (!p.team || p.team === 'FA') return;
+    const set = playedWeeks(p);
+    if (!set) return;
+    const acc = nflPlayed.get(p.team) ?? new Set<number>();
+    set.forEach(w => acc.add(w));
+    nflPlayed.set(p.team, acc);
   };
+  for (const t of league.teams) {
+    t.roster?.forEach(noteTeam);
+    t.draftPicks?.forEach(pk => noteTeam(pk.player));
+  }
 
-  return cores.map(({ team, core }) => {
+  return picksByTeam.map(({ team, picks }) => {
     const players: MissedPlayer[] = [];
-    for (const pk of core) {
+    for (const pk of picks) {
       const p = pk.player;
-      const games = pointsFor(weekly, p) ?? {};
-      const until = releaseWeek(team, p, league.trades);
-      const nfl = p.team && p.team !== 'FA' ? p.team : undefined;
-      const bye = nfl ? byes.get(nfl) : undefined;
+      const played = playedWeeks(p);
+      const nflWeeks = p.team ? nflPlayed.get(p.team) : undefined;
       // No known NFL team means no bye to exclude; skip rather than guess.
-      if (!nfl || !bye) continue;
+      if (!played || !nflWeeks) continue;
+      const until = releaseWeek(team, p, league.trades);
       let weeksMissed = 0;
-      for (const w of weeks) {
-        if (w >= until || bye.has(w)) continue;
-        if (games[w] === undefined) weeksMissed++;
+      for (const w of judged) {
+        if (w >= until || !nflWeeks.has(w)) continue;
+        if (!played.has(w)) weeksMissed++;
       }
       if (weeksMissed === 0) continue;
-      const played = Object.values(games);
-      const perGame = played.length
-        ? played.reduce((s, v) => s + v, 0) / played.length
-        : posFallback(p.position);
+
+      const playedJudged = judged.filter(w => played.has(w));
+      const pts = pointsOf(p);
+      let perGame: number | undefined;
+      if (playedJudged.length > 0) {
+        const total = pts
+          ? playedJudged.reduce((s, w) => s + (pts[w] ?? 0), 0)
+          : (pk.seasonPoints ?? p.seasonPoints);
+        if (total !== undefined) perGame = total / playedJudged.length;
+      }
+      perGame ??= ctx.projectedPerGame?.(p);
+      if (perGame === undefined) continue;
+
+      const repl = ctx.replacementPerGame(p.position);
+      const valueLost = weeksMissed * Math.max(0, perGame - repl);
+      if (valueLost <= 0) continue;
       players.push({
         name: p.name,
         position: p.position,
         weeksMissed,
         perGame: round1(perGame),
-        pointsLost: round1(weeksMissed * perGame),
+        replacementPerGame: round1(repl),
+        valueLost: round1(valueLost),
       });
     }
-    players.sort((a, b) => b.pointsLost - a.pointsLost);
+    players.sort((a, b) => b.valueLost - a.valueLost);
     return {
       teamId: team.id,
       gamesMissed: players.reduce((s, p) => s + p.weeksMissed, 0),
-      pointsLost: round1(players.reduce((s, p) => s + p.pointsLost, 0)),
+      valueLost: round1(players.reduce((s, p) => s + p.valueLost, 0)),
       players,
     };
   });

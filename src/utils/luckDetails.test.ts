@@ -81,31 +81,41 @@ describe('injuryLuck', () => {
   });
 
   // KC players: star (misses W2, W3), mate (plays W1-W3, KC bye W4).
+  // BUF: other plays every week; scrub is a sub-replacement RB who sits W2.
   const star = player('1', 'KC');
   const mate = player('2', 'KC', 'WR');
   const other = player('3', 'BUF');
+  const scrub = player('4', 'BUF');
   const league = {
-    draftType: 'snake',
+    season: 2026,
     trades: [],
     teams: [
       { id: 'A', name: 'A', draftPicks: [pick(1, star, 'A'), pick(3, mate, 'A')] },
-      { id: 'B', name: 'B', draftPicks: [pick(2, other, 'B')] },
+      { id: 'B', name: 'B', draftPicks: [pick(2, other, 'B'), pick(4, scrub, 'B')] },
     ],
     playerWeeklyPoints: {
       '1': { 1: 20 },
       '2': { 1: 10, 2: 12, 3: 8 },
       '3': { 1: 15, 2: 15, 3: 15, 4: 15 },
+      '4': { 1: 3, 3: 3, 4: 3 },
     },
   } as unknown as League;
+  const ctx = { replacementPerGame: () => 8 };
 
-  it('counts non-bye weeks a core pick sat out, priced at his own rate', () => {
-    const res = injuryLuck(league, [1, 2, 3, 4]);
+  it('prices missed non-bye weeks at points over replacement', () => {
+    const res = injuryLuck(league, [1, 2, 3, 4], ctx);
     const a = res.find(r => r.teamId === 'A')!;
-    // Week 4 is KC's bye (no KC player logged a game), so only W2-W3 count.
+    // Week 4 is KC's bye (no KC player logged a game), so only W2-W3 count:
+    // 2 games x (20 - 8).
     expect(a.gamesMissed).toBe(2);
-    expect(a.pointsLost).toBe(40);
+    expect(a.valueLost).toBe(24);
     expect(a.players[0].name).toBe('P1');
-    expect(res.find(r => r.teamId === 'B')!.gamesMissed).toBe(0);
+  });
+
+  it('charges nothing for a sub-replacement player sitting', () => {
+    const b = injuryLuck(league, [1, 2, 3, 4], ctx).find(r => r.teamId === 'B')!;
+    expect(b.gamesMissed).toBe(0);
+    expect(b.valueLost).toBe(0);
   });
 
   it('stops counting once the team drops him', () => {
@@ -115,11 +125,45 @@ describe('injuryLuck', () => {
         ? { ...t, transactions: [{ id: 'x', type: 'free_agent', timestamp: 0, week: 3, teamId: 'A', teamName: 'A', adds: [], drops: [star] }] }
         : t),
     } as League;
-    const a = injuryLuck(dropped, [1, 2, 3, 4]).find(r => r.teamId === 'A')!;
+    const a = injuryLuck(dropped, [1, 2, 3, 4], ctx).find(r => r.teamId === 'A')!;
     expect(a.gamesMissed).toBe(1);
   });
 
-  it('returns nothing without weekly player points (Yahoo)', () => {
-    expect(injuryLuck({ ...league, playerWeeklyPoints: undefined }, [1, 2])).toEqual([]);
+  it('counts a played 0-point game as played when the gp feed is present', () => {
+    // Weekly points have no W2 entry for the WR (Sleeper drops zeros), but
+    // the gp feed says he played. Without the feed it would read as missed.
+    // A third KC player who played W2 keeps W2 from reading as KC's bye.
+    const kc3 = player('5', 'KC', 'WR');
+    const zeroWeek = {
+      ...league,
+      teams: league.teams.map(t => t.id === 'B' ? { ...t, draftPicks: [...t.draftPicks!, pick(5, kc3, 'B')] } : t),
+      playerWeeklyPoints: { ...league.playerWeeklyPoints, '2': { 1: 10, 3: 8 }, '5': { 1: 9, 2: 9, 3: 9 } },
+    } as League;
+    const gamesPlayed = {
+      season: 2026,
+      weeks: [1, 2, 3, 4],
+      bySleeperId: { '1': [1], '2': [1, 2, 3], '3': [1, 2, 3, 4], '4': [1, 3, 4], '5': [1, 2, 3] },
+    };
+    const withGp = injuryLuck(zeroWeek, [1, 2, 3, 4], { ...ctx, gamesPlayed, sleeperIdOf: p => p.id });
+    const a = withGp.find(r => r.teamId === 'A')!;
+    expect(a.players.map(p => p.name)).toEqual(['P1']);
+    // His 0 counts in his rate: (10 + 0 + 8) / 3 = 6.
+    const without = injuryLuck(zeroWeek, [1, 2, 3, 4], { replacementPerGame: () => 0 });
+    expect(without.find(r => r.teamId === 'A')!.players.map(p => p.name)).toContain('P2');
+  });
+
+  it('uses the projection for a player who never played', () => {
+    const neverPlayed = {
+      ...league,
+      playerWeeklyPoints: { ...league.playerWeeklyPoints, '1': {} },
+    } as League;
+    const a = injuryLuck(neverPlayed, [1, 2, 3], { ...ctx, projectedPerGame: () => 14 })
+      .find(r => r.teamId === 'A')!;
+    expect(a.gamesMissed).toBe(3);
+    expect(a.valueLost).toBe(18);
+  });
+
+  it('returns nothing with no way to tell played from missed (Yahoo, no gp)', () => {
+    expect(injuryLuck({ ...league, playerWeeklyPoints: undefined }, [1, 2], ctx)).toEqual([]);
   });
 });

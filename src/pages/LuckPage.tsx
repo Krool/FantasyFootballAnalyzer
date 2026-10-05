@@ -1,17 +1,21 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import type { League } from '@/types';
+import type { League, Player } from '@/types';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
 import { completedMatchups } from '@/utils/completedMatchups';
 import {
   injuryLuck,
-  INJURY_CORE_PICKS,
   pointsAgainstMetrics,
   scheduleSwap,
   summarizeScheduleSwap,
   type ScheduleRecord,
 } from '@/utils/luckDetails';
 import { TeamLink, LuckIcon } from '@/components';
+import { POOL } from '@/data/draftPool';
+import { WEEKLY_SHAPE } from '@/data/weeklyShape';
+import { indexPool, resolvePoolPlayer } from '@/utils/consensusGrade';
+import { projectedPoints } from '@/utils/projectionValues';
+import { DEFAULT_ROSTER_SLOTS, replacementPerGame } from '@/utils/projectedRoster';
 import styles from './LuckPage.module.css';
 
 interface LuckPageProps {
@@ -50,7 +54,42 @@ export function LuckPage({ league }: LuckPageProps) {
   const pa = useMemo(() => pointsAgainstMetrics(done, teamIds), [done, teamIds]);
   const swap = useMemo(() => scheduleSwap(done, teamIds), [done, teamIds]);
   const swapSummary = useMemo(() => summarizeScheduleSwap(swap), [swap]);
-  const injuries = useMemo(() => injuryLuck(league, weeks), [league, weeks]);
+  const injuries = useMemo(() => {
+    const scoring = league.scoringType ?? 'ppr';
+    const index = indexPool(POOL);
+    const pooled = (p: Player) => resolvePoolPlayer(p, index);
+    return injuryLuck(league, weeks, {
+      replacementPerGame: replacementPerGame(
+        POOL,
+        league.rosterSlots ?? DEFAULT_ROSTER_SLOTS,
+        league.totalTeams || league.teams.length,
+        scoring,
+        { passTdPoints: league.passTdPoints, tePremiumPerReception: league.tePremiumPerReception },
+      ),
+      gamesPlayed: league.gamesPlayed,
+      // Sleeper ids are the platform ids; ESPN and Yahoo join through the pool.
+      sleeperIdOf: p => (league.platform === 'sleeper' ? p.id : pooled(p)?.sleeperId),
+      // A player who hasn't played yet: his projected points per ACTIVE
+      // week (the weekly shape zeroes byes and suspensions, so season / 17
+      // would dilute a suspended starter). The shape is half PPR; scale it
+      // by his league-scoring / half-PPR season ratio. This season only.
+      projectedPerGame: p => {
+        if (POOL.season !== league.season) return undefined;
+        const pl = pooled(p);
+        if (!pl) return undefined;
+        const season = projectedPoints(pl, scoring);
+        const weeksOn = WEEKLY_SHAPE.season === league.season
+          ? (WEEKLY_SHAPE.players[pl.id] ?? []).filter(v => v > 0)
+          : [];
+        if (weeksOn.length > 0) {
+          const half = projectedPoints(pl, 'half_ppr');
+          const factor = half && season != null ? season / half : 1;
+          return (weeksOn.reduce((a, v) => a + v, 0) / weeksOn.length) * factor;
+        }
+        return season != null ? season / 17 : undefined;
+      },
+    });
+  }, [league, weeks]);
 
   if (luckMetrics.length === 0) {
     return (
@@ -69,7 +108,7 @@ export function LuckPage({ league }: LuckPageProps) {
   const luckiest = byLuck[0];
   const unluckiest = byLuck[byLuck.length - 1];
   const toughest = [...pa].sort((a, b) => b.pointsAgainst - a.pointsAgainst)[0];
-  const injuryHit = [...injuries].sort((a, b) => b.pointsLost - a.pointsLost)[0];
+  const injuryHit = [...injuries].sort((a, b) => b.valueLost - a.valueLost)[0];
 
   const anyTies = luckMetrics.some(m => m.actualTies > 0);
   const anyCloseGames = luckMetrics.some(m => m.closeWins + m.closeLosses > 0);
@@ -117,13 +156,13 @@ export function LuckPage({ league }: LuckPageProps) {
               detail={`points against, ${signed(toughest.paVsLeague)} a game vs league average`}
             />
           )}
-          {showInjuries && injuryHit && injuryHit.pointsLost > 0 && (
+          {showInjuries && injuryHit && injuryHit.valueLost > 0 && (
             <Headline
               label="Injury bug"
               teamId={injuryHit.teamId}
               name={nameOf(injuryHit.teamId)}
               value={`${injuryHit.gamesMissed} games`}
-              detail={`missed by core picks, about ${Math.round(injuryHit.pointsLost)} pts lost`}
+              detail={`missed by players better than replacement, ${injuryHit.valueLost.toFixed(1)} pts over replacement lost`}
             />
           )}
         </div>
@@ -364,43 +403,44 @@ export function LuckPage({ league }: LuckPageProps) {
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Injury Luck</h2>
             <p className={styles.note}>
-              Games each team's first {INJURY_CORE_PICKS} draft picks (no K or
-              DST) sat out while still on the roster, byes excluded. Points lost
-              uses each player's own per-game average.
+              Weeks a drafted player sat out (byes excluded) while still on the
+              roster, priced at what he scores per game above a replacement-level
+              pickup at his position. A player no better than the waiver wire
+              costs nothing when he sits; a stud costs the gap.
             </p>
             <div className={`${styles.table} scroll-x-hint`}>
               <table>
                 <thead>
                   <tr>
                     <th scope="col">Team</th>
-                    <th scope="col">Games Missed</th>
-                    <th scope="col">Pts Lost</th>
+                    <th scope="col" title="Weeks missed by players worth more than replacement">Games Missed</th>
+                    <th scope="col" title="Points over replacement those games would have been worth">Value Lost</th>
                     <th scope="col">Who</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[...injuries]
-                    .sort((a, b) => b.pointsLost - a.pointsLost)
+                    .sort((a, b) => b.valueLost - a.valueLost)
                     .map(i => (
                       <tr key={i.teamId}>
                         <td className={styles.teamName}>
                           <TeamLink teamId={i.teamId} name={nameOf(i.teamId)} />
                         </td>
                         <td>{i.gamesMissed > 0 ? i.gamesMissed : <span className={styles.dim}>0</span>}</td>
-                        <td className={i.pointsLost > 0 ? styles.bad : undefined}>
-                          {i.pointsLost > 0 ? i.pointsLost.toFixed(1) : <span className={styles.dim}>-</span>}
+                        <td className={i.valueLost > 0 ? styles.bad : undefined}>
+                          {i.valueLost > 0 ? i.valueLost.toFixed(1) : <span className={styles.dim}>-</span>}
                         </td>
                         <td className={styles.who}>
                           {i.players.length === 0 ? (
-                            <span className={styles.dim}>Healthy</span>
+                            <span className={styles.dim}>Nothing lost</span>
                           ) : (
                             i.players.map(p => (
                               <span
                                 key={p.name}
                                 className={styles.missed}
-                                title={`${p.perGame.toFixed(1)} pts per game played`}
+                                title={`${p.perGame.toFixed(1)} per game vs ${p.replacementPerGame.toFixed(1)} replacement: ${p.valueLost.toFixed(1)} lost over ${p.weeksMissed} game${p.weeksMissed === 1 ? '' : 's'}`}
                               >
-                                {p.name} <span className={styles.dim}>{p.position} · {p.weeksMissed}g</span>
+                                {p.name} <span className={styles.dim}>{p.position} · {p.weeksMissed}g · -{p.valueLost.toFixed(1)}</span>
                               </span>
                             ))
                           )}
@@ -411,12 +451,6 @@ export function LuckPage({ league }: LuckPageProps) {
               </table>
             </div>
           </section>
-        )}
-        {!showInjuries && league.platform === 'yahoo' && (
-          <p className={styles.note}>
-            Injury luck needs weekly player scores, which Yahoo doesn't
-            provide for every player.
-          </p>
         )}
 
         <p className={styles.note}>
