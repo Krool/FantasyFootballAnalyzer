@@ -79,7 +79,7 @@ export function HomeFeatures() {
         <h3 className={styles.featureTitle}>Draft Rankings</h3>
         <p className={styles.featureDesc}>
           FantasyPros, ESPN, Sleeper, and Yahoo boards side by side.
-          Sort by ADP or dollar value. Star your targets.
+          Sort by ADP or dollar value.
         </p>
       </a>
 
@@ -91,8 +91,8 @@ export function HomeFeatures() {
         </div>
         <h3 className={styles.featureTitle}>Trade Verdicts</h3>
         <p className={styles.featureDesc}>
-          Evaluate every trade by points generated after the deal.
-          Grade each side and crown the winner.
+          Grade each side of every trade by the points
+          scored after the deal, and name the winner.
         </p>
       </a>
 
@@ -137,7 +137,7 @@ export function HomeFeatures() {
         </div>
         <h3 className={styles.featureTitle}>Season Awards</h3>
         <p className={styles.featureDesc}>
-          Auto-generated trophies for highest scorer,
+          Trophies for highest scorer,
           best draft, trade heist, and bench warmer.
         </p>
       </div>
@@ -167,8 +167,8 @@ export function HomeFeatures() {
         </div>
         <h3 className={styles.featureTitle}>Player Journey</h3>
         <p className={styles.featureDesc}>
-          Full transaction timeline for any player. Drafted,
-          traded, added, dropped. Every move, every team.
+          Full transaction timeline for any player: drafted,
+          traded, added, dropped.
         </p>
       </div>
 

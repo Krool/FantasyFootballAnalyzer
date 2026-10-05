@@ -37,8 +37,8 @@ export const TOOL_LANDINGS: Record<'trade-analyzer' | 'draft-grades', ToolLandin
       'Connect your Sleeper, ESPN, or Yahoo league and it grades each side on what their ' +
       'players produced once they changed teams, then names the winner.',
     points: [
-      { h: 'Judged on real production', p: 'Not preseason hype. Each side is scored on the fantasy points its acquired players put up after the trade.' },
-      { h: 'Both sides graded', p: 'A clear verdict for each side and a winner named, with the points to back it up.' },
+      { h: 'Judged on real production', p: 'Each side is scored on the fantasy points its acquired players put up after the trade.' },
+      { h: 'Both sides graded', p: 'Each side gets a grade, and the side that came out ahead is named the winner.' },
       { h: 'Every league, every season', p: 'Works across Sleeper, ESPN, and Yahoo, for the current season and your league history.' },
     ],
     ctas: [
@@ -57,11 +57,11 @@ export const TOOL_LANDINGS: Record<'trade-analyzer' | 'draft-grades', ToolLandin
     intro:
       'See who won your draft based on how the picks actually scored. ' +
       'Connect your Sleeper, ESPN, or Yahoo league for a letter grade on every pick and every team, ' +
-      'or run a mock draft first to pressure-test your board.',
+      'or run a mock draft first.',
     points: [
-      { h: 'Graded on production', p: 'Each pick is scored against what it returned in started games, so value and reaches are obvious.' },
-      { h: 'Team draft leaderboard', p: 'See which manager drafted best, who reached early, and who stole value late.' },
-      { h: 'Mock first', p: 'Practice snake or auction drafts against AI opponents, then grade the real thing.' },
+      { h: 'Graded on production', p: 'Each pick is scored against what it returned in started games.' },
+      { h: 'Team draft leaderboard', p: 'See which manager drafted best, who reached early, and who found value late.' },
+      { h: 'Mock first', p: 'Practice snake or auction drafts against AI opponents.' },
     ],
     ctas: [
       { to: '', label: 'Connect your league', primary: true },
