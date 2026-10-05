@@ -27,6 +27,7 @@ import { vorConfigFor } from '@/utils/projectionValues';
 import { KeeperValuePanel } from './KeeperValuePanel';
 import { POOL } from '@/data/draftPool';
 import { WEEKLY_SHAPE } from '@/data/weeklyShape';
+import { leagueOutlooks } from '@/utils/seasonOutlook';
 import { useSounds } from '@/hooks/useSounds';
 import { NflTeamLabel } from './NflTeamLabel';
 import { PosBadge } from './PosBadge';
@@ -143,14 +144,22 @@ export function DraftTable({
       !hasResults && !isAuction && consensusBoardCoverage(allPicks, POOL) >= BOARD_MATCH_FLOOR
         ? consensusBoardSlots(allPicks, POOL, boardFormatFor({ scoringType, rosterSlots }))
         : undefined;
+    // Live season: rank on points so far plus the projected rest of season.
+    const outlook = hasResults
+      ? leagueOutlooks(
+          { status: leagueStatus, season, currentWeek, scoringType, rosterSlots, totalTeams, teams, passTdPoints, tePremiumPerReception },
+          POOL,
+        )
+      : undefined;
     // An empty market map (pool matched nobody) must not engage dollar mode.
     return gradeAllPicks(
       mockLeague,
       override,
       market?.size ? market : undefined,
       board,
+      outlook,
     ).filter(pick => !isPlaceholderPlayer(pick.player.name));
-  }, [teams, totalTeams, isAuction, auctionBudget, hasResults, allPicks, scoringType, rosterSlots, leagueStatus]);
+  }, [teams, totalTeams, isAuction, auctionBudget, hasResults, allPicks, scoringType, rosterSlots, leagueStatus, season, currentWeek, passTdPoints, tePremiumPerReception]);
 
   // True when the value/grade numbers are dollar deltas, not rank deltas.
   const valuesInDollars = !hasResults && isAuction;
@@ -705,7 +714,7 @@ export function DraftTable({
                   Proj Pts{getSortIndicator('proj')}
                 </th>
               )}
-              <th onClick={() => handleSort('posRank')} onKeyDown={handleSortKeyDown('posRank')} tabIndex={0} aria-sort={ariaSortFor('posRank')} className={styles.sortable} role="button" aria-label={hasResults ? 'Sort by Position Rank' : 'Sort by Consensus Rank'} title={hasResults ? 'Where he finished at his position among drafted players' : 'Where the FantasyPros consensus ranked him at his position among drafted players'}>
+              <th onClick={() => handleSort('posRank')} onKeyDown={handleSortKeyDown('posRank')} tabIndex={0} aria-sort={ariaSortFor('posRank')} className={styles.sortable} role="button" aria-label={hasResults ? 'Sort by Position Rank' : 'Sort by Consensus Rank'} title={hasResults ? (gradedPicks.some(p => p.outlook) ? 'Where he ranks at his position among drafted players on season outlook: points so far, missed weeks at replacement, and projected points for the rest of the season' : 'Where he finished at his position among drafted players') : 'Where the FantasyPros consensus ranked him at his position among drafted players'}>
                 {hasResults ? 'Pos Rank' : 'Consensus'}{getSortIndicator('posRank')}
               </th>
               {(!isAuction || valuesInDollars) && (
@@ -713,7 +722,7 @@ export function DraftTable({
                   Value{getSortIndicator('value')}
                 </th>
               )}
-              <th onClick={() => handleSort('grade')} onKeyDown={handleSortKeyDown('grade')} tabIndex={0} aria-sort={ariaSortFor('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade" title={describeGradeBasis(gradedPicks[0]?.gradeBasis)}>
+              <th onClick={() => handleSort('grade')} onKeyDown={handleSortKeyDown('grade')} tabIndex={0} aria-sort={ariaSortFor('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade" title={describeGradeBasis(gradedPicks[0]?.gradeBasis, gradedPicks.some(p => p.outlook))}>
                 Grade{getSortIndicator('grade')}
               </th>
             </tr>

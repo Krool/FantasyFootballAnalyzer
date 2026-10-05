@@ -190,6 +190,31 @@ export function projectedSeasonPoints(
   extras: ScoringExtras = {},
   weeklyShape?: WeeklyShapeFile,
 ): ProjectedSeason {
+  const replPerGame = replacementPerGame(pool, slots, teamCount, scoring, extras);
+  const flexRepl = Math.max(replPerGame('RB'), replPerGame('WR'), replPerGame('TE'));
+  const superflexRepl = Math.max(flexRepl, replPerGame('QB'));
+
+  // Weekly points per pick, resolved once. With a shape, the season total
+  // is distributed across the weeks the source projects him to play; the
+  // flat fallback plays every non-bye week at total/17.
+  const index = indexPool(pool);
+  // A prior-season shape file joins cleanly (player ids are stable slugs)
+  // but carries last year's byes and absences; ignore it outright.
+  const shapes = weeklyShape && weeklyShape.season === pool.season ? weeklyShape.players : {};
+  return projectedSeasonFromShapes(picks, index, shapes, seasonPoints, slots, replPerGame, flexRepl, superflexRepl);
+}
+
+// What a waiver-wire starter scores per game at each position, for this
+// league's size, lineup, and scoring: the per-week replacement floor. Shared
+// by the projected lineup and mid-season grading (seasonOutlook.ts), so a
+// missed week is worth the same streamer in both.
+export function replacementPerGame(
+  pool: DraftPoolFile,
+  slots: RosterSlots,
+  teamCount: number,
+  scoring: ScoringType,
+  extras: ScoringExtras = {},
+): (pos: string) => number {
   const cfg = vorConfigFor({
     sixPtPassTd: (extras.passTdPoints ?? 4) >= 6,
     tePremium: (extras.tePremiumPerReception ?? 0) > 0,
@@ -217,19 +242,28 @@ export function projectedSeasonPoints(
     if (sorted.length === 0) return 0;
     return sorted[Math.min(ranks[pos] - 1, sorted.length - 1)] ?? 0;
   };
-  const replPerGame = (pos: string): number =>
-    (pos === 'K' || pos === 'DST' ? kickerlikeFloor(pos) : (replSeason[pos] ?? 0)) /
-    PROJECTED_GAMES;
-  const flexRepl = Math.max(replPerGame('RB'), replPerGame('WR'), replPerGame('TE'));
-  const superflexRepl = Math.max(flexRepl, replPerGame('QB'));
+  const cache = new Map<string, number>();
+  return (pos: string): number => {
+    const p = normalizePos(pos);
+    let v = cache.get(p);
+    if (v === undefined) {
+      v = (p === 'K' || p === 'DST' ? kickerlikeFloor(p) : (replSeason[p] ?? 0)) / PROJECTED_GAMES;
+      cache.set(p, v);
+    }
+    return v;
+  };
+}
 
-  // Weekly points per pick, resolved once. With a shape, the season total
-  // is distributed across the weeks the source projects him to play; the
-  // flat fallback plays every non-bye week at total/17.
-  const index = indexPool(pool);
-  // A prior-season shape file joins cleanly (player ids are stable slugs)
-  // but carries last year's byes and absences; ignore it outright.
-  const shapes = weeklyShape && weeklyShape.season === pool.season ? weeklyShape.players : {};
+function projectedSeasonFromShapes(
+  picks: DraftPick[],
+  index: ReturnType<typeof indexPool>,
+  shapes: WeeklyShapeFile['players'],
+  seasonPoints: Map<string, number>,
+  slots: RosterSlots,
+  replPerGame: (pos: string) => number,
+  flexRepl: number,
+  superflexRepl: number,
+): ProjectedSeason {
   const rated = picks.map(pick => {
     const seasonTotal = seasonPoints.get(pickKey(pick)) ?? 0;
     const pooled = resolvePoolPlayer(pick.player, index);

@@ -20,6 +20,7 @@ import type { DraftPoolFile, PoolPlayer } from '@/types/draft';
 import { gradeAllPicks, type GradedPick } from './grading';
 import { matchKey } from './playerNames';
 import { isPlaceholderPlayer } from './placeholders';
+import { leagueOutlooks } from './seasonOutlook';
 
 export interface PoolIndex {
   bySleeperId: Map<string, PoolPlayer>;
@@ -291,7 +292,9 @@ export function gradeLeaguePicks(league: League, pool: DraftPoolFile): GradedPic
 
 function computeLeaguePicks(league: League, pool: DraftPoolFile): GradedPick[] {
   const allPicks = league.teams.flatMap(t => t.draftPicks || []);
-  if (hasSeasonResults(allPicks, league)) return gradeAllPicks(league);
+  if (hasSeasonResults(allPicks, league)) {
+    return gradeAllPicks(league, undefined, undefined, undefined, leagueOutlooks(league, pool));
+  }
   const override = consensusPositionRanks(allPicks, pool);
   // Auctions additionally get the market's dollar prices, so pre-season
   // value reads "overpaid by $3", not a rank delta the $1-4 tail distorts.
