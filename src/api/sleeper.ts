@@ -602,6 +602,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
       // grades the 1.01 "terrible". Downstream uses undefined as the "no
       // results yet" signal and grades against consensus instead.
       seasonPoints: pointsForScoring(seasonStats[pick.player_id]),
+      seasonGames: seasonStats[pick.player_id]?.gp,
     };
 
     const picks = teamDraftPicks.get(pick.roster_id) || [];

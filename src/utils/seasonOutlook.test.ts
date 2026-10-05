@@ -70,8 +70,9 @@ describe('seasonOutlooks', () => {
   it('fills missed games at replacement and adds the projected rest of season', () => {
     // Star after 4 weeks: 30 points in 2 games, weeks 2-3 missed.
     const o = seasonOutlooks([pick(1, 'wr1-wr', 30)], POOL, SHAPE, ctx).get('WR-wr1-wr')!;
-    // Two games played: his own 15 a game is the rate from here.
-    expect(o.basis).toBe('pace');
+    // Two games played at 15, projected 15: the blend is 15 from here.
+    expect(o.basis).toBe('blend');
+    expect(o.paceWeight).toBeCloseTo(2 / 5, 5);
     expect(o.perGame).toBe(15);
     expect(o.projectedGames).toBe(12);
     expect(o.missedWeeks).toBe(2);
@@ -208,18 +209,40 @@ describe('games played (Sleeper weekly stats)', () => {
     expect(o.games).toBe(2);
     expect(o.missedWeeks).toBe(2);
     // Week 4 is history for him: 12 games left (weeks 5-17 less the bye),
-    // at his own 20 a game.
+    // at his 20 a game weighted 2/5 against his projected 15: 17.
     expect(o.remainingWeeks).toBe(13);
     expect(o.projectedGames).toBe(12);
-    expect(o.projectedPoints).toBeCloseTo(12 * 20, 5);
+    expect(o.projectedPoints).toBeCloseTo(12 * 17, 5);
   });
 
-  it("values the rest of the season at his own scoring, not the projection's", () => {
-    // Owner-reported 2026-10-04: Walker outscoring backs projected higher.
-    // Steady projects 10 a game but has scored 60 in his 3: 20 a game.
+  it("does not count this week's game until his season total includes it", () => {
+    // Owner-reported 2026-10-04: Nacua's Sleeper total was Week 1 alone
+    // while weekly stats showed his Week 4 game, so 13.4 points over 2 games
+    // made a 6.7-a-game receiver of him.
+    const o = seasonOutlooks([{ ...pick(1, 'wr1-wr', 15), seasonGames: 1 }], POOL, SHAPE, live).get('WR-wr1-wr')!;
+    expect(o.games).toBe(1);
+    expect(o.perGame).toBe(15);
+    // Week 4 stays on the schedule: 13 games left at 15.
+    expect(o.remainingWeeks).toBe(14);
+    expect(o.projectedPoints).toBeCloseTo(13 * 15, 5);
+    // Once the total catches up, the week is history.
+    const caught = seasonOutlooks([{ ...pick(1, 'wr1-wr', 40), seasonGames: 2 }], POOL, SHAPE, live).get('WR-wr1-wr')!;
+    expect(caught.games).toBe(2);
+    expect(caught.remainingWeeks).toBe(13);
+  });
+
+  it('weighs his own scoring against the projection by games played', () => {
+    // Owner-reported 2026-10-04: Walker outscoring backs projected higher
+    // (production must move the rate), and Smith-Njigba's three hot weeks
+    // stretched into a 598-point season (it must not be the whole rate).
+    // Steady projects 10 a game but has scored 60 in his 3: 20 a game,
+    // weighted 3/6 -> 15.
     const o = seasonOutlooks([pick(2, 'wr2-wr', 60)], POOL, SHAPE, live).get('WR-wr2-wr')!;
-    expect(o.basis).toBe('pace');
-    expect(o.projectedPoints).toBeCloseTo(13 * 20, 5);
+    expect(o.basis).toBe('blend');
+    expect(o.perGame).toBe(20);
+    expect(o.paceWeight).toBeCloseTo(0.5, 5);
+    expect(o.projectedPoints).toBeCloseTo(13 * 15, 5);
+    expect(describeOutlook(o)).toContain('his 20.0 a game so far weighted 50% against his projection');
   });
 
   it('counts this week as still to play for a player who has not played it yet', () => {

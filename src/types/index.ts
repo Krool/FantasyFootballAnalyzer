@@ -50,6 +50,11 @@ export interface DraftPick {
   // Grading
   grade?: DraftGrade;
   seasonPoints?: number;
+  // Games behind seasonPoints, when the platform says (Sleeper's season
+  // stats carry gp). Sleeper's season total lags the week in progress while
+  // its weekly stats already show the game played; seasonOutlook.ts uses
+  // this to keep points and games on the same weeks.
+  seasonGames?: number;
   positionRank?: number;
   expectedRank?: number;
   valueOverExpected?: number;

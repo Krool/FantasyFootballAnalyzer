@@ -512,6 +512,7 @@ export function describeOutlook(o: SeasonOutlook): string {
     const rest = {
       projection: `${f(o.projectedPoints)} projected over ${g}${out}`,
       'season-projection': `${f(o.projectedPoints)} from his season projection over ${g}${out}`,
+      blend: `${f(o.projectedPoints)} over ${g}${out}, his ${f(o.perGame ?? 0)} a game so far weighted ${Math.round((o.paceWeight ?? 0) * 100)}% against his projection`,
       pace: `${f(o.projectedPoints)} at his ${f(o.perGame ?? 0)} a game over ${g}${out}`,
     }[o.basis];
     parts.push(rest);

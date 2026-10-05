@@ -7,13 +7,17 @@
 //    weekly stats (league.gamesPlayed), so it is a fact, not a guess.
 //  - Live season, the rest of the year: Sleeper's weekly projections (the
 //    bundled weekly shape) and injury report decide WHICH weeks he plays
-//    (an IR rookie's return week, a season-ending injury's zeros); his own
-//    points per game so far decide how much each of those weeks is worth,
-//    once he has two games. A projection must not overrule production: it
-//    had Kenneth Walker (18.8/game) at 16.5 from here and ranked him behind
-//    backs he was outscoring (owner, 2026-10-04). Under two games, the
-//    projection supplies the rate too. A player who already played this
-//    week keeps his real points for it.
+//    (an IR rookie's return week, a season-ending injury's zeros). What each
+//    of those weeks is worth blends his own points per game with the
+//    projection, his pace weighing games / (games + PACE_PRIOR_GAMES). A
+//    projection must not overrule production: it had Kenneth Walker
+//    (18.8/game) at 16.5 from here and ranked him behind backs he was
+//    outscoring (owner, 2026-10-04). Nor may three hot weeks: pure pace
+//    stretched Smith-Njigba's 37 a game into a 598-point season and dropped
+//    Puka Nacua (one game back from injury, on his projection) to WR9 and a
+//    Terrible grade (owner-reported, 2026-10-04). A player who already
+//    played this week keeps his real points for it, once his season total
+//    includes them.
 //  - Finished season: facts only. Points scored plus replacement for weeks
 //    without a game; no projections.
 //
@@ -33,6 +37,10 @@ import { DEFAULT_ROSTER_SLOTS, replacementPerGame, type ScoringExtras } from './
 // Fantasy regular season plus playoffs, matching the weekly shape.
 export const OUTLOOK_WEEKS = 17;
 
+// How many games of projection his own pace is weighed against: after 3
+// games pace and projection count equally, after 9 pace is 75%.
+export const PACE_PRIOR_GAMES = 3;
+
 export interface SeasonOutlook {
   // Finished season (facts only) vs live (includes a projection).
   final: boolean;
@@ -51,16 +59,19 @@ export interface SeasonOutlook {
   // yet). Valued where he is expected to play; zero where he is not.
   remainingWeeks: number;
   outWeeks: number;
-  // Weeks he is expected to play, and the per-game rate they are valued at
-  // when it is his own scoring pace (basis 'pace').
+  // Weeks he is expected to play, and his own points per game so far when
+  // that fed the rate (basis 'pace' or 'blend').
   projectedGames: number;
   perGame?: number;
+  // Basis 'blend': the share of the rate that is his own pace.
+  paceWeight?: number;
   projectedPoints: number;
   replacementPerWeek: number;
-  // Where the rest of season's per-game rate came from: his own points per
-  // game ('pace', 2+ games), the weekly projection, or his pool season
-  // projection pro-rated. 'none' when finished.
-  basis: 'projection' | 'season-projection' | 'pace' | 'none';
+  // Where the rest of season's per-game rate came from: the weekly
+  // projection or his pool season projection pro-rated (no games yet), his
+  // pace blended with either ('blend'), or his pace alone when there is no
+  // projection. 'none' when finished.
+  basis: 'projection' | 'season-projection' | 'blend' | 'pace' | 'none';
   // Live: the injury report ("IR: Knee - ACL (Surgery)"), and whether it
   // reads as season-ending.
   injury?: string;
@@ -154,8 +165,17 @@ export function seasonOutlooks(
       if (weekly) return (weekly[w - 1] ?? 0) > 0;
       return undefined;
     };
-    // This week counts as history only once he has played in it.
-    const playedThisWeek = !final && playedWeeks && loadedWeeks.has(current) && playedWeeks.has(current);
+    // This week counts as history only once he has played in it, and his
+    // season total includes it: Sleeper's lags the week in progress (Nacua,
+    // 2026 Week 4: weekly stats said played, the total was Week 1 alone),
+    // and counting the game without its points halved his pace.
+    const gamesBefore = playedWeeks ? [...playedWeeks].filter(w => w < current).length : 0;
+    const playedThisWeek =
+      !final &&
+      playedWeeks &&
+      loadedWeeks.has(current) &&
+      playedWeeks.has(current) &&
+      (pick.seasonGames === undefined || pick.seasonGames > gamesBefore);
     const lastPast = playedThisWeek ? current : current - 1;
 
     // History: a missed game (not his bye) is credited at replacement, the
@@ -181,6 +201,7 @@ export function seasonOutlooks(
     let outWeeks = 0;
     let projectedGames = 0;
     let perGame: number | undefined;
+    let paceWeight: number | undefined;
     let basis: SeasonOutlook['basis'] = 'none';
     if (remainingWeeks > 0) {
       // The injury report overrides a projection that hasn't caught up: a
@@ -193,34 +214,48 @@ export function seasonOutlooks(
       // week. The injury report overrides either.
       const plays = (w: number) =>
         !noNflTeam && !ruledOut(w) && (weekly ? (weekly[w - 1] ?? 0) > 0 : true);
-      // What each of those weeks is worth.
-      const ownPace = games >= 2 ? soFar / games : undefined;
-      let rate: (w: number) => number;
-      if (ownPace !== undefined) {
-        basis = 'pace';
-        perGame = ownPace;
-        rate = () => ownPace;
-      } else if (weekly && pooled) {
-        basis = 'projection';
+      // What each of those weeks is worth. The projection first: the weekly
+      // shape where it covers him, else his pool season projection.
+      let projRate: ((w: number) => number) | undefined;
+      let projBasis: 'projection' | 'season-projection' | undefined;
+      if (weekly && pooled) {
+        projBasis = 'projection';
         const half = projectedPoints(pooled, 'half_ppr');
         const league = projectedPoints(pooled, ctx.scoring);
         const factor =
           half && half > 0 && league != null ? adjustedPoints(pooled, league, cfg) / half : 1;
-        rate = w => (weekly[w - 1] ?? 0) * factor;
+        projRate = w => (weekly[w - 1] ?? 0) * factor;
       } else {
         const seasonProj = pooled ? projectedPoints(pooled, ctx.scoring) : null;
         if (pooled && seasonProj != null && seasonProj > 0) {
-          basis = 'season-projection';
+          projBasis = 'season-projection';
           // A season projection covers 16 games across 17 weeks (one bye).
           const seasonRate = adjustedPoints(pooled, seasonProj, cfg) / (OUTLOOK_WEEKS - 1);
-          rate = () => seasonRate;
-        } else {
-          // No projection and under two games: whatever he has, per week.
-          basis = 'pace';
-          const pace = lastPast > 0 ? soFar / lastPast : 0;
-          perGame = pace;
-          rate = () => pace;
+          projRate = () => seasonRate;
         }
+      }
+      let rate: (w: number) => number;
+      if (projRate && projBasis) {
+        if (games > 0) {
+          // Then his own scoring, weighed by games played.
+          const pace = soFar / games;
+          const weight = games / (games + PACE_PRIOR_GAMES);
+          const proj = projRate;
+          basis = 'blend';
+          perGame = pace;
+          paceWeight = weight;
+          rate = w => weight * pace + (1 - weight) * proj(w);
+        } else {
+          basis = projBasis;
+          rate = projRate;
+        }
+      } else {
+        // No projection: his own scoring alone, per game when games are
+        // known, else per week.
+        basis = 'pace';
+        const pace = games > 0 ? soFar / games : lastPast > 0 ? soFar / lastPast : 0;
+        perGame = pace;
+        rate = () => pace;
       }
       for (let w = firstFuture; w <= OUTLOOK_WEEKS; w++) {
         if (w === bye) continue;
@@ -242,6 +277,7 @@ export function seasonOutlooks(
       outWeeks,
       projectedGames,
       perGame,
+      paceWeight,
       projectedPoints: projected,
       replacementPerWeek: perWeek,
       basis,
