@@ -98,8 +98,9 @@ export interface Trade {
   // Trade winner determination (based on PAR)
   winner?: string; // teamId of winner
   winnerMargin?: number;
-  // What the PAR numbers cover: 'post-trade' (Sleeper, real weekly starts)
-  // or 'full-season' (ESPN/Yahoo, season totals only).
+  // What the PAR numbers cover: 'post-trade' (weeks after the trade; all
+  // three platforms when weekly data loads) or 'full-season' (season totals,
+  // the fallback when the trade week or weekly data is missing). Per trade.
   verdictBasis?: 'post-trade' | 'full-season';
 }
 
@@ -194,9 +195,9 @@ export interface League {
   // underprice QBs in these leagues; the Draft Room warns when set.
   hasSuperflex?: boolean;
   // Per-player weekly fantasy points (platform player id -> week -> pts).
-  // Sleeper supplies this from matchup data; Player Journey uses it to score
-  // each stint of a player's season ("6.2 ppg for you, 18.4 after the
-  // trade"). Absent on platforms that don't expose weekly player points.
+  // Sleeper and ESPN supply it for every rostered player; Yahoo only for
+  // players who changed teams (capped). Player Journey uses it to score each
+  // stint of a player's season ("6.2 ppg for you, 18.4 after the trade").
   playerWeeklyPoints?: Record<string, Record<number, number>>;
   // What pointsSincePickup actually holds for this load: real since-pickup
   // sums, or season totals standing in because the weekly fetch failed.
@@ -325,6 +326,9 @@ export namespace SleeperAPI {
     username: string;
     display_name: string;
     avatar: string;
+    // League-scoped user entries carry the team name the manager set for
+    // this league; display_name is their account handle.
+    metadata?: { team_name?: string } | null;
   }
 
   export interface League {

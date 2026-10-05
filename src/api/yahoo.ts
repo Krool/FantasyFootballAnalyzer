@@ -47,6 +47,7 @@ migrateLegacyTokens();
 // Exported for tests: yahoo.test.ts asserts last season's key exists so the
 // "just-completed season missing from the year dropdown" bug can't recur.
 export const NFL_GAME_KEYS: Record<number, string> = {
+  2026: '470',
   2025: '461',
   2024: '449',
   2023: '423',
@@ -283,6 +284,30 @@ async function yahooError(response: Response): Promise<Error> {
   return new Error(`Yahoo API error: ${response.status}${detail}`);
 }
 
+// Multi-eligible players arrive as display_position "WR,TE". Every position
+// bucket (replacement level, positional rank, grading) keys on one position,
+// so a comma list would match none and score PAR against a zero baseline.
+export function yahooPosition(p: { display_position?: string; primary_position?: string } | undefined): string {
+  const raw = p?.display_position || p?.primary_position || '';
+  return raw.split(',')[0].trim();
+}
+
+// Yahoo throttles bursts with 429 (or its own 999). The enrichment pass makes
+// ~150 calls and swallows per-week failures, so an unretried throttle quietly
+// drops a week of scores. Two backed-off retries ride out a burst.
+const THROTTLE_STATUSES = new Set([429, 999, 502, 503, 504]);
+const THROTTLE_RETRY_MS = [800, 2000];
+
+async function fetchWithThrottleRetry(url: string, init: RequestInit): Promise<Response> {
+  let response = await fetch(url, init);
+  for (const delay of THROTTLE_RETRY_MS) {
+    if (!THROTTLE_STATUSES.has(response.status)) break;
+    await new Promise(resolve => setTimeout(resolve, delay));
+    response = await fetch(url, init);
+  }
+  return response;
+}
+
 // Make authenticated API request
 async function yahooFetch<T>(endpoint: string): Promise<T> {
   // Check if token needs refresh
@@ -295,7 +320,7 @@ async function yahooFetch<T>(endpoint: string): Promise<T> {
     throw new Error('Not authenticated with Yahoo');
   }
 
-  const response = await fetch(
+  const response = await fetchWithThrottleRetry(
     `${API_BASE}/api/yahoo-api?endpoint=${encodeURIComponent(endpoint)}`,
     {
       headers: {
@@ -308,7 +333,7 @@ async function yahooFetch<T>(endpoint: string): Promise<T> {
     // Token expired, try refresh once
     await refreshAccessToken();
     const newToken = getAccessToken();
-    const retryResponse = await fetch(
+    const retryResponse = await fetchWithThrottleRetry(
       `${API_BASE}/api/yahoo-api?endpoint=${encodeURIComponent(endpoint)}`,
       {
         headers: {
@@ -753,7 +778,7 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
             id: player.player_key,
             platformId: player.player_key,
             name: player.name?.full || 'Unknown Player',
-            position: player.display_position || '',
+            position: yahooPosition(player),
             team: player.editorial_team_abbr || ''
           };
 
@@ -810,6 +835,7 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
         const drops: Player[] = [];
         let teamId = '';
         let teamName = '';
+        let addedOffWaivers = false;
 
         for (const player of playerList) {
           const txType = player.transaction_data?.type;
@@ -820,12 +846,13 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
             id: player.player_key,
             platformId: player.player_key,
             name: player.name?.full || 'Unknown Player',
-            position: player.display_position || '',
+            position: yahooPosition(player),
             team: player.editorial_team_abbr || ''
           };
 
           if (txType === 'add') {
             adds.push(playerObj);
+            if (player.transaction_data?.source_type === 'waivers') addedOffWaivers = true;
             teamId = destTeam;
             teamName = teams.find(t => t.id === destTeam)?.name || 'Unknown';
           } else if (txType === 'drop') {
@@ -842,7 +869,9 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
             id: tx.transaction_key,
             // != null, not truthiness: a winning $0 FAAB claim arrives as the
             // number 0 and is still a waiver claim, not a free-agent add.
-            type: tx.faab_bid != null ? 'waiver' : 'free_agent',
+            // Non-FAAB leagues carry no bid, so the add's source_type is what
+            // marks a rolling-priority waiver claim.
+            type: tx.faab_bid != null || addedOffWaivers ? 'waiver' : 'free_agent',
             timestamp,
             week,
             teamId,
@@ -1143,7 +1172,7 @@ export async function enrichPlayersWithStats(
 
         playerMap.set(player.player_key, {
           name: player.name?.full || 'Unknown',
-          position: player.display_position || player.primary_position || '',
+          position: yahooPosition(player),
           team: player.editorial_team_abbr || '',
           points
         });
@@ -1286,16 +1315,18 @@ export async function enrichPlayersWithStats(
     //    adds and traded players). That set is what real since-pickup math
     //    and Player Journey stint scoring need; fetching every drafted
     //    player would multiply the call count for little gain.
+    // Traded players go in first: the 150 cap below cuts from the end, and
+    // one uncovered player drops a whole trade back to the full-season basis.
     const movedKeys = new Set<string>();
-    for (const team of league.teams) {
-      for (const tx of team.transactions || []) {
-        for (const p of tx.adds || []) movedKeys.add(p.id);
-      }
-    }
     for (const trade of league.trades || []) {
       for (const side of trade.teams) {
         for (const p of side.playersReceived) movedKeys.add(p.id);
         for (const p of side.playersSent) movedKeys.add(p.id);
+      }
+    }
+    for (const team of league.teams) {
+      for (const tx of team.transactions || []) {
+        for (const p of tx.adds || []) movedKeys.add(p.id);
       }
     }
 

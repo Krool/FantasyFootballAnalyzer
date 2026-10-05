@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Trade } from '@/types';
-import { decideTradeWinner } from './tradeVerdict';
+import { decideTradeWinner, verdictBasisSummary } from './tradeVerdict';
 
 function makeTeams(netPAR1: number, netPAR2: number): Trade['teams'] {
   const base = {
@@ -47,5 +47,20 @@ describe('decideTradeWinner', () => {
   it('never calls a winner for 3+ team trades', () => {
     const teams = [...makeTeams(50, 0), { ...makeTeams(0, 0)[0], teamId: 'C' }];
     expect(decideTradeWinner(teams, 'full-season')).toEqual({ winnerMargin: 0 });
+  });
+});
+
+describe('verdictBasisSummary', () => {
+  const trade = (verdictBasis?: Trade['verdictBasis']) => ({ verdictBasis } as Trade);
+
+  it('names the shared basis when every trade agrees', () => {
+    expect(verdictBasisSummary([trade('post-trade'), trade('post-trade')])).toMatch(/after the trade/);
+    expect(verdictBasisSummary([trade('full-season')])).toMatch(/full-season/);
+    expect(verdictBasisSummary([])).toBeUndefined();
+  });
+
+  it('counts the trades that fell back to full-season value', () => {
+    expect(verdictBasisSummary([trade('post-trade'), trade('full-season'), trade('post-trade')]))
+      .toMatch(/1 of 3 use full-season value/);
   });
 });

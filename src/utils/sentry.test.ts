@@ -153,6 +153,8 @@ describe('isExpectedUserError', () => {
     expect(isExpectedUserError(exception('ESPN: cookies were rejected (401). Your espn_s2 likely expired. Log into espn.com again and re-copy both cookies.'))).toBe(true);
     expect(isExpectedUserError(exception('ESPN API error: 404 Not Found'))).toBe(true);
     expect(isExpectedUserError(exception('ESPN API error: 400'))).toBe(true);
+    // A rate limit is not a user mistake; it keeps reporting.
+    expect(isExpectedUserError(exception('ESPN API error: 429'))).toBe(false);
     expect(isExpectedUserError(exception('Sleeper API error: 404'))).toBe(true);
     // A pasted cookie carrying a `;` — the proxy's own 400.
     expect(isExpectedUserError(exception('Malformed cookie value: 400'))).toBe(true);

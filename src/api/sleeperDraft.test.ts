@@ -40,7 +40,7 @@ describe('sleeperDraft getLeagueDrafts', () => {
     vi.stubGlobal('fetch', vi.fn(async () => errorResponse(404, 'Not Found')));
 
     await expect(getLeagueDrafts(LEAGUE_ID)).rejects.toThrow(
-      `Sleeper 404 for /league/${LEAGUE_ID}/drafts`,
+      `Sleeper API error: 404 for /league/${LEAGUE_ID}/drafts`,
     );
   });
 });
@@ -66,7 +66,7 @@ describe('sleeperDraft getLiveDraftPicks', () => {
     vi.stubGlobal('fetch', vi.fn(async () => errorResponse(500, 'Internal Server Error')));
 
     await expect(getLiveDraftPicks(DRAFT_ID)).rejects.toThrow(
-      `Sleeper 500 for /draft/${DRAFT_ID}/picks`,
+      `Sleeper API error: 500 for /draft/${DRAFT_ID}/picks`,
     );
   });
 });

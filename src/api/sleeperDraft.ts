@@ -40,7 +40,9 @@ export interface SleeperLivePick {
 
 async function fetchJson<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`);
-  if (!res.ok) throw new Error(`Sleeper ${res.status} for ${path}`);
+  // Same shape as sleeper.ts so the Sentry filter for expected Sleeper 404s
+  // (a mock-draft URL that doesn't exist) matches poll failures too.
+  if (!res.ok) throw new Error(`Sleeper API error: ${res.status} for ${path}`);
   return res.json();
 }
 

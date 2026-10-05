@@ -126,8 +126,9 @@ const EXPECTED_USER_ERROR = new RegExp(
   [
     'this looks like a private league',
     'cookies were rejected \\(401\\)',
-    'ESPN API error: 4\\d\\d',
-    '\\[ESPN\\] Proxy error \\(4\\d\\d\\)',
+    // 429 is left out: a rate limit is ours to notice, not a user typo.
+    'ESPN API error: 4(?!29)\\d\\d',
+    '\\[ESPN\\] Proxy error \\(4(?!29)\\d\\d\\)',
     'Malformed cookie (value|header encoding): 400',
     'Sleeper API error: 404',
     'Yahoo OAuth error: access_denied',

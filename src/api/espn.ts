@@ -1196,6 +1196,31 @@ export async function loadLeague(
 
   logger.debug('[ESPN] Replacement baselines (season points):', replacementBaseline);
 
+  // Weeks the replacement baselines (season-to-date totals) cover. Prorating
+  // by a fixed 17 mid-season undercounts the per-game baseline (3x at week
+  // 5) and inflates every since-pickup and post-trade PAR.
+  const matchupPeriod = leagueData.status?.currentMatchupPeriod || 0;
+  const seasonOver = season < new Date().getFullYear() || matchupPeriod === 0 || matchupPeriod >= 17;
+  const baselineWeeks = seasonOver ? 17 : Math.max(1, matchupPeriod - 1);
+
+  // Points, starts and PAR a player produced in this team's lineup from
+  // fromWeek on. Shared by waiver pickups and post-trade verdicts.
+  const startedSince = (teamId: number | string, playerId: string, fromWeek: number) => {
+    const weekMap = playerStartsByTeamAndWeek.get(`${teamId}-${playerId}`);
+    let points = 0;
+    let games = 0;
+    weekMap?.forEach((pts, week) => {
+      if (week >= fromWeek) {
+        points += pts;
+        games += 1;
+      }
+    });
+    const position = playerMap.get(playerId)?.position || '';
+    const baseline = replacementBaseline[position] || 0;
+    const par = games > 0 ? Math.max(0, points - (baseline / baselineWeeks) * games) : 0;
+    return { points, games, par };
+  };
+
   // Calculate PAR for a player
   const getPlayerPAR = (playerId: string): number => {
     const player = playerMap.get(playerId);
@@ -1223,8 +1248,7 @@ export async function loadLeague(
         const gamesSincePickup = (player as any).gamesSincePickup || 0;
 
         // Prorate the replacement baseline for the games played since pickup
-        // Full season = 17 games, so baseline per game = baseline / 17
-        const proratedBaseline = gamesSincePickup > 0 ? (baseline / 17) * gamesSincePickup : 0;
+        const proratedBaseline = gamesSincePickup > 0 ? (baseline / baselineWeeks) * gamesSincePickup : 0;
         const par = Math.max(0, pointsSincePickup - proratedBaseline);
 
         (player as any).pointsAboveReplacement = Math.round(par * 10) / 10;
@@ -1280,23 +1304,43 @@ export async function loadLeague(
         });
       }
 
+      // Post-trade basis, like Sleeper: what each received player scored in
+      // the receiving team's lineup from the trade week on. Needs a known
+      // week (communication-feed trades arrive with week 0) and real items.
+      // A player sent counts against the sender at what he gave the other
+      // side, so both sides are judged on the same weeks.
+      const tradeWeek = tradeTx.week;
+      const postTrade = !isIncomplete && tradeWeek >= 1;
+      const receiverOf = new Map<string, number>();
+      items.forEach(item => {
+        if (item.playerId && item.toTeamId) receiverOf.set(String(item.playerId), item.toTeamId);
+      });
+      const basis: 'post-trade' | 'full-season' = postTrade ? 'post-trade' : 'full-season';
+
       const tradeTeams: Trade['teams'] = [];
       teamItems.forEach((items, teamId) => {
         // Calculate value based on Points Above Replacement (PAR)
         // PAR accounts for position scarcity - a RB2 is more valuable than a QB2
         const parGained = items.adds.reduce((sum, p) => {
-          return sum + getPlayerPAR(p.id);
+          return sum + (postTrade ? startedSince(teamId, p.id, tradeWeek).par : getPlayerPAR(p.id));
         }, 0);
         const parLost = items.drops.reduce((sum, p) => {
-          return sum + getPlayerPAR(p.id);
+          if (!postTrade) return sum + getPlayerPAR(p.id);
+          const receiver = receiverOf.get(p.id);
+          return sum + (receiver ? startedSince(receiver, p.id, tradeWeek).par : 0);
         }, 0);
 
         // Also calculate raw season points for reference
         const rawPointsGained = items.adds.reduce((sum, p) => {
+          if (postTrade) return sum + startedSince(teamId, p.id, tradeWeek).points;
           const pd = playerMap.get(p.id);
           return sum + (pd?.seasonPoints || 0);
         }, 0);
         const rawPointsLost = items.drops.reduce((sum, p) => {
+          if (postTrade) {
+            const receiver = receiverOf.get(p.id);
+            return sum + (receiver ? startedSince(receiver, p.id, tradeWeek).points : 0);
+          }
           const pd = playerMap.get(p.id);
           return sum + (pd?.seasonPoints || 0);
         }, 0);
@@ -1317,9 +1361,7 @@ export async function loadLeague(
         });
       });
 
-      // Determine winner based on PAR. ESPN only exposes season totals, so
-      // the verdict spans the full season rather than post-trade weeks.
-      const { winner, winnerMargin } = decideTradeWinner(tradeTeams, 'full-season');
+      const { winner, winnerMargin } = decideTradeWinner(tradeTeams, basis);
 
       const trade: Trade = {
         id: tradeTx.id,
@@ -1329,7 +1371,7 @@ export async function loadLeague(
         teams: tradeTeams,
         winner,
         winnerMargin,
-        verdictBasis: 'full-season',
+        verdictBasis: basis,
       };
 
       // Add incomplete flag if trade data is missing
@@ -1649,11 +1691,15 @@ export async function loadHeadToHeadRecords(
   leagueId: string,
   teamId: string,
   maxSeasons: number = 5,
-  options?: { espnS2?: string; swid?: string }
+  options?: { espnS2?: string; swid?: string },
+  // The season teamId belongs to (the loaded league's). Anchoring on the
+  // calendar year instead 404s until the commissioner renews the league,
+  // which ended the walk with zero rivalries, and on a past-season load it
+  // resolved teamId against the wrong year's (possibly renumbered) teams.
+  startSeason: number = new Date().getFullYear(),
 ): Promise<{ records: Map<string, HeadToHeadRecord>; teamName: string }> {
   const records = new Map<string, HeadToHeadRecord>();
   let teamName = '';
-  const currentYear = new Date().getFullYear();
 
   // Follow the selected manager by their stable owner (member) id, resolved
   // once in the current season. ESPN team ids renumber and teams get renamed
@@ -1672,7 +1718,7 @@ export async function loadHeadToHeadRecords(
   const ownerKeyByName = new Map<string, string>();
 
   for (let i = 0; i < maxSeasons; i++) {
-    const season = currentYear - i;
+    const season = startSeason - i;
 
     try {
       // Fetch matchup data for this season

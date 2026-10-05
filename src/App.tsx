@@ -116,6 +116,14 @@ const PAGE_TITLES: Record<string, string> = {
   '/draft-grades': 'Draft Grades',
 };
 
+// Draft-prep routes whose boards include Yahoo market data (ADP, auction
+// values) regardless of which league, if any, is loaded.
+function showsYahooMarket(pathname: string): boolean {
+  return ['/rankings', '/values', '/trends', '/draft-room'].some(
+    route => pathname === route || pathname.startsWith(`${route}/`),
+  );
+}
+
 // Router paths are basename-relative; window.location.pathname is not. Join
 // them so the two can be compared (see the share-param effect below).
 function routerPathToUrl(pathname: string): string {
@@ -837,8 +845,10 @@ function App() {
               </svg>
             </a>
           </p>
-          {/* Yahoo's API agreement requires this wherever its data shows. */}
-          {league?.platform === 'yahoo' && !league.isGuest && (
+          {/* Yahoo's API agreement requires this wherever its data shows:
+              a Yahoo league, and the draft-prep boards, which carry Yahoo's
+              ADP and auction values for every visitor. */}
+          {((league?.platform === 'yahoo' && !league.isGuest) || showsYahooMarket(location.pathname)) && (
             <p className="footer-attribution">Fantasy data provided by Yahoo Fantasy</p>
           )}
         </div>

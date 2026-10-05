@@ -39,12 +39,23 @@ async function fetchJSON<T>(endpoint: string): Promise<T> {
   return response.json();
 }
 
+// What Sleeper's own UI shows: the team name the manager set for this
+// league, else their handle. ownerName keeps the handle.
+function sleeperTeamName(owner: SleeperAPI.User | undefined, rosterId: number): string {
+  return owner?.metadata?.team_name?.trim() || owner?.display_name || owner?.username || `Team ${rosterId}`;
+}
+
 export async function getAllPlayers(): Promise<Record<string, SleeperAPI.Player>> {
   // If we already have a pending or completed promise, return it
   // This prevents multiple concurrent fetches of the same large file
   if (!playerCachePromise) {
     // This is a large file (~5MB), only fetch once per session
-    playerCachePromise = fetchJSON<Record<string, SleeperAPI.Player>>('/players/nfl');
+    // A rejected promise must not stay cached: one dropped ~5MB download
+    // (common on mobile) would fail every later load until a page reload.
+    playerCachePromise = fetchJSON<Record<string, SleeperAPI.Player>>('/players/nfl').catch(err => {
+      playerCachePromise = null;
+      throw err;
+    });
   }
   return playerCachePromise;
 }
@@ -711,7 +722,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
   const teamNameMap = new Map<string, string>();
   rosters.forEach(roster => {
     const owner = roster.owner_id ? userMap.get(roster.owner_id) : undefined;
-    const teamName = owner?.display_name || owner?.username || `Team ${roster.roster_id}`;
+    const teamName = sleeperTeamName(owner, roster.roster_id);
     teamNameMap.set(String(roster.roster_id), teamName);
   });
 
@@ -783,7 +794,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
   const myUserId = loadLastConnection()?.sleeper?.userId ?? null;
   const teams: Team[] = rosters.map(roster => {
     const owner = roster.owner_id ? userMap.get(roster.owner_id) : undefined;
-    const teamName = owner?.display_name || owner?.username || `Team ${roster.roster_id}`;
+    const teamName = sleeperTeamName(owner, roster.roster_id);
     // Owner plus co-managers: a co-managed roster is still the user's own.
     const ownerUserIds = [roster.owner_id, ...(roster.co_owners ?? [])].filter(
       (id): id is string => Boolean(id)
@@ -1039,7 +1050,7 @@ export async function loadLeagueHistory(leagueId: string, maxSeasons: number = 5
             // owner_id is stable across seasons even when roster IDs renumber
             // or team names change, so the all-time leaderboard keys off it.
             ownerId: roster.owner_id || undefined,
-            name: owner?.display_name || owner?.username || `Team ${roster.roster_id}`,
+            name: sleeperTeamName(owner, roster.roster_id),
             wins: roster.settings?.wins || 0,
             losses: roster.settings?.losses || 0,
             ties: roster.settings?.ties || 0,
@@ -1111,7 +1122,7 @@ export async function loadHeadToHeadRecords(
       const rosterToName = new Map<number, string>();
       rosters.forEach(roster => {
         const owner = roster.owner_id ? userMap.get(roster.owner_id) : undefined;
-        const name = owner?.display_name || owner?.username || `Team ${roster.roster_id}`;
+        const name = sleeperTeamName(owner, roster.roster_id);
         rosterToName.set(roster.roster_id, name);
         if (roster.owner_id) {
           rosterToOwner.set(roster.roster_id, roster.owner_id);

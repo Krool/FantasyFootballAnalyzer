@@ -210,7 +210,13 @@ export function useLiveDraftSync(league: League, room: UseDraftRoomReturn): UseL
       try {
         if (!draftIdRef.current) {
           if (watchId) {
-            const draft = await getDraft(watchId).catch(() => null);
+            // Only a 404 (or a null body) means the id is wrong. A network
+            // blip or 5xx rethrows to the poll's error path and retries,
+            // instead of telling the user their draft doesn't exist.
+            const draft = await getDraft(watchId).catch(err => {
+              if (err instanceof Error && err.message.includes(': 404')) return null;
+              throw err;
+            });
             if (cancelled) return;
             if (!draft) {
               stop(`No Sleeper draft found for id ${watchId}.`);

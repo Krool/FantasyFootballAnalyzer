@@ -23,6 +23,8 @@ export function HistoryPage({ league }: HistoryPageProps) {
   const [rivalriesLoading, setRivalriesLoading] = useState(false);
   // A failed fetch must not masquerade as "this team has no records".
   const [rivalriesError, setRivalriesError] = useState<string | null>(null);
+  // Bumped by the Retry button: re-picking the same team fires no onChange.
+  const [rivalriesAttempt, setRivalriesAttempt] = useState(0);
 
   // Check if platform supports history
   const supportsHistory = league.platform === 'sleeper' || league.platform === 'espn';
@@ -90,7 +92,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
           result = await loadSleeperH2H(league.id, selectedTeamId, 5);
         } else if (league.platform === 'espn') {
           const credentials = loadESPNCredentials(league.id);
-          result = await loadESPNH2H(league.id, selectedTeamId, 5, credentials);
+          result = await loadESPNH2H(league.id, selectedTeamId, 5, credentials, league.season);
         } else {
           result = { records: new Map(), teamName: '' };
         }
@@ -107,7 +109,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
         logger.error('Failed to load rivalries:', err);
         if (!cancelled) {
           setRivalries([]);
-          setRivalriesError('Could not load head-to-head records. Pick the team again to retry.');
+          setRivalriesError('Could not load head-to-head records.');
         }
       } finally {
         if (!cancelled) setRivalriesLoading(false);
@@ -118,7 +120,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
     return () => {
       cancelled = true;
     };
-  }, [selectedTeamId, league.id, league.platform, supportsHistory]);
+  }, [selectedTeamId, league.id, league.season, league.platform, supportsHistory, rivalriesAttempt]);
 
   // Calculate all-time standings. Aggregate by stable owner id when the
   // platform supplied one so a manager who renames their team isn't split
@@ -200,8 +202,8 @@ export function HistoryPage({ league }: HistoryPageProps) {
             <h1 className={styles.title}>League History</h1>
           </div>
           <div className={styles.notice}>
-            Historical data is only available for Sleeper and ESPN leagues.
-            Yahoo does not provide access to previous season data through their API.
+            League history is built for Sleeper and ESPN leagues so far. For a
+            past Yahoo season, pick the year from the season menu in the header.
           </div>
         </div>
       </div>
@@ -308,7 +310,14 @@ export function HistoryPage({ league }: HistoryPageProps) {
 
               {!rivalriesLoading && selectedTeamId && rivalriesError && (
                 <div className={styles.noRivalries} role="alert">
-                  {rivalriesError}
+                  {rivalriesError}{' '}
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setRivalriesAttempt(n => n + 1)}
+                  >
+                    Retry
+                  </button>
                 </div>
               )}
 

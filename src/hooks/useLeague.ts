@@ -224,7 +224,12 @@ export function useLeague(): UseLeagueReturn {
             // Point each platform at its actual fix: ESPN 401s mean missing or
             // expired cookies, Yahoo 401s mean the OAuth session lapsed.
             if (credentials.platform === 'espn') {
-              message = 'This league is private. Add your espn_s2 and SWID cookies to load it.';
+              // With cookies supplied, the 401 means ESPN rejected them, and
+              // the adapter's message says how to fix that. Telling that user
+              // to "add your cookies" sends them to re-paste the same ones.
+              message = credentials.espnS2 && credentials.swid && err instanceof ESPNAPIError
+                ? err.message.replace(/^ESPN: (\w)/, (_, c: string) => `ESPN ${c}`)
+                : 'This league is private. Add your espn_s2 and SWID cookies to load it.';
             } else if (credentials.platform === 'yahoo') {
               message = 'Yahoo session expired. Log in with Yahoo again.';
             } else {

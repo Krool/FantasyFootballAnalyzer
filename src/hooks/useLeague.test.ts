@@ -251,6 +251,21 @@ describe('useLeague.load - error mapping', () => {
     expect(result.current.error).toMatch(/espn_s2 and SWID/);
   });
 
+  it('tells a user whose ESPN cookies were rejected to re-copy them, not to add them', async () => {
+    mockedLoadLeague.mockRejectedValue(new ESPNAPIError(
+      'ESPN: cookies were rejected (401). Your espn_s2 likely expired. Log into espn.com again and re-copy both cookies.',
+      401,
+    ));
+
+    const { result } = renderHook(() => useLeague());
+    await act(async () => {
+      await result.current.load({ platform: 'espn', leagueId: 'L1', season: 2024, espnS2: 's2', swid: '{x}' });
+    });
+
+    expect(result.current.error).toMatch(/^ESPN cookies were rejected/);
+    expect(result.current.error).not.toMatch(/This league is private/);
+  });
+
   it('points Yahoo 401s at logging in again', async () => {
     mockedLoadLeague.mockRejectedValue(new Error('Request failed: 401'));
 

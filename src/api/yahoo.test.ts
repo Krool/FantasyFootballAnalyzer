@@ -10,6 +10,7 @@ import {
   getAccessToken,
   getRefreshToken,
   isAuthenticated,
+  yahooPosition,
 } from './yahoo';
 
 describe('NFL_GAME_KEYS', () => {
@@ -26,6 +27,15 @@ describe('NFL_GAME_KEYS', () => {
     for (let year = 2015; year <= lastSeason; year++) {
       expect(NFL_GAME_KEYS[year], `missing game key for ${year}`).toBeTruthy();
     }
+  });
+});
+
+describe('yahooPosition', () => {
+  it('keeps one position for multi-eligible players', () => {
+    expect(yahooPosition({ display_position: 'WR,TE' })).toBe('WR');
+    expect(yahooPosition({ display_position: 'RB' })).toBe('RB');
+    expect(yahooPosition({ primary_position: 'QB' })).toBe('QB');
+    expect(yahooPosition(undefined)).toBe('');
   });
 });
 

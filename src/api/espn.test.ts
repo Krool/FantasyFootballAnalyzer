@@ -369,6 +369,14 @@ describe('espn loadLeague', () => {
     expect(side2.playersReceived.map(p => p.name)).toEqual(['Bijan Robinson']);
     expect(side2.playersSent.map(p => p.name)).toEqual(['Saquon Barkley']);
 
+    // Judged on the weeks after the trade, from each receiver's lineup:
+    // both backs started weeks 4-17 at 10 a week for their new team.
+    expect(trade.verdictBasis).toBe('post-trade');
+    expect(side1.pointsGained).toBe(140);
+    expect(side1.pointsLost).toBe(140);
+    expect(side1.netPAR).toBe(0);
+    expect(trade.winner).toBeUndefined();
+
     // Trade attached to both teams
     expect(league.teams.find(t => t.id === '1')!.trades).toHaveLength(1);
     expect(league.teams.find(t => t.id === '2')!.trades).toHaveLength(1);
@@ -711,6 +719,33 @@ describe('espn loadLeagueHistory', () => {
 describe('espn loadHeadToHeadRecords', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('starts from the loaded season, not a calendar year the league has not renewed into', async () => {
+    const loaded = new Date().getFullYear() - 1;
+    const season = {
+      id: 12345,
+      settings: { name: 'League' },
+      teams: [
+        { id: 1, name: 'Alpha', owners: ['m1'], record: { overall: {} } },
+        { id: 2, name: 'Bravo', owners: ['m2'], record: { overall: {} } },
+      ],
+      schedule: [
+        { matchupPeriodId: 1, winner: 'HOME', home: { teamId: 1, totalPoints: 100 }, away: { teamId: 2, totalPoints: 90 } },
+      ],
+    };
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes(`/seasons/${loaded}/`)) return jsonResponse(season);
+      return new Response('{}', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { records, teamName } = await loadHeadToHeadRecords(LEAGUE_ID, '1', 2, undefined, loaded);
+
+    expect(teamName).toBe('Alpha');
+    expect(records.get('m2')?.wins).toBe(1);
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes(`/seasons/${loaded + 1}/`))).toBe(false);
   });
 
   it('follows the manager and opponents by owner id across a rename + renumber', async () => {

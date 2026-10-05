@@ -34,7 +34,7 @@ const leagueFixture = {
 
 const usersFixture: SleeperAPI.User[] = [
   { user_id: 'u1', username: 'alice', display_name: 'Alice', avatar: 'av1' },
-  { user_id: 'u2', username: 'bob', display_name: 'Bob', avatar: '' },
+  { user_id: 'u2', username: 'bob', display_name: 'Bob', avatar: '', metadata: { team_name: 'Bob Squad' } },
   { user_id: 'u3', username: 'carol', display_name: 'Carol', avatar: '' },
   { user_id: 'u4', username: 'dave', display_name: 'Dave', avatar: '' },
 ];
@@ -354,6 +354,10 @@ describe('sleeper loadLeague', () => {
     expect(league.teams).toHaveLength(4);
     const team1 = league.teams.find(t => t.id === '1')!;
     expect(team1.name).toBe('Alice');
+    // A league team name wins over the account handle, which stays the owner.
+    const team2 = league.teams.find(t => t.id === '2')!;
+    expect(team2.name).toBe('Bob Squad');
+    expect(team2.ownerName).toBe('Bob');
     expect(team1.wins).toBe(10);
     expect(team1.losses).toBe(4);
     expect(team1.ties).toBe(0);
@@ -1065,5 +1069,25 @@ describe('fantasyPosition', () => {
   it('keeps real offensive and defensive positions as they are', () => {
     expect(fantasyPosition({ position: 'WR', fantasy_positions: ['WR'] })).toBe('WR');
     expect(fantasyPosition({ position: 'LB', fantasy_positions: ['LB'] })).toBe('LB');
+  });
+});
+
+describe('sleeper getAllPlayers', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
+
+  it('does not cache a failed download', async () => {
+    vi.resetModules();
+    const { getAllPlayers } = await import('./sleeper');
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ '1': { player_id: '1' } }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(getAllPlayers()).rejects.toThrow('Failed to fetch');
+    await expect(getAllPlayers()).resolves.toHaveProperty('1');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

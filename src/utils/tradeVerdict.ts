@@ -1,8 +1,9 @@
 import type { Trade } from '@/types';
 
-// How a trade's PAR numbers were computed. Sleeper (weekly starts) and Yahoo
-// (weekly player points) cover only the weeks after the trade; ESPN, and any
-// platform whose weekly fetch failed, spans the whole season.
+// How a trade's PAR numbers were computed. Sleeper and ESPN (weekly lineup
+// starts) and Yahoo (weekly player points) cover only the weeks after the
+// trade. A trade with no known week, or whose weekly data failed to load,
+// spans the whole season. The basis is per trade, so one league can mix both.
 export type TradeVerdictBasis = 'post-trade' | 'full-season';
 
 // One threshold per basis, in PAR. Post-trade PAR accrues over fewer weeks,
@@ -20,6 +21,17 @@ export const VERDICT_BASIS_NOTE: Record<TradeVerdictBasis, string> = {
   'full-season':
     'Verdicts compare full-season value; weekly data was not available for this league',
 };
+
+// Page subtitle note for a set of trades: the shared basis, or a split count
+// when some trades fell back to full-season value.
+export function verdictBasisSummary(trades: Trade[] | undefined): string | undefined {
+  const bases = (trades ?? []).map(t => t.verdictBasis).filter((b): b is TradeVerdictBasis => !!b);
+  if (bases.length === 0) return undefined;
+  const fullSeason = bases.filter(b => b === 'full-season').length;
+  if (fullSeason === 0) return VERDICT_BASIS_NOTE['post-trade'];
+  if (fullSeason === bases.length) return VERDICT_BASIS_NOTE['full-season'];
+  return `${VERDICT_BASIS_NOTE['post-trade']}; ${fullSeason} of ${bases.length} use full-season value (weekly data was missing for those)`;
+}
 
 export function decideTradeWinner(
   teams: Trade['teams'],

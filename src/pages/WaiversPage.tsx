@@ -24,7 +24,6 @@ export function WaiversPage({ league }: WaiversPageProps) {
         {hasTransactions ? (
           <WaiverTable
             teams={league.teams}
-            platform={league.platform}
             pointsBasis={league.waiverPointsBasis}
           />
         ) : (
@@ -36,7 +35,6 @@ export function WaiversPage({ league }: WaiversPageProps) {
             </p>
             <ul>
               <li>No waiver claims or free agent pickups have been made yet</li>
-              <li>The platform doesn't provide transaction history</li>
               <li>This is a new league with no activity</li>
             </ul>
           </div>

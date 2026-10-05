@@ -142,6 +142,9 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
   };
   const [leagueId, setLeagueId] = useState(() => savedIdFor(saved?.platform ?? 'sleeper'));
   const [leagueIdError, setLeagueIdError] = useState<string | null>(null);
+  // Cookie problems render next to the cookie fields, not in the League ID
+  // slot, so the alert and focus land where the fix is.
+  const [cookieError, setCookieError] = useState<string | null>(null);
   const [season, setSeason] = useState(() => defaultSeasonFor(saved?.platform ?? 'sleeper'));
   const [espnS2, setEspnS2] = useState('');
   const [swid, setSwid] = useState('');
@@ -462,18 +465,21 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
     if (platform === 'espn' && (espnS2 || swid)) {
       const swapped = isSwidValid(espnS2) && !isSwidValid(swid);
       if (swapped) {
-        setLeagueIdError(
+        setCookieError(
           'The two cookies look swapped: the braces-wrapped SWID is in the espn_s2 field. Switch them and try again.',
         );
+        document.getElementById('espnS2')?.focus();
         return;
       }
       if (!isEspnS2Valid(espnS2) || !isSwidValid(swid)) {
-        setLeagueIdError(
+        setCookieError(
           'One of the ESPN cookies does not look right (see the notes under the fields). Re-copy both values, or clear them for a public league.',
         );
+        document.getElementById(isEspnS2Valid(espnS2) ? 'swid' : 'espnS2')?.focus();
         return;
       }
     }
+    setCookieError(null);
 
     Analytics.connectAttempt(platform);
 
@@ -500,7 +506,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
           aria-pressed={platform === 'sleeper'}
           onClick={() => setPlatform('sleeper')}
         >
-          <span className={styles.platformIcon}>S</span>
+          <span className={styles.platformIcon} aria-hidden="true">S</span>
           Sleeper
         </button>
         <button
@@ -509,7 +515,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
           aria-pressed={platform === 'espn'}
           onClick={() => setPlatform('espn')}
         >
-          <span className={styles.platformIcon}>E</span>
+          <span className={styles.platformIcon} aria-hidden="true">E</span>
           ESPN
         </button>
         <button
@@ -518,7 +524,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
           aria-pressed={platform === 'yahoo'}
           onClick={() => setPlatform('yahoo')}
         >
-          <span className={styles.platformIcon}>Y</span>
+          <span className={styles.platformIcon} aria-hidden="true">Y</span>
           Yahoo
         </button>
       </div>
@@ -851,7 +857,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                 type="text"
                 className={`input ${espnS2 ? (isEspnS2Valid(espnS2) ? styles.inputValid : styles.inputInvalid) : ''}`}
                 value={espnS2}
-                onChange={(e) => setEspnS2(normalizeEspnS2(e.target.value))}
+                onChange={(e) => { setEspnS2(normalizeEspnS2(e.target.value)); setCookieError(null); }}
                 placeholder="Leave empty for public leagues"
                 spellCheck={false}
                 autoComplete="off"
@@ -873,7 +879,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                 type="text"
                 className={`input ${swid ? (isSwidValid(swid) ? styles.inputValid : styles.inputInvalid) : ''}`}
                 value={swid}
-                onChange={(e) => setSwid(normalizeSwid(e.target.value))}
+                onChange={(e) => { setSwid(normalizeSwid(e.target.value)); setCookieError(null); }}
                 placeholder="e.g., {XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}"
                 spellCheck={false}
                 autoComplete="off"
@@ -891,6 +897,9 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
           {/* Show inconsistency warning if only one cookie is filled */}
           {((espnS2 && !swid) || (!espnS2 && swid)) && (
             <p className={styles.warning} role="alert">Private leagues need both cookies. Add the other one too.</p>
+          )}
+          {cookieError && (
+            <p className={styles.fieldError} role="alert">{cookieError}</p>
           )}
         </div>
       )}

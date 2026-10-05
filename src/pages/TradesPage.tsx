@@ -1,6 +1,6 @@
 import { TradeTable } from '@/components/TradeTable';
 import type { League } from '@/types';
-import { VERDICT_BASIS_NOTE } from '@/utils/tradeVerdict';
+import { verdictBasisSummary } from '@/utils/tradeVerdict';
 import styles from './TradesPage.module.css';
 
 interface TradesPageProps {
@@ -9,8 +9,9 @@ interface TradesPageProps {
 
 export function TradesPage({ league }: TradesPageProps) {
   const hasTrades = league.trades && league.trades.length > 0;
-  // Uniform per platform, so the first trade speaks for all of them.
-  const verdictBasis = league.trades?.[0]?.verdictBasis;
+  // Per trade, not per platform: one trade whose weekly data is missing
+  // falls back to full-season value while the rest stay post-trade.
+  const basisNote = verdictBasisSummary(league.trades);
 
   return (
     <div className={styles.page}>
@@ -19,7 +20,7 @@ export function TradesPage({ league }: TradesPageProps) {
           <h1 className={styles.title}>Trade Analysis</h1>
           <p className={styles.subtitle}>
             Analyze trades from the {league.season} season
-            {verdictBasis && ` · ${VERDICT_BASIS_NOTE[verdictBasis]}`}
+            {basisNote && ` · ${basisNote}`}
           </p>
         </div>
 
