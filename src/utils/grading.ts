@@ -17,7 +17,18 @@ export interface GradedPick extends DraftPick {
   // was not an eligible overpay.
   marketValue?: number;
   auctionDamage?: number;
+  // Which yardstick produced the grade, so the table can explain it on hover
+  // (explainGrade). Optional only so hand-built test picks stay valid.
+  gradeBasis?: GradeBasis;
 }
+
+export type GradeBasis =
+  | 'auction-results' // season finish vs the price tier he cost
+  | 'auction-market' // pre-season: price paid vs consensus market dollars
+  | 'auction-consensus' // pre-season, no market price: cost rank vs consensus rank
+  | 'snake-results' // season finish vs draft order at his position
+  | 'snake-board' // pre-season: pick vs the consensus overall board
+  | 'snake-consensus'; // pre-season: draft order vs consensus rank at his position
 
 export interface DraftGradeSummary {
   great: number;
@@ -421,6 +432,7 @@ export function gradeAllPicks(
           valueOverExpected: delta,
           marketValue: market,
           auctionDamage: auctionOverpayDamage(delta, market, budget),
+          gradeBasis: 'auction-market',
         };
       }
       const { grade, auctionValueGrade } = positionRanksOverride
@@ -441,6 +453,7 @@ export function gradeAllPicks(
         expectedRank,
         valueOverExpected,
         auctionValueGrade,
+        gradeBasis: positionRanksOverride ? 'auction-consensus' : 'auction-results',
       };
     }
 
@@ -465,6 +478,7 @@ export function gradeAllPicks(
         positionRank,
         expectedRank: boardSlot,
         valueOverExpected: boardValue,
+        gradeBasis: 'snake-board',
       };
     }
     const grade = positionRanksOverride
@@ -477,8 +491,98 @@ export function gradeAllPicks(
       positionRank,
       expectedRank,
       valueOverExpected,
+      gradeBasis: positionRanksOverride ? 'snake-consensus' : 'snake-results',
     };
   });
+}
+
+function ordinal(n: number): string {
+  const tens = n % 100;
+  if (tens >= 11 && tens <= 13) return `${n}th`;
+  return `${n}${['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
+}
+
+function signed(n: number): string {
+  return n > 0 ? `+${n}` : `${n}`;
+}
+
+// One line on the Grade column header: what the grades in this table measure.
+export function describeGradeBasis(basis: GradeBasis | undefined): string {
+  switch (basis) {
+    case 'auction-results':
+      return 'Where he finished at his position versus the price tier he cost. Hover a grade for the math.';
+    case 'auction-market':
+      return 'Price paid versus the consensus market price. Hover a grade for the math.';
+    case 'auction-consensus':
+      return 'How he ranked on price at his position versus the consensus rank. Hover a grade for the math.';
+    case 'snake-results':
+      return 'Where he finished at his position versus where he was drafted at it. Hover a grade for the math.';
+    case 'snake-board':
+      return 'Where he was taken versus where the consensus board had him. Hover a grade for the math.';
+    case 'snake-consensus':
+      return 'Where he was drafted at his position versus the consensus rank. Hover a grade for the math.';
+    default:
+      return 'Hover a grade for the math.';
+  }
+}
+
+// The grade badge's hover text: this pick's numbers, then the bands it was
+// judged on. Mirrors the thresholds in gradePick, gradeAuctionPick,
+// gradeAuctionDollarDelta and the consensus graders above; change them
+// together.
+export function explainGrade(
+  pick: GradedPick,
+  opts: { budget?: number; picksPerRound?: number } = {},
+): string {
+  const pos = pick.player.position;
+  const ranked = pick.positionRank < 999;
+  const finish = ranked ? `${pos}${pick.positionRank}` : 'no points yet';
+  const vs = ranked ? ` (${signed(pick.valueOverExpected)})` : '';
+
+  switch (pick.gradeBasis) {
+    case 'snake-results': {
+      const head = `Drafted as the ${ordinal(pick.expectedRank)} ${pos}, finished ${finish}${vs}.`;
+      if (pick.expectedRank <= 3) {
+        return `${head} An early ${pos} is judged on the finish: top 3 Great, top 6 Good, top 12 Bad, worse Terrible.`;
+      }
+      if (pick.expectedRank <= 8) {
+        return `${head} A mid-tier ${pos} is judged on the finish or beating his slot: top 5 or 4+ better Great, top 10 or 2+ better Good, top 15 or within 4 Bad, worse Terrible.`;
+      }
+      return `${head} A late ${pos} is judged on beating his slot: 6+ better Great, 2+ better Good, within 4 worse Bad, worse Terrible.`;
+    }
+    case 'auction-results': {
+      const budget = opts.budget && opts.budget > 0 ? opts.budget : 200;
+      const $ = (n: number) => `$${Math.round((n * budget) / 200)}`;
+      const paid = pick.auctionValue ?? 0;
+      const scaled = (paid * 200) / budget;
+      const head = `Paid $${paid}, finished ${finish} among drafted ${pos}s.`;
+      const label = pick.auctionValueGrade ? ` ${pick.auctionValueGrade}.` : '';
+      if (scaled >= 40) {
+        return `${head}${label} Elite price (${$(40)}+): top 3 Great, top 6 Good, top 12 Bad, worse Terrible.`;
+      }
+      if (scaled >= 15) {
+        return `${head}${label} Starter price (${$(15)}-${$(39)}): top 5 Great, top 10 Good, top 15 Bad, worse Terrible.`;
+      }
+      if (scaled >= 5) {
+        return `${head}${label} Value price (${$(5)}-${$(14)}): top 8 Great, top 15 Good, top 20 Bad, worse Terrible.`;
+      }
+      return `${head}${label} Bargain price (under ${$(5)}): top 10 Great, top 20 Good, any other finish Bad, no points Terrible.`;
+    }
+    case 'auction-market': {
+      const market = describeAuctionMarket(pick.auctionValue ?? 0, pick.marketValue ?? 1);
+      return `${pick.auctionValueGrade ?? ''}: ${market}. Judged on the overpay as a share of his price (cheap players get a $10 cushion): 12%+ under Great, within 10% Good, up to 25% over Fair, up to 45% over Bad, more Terrible.`;
+    }
+    case 'auction-consensus':
+      return `The ${ordinal(pick.expectedRank)} priciest ${pos}, consensus ${finish}${vs}. 4+ spots better Great, within 1 Good, up to 5 worse Bad, more Terrible.`;
+    case 'snake-board': {
+      const round = opts.picksPerRound && opts.picksPerRound > 0 ? opts.picksPerRound : 12;
+      return `Taken at pick ${pick.pickNumber}; the consensus board had him at ${pick.expectedRank} (${signed(pick.valueOverExpected)}). A round is ${round} picks: fell a round or more Great, within half a round Good, up to two rounds early Bad, earlier Terrible.`;
+    }
+    case 'snake-consensus':
+      return `Drafted as the ${ordinal(pick.expectedRank)} ${pos}, consensus ${finish}${vs}. 4+ spots better Great, within 1 Good, up to 5 worse Bad, more Terrible.`;
+    default:
+      return '';
+  }
 }
 
 // Calculate draft grade summary for a team

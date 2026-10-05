@@ -302,3 +302,8 @@
   padding: 0.15rem 0.45rem;
   white-space: nowrap;
 }
+
+/* Grade badges explain their math on hover. */
+.gradeHint {
+  cursor: help;
+}

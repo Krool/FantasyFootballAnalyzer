@@ -17,6 +17,8 @@ import {
   auctionOverpayDamage,
   describeAuctionMarket,
   auctionBadgeWord,
+  explainGrade,
+  describeGradeBasis,
 } from './grading';
 import type { DraftPick, League } from '@/types';
 
@@ -649,5 +651,69 @@ describe('gradeConsensusBoardPick', () => {
   it('falls back to a 12-team round when the league size is unknown', () => {
     expect(gradeConsensusBoardPick(12, 0)).toBe('great');
     expect(gradeConsensusBoardPick(-7, 0)).toBe('bad');
+  });
+});
+
+describe('explainGrade', () => {
+  const graded = (overrides: Record<string, unknown>) =>
+    ({
+      ...makePick({ position: 'WR' }),
+      grade: 'terrible',
+      positionRank: 55,
+      expectedRank: 2,
+      valueOverExpected: -53,
+      ...overrides,
+    }) as Parameters<typeof explainGrade>[0];
+
+  it('shows an auction result against its price tier, scaled to the budget', () => {
+    const text = explainGrade(
+      graded({ gradeBasis: 'auction-results', auctionValue: 67, auctionValueGrade: 'Bust' }),
+      { budget: 200 },
+    );
+    expect(text).toContain('Paid $67, finished WR55 among drafted WRs. Bust.');
+    expect(text).toContain('Elite price ($40+): top 3 Great');
+    // $30 in a $100 league is the same elite tier, with its bands in league dollars.
+    expect(explainGrade(graded({ gradeBasis: 'auction-results', auctionValue: 30 }), { budget: 100 }))
+      .toContain('Elite price ($20+)');
+  });
+
+  it('calls out a bargain pick that never scored', () => {
+    const text = explainGrade(graded({ gradeBasis: 'auction-results', auctionValue: 1, positionRank: 999 }));
+    expect(text).toContain('finished no points yet');
+    expect(text).toContain('no points Terrible');
+  });
+
+  it('shows a snake result against draft order at the position', () => {
+    const text = explainGrade(
+      graded({ gradeBasis: 'snake-results', expectedRank: 12, positionRank: 4, valueOverExpected: 8 }),
+    );
+    expect(text).toBe(
+      'Drafted as the 12th WR, finished WR4 (+8). A late WR is judged on beating his slot: 6+ better Great, 2+ better Good, within 4 worse Bad, worse Terrible.',
+    );
+  });
+
+  it('shows the board slot and the round size for consensus snake grades', () => {
+    const text = explainGrade(
+      graded({ gradeBasis: 'snake-board', pickNumber: 34, expectedRank: 20, valueOverExpected: 14 }),
+      { picksPerRound: 10 },
+    );
+    expect(text).toContain('Taken at pick 34; the consensus board had him at 20 (+14). A round is 10 picks');
+  });
+
+  it('keeps the market math for pre-season auction grades', () => {
+    const text = explainGrade(
+      graded({ gradeBasis: 'auction-market', auctionValue: 75, marketValue: 65, auctionValueGrade: 'Slight Overpay' }),
+    );
+    expect(text).toContain('Slight Overpay: $75 vs $65 market (15% over)');
+  });
+
+  it('tags every pick gradeAllPicks returns with its basis', () => {
+    const league = {
+      draftType: 'snake',
+      totalTeams: 12,
+      teams: [{ draftPicks: makePositionPicks('RB', 4) }],
+    } as unknown as League;
+    expect(gradeAllPicks(league).every(p => p.gradeBasis === 'snake-results')).toBe(true);
+    expect(describeGradeBasis('snake-results')).toContain('versus where he was drafted');
   });
 });

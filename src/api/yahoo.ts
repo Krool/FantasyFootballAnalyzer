@@ -965,6 +965,51 @@ export async function getWeeklyMatchups(
   return matchups;
 }
 
+// Yahoo lineup slots that do not score. Everything else (QB, W/R/T, DEF...)
+// is a start.
+const NON_STARTING_SLOTS = new Set(['BN', 'IR', 'IR+', 'NA']);
+
+// Who each team STARTED each week: week -> team_key -> player_keys. One
+// league-wide roster call per week. A week whose call failed is absent, so
+// the caller can tell "benched" from "unknown".
+export async function getWeeklyStarters(
+  leagueKey: string,
+  maxWeek: number,
+  onCallDone?: () => void,
+): Promise<Map<number, Map<string, Set<string>>>> {
+  const tasks = Array.from({ length: maxWeek }, (_, i) => async () => {
+    const week = i + 1;
+    try {
+      const data = await yahooFetch<any>(`/league/${leagueKey}/teams/roster;week=${week}`);
+      return { week, data };
+    } catch (e) {
+      logger.warn(`[Yahoo] roster week ${week} failed:`, e);
+      return { week, data: null as any };
+    } finally {
+      onCallDone?.();
+    }
+  });
+
+  const starters = new Map<number, Map<string, Set<string>>>();
+  for (const { week, data } of await runBatched(tasks)) {
+    const teamsNode = data?.fantasy_content?.league?.teams?.team;
+    if (!teamsNode) continue;
+    const byTeam = new Map<string, Set<string>>();
+    for (const team of Array.isArray(teamsNode) ? teamsNode : [teamsNode]) {
+      if (!team?.team_key) continue;
+      const started = new Set<string>();
+      const players = team.roster?.players?.player;
+      for (const p of players ? (Array.isArray(players) ? players : [players]) : []) {
+        const slot = p?.selected_position?.position;
+        if (p?.player_key && slot && !NON_STARTING_SLOTS.has(slot)) started.add(p.player_key);
+      }
+      byTeam.set(team.team_key, started);
+    }
+    starters.set(week, byTeam);
+  }
+  return starters;
+}
+
 // Per-player weekly fantasy points, scored by the league's own settings
 // (player_points.total comes back league-scored on the league-scoped URL).
 // failedKeys collects every player whose fetch errored at least once, so the
@@ -1196,6 +1241,7 @@ export async function enrichPlayersWithStats(
   // to season totals per player.
   let weeklyCoveredKeys = new Set<string>();
   let weeksResolved = false;
+  let startersByWeek = new Map<number, Map<string, Set<string>>>();
 
   const maxWeek = Math.min(league.currentWeek || SEASON_MAX_WEEK, SEASON_MAX_WEEK);
   if (league.status !== 'preseason' && maxWeek >= 1) {
@@ -1276,6 +1322,17 @@ export async function enrichPlayersWithStats(
       if (Object.keys(weeklyPoints).length > 0) {
         league.playerWeeklyPoints = weeklyPoints;
       }
+
+      // 4. Weekly lineups, so a pickup is credited only with the weeks this
+      //    team actually started him (like Sleeper/ESPN). Without them, a
+      //    player dropped before ever playing got every point he scored for
+      //    his NEXT team (owner-reported, 2026-10-04).
+      let rosterDone = 0;
+      onProgress?.({ stage: 'Fetching weekly lineups', current: 0, total: maxWeek });
+      startersByWeek = await getWeeklyStarters(league.id, maxWeek, () => {
+        rosterDone++;
+        onProgress?.({ stage: 'Fetching weekly lineups', current: rosterDone, total: maxWeek });
+      });
     }
   }
 
@@ -1284,19 +1341,60 @@ export async function enrichPlayersWithStats(
   // fetch outage leaves weeklyCoveredKeys empty, so everyone falls back.
   const weeklyCovered = (playerId: string): boolean =>
     weeksResolved && weeklyCoveredKeys.has(playerId);
-  const sumWeeksSince = (playerId: string, fromWeek: number): { points: number; games: number } => {
+  const sumWeeksSince = (
+    playerId: string,
+    fromWeek: number,
+    untilWeek = Infinity,
+  ): { points: number; games: number } => {
     const weekly = weeklyPoints?.[playerId];
     let points = 0;
     let games = 0;
     if (weekly) {
       for (const [w, pts] of Object.entries(weekly)) {
-        if (Number(w) >= fromWeek) {
+        if (Number(w) >= fromWeek && Number(w) < untilWeek) {
           points += pts;
           games++;
         }
       }
     }
     return { points, games };
+  };
+  // Points from the weeks this team had him in its starting lineup, from the
+  // pickup week on. Null when any of those weeks' lineups failed to load, so
+  // the caller falls back rather than under-crediting a pickup.
+  const sumStartsSince = (
+    teamId: string,
+    playerId: string,
+    fromWeek: number,
+  ): { points: number; games: number } | null => {
+    let points = 0;
+    let games = 0;
+    for (let w = Math.max(1, fromWeek); w <= maxWeek; w++) {
+      const byTeam = startersByWeek.get(w);
+      if (!byTeam) return null;
+      if (byTeam.get(teamId)?.has(playerId)) {
+        points += weeklyPoints?.[playerId]?.[w] ?? 0;
+        games++;
+      }
+    }
+    return { points, games };
+  };
+  // Fallback bound when lineups are missing: the week this team let him go
+  // (a later drop or trade), exclusive. A player dropped in his pickup week
+  // earns this team nothing.
+  const ownedUntilWeek = (team: Team, tx: Transaction, playerId: string): number => {
+    let until = Infinity;
+    for (const other of team.transactions || []) {
+      if (other.timestamp > tx.timestamp && other.drops.some(p => p.id === playerId)) {
+        until = Math.min(until, other.week);
+      }
+    }
+    for (const trade of league.trades || []) {
+      if (trade.timestamp <= tx.timestamp) continue;
+      const side = trade.teams.find(s => s.teamId === team.id);
+      if (side?.playersSent.some(p => p.id === playerId)) until = Math.min(until, trade.week);
+    }
+    return until;
   };
   // ========== END WEEKLY DATA ==========
 
@@ -1314,13 +1412,16 @@ export async function enrichPlayersWithStats(
       }
     }
 
-    // Update transactions with player stats. With weekly data the points
-    // column is real "since pickup" (all games from the pickup week on -
-    // Yahoo doesn't report lineup starts, so we can't narrow to started
-    // games the way Sleeper/ESPN do). Without it, season totals as before.
+    // Update transactions with player stats. With weekly points and lineups
+    // the points column is what this team got from him: weeks it STARTED
+    // him since the pickup, as Sleeper/ESPN count. Lineups missing, it is
+    // every game from the pickup until this team dropped or traded him.
+    // No weekly data at all, season totals as before.
     for (const tx of team.transactions || []) {
       let txTotalPAR = 0;
       let txTotalPoints = 0;
+      let txGamesStarted = 0;
+      let txStartsKnown = (tx.adds || []).length > 0;
 
       for (const player of tx.adds || []) {
         const playerInfo = playerMap.get(player.id);
@@ -1333,12 +1434,19 @@ export async function enrichPlayersWithStats(
           player.seasonPoints = Math.round(seasonPoints * 10) / 10;
 
           if (weeklyCovered(player.id)) {
-            const { points, games } = sumWeeksSince(player.id, tx.week);
+            const starts = sumStartsSince(team.id, player.id, tx.week);
+            const { points, games } =
+              starts ?? sumWeeksSince(player.id, tx.week, ownedUntilWeek(team, tx, player.id));
             const par = calculateGamesPAR(points, playerInfo.position, games, replacementMap);
             player.pointsSincePickup = Math.round(points * 10) / 10;
             player.pointsAboveReplacement = Math.round(par * 10) / 10;
+            // Lineups make this a real start count; without them it is only
+            // games played, which says nothing about this team's lineup.
+            player.gamesSincePickup = starts ? starts.games : undefined;
             txTotalPAR += par;
             txTotalPoints += points;
+            if (starts) txGamesStarted += starts.games;
+            else txStartsKnown = false;
           } else {
             const par = getPlayerPAR(player.id);
             player.pointsAboveReplacement = Math.round(par * 10) / 10;
@@ -1347,10 +1455,11 @@ export async function enrichPlayersWithStats(
             player.pointsSincePickup = Math.round(seasonPoints * 10) / 10;
             txTotalPAR += par;
             txTotalPoints += seasonPoints;
+            player.gamesSincePickup = undefined;
+            txStartsKnown = false;
           }
-          // Weekly points say a player PLAYED, not that this team STARTED
-          // him - so games-since-pickup stays unavailable on Yahoo.
-          player.gamesSincePickup = undefined;
+        } else {
+          txStartsKnown = false;
         }
       }
 
@@ -1358,8 +1467,7 @@ export async function enrichPlayersWithStats(
       // PDF/team rollups don't conflate them.
       tx.totalPAR = Math.round(txTotalPAR * 10) / 10;
       tx.totalPointsGenerated = Math.round(txTotalPoints * 10) / 10;
-      // Games started not available for Yahoo
-      tx.gamesStarted = undefined;
+      tx.gamesStarted = txStartsKnown ? txGamesStarted : undefined;
     }
   }
 

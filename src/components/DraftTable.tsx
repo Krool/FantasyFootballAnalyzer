@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { League, RosterSlots, ScoringType, Team } from '@/types';
-import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected, describeAuctionMarket, auctionBadgeWord } from '@/utils/grading';
+import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected, auctionBadgeWord, explainGrade, describeGradeBasis } from '@/utils/grading';
 import {
   BOARD_MATCH_FLOOR,
   consensusBoardCoverage,
@@ -709,7 +709,7 @@ export function DraftTable({
                   Value{getSortIndicator('value')}
                 </th>
               )}
-              <th onClick={() => handleSort('grade')} onKeyDown={handleSortKeyDown('grade')} tabIndex={0} aria-sort={ariaSortFor('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade">
+              <th onClick={() => handleSort('grade')} onKeyDown={handleSortKeyDown('grade')} tabIndex={0} aria-sort={ariaSortFor('grade')} className={styles.sortable} role="button" aria-label="Sort by Grade" title={describeGradeBasis(gradedPicks[0]?.gradeBasis)}>
                 Grade{getSortIndicator('grade')}
               </th>
             </tr>
@@ -776,15 +776,14 @@ export function DraftTable({
                     </span>
                   ) : (
                     // Short grade words only (no room for "Slight Overpay");
-                    // dollar mode adds a Fair step between Good and Bad and
-                    // puts the market label and math in the tooltip.
+                    // dollar mode adds a Fair step between Good and Bad. The
+                    // tooltip carries this pick's numbers and the bands.
                     <span
-                      className={`grade-badge ${valuesInDollars ? auctionBadgeWord(pick.auctionValueGrade, pick.grade).cls : pick.grade}`}
-                      title={
-                        valuesInDollars && pick.marketValue !== undefined
-                          ? `${pick.auctionValueGrade}: ${describeAuctionMarket(pick.auctionValue ?? 0, pick.marketValue)}`
-                          : undefined
-                      }
+                      className={`grade-badge ${styles.gradeHint} ${valuesInDollars ? auctionBadgeWord(pick.auctionValueGrade, pick.grade).cls : pick.grade}`}
+                      title={explainGrade(pick, {
+                        budget: auctionBudget ?? 200,
+                        picksPerRound: totalTeams || teams.length,
+                      })}
                     >
                       {valuesInDollars
                         ? auctionBadgeWord(pick.auctionValueGrade, pick.grade).word

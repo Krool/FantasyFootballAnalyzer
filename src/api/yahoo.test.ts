@@ -567,7 +567,7 @@ describe('yahoo enrichPlayersWithStats (weekly data)', () => {
     expect(puka.pointsSincePickup).toBe(40);
     expect(tx.totalPointsGenerated).toBe(40);
     expect(puka.seasonPoints).toBe(180);
-    // Yahoo reports weekly scoring, not lineup starts
+    // Lineups failed to load in this fixture, so there is no start count
     expect(puka.gamesSincePickup).toBeUndefined();
     // PAR over the 3 scoring weeks: 40 - (180/17)*3
     expect(puka.pointsAboveReplacement).toBeCloseTo(8.2, 1);
@@ -582,6 +582,67 @@ describe('yahoo enrichPlayersWithStats (weekly data)', () => {
     expect(side1.pointsLost).toBe(15);
     expect(side1.netValue).toBe(25);
     expect(trade.winner).toBe(TEAM_1);
+  });
+});
+
+// Weekly lineups: Krool started Puka in weeks 6 and 8 and benched him in 7.
+function rosterBody(week: number) {
+  const slot = week === 6 || week === 8 ? 'WR' : 'BN';
+  return {
+    fantasy_content: {
+      league: {
+        teams: {
+          team: [
+            {
+              team_key: TEAM_1,
+              roster: {
+                players: {
+                  player: week >= 6
+                    ? [{ player_key: '461.p.200', selected_position: { week, position: slot } }]
+                    : [],
+                },
+              },
+            },
+            { team_key: TEAM_2, roster: { players: { player: [] } } },
+          ],
+        },
+      },
+    },
+  };
+}
+
+describe('yahoo enrichPlayersWithStats (weekly lineups)', () => {
+  let league: League;
+
+  beforeAll(async () => {
+    localStorage.setItem('yahoo_access_token', 'test-token');
+    localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const endpoint = decodeURIComponent(String(input).match(/endpoint=([^&]+)/)![1]);
+      const roster = endpoint.match(new RegExp(`^/league/${LEAGUE_KEY}/teams/roster;week=(\\d+)$`));
+      if (roster) return jsonResponse(rosterBody(parseInt(roster[1])));
+      return jsonResponse(routeYahooEnrich(String(input)));
+    }));
+    league = await loadLeague(LEAGUE_KEY);
+    await enrichPlayersWithStats(league);
+  });
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
+    localStorage.removeItem('yahoo_access_token');
+    localStorage.removeItem('yahoo_token_expiry');
+  });
+
+  it('credits a pickup only with the weeks this team started him', () => {
+    // Owner-reported 2026-10-04: a player dropped before ever playing got
+    // credited with everything he later scored for another team.
+    const tx = league.teams.find(t => t.id === TEAM_1)!.transactions![0];
+    const puka = tx.adds[0];
+    // Weeks 6 and 8 started (12 + 20); the benched week 7 is not his team's.
+    expect(puka.pointsSincePickup).toBe(32);
+    expect(puka.gamesSincePickup).toBe(2);
+    expect(tx.totalPointsGenerated).toBe(32);
+    expect(tx.gamesStarted).toBe(2);
   });
 });
 
