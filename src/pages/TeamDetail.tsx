@@ -6,6 +6,7 @@ import { gradeLeaguePicks } from '@/utils/consensusGrade';
 import { POOL } from '@/data/draftPool';
 import { calculateAllAwards } from '@/utils/awards';
 import { calculateLuckMetrics, type MatchupData } from '@/utils/luck';
+import { completedMatchups } from '@/utils/completedMatchups';
 import { isPlaceholderPlayer } from '@/utils/placeholders';
 import styles from './TeamDetail.module.css';
 
@@ -21,7 +22,7 @@ interface TeamDetailProps {
 export function TeamDetail({ league, team, onBack }: TeamDetailProps) {
   const weekly = useMemo(() => {
     const rows: Array<{ week: number; points: number; oppPoints: number; oppName: string; won: boolean }> = [];
-    for (const m of league.matchups ?? []) {
+    for (const m of completedMatchups(league)) {
       const isTeam1 = m.team1Id === team.id;
       const isTeam2 = m.team2Id === team.id;
       if (!isTeam1 && !isTeam2) continue;
@@ -66,7 +67,7 @@ export function TeamDetail({ league, team, onBack }: TeamDetailProps) {
 
   const h2h = useMemo(() => {
     const records = new Map<string, { w: number; l: number; t: number; pf: number; pa: number }>();
-    for (const m of league.matchups ?? []) {
+    for (const m of completedMatchups(league)) {
       const isTeam1 = m.team1Id === team.id;
       const isTeam2 = m.team2Id === team.id;
       if (!isTeam1 && !isTeam2) continue;
@@ -92,7 +93,7 @@ export function TeamDetail({ league, team, onBack }: TeamDetailProps) {
   }, [league, team.id]);
 
   const awards = useMemo(() => {
-    const matchupData: MatchupData[] = (league.matchups ?? []).map(m => ({
+    const matchupData: MatchupData[] = completedMatchups(league).map(m => ({
       week: m.week,
       team1Id: m.team1Id,
       team1Points: m.team1Points,
@@ -216,7 +217,11 @@ export function TeamDetail({ league, team, onBack }: TeamDetailProps) {
                       ? `$${pick.auctionValue}`
                       : `${pick.round}.${String(((pick.pickNumber - 1) % (league.totalTeams || 12)) + 1).padStart(2, '0')}`}
                   </span>
-                  <span className={`grade-badge ${pick.grade}`}>{getGradeDisplayText(pick.grade)}</span>
+                  {pick.pending ? (
+                    <span className="grade-badge" title="No points yet: graded once he plays">Pending</span>
+                  ) : (
+                    <span className={`grade-badge ${pick.grade}`}>{getGradeDisplayText(pick.grade)}</span>
+                  )}
                 </li>
               ))}
             </ul>

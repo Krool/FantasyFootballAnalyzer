@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import type { League, SleeperAPI } from '@/types';
 import {
+  fantasyPosition,
   findSuccessorLeague,
   getAvailableSeasons,
   loadHeadToHeadRecords,
@@ -816,6 +817,24 @@ describe('sleeper loadLeague settings edge cases', () => {
     expect(tx.adds[0].gamesSincePickup).toBe(1);
   });
 
+  it('does not count unplayed future weeks (prefilled lineups, 0 points) as games', async () => {
+    const week4 = matchupsForWeek(4).map(m =>
+      m.roster_id === 1
+        ? { ...m, starters: ['101', '105'], starters_points: [0, 0] }
+        : m,
+    );
+    const league = await loadWith({ [`/league/${LEAGUE_ID}/matchups/4`]: week4 });
+    const tx = league.teams.find(t => t.id === '1')!.transactions![0];
+    expect(tx.adds[0].gamesSincePickup).toBe(1);
+    expect(tx.gamesStarted).toBe(1);
+  });
+
+  it('fills roster seasonPoints from season stats for the league scoring', async () => {
+    const league = await loadWith({});
+    const team1 = league.teams.find(t => t.id === '1')!;
+    expect(team1.roster.map(p => p.seasonPoints)).toEqual([380, 190]); // pts_half_ppr
+  });
+
   it('flags IDP leagues without counting IDP slots', async () => {
     const league = await loadWith({
       [`/league/${LEAGUE_ID}`]: {
@@ -1034,5 +1053,17 @@ describe('sleeper loadKeeperSourceTeams', () => {
     expect(teams).toHaveLength(2);
     expect(teams.every(t => t.draftPicks.length === 0)).toBe(true);
     expect(teams[0].roster).toHaveLength(2);
+  });
+});
+
+describe('fantasyPosition', () => {
+  it('grades two-way and fullback players at their offensive fantasy position', () => {
+    expect(fantasyPosition({ position: 'DB', fantasy_positions: ['DB', 'WR'] })).toBe('WR');
+    expect(fantasyPosition({ position: 'FB', fantasy_positions: ['RB'] })).toBe('RB');
+  });
+
+  it('keeps real offensive and defensive positions as they are', () => {
+    expect(fantasyPosition({ position: 'WR', fantasy_positions: ['WR'] })).toBe('WR');
+    expect(fantasyPosition({ position: 'LB', fantasy_positions: ['LB'] })).toBe('LB');
   });
 });

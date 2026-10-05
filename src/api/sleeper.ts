@@ -207,9 +207,21 @@ function convertPlayer(playerId: string, players: Record<string, SleeperAPI.Play
     id: playerId,
     platformId: playerId,
     name: player.full_name || `${player.first_name} ${player.last_name}`,
-    position: player.position || 'Unknown',
+    position: fantasyPosition(player),
     team: player.team || 'FA',
   };
+}
+
+const OFFENSE_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE', 'K', 'DEF']);
+
+// Sleeper's `position` is the depth-chart one: two-way Travis Hunter is "DB"
+// and fullbacks are "FB", though both are rostered and scored at WR/RB. Grading
+// at DB made him DB1 of one (a 2-point "Great"). Prefer an offensive fantasy
+// position when the depth-chart one isn't.
+export function fantasyPosition(player: Pick<SleeperAPI.Player, 'position' | 'fantasy_positions'>): string {
+  const pos = player.position || 'Unknown';
+  if (OFFENSE_POSITIONS.has(pos)) return pos;
+  return player.fantasy_positions?.find(p => OFFENSE_POSITIONS.has(p)) ?? pos;
 }
 
 /**
@@ -457,7 +469,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
       if (points !== undefined) {
         allPlayerStats.push({
           playerId,
-          position: player.position,
+          position: fantasyPosition(player),
           seasonPoints: points,
         });
       }
@@ -472,6 +484,9 @@ export async function loadLeague(leagueId: string): Promise<League> {
   const playerStartsByRosterAndWeek = new Map<string, Map<number, number>>();
   allMatchups.forEach((weekMatchups, weekIndex) => {
     const week = weekIndex + 1;
+    // Sleeper serves future weeks with prefilled lineups and 0 points; a week
+    // counts as played (or in progress) only once some team has scored.
+    if (!weekMatchups.some(m => matchupPoints(m) > 0)) return;
     weekMatchups.forEach(matchup => {
       if (matchup.starters && matchup.starters_points) {
         matchup.starters.forEach((playerId, index) => {
@@ -629,7 +644,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
           const stats = calculatePlayerPARFromMatchups(
             weekMap,
             tradeWeek,
-            player?.position || 'Unknown',
+            player ? fantasyPosition(player) : 'Unknown',
             replacementPoints
           );
 
@@ -650,7 +665,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
                 const stats = calculatePlayerPARFromMatchups(
                   weekMap,
                   tradeWeek,
-                  player?.position || 'Unknown',
+                  player ? fantasyPosition(player) : 'Unknown',
                   replacementPoints
                 );
 
@@ -797,7 +812,11 @@ export async function loadLeague(leagueId: string): Promise<League> {
       isMyTeam: isMyTeam || undefined,
       ownerUserIds,
       avatarUrl: owner?.avatar ? `https://sleepercdn.com/avatars/thumbs/${owner.avatar}` : undefined,
-      roster: roster.players?.map(id => convertPlayer(id, players)) || [],
+      roster: roster.players?.map(id => ({
+        ...convertPlayer(id, players),
+        // Undefined (not 0) when Sleeper has no points on record yet.
+        seasonPoints: pointsForScoring(seasonStats[id]),
+      })) || [],
       draftPicks: draftPicksForTeam,
       transactions: transactionsForTeam,
       trades: teamTrades,

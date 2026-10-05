@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { League, RosterSlots, ScoringType, Team } from '@/types';
-import { gradeAllPicks, getGradeDisplayText, formatValueOverExpected, auctionBadgeWord, explainGrade, describeGradeBasis } from '@/utils/grading';
+import { gradeAllPicks, isGraded, getGradeDisplayText, formatValueOverExpected, auctionBadgeWord, explainGrade, describeGradeBasis } from '@/utils/grading';
 import {
   BOARD_MATCH_FLOOR,
   consensusBoardCoverage,
@@ -125,6 +125,8 @@ export function DraftTable({
       scoringType: 'ppr' as const,
       totalTeams,
       isLoaded: true,
+      // Live seasons leave players with no points yet ungraded (pending).
+      status: leagueStatus,
     };
     // Filter out unknown players (those with names like "Player 12345")
     const override = hasResults ? undefined : consensusPositionRanks(allPicks, POOL);
@@ -148,7 +150,7 @@ export function DraftTable({
       market?.size ? market : undefined,
       board,
     ).filter(pick => !isPlaceholderPlayer(pick.player.name));
-  }, [teams, totalTeams, isAuction, auctionBudget, hasResults, allPicks, scoringType, rosterSlots]);
+  }, [teams, totalTeams, isAuction, auctionBudget, hasResults, allPicks, scoringType, rosterSlots, leagueStatus]);
 
   // True when the value/grade numbers are dollar deltas, not rank deltas.
   const valuesInDollars = !hasResults && isAuction;
@@ -257,6 +259,8 @@ export function DraftTable({
       // either direction rather than leading the list.
       if (sortField === 'value' || sortField === 'grade' || sortField === 'posRank') {
         if (a.isKeeper !== b.isKeeper) return a.isKeeper ? 1 : -1;
+        // Pending picks (no points yet) carry no verdict either.
+        if (!!a.pending !== !!b.pending) return a.pending ? 1 : -1;
       }
 
       switch (sortField) {
@@ -343,7 +347,7 @@ export function DraftTable({
   // last year's skill, not this draft's.
   const summary = useMemo(() => {
     const counts = { great: 0, good: 0, bad: 0, terrible: 0 };
-    displayPicks.filter(p => !p.isKeeper).forEach(pick => counts[pick.grade]++);
+    displayPicks.filter(isGraded).forEach(pick => counts[pick.grade]++);
     return counts;
   }, [displayPicks]);
 
@@ -360,7 +364,7 @@ export function DraftTable({
 
     const ordered = [...gradedPicks].sort((a, b) => a.pickNumber - b.pickNumber);
     const leftOnBoard = (pick: (typeof gradedPicks)[number]): number => {
-      if (pick.isKeeper) return 0;
+      if (!isGraded(pick)) return 0;
       const later = ordered.filter(
         p => p.pickNumber > pick.pickNumber && p.player.position === pick.player.position,
       );
@@ -370,7 +374,7 @@ export function DraftTable({
 
     return [...byTeam.entries()]
       .map(([teamId, picks]) => {
-        const live = picks.filter(p => !p.isKeeper);
+        const live = picks.filter(isGraded);
         const hits = live.filter(p => p.grade === 'great' || p.grade === 'good').length;
         const points = picks.reduce((sum, p) => sum + (p.seasonPoints ?? 0), 0);
         const spent = picks.reduce((sum, p) => sum + (p.auctionValue ?? 0), 0);
@@ -756,7 +760,7 @@ export function DraftTable({
                   {/* Auction results have no Value column, so the finish
                       carries its own delta vs where he was bought at his
                       position: RB3 (-1) for the second RB off the board. */}
-                  {hasResults && isAuction && !valuesInDollars && pick.positionRank < 999 && (
+                  {hasResults && isAuction && !valuesInDollars && pick.positionRank < 999 && !pick.pending && (
                     <span
                       className={`${styles.rankDelta} ${pick.valueOverExpected > 0 ? 'grade-great' : pick.valueOverExpected < 0 ? 'grade-terrible' : ''}`}
                       title={`Bought as the ${pick.player.position}${pick.expectedRank} by price`}
@@ -772,18 +776,22 @@ export function DraftTable({
                 {(!isAuction || valuesInDollars) && (
                   <td
                     className={
-                      pick.isKeeper
+                      !isGraded(pick)
                         ? 'font-mono text-center'
                         : `font-mono text-center ${pick.valueOverExpected >= 0 ? 'grade-great' : 'grade-terrible'}`
                     }
                   >
-                    {pick.isKeeper ? '—' : formatValueOverExpected(pick.valueOverExpected, valuesInDollars)}
+                    {!isGraded(pick) ? '—' : formatValueOverExpected(pick.valueOverExpected, valuesInDollars)}
                   </td>
                 )}
                 <td>
                   {pick.isKeeper ? (
                     <span className={styles.keeperGrade} title="Kept, not drafted: no reach or steal to judge">
                       Keeper
+                    </span>
+                  ) : pick.pending ? (
+                    <span className={`${styles.keeperGrade} ${styles.gradeHint}`} title={explainGrade(pick)}>
+                      Pending
                     </span>
                   ) : (
                     // Short grade words only (no room for "Slight Overpay");

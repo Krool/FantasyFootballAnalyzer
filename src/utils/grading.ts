@@ -20,6 +20,16 @@ export interface GradedPick extends DraftPick {
   // Which yardstick produced the grade, so the table can explain it on hover
   // (explainGrade). Optional only so hand-built test picks stay valid.
   gradeBasis?: GradeBasis;
+  // Live season, graded on results, and he has no points yet (held out,
+  // suspended, started on IR). No verdict until he plays: the table shows
+  // "Pending", and summaries, awards, and exports leave him out (isGraded).
+  // At season's end everyone is graded, so a lost season still reads as one.
+  pending?: boolean;
+}
+
+// True for picks that carry a verdict: not a keeper, not pending.
+export function isGraded(pick: GradedPick): boolean {
+  return !pick.isKeeper && !pick.pending;
 }
 
 export type GradeBasis =
@@ -55,10 +65,11 @@ export function calculatePositionRanks(
     byPosition.set(pos, players);
   });
 
-  // Sort each position by season points and assign ranks
+  // Sort each position by season points and assign ranks. A player with no
+  // points yet ranks with the zeros at the bottom rather than going unranked:
+  // the unranked sentinel (999) once leaked into value as -986.
   byPosition.forEach((players, position) => {
     const sorted = [...players]
-      .filter(p => p.seasonPoints !== undefined)
       .sort((a, b) => (b.seasonPoints || 0) - (a.seasonPoints || 0));
 
     sorted.forEach((player, index) => {
@@ -400,7 +411,7 @@ export function gradeAllPicks(
     : null;
 
   // Grade each pick
-  return allPicks.map(pick => {
+  const graded = allPicks.map((pick): GradedPick => {
     const positionRank = positionRanks.get(`${pick.player.position}-${pick.player.id}`) || 999;
     const expectedRank = auctionExpectedRanks
       ? auctionExpectedRanks.get(`${pick.player.position}-${pick.player.id}`) || 999
@@ -494,6 +505,14 @@ export function gradeAllPicks(
       gradeBasis: positionRanksOverride ? 'snake-consensus' : 'snake-results',
     };
   });
+
+  // Mid-season, a player with no points yet has not had his chance: held out,
+  // suspended, or starting on IR, he may still pay off (owner, 2026-10-04).
+  // Hold the verdict, and zero his value so nothing downstream sums a bust.
+  if (positionRanksOverride || league.status !== 'live') return graded;
+  return graded.map(pick =>
+    (pick.seasonPoints ?? 0) > 0 ? pick : { ...pick, pending: true, valueOverExpected: 0 },
+  );
 }
 
 function ordinal(n: number): string {
@@ -534,6 +553,9 @@ export function explainGrade(
   pick: GradedPick,
   opts: { budget?: number; picksPerRound?: number } = {},
 ): string {
+  if (pick.pending) {
+    return 'No points yet (held out, suspended, or on IR). He gets a grade once he plays, or at season end.';
+  }
   const pos = pick.player.position;
   const ranked = pick.positionRank < 999;
   const finish = ranked ? `${pos}${pick.positionRank}` : 'no points yet';
@@ -596,16 +618,18 @@ export function calculateDraftSummary(picks: GradedPick[]): DraftGradeSummary {
     totalPicks: picks.length,
   };
 
-  if (picks.length === 0) return summary;
+  const graded = picks.filter(p => !p.pending);
+  summary.totalPicks = graded.length;
+  if (graded.length === 0) return summary;
 
   let totalValue = 0;
 
-  picks.forEach(pick => {
+  graded.forEach(pick => {
     summary[pick.grade]++;
     totalValue += pick.valueOverExpected;
   });
 
-  summary.averageValue = totalValue / picks.length;
+  summary.averageValue = totalValue / graded.length;
 
   return summary;
 }

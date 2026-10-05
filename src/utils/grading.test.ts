@@ -69,7 +69,7 @@ describe('calculatePositionRanks', () => {
     expect(ranks.get('QB-qb1')).toBe(1); // only QB
   });
 
-  it('skips players with undefined seasonPoints', () => {
+  it('ranks players with undefined seasonPoints last, not unranked', () => {
     const picks = [
       makePick({ playerId: 'rb1', position: 'RB', points: 200 }),
       makePick({ playerId: 'rb2', position: 'RB', seasonPoints: undefined }),
@@ -78,7 +78,8 @@ describe('calculatePositionRanks', () => {
     const ranks = calculatePositionRanks(picks, picks);
 
     expect(ranks.get('RB-rb1')).toBe(1);
-    expect(ranks.has('RB-rb2')).toBe(false);
+    // Unranked meant a 999 sentinel that leaked into value as -986.
+    expect(ranks.get('RB-rb2')).toBe(2);
   });
 });
 
@@ -715,5 +716,37 @@ describe('explainGrade', () => {
     } as unknown as League;
     expect(gradeAllPicks(league).every(p => p.gradeBasis === 'snake-results')).toBe(true);
     expect(describeGradeBasis('snake-results')).toContain('versus where he was drafted');
+  });
+});
+
+describe('pending grades (live season, no points yet)', () => {
+  const league = (status: 'live' | 'final') =>
+    ({
+      draftType: 'snake',
+      totalTeams: 12,
+      status,
+      teams: [{
+        draftPicks: [
+          makePick({ playerId: 'a', pickNumber: 1, points: 50 }),
+          makePick({ playerId: 'b', pickNumber: 2, points: undefined, seasonPoints: undefined }),
+          makePick({ playerId: 'c', pickNumber: 3, points: 30 }),
+        ],
+      }],
+    }) as unknown as League;
+
+  it('holds the verdict mid-season and zeroes the value (no -986 sentinel)', () => {
+    const b = gradeAllPicks(league('live')).find(p => p.player.id === 'b')!;
+    expect(b.pending).toBe(true);
+    expect(b.valueOverExpected).toBe(0);
+    expect(explainGrade(b)).toContain('No points yet');
+    const summary = calculateDraftSummary(gradeAllPicks(league('live')));
+    expect(summary.totalPicks).toBe(2);
+  });
+
+  it('grades everyone at season end, ranking a no-show last instead of unranked', () => {
+    const b = gradeAllPicks(league('final')).find(p => p.player.id === 'b')!;
+    expect(b.pending).toBeUndefined();
+    expect(b.positionRank).toBe(3);
+    expect(b.valueOverExpected).toBe(-1);
   });
 });

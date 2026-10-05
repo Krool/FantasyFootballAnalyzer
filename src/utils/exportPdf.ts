@@ -6,6 +6,7 @@ import { gradeLeaguePicks, hasSeasonResults } from './consensusGrade';
 import { POOL } from '@/data/draftPool';
 import { calculateAllAwards } from './awards';
 import { calculateLuckMetrics } from './luck';
+import { completedMatchups } from './completedMatchups';
 import { isPlaceholderPlayer } from './placeholders';
 import { logger } from './logger';
 
@@ -92,7 +93,7 @@ function getTeamWaiverStats(league: League) {
 const PDF_AWARD_CAP = 12;
 
 function generateAwards(league: League): PdfAward[] {
-  const matchups = (league.matchups ?? []).map(m => ({
+  const matchups = completedMatchups(league).map(m => ({
     week: m.week,
     team1Id: m.team1Id,
     team1Points: m.team1Points,
@@ -329,7 +330,7 @@ export async function exportLeagueReport(league: League) {
   const isAuction = league.draftType === 'auction';
   const pickCell = (pick: (typeof gradedPicks)[number]) =>
     isAuction ? `$${pick.auctionValue ?? 0}` : String(pick.pickNumber);
-  const topPicks = [...gradedPicks]
+  const topPicks = gradedPicks.filter(p => !p.pending)
     .sort((a, b) => b.valueOverExpected - a.valueOverExpected)
     .slice(0, 10)
     .map((pick, index) => [
@@ -364,7 +365,7 @@ export async function exportLeagueReport(league: League) {
   // overpay ratio); rank on that so $8-for-$1 fliers and $10-over stars sit
   // where they belong instead of the raw dollar column deciding.
   const damageMode = gradedPicks.some(p => p.auctionDamage !== undefined);
-  const worstPicks = [...gradedPicks]
+  const worstPicks = gradedPicks.filter(p => !p.pending)
     .sort((a, b) =>
       damageMode
         ? (b.auctionDamage ?? 0) - (a.auctionDamage ?? 0) || a.valueOverExpected - b.valueOverExpected

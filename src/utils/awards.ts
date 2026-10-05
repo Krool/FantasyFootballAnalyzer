@@ -462,7 +462,8 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   // based on cost, so the round-based filters below stay meaningful.
   // gradeLeaguePicks swaps in consensus ranks before Week 1 so a finished
   // pre-season draft grades against the market instead of zeroed stats.
-  const gradedPicks = gradeLeaguePicks(league, POOL);
+  // Pending picks (no points yet, mid-season) get no verdict, so no award.
+  const gradedPicks = gradeLeaguePicks(league, POOL).filter(p => !p.pending);
   const teamMap = new Map(league.teams.map(t => [t.id, t]));
 
   // Pre-season auction grading measures value in league dollars (market

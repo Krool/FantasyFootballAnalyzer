@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { POOL } from '@/data/draftPool';
+import { formatBuildDate } from '@/utils/formatBuildDate';
 import { ADP_HISTORY } from '@/data/adpHistory';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { playerHeadshotUrl } from '@/data/nflTeams';
@@ -193,7 +194,7 @@ export function TrendsPage({ league }: TrendsPageProps) {
             className={styles.settingsDim}
             title="Rankings and ADP refresh daily from FantasyPros, ESPN, Sleeper, and Yahoo"
           >
-            {newest ? `Board as of ${fmtDate(newest.date)}` : `Updated ${new Date(POOL.generatedAt).toLocaleDateString()}`}
+            {newest ? `Board as of ${fmtDate(newest.date)}` : `Updated ${formatBuildDate(POOL.generatedAt)}`}
           </span>
         </div>
 

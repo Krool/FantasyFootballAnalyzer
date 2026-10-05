@@ -1,5 +1,6 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { POOL } from '@/data/draftPool';
+import { formatBuildDate } from '@/utils/formatBuildDate';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { injuryAbbrev, injuryTitle } from '@/utils/injury';
 import type { League, Platform } from '@/types';
@@ -247,7 +248,7 @@ export function ValuesPage({ league, onUpdateGuest }: ValuesPageProps) {
             className={styles.settingsDim}
             title="Rankings and ADP refresh daily from FantasyPros, ESPN, Sleeper, and Yahoo"
           >
-            Updated {updated.toLocaleDateString()}
+            Updated {formatBuildDate(updated)}
           </span>
         </div>
 

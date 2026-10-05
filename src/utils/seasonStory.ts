@@ -3,6 +3,7 @@
 // the biggest number, which week was the bloodbath, when the big trade hit.
 
 import type { League, WeeklyMatchup } from '@/types';
+import { completedMatchups } from './completedMatchups';
 
 export interface SeasonRecord {
   label: string;
@@ -50,7 +51,7 @@ function games(matchups: WeeklyMatchup[]): GameView[] {
 }
 
 export function seasonRecords(league: League): SeasonRecord[] {
-  const all = games(league.matchups ?? []);
+  const all = games(completedMatchups(league));
   if (all.length === 0) return [];
   const nameOf = (id: string) => league.teams.find(t => t.id === id)?.name ?? `Team ${id}`;
 
@@ -140,7 +141,7 @@ export function seasonRecords(league: League): SeasonRecord[] {
 
 // One headline per played week, plus trades stitched into their weeks.
 export function seasonTimeline(league: League): WeekHeadline[] {
-  const all = games(league.matchups ?? []);
+  const all = games(completedMatchups(league));
   if (all.length === 0) return [];
   const nameOf = (id: string) => league.teams.find(t => t.id === id)?.name ?? `Team ${id}`;
 

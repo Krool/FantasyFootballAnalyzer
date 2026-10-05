@@ -1,5 +1,6 @@
 import { POOL_BASELINE, POOL_GENERATED_AT, POOL_SEASON, TOP_OF_BOARD } from '@/data/draftPoolMeta';
 import { nflLogoUrl } from '@/data/nflTeams';
+import { formatBuildDate } from '@/utils/formatBuildDate';
 import styles from './HomePage.module.css';
 
 // Static hero. Kept free of hooks, browser APIs, and the league form so it can
@@ -13,13 +14,7 @@ import styles from './HomePage.module.css';
 // park it in the eager entry chunk that every route pays for. The generator
 // pre-slices TOP_OF_BOARD, refreshed daily by the rankings Action.
 
-// Explicit locale + UTC so the prerendered HTML doesn't depend on the build
-// machine's locale or timezone.
-const UPDATED = new Date(POOL_GENERATED_AT).toLocaleDateString('en-US', {
-  month: 'short',
-  day: 'numeric',
-  timeZone: 'UTC',
-});
+const UPDATED = formatBuildDate(POOL_GENERATED_AT);
 
 export function HomeHero() {
   // import.meta.env.BASE_URL ('/' on the custom-domain apex) in both the live

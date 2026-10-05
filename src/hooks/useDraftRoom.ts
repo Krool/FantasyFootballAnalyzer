@@ -296,6 +296,11 @@ export function useDraftRoom(league: League): UseDraftRoomReturn {
   const [resumable, setResumable] = useState<DraftRoomSession | null>(() => {
     const session = loadDraftRoom(leagueKeyFor(league));
     if (!session) return null;
+    // A session with no picks has nothing to resume; don't offer it.
+    if (session.events.length === 0) {
+      clearDraftRoom(leagueKeyFor(league));
+      return null;
+    }
     // A session whose picks reference ids the current pool doesn't know is
     // from an older pool build (ids were rank-based before they were made
     // stable). Resuming it would map picks to the wrong players.

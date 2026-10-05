@@ -7,6 +7,7 @@ import type { League } from '@/types';
 import { POOL } from '@/data/draftPool';
 import { gradeLeaguePicks } from './consensusGrade';
 import { calculateLuckMetrics } from './luck';
+import { completedMatchups } from './completedMatchups';
 import { isPlaceholderPlayer } from './placeholders';
 
 export interface ManagerScore {
@@ -42,7 +43,7 @@ export function managerScores(league: League): ManagerScore[] {
 
   const graded = gradeLeaguePicks(league, POOL).filter(p => !isPlaceholderPlayer(p.player.name));
   const luck = calculateLuckMetrics(
-    (league.matchups ?? []).map(m => ({
+    completedMatchups(league).map(m => ({
       week: m.week,
       team1Id: m.team1Id,
       team1Points: m.team1Points,
@@ -65,7 +66,7 @@ export function managerScores(league: League): ManagerScore[] {
   const luckById = new Map(luck.map(m => [m.teamId, m]));
 
   const raw = league.teams.map(team => {
-    const picks = graded.filter(p => p.teamId === team.id && !p.isKeeper);
+    const picks = graded.filter(p => p.teamId === team.id && !p.isKeeper && !p.pending);
     const draftValue =
       picks.length > 0
         ? picks.reduce((sum, p) => sum + p.valueOverExpected, 0) / picks.length

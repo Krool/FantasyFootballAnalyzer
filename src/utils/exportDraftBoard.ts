@@ -97,7 +97,7 @@ function teamBlocks(data: DraftBoardData): Block[] {
     // Keepers carry no verdict on the site (their cost was set by the keeper
     // rule, not by anyone reading the board), so they don't count here either.
     const value = Math.round(
-      picks.filter(p => !p.isKeeper).reduce((sum, p) => sum + p.valueOverExpected, 0),
+      picks.filter(p => !p.isKeeper && !p.pending).reduce((sum, p) => sum + p.valueOverExpected, 0),
     );
     return {
       title: picks[0]?.teamName ?? '',
@@ -249,12 +249,12 @@ function drawTeamsBoard(data: DraftBoardData): HTMLCanvasElement | null {
     ctx.textAlign = 'left';
     // Name in the grade's color: the color IS the grade, no badge needed.
     // Keepers stay neutral, like the on-site table: kept, not judged.
-    ctx.fillStyle = pick.isKeeper ? BONE : GRADE_COLORS[pick.grade];
-    const valueText = pick.isKeeper ? 'K' : signed(pick.valueOverExpected, data.valuesInDollars);
+    ctx.fillStyle = pick.isKeeper || pick.pending ? BONE : GRADE_COLORS[pick.grade];
+    const valueText = pick.isKeeper ? 'K' : pick.pending ? '-' : signed(pick.valueOverExpected, data.valuesInDollars);
     const valueW = ctx.measureText(valueText).width;
     ctx.fillText(truncate(ctx, pick.player.name, blockW - 56 - 24 - valueW - 14), x + 64, py);
     ctx.textAlign = 'right';
-    ctx.fillStyle = pick.isKeeper ? BONE_DIM : pick.valueOverExpected >= 0 ? BONE : BONE_DIM;
+    ctx.fillStyle = pick.isKeeper || pick.pending ? BONE_DIM : pick.valueOverExpected >= 0 ? BONE : BONE_DIM;
     ctx.fillText(valueText, x + blockW - 12, py);
     ctx.textAlign = 'left';
   });
@@ -269,15 +269,15 @@ function drawOrderBoard(data: DraftBoardData): HTMLCanvasElement | null {
     ctx.textAlign = 'right';
     ctx.fillText(slotLabel(data, pick), x + 56, py);
     ctx.textAlign = 'left';
-    ctx.fillStyle = pick.isKeeper ? BONE : GRADE_COLORS[pick.grade];
-    const valueText = pick.isKeeper ? 'K' : signed(pick.valueOverExpected, data.valuesInDollars);
+    ctx.fillStyle = pick.isKeeper || pick.pending ? BONE : GRADE_COLORS[pick.grade];
+    const valueText = pick.isKeeper ? 'K' : pick.pending ? '-' : signed(pick.valueOverExpected, data.valuesInDollars);
     const valueW = ctx.measureText(valueText).width;
     const teamW = 110;
     ctx.fillText(truncate(ctx, pick.player.name, blockW - 56 - 24 - teamW - valueW - 22), x + 64, py);
     ctx.textAlign = 'right';
     ctx.fillStyle = BONE_DIM;
     ctx.fillText(truncate(ctx, pick.teamName, teamW), x + blockW - 12 - valueW - 10, py);
-    ctx.fillStyle = pick.isKeeper ? BONE_DIM : pick.valueOverExpected >= 0 ? BONE : BONE_DIM;
+    ctx.fillStyle = pick.isKeeper || pick.pending ? BONE_DIM : pick.valueOverExpected >= 0 ? BONE : BONE_DIM;
     ctx.fillText(valueText, x + blockW - 12, py);
     ctx.textAlign = 'left';
   });

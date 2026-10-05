@@ -22,6 +22,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { currentDraftSeason } from './season';
+import { cleanSleeperAdp } from './sleeperAdp';
 
 const seasonArg = process.argv.find(a => a.startsWith('--season='));
 const SEASON = seasonArg ? Number(seasonArg.split('=')[1]) : currentDraftSeason();
@@ -327,20 +328,21 @@ async function fetchSleeper(): Promise<void> {
     stats: Record<string, number | undefined>;
   }>;
   if (!Array.isArray(json)) throw new Error('Sleeper payload is not an array');
-  // 999 is Sleeper's unranked sentinel. K/DST never get ADP from Sleeper, so
+  // 999 is Sleeper's unranked sentinel, and averages padded with it land at
+  // 600-700; cleanSleeperAdp drops both. K/DST never get ADP from Sleeper, so
   // keep any row with season-long projected points too — that's how kicker
   // and defense projections make it into the pool.
   const ranked = json.filter(
-    p => (p.stats?.adp_half_ppr ?? 999) < 999 || (p.stats?.pts_half_ppr ?? 0) > 0,
+    p => cleanSleeperAdp(p.stats?.adp_half_ppr) !== null || (p.stats?.pts_half_ppr ?? 0) > 0,
   );
   const players = ranked.map(p => ({
     name: `${p.player.first_name} ${p.player.last_name}`,
     pos: p.player.position === 'DEF' ? 'DST' : p.player.position,
     team: p.team ?? 'FA',
-    adpHalfPpr: (p.stats.adp_half_ppr ?? 999) < 999 ? p.stats.adp_half_ppr : null,
-    adpPpr: (p.stats.adp_ppr ?? 999) < 999 ? p.stats.adp_ppr : null,
-    adpStd: (p.stats.adp_std ?? 999) < 999 ? p.stats.adp_std : null,
-    adp2qb: (p.stats.adp_2qb ?? 999) < 999 ? p.stats.adp_2qb : null,
+    adpHalfPpr: cleanSleeperAdp(p.stats.adp_half_ppr),
+    adpPpr: cleanSleeperAdp(p.stats.adp_ppr),
+    adpStd: cleanSleeperAdp(p.stats.adp_std),
+    adp2qb: cleanSleeperAdp(p.stats.adp_2qb),
     // Season-long projected points: the cheapest projections on the internet,
     // already in this payload.
     ptsHalfPpr: p.stats.pts_half_ppr ?? null,

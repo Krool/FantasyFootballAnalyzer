@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { TeamCard } from '@/components/TeamCard';
 import type { League } from '@/types';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
+import { completedMatchups } from '@/utils/completedMatchups';
 import { managerScores } from '@/utils/managerScore';
 import { TeamDetail } from './TeamDetail';
 import styles from './TeamsPage.module.css';
@@ -29,11 +30,12 @@ export function TeamsPage({ league }: TeamsPageProps) {
   };
   // Calculate luck metrics
   const luckByTeam = useMemo((): Map<string, LuckMetrics> => {
-    if (!league.matchups || league.matchups.length === 0) {
+    const done = completedMatchups(league);
+    if (done.length === 0) {
       return new Map();
     }
 
-    const matchupData: MatchupData[] = league.matchups.map(m => ({
+    const matchupData: MatchupData[] = done.map(m => ({
       week: m.week,
       team1Id: m.team1Id,
       team1Points: m.team1Points,
@@ -56,7 +58,7 @@ export function TeamsPage({ league }: TeamsPageProps) {
     const map = new Map<string, LuckMetrics>();
     metrics.forEach(m => map.set(m.teamId, m));
     return map;
-  }, [league.matchups, league.teams, league.hasMedianMatchup]);
+  }, [league]);
 
   // One number to argue about: draft + waivers + trades + schedule-adjusted
   // results, each normalized within the league.
@@ -68,7 +70,7 @@ export function TeamsPage({ league }: TeamsPageProps) {
   // Season head-to-head grid: every pairing's record this season.
   const h2h = useMemo(() => {
     const grid = new Map<string, Map<string, { w: number; l: number; t: number }>>();
-    for (const m of league.matchups ?? []) {
+    for (const m of completedMatchups(league)) {
       if (m.team1Points === 0 && m.team2Points === 0) continue;
       const upd = (a: string, b: string, aPts: number, bPts: number) => {
         const row = grid.get(a) ?? new Map();
@@ -83,7 +85,7 @@ export function TeamsPage({ league }: TeamsPageProps) {
       upd(m.team2Id, m.team1Id, m.team2Points, m.team1Points);
     }
     return grid;
-  }, [league.matchups]);
+  }, [league]);
 
   // Sort teams by record (wins desc, then points for desc)
   const sortedTeams = [...league.teams].sort((a, b) => {

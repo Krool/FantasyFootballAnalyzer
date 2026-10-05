@@ -29,12 +29,12 @@ export const TOOL_LANDINGS: Record<'trade-analyzer' | 'draft-grades', ToolLandin
     title: 'Fantasy Football Trade Analyzer (Free): Sleeper, ESPN, Yahoo',
     desc:
       'Free fantasy football trade analyzer for Sleeper, ESPN, and Yahoo. ' +
-      'Grade every trade by the points each side actually scored after the deal, and crown the winner. No login.',
+      'Grade every trade by the points each side actually scored after the deal, and name the winner. No login.',
     kicker: '▌ TRADE VERDICTS',
     heading: 'Fantasy Football Trade Analyzer',
     intro:
-      'Settle every trade with the only number that matters: points scored after the deal. ' +
-      'Connect your Sleeper, ESPN, or Yahoo league and the trade analyzer grades each side on what their ' +
+      'This grades each trade by the points scored after the deal. ' +
+      'Connect your Sleeper, ESPN, or Yahoo league and it grades each side on what their ' +
       'players produced once they changed teams, then names the winner.',
     points: [
       { h: 'Judged on real production', p: 'Not preseason hype. Each side is scored on the fantasy points its acquired players put up after the trade.' },
@@ -55,7 +55,7 @@ export const TOOL_LANDINGS: Record<'trade-analyzer' | 'draft-grades', ToolLandin
     kicker: '▌ DRAFT GRADES',
     heading: 'Fantasy Football Draft Grades',
     intro:
-      'Find out who won your draft on the only evidence that counts: how the picks actually scored. ' +
+      'See who won your draft based on how the picks actually scored. ' +
       'Connect your Sleeper, ESPN, or Yahoo league for a letter grade on every pick and every team, ' +
       'or run a mock draft first to pressure-test your board.',
     points: [

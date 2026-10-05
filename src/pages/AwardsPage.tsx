@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { League } from '@/types';
 import { calculateAllAwards, groupAwardsByCategory, getCategoryDisplayName, type Award } from '@/utils/awards';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
+import { completedMatchups } from '@/utils/completedMatchups';
 import { seasonRecords, seasonTimeline } from '@/utils/seasonStory';
 import { exportAwardCard } from '@/utils/exportAwardCard';
 import { awardIconSrc } from '@/utils/awardIcons';
@@ -15,11 +16,12 @@ interface AwardsPageProps {
 export function AwardsPage({ league }: AwardsPageProps) {
   // Calculate luck metrics from matchup data
   const luckMetrics = useMemo((): LuckMetrics[] => {
-    if (!league.matchups || league.matchups.length === 0) {
+    const done = completedMatchups(league);
+    if (done.length === 0) {
       return [];
     }
 
-    const matchupData: MatchupData[] = league.matchups.map(m => ({
+    const matchupData: MatchupData[] = done.map(m => ({
       week: m.week,
       team1Id: m.team1Id,
       team1Points: m.team1Points,
@@ -39,7 +41,7 @@ export function AwardsPage({ league }: AwardsPageProps) {
     return calculateLuckMetrics(matchupData, teams, 10, {
       medianMatchup: league.hasMedianMatchup,
     });
-  }, [league.matchups, league.teams, league.hasMedianMatchup]);
+  }, [league]);
 
   // Calculate all awards
   const awards = useMemo(() => {
