@@ -17,7 +17,9 @@ export interface ManagerScore {
   components: {
     draft: number; // 0-100 within league
     waivers: number;
-    trades: number;
+    // null when nobody in the league has traded: a flat 50 for everyone
+    // measures nothing, so the other three carry its weight.
+    trades: number | null;
     results: number; // all-play win pct
   };
 }
@@ -94,20 +96,23 @@ export function managerScores(league: League): ManagerScore[] {
   const waiverNorm = normalize(raw.map(r => r.waiverPAR));
   const tradeNorm = normalize(raw.map(r => r.tradePAR));
   const resultsNorm = normalize(raw.map(r => r.results));
+  const anyTrades = (league.trades ?? []).some(t => t.status === 'completed');
+  const weightTotal = anyTrades ? 1 : 1 - WEIGHTS.trades;
 
   return raw
     .map((r, i) => {
       const components = {
         draft: Math.round(draftNorm[i]),
         waivers: Math.round(waiverNorm[i]),
-        trades: Math.round(tradeNorm[i]),
+        trades: anyTrades ? Math.round(tradeNorm[i]) : null,
         results: Math.round(resultsNorm[i]),
       };
       const score = Math.round(
-        components.draft * WEIGHTS.draft +
+        (components.draft * WEIGHTS.draft +
           components.waivers * WEIGHTS.waivers +
-          components.trades * WEIGHTS.trades +
-          components.results * WEIGHTS.results,
+          (components.trades ?? 0) * WEIGHTS.trades +
+          components.results * WEIGHTS.results) /
+          weightTotal,
       );
       return { teamId: r.team.id, teamName: r.team.name, score, components };
     })

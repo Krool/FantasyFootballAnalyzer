@@ -112,7 +112,8 @@ describe('managerScores', () => {
 
     expect(scores).toHaveLength(3);
     for (const s of scores) {
-      expect(s.components).toEqual({ draft: 50, waivers: 50, trades: 50, results: 50 });
+      // No trades in the league: the trade component sits out (null).
+      expect(s.components).toEqual({ draft: 50, waivers: 50, trades: null, results: 50 });
       expect(s.score).toBe(50);
     }
   });
@@ -203,6 +204,25 @@ describe('managerScores', () => {
     expect(byId.get('c')?.components.draft).toBe(50);
   });
 
+  it('keeps trades in the score once the league has a completed trade', () => {
+    const league = baseLeague({
+      teams: [
+        { id: 'a', name: 'A' },
+        { id: 'b', name: 'B' },
+      ],
+      trades: [{
+        id: 't', timestamp: 0, week: 1, status: 'completed',
+        teams: [
+          { teamId: 'a', teamName: 'A', playersReceived: [], playersSent: [], parGained: 10, parLost: 0, netPAR: 10, pointsGained: 0, pointsLost: 0, netValue: 0 },
+          { teamId: 'b', teamName: 'B', playersReceived: [], playersSent: [], parGained: 0, parLost: 10, netPAR: -10, pointsGained: 0, pointsLost: 0, netValue: 0 },
+        ],
+      }],
+    });
+    const byId = new Map(managerScores(league).map(s => [s.teamId, s]));
+    expect(byId.get('a')?.components.trades).toBe(100);
+    expect(byId.get('b')?.components.trades).toBe(0);
+  });
+
   it('sorts the returned scores descending', () => {
     // Draft/waivers/trades flat (all 0, normalizes to 50 for everyone);
     // results is a 3-team round robin so x > y > z on the only varying lever.
@@ -223,8 +243,10 @@ describe('managerScores', () => {
     const scores = managerScores(league);
 
     // x wins both its all-play games (100%), y splits (50%), z loses both (0%).
+    // No trades, so the other three carry the weight: x = (50*.3 + 50*.2 +
+    // 100*.35) / .85 = 70.6.
     expect(scores.map(s => s.teamId)).toEqual(['x', 'y', 'z']);
-    expect(scores.map(s => s.score)).toEqual([68, 50, 33]);
+    expect(scores.map(s => s.score)).toEqual([71, 50, 29]);
     for (let i = 1; i < scores.length; i++) {
       expect(scores[i - 1].score).toBeGreaterThanOrEqual(scores[i].score);
     }

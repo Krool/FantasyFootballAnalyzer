@@ -67,6 +67,11 @@ export function LuckPage({ league }: LuckPageProps) {
   const byLuck = [...luckMetrics].sort((a, b) => b.luckScore - a.luckScore);
   const luckiest = byLuck[0];
   const unluckiest = byLuck[byLuck.length - 1];
+  // Everyone sharing the top (bottom) score: a tie names them all instead of
+  // crowning whichever team sorted first (the Awards page skips ties).
+  const tiedWith = (score: number) => luckMetrics.filter(m => Math.abs(m.luckScore - score) < 1e-9);
+  const luckyTie = tiedWith(luckiest.luckScore);
+  const unluckyTie = tiedWith(unluckiest.luckScore);
   const toughest = [...pa].sort((a, b) => b.pointsAgainst - a.pointsAgainst)[0];
   const injuryHit = [...injuries].sort((a, b) => b.valueLost - a.valueLost)[0];
 
@@ -91,20 +96,26 @@ export function LuckPage({ league }: LuckPageProps) {
         <div className={styles.headlines}>
           {luckiest.luckScore > 0 && (
             <Headline
-              label="Luckiest"
-              teamId={luckiest.teamId}
-              name={luckiest.teamName}
+              label={luckyTie.length > 1 ? `Luckiest (${luckyTie.length}-way tie)` : 'Luckiest'}
+              teams={luckyTie.map(m => ({ teamId: m.teamId, name: m.teamName }))}
               value={signed(luckiest.luckScore)}
-              detail={`wins over expected (${luckiest.expectedWins.toFixed(1)} expected)`}
+              detail={
+                luckyTie.length > 1
+                  ? 'wins over expected, each'
+                  : `wins over expected (${luckiest.expectedWins.toFixed(1)} expected)`
+              }
             />
           )}
           {unluckiest.luckScore < 0 && (
             <Headline
-              label="Unluckiest"
-              teamId={unluckiest.teamId}
-              name={unluckiest.teamName}
+              label={unluckyTie.length > 1 ? `Unluckiest (${unluckyTie.length}-way tie)` : 'Unluckiest'}
+              teams={unluckyTie.map(m => ({ teamId: m.teamId, name: m.teamName }))}
               value={signed(unluckiest.luckScore)}
-              detail={`wins under expected (${unluckiest.expectedWins.toFixed(1)} expected)`}
+              detail={
+                unluckyTie.length > 1
+                  ? 'wins under expected, each'
+                  : `wins under expected (${unluckiest.expectedWins.toFixed(1)} expected)`
+              }
             />
           )}
           {toughest && (
@@ -437,17 +448,26 @@ function Header({ league, weeks }: { league: League; weeks?: number }) {
   );
 }
 
-function Headline({ label, teamId, name, value, detail }: {
+function Headline({ label, teamId, name, teams, value, detail }: {
   label: string;
-  teamId: string;
-  name: string;
   value: string;
   detail: string;
-}) {
+} & (
+  | { teamId: string; name: string; teams?: undefined }
+  | { teams: Array<{ teamId: string; name: string }>; teamId?: undefined; name?: undefined }
+)) {
+  const list = teams ?? [{ teamId: teamId!, name: name! }];
   return (
     <div className={styles.headline}>
       <span className={styles.headlineLabel}>{label}</span>
-      <span className={styles.headlineTeam}><TeamLink teamId={teamId} name={name} /></span>
+      <span className={styles.headlineTeam}>
+        {list.map((t, i) => (
+          <span key={t.teamId}>
+            {i > 0 && ', '}
+            <TeamLink teamId={t.teamId} name={t.name} />
+          </span>
+        ))}
+      </span>
       <span className={styles.headlineValue}>{value}</span>
       <span className={styles.headlineDetail}>{detail}</span>
     </div>

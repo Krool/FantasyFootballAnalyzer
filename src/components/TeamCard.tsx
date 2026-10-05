@@ -56,13 +56,30 @@ export function TeamCard({ league, team, onClick, luckMetrics }: TeamCardProps) 
     };
   }, [team]);
 
-  // The actual humans on this roster: top three season scorers.
+  // Top three scorers FOR THIS TEAM. With weekly lineups (Sleeper, ESPN),
+  // that's points scored while on this roster: a waiver add's season total
+  // includes weeks he spent elsewhere (Kalif Raymond read 51.4 for a team
+  // he'd scored 2.6 for). Without them, the current roster's season totals.
   const topScorers = useMemo(() => {
+    const lineups = (league.weeklyLineups ?? []).filter(l => l.teamId === team.id);
+    if (lineups.length > 0) {
+      const byId = new Map<string, { id: string; name: string; points: number }>();
+      for (const l of lineups) {
+        for (const p of [...l.starters, ...l.bench]) {
+          if (!p || isPlaceholderPlayer(p.name)) continue;
+          const row = byId.get(p.id) ?? { id: p.id, name: p.name, points: 0 };
+          row.points += p.points;
+          byId.set(p.id, row);
+        }
+      }
+      return [...byId.values()].sort((a, b) => b.points - a.points).slice(0, 3);
+    }
     return [...(team.roster ?? [])]
       .filter(p => !isPlaceholderPlayer(p.name))
-      .sort((a, b) => (b.seasonPoints ?? 0) - (a.seasonPoints ?? 0))
+      .map(p => ({ id: p.id, name: p.name, points: p.seasonPoints ?? 0 }))
+      .sort((a, b) => b.points - a.points)
       .slice(0, 3);
-  }, [team.roster]);
+  }, [league.weeklyLineups, team.id, team.roster]);
 
   return (
     <div
@@ -103,8 +120,11 @@ export function TeamCard({ league, team, onClick, luckMetrics }: TeamCardProps) 
         </span>
         <span className={styles.recordLabel}>Record</span>
         {luckMetrics && (
-          <span className={`${styles.luckBadge} ${getLuckClass(luckMetrics.luckScore, styles)}`}>
-            <LuckIcon rating={luckMetrics.luckRating} /> {luckMetrics.luckScore >= 0 ? '+' : ''}{luckMetrics.luckScore.toFixed(1)}
+          <span
+            className={`${styles.luckBadge} ${getLuckClass(luckMetrics.luckScore, styles)}`}
+            title="Wins above or below expected (Luck tab)"
+          >
+            <LuckIcon rating={luckMetrics.luckRating} /> {luckMetrics.luckScore >= 0 ? '+' : ''}{luckMetrics.luckScore.toFixed(1)} luck
           </span>
         )}
       </div>
@@ -188,7 +208,7 @@ export function TeamCard({ league, team, onClick, luckMetrics }: TeamCardProps) 
                 <li key={player.id} className={styles.topScorer}>
                   <span className={styles.topScorerName}>{player.name}</span>
                   <span className={styles.topScorerPts}>
-                    {(player.seasonPoints ?? 0).toFixed(1)}
+                    {player.points.toFixed(1)}
                   </span>
                 </li>
               ))}

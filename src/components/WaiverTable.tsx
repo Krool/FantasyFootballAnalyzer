@@ -38,6 +38,9 @@ export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
   // Default to PAR sorting since it's the most meaningful cross-position metric
   const [sortField, setSortField] = useState<SortField>('par');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  // Pickups this team never started read as rows of +0.0 / 0 / -, and in a
+  // busy league they're half the table. Folded away by default.
+  const [showUnstarted, setShowUnstarted] = useState(false);
 
   // Games/PPG columns show whenever the load produced a start count. All
   // three platforms do when weekly lineups load; Yahoo's can fail, and then
@@ -205,6 +208,11 @@ export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
     });
   }, [allPickups, selectedTeam, selectedPosition, sortField, sortDirection]);
 
+  const isUnstarted = (p: (typeof displayPickups)[number]) =>
+    hasGamesData && p.gamesStarted === 0 && p.par === 0 && p.totalPoints === 0;
+  const unstartedCount = displayPickups.filter(isUnstarted).length;
+  const visiblePickups = showUnstarted ? displayPickups : displayPickups.filter(p => !isUnstarted(p));
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -355,7 +363,7 @@ export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
             </tr>
           </thead>
           <tbody>
-            {displayPickups.map((pickup) => (
+            {visiblePickups.map((pickup) => (
               <tr key={`${pickup.transaction.teamId}-${pickup.playerId}`}>
                 <td className="font-mono text-center">{pickup.transaction.week}</td>
                 <td className={styles.fantasyTeam}>
@@ -403,6 +411,14 @@ export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
           </tbody>
         </table>
       </div>
+
+      {unstartedCount > 0 && (
+        <button type="button" className={styles.unstartedToggle} onClick={() => setShowUnstarted(v => !v)}>
+          {showUnstarted
+            ? `Hide ${unstartedCount} never started`
+            : `Show ${unstartedCount} pickup${unstartedCount === 1 ? '' : 's'} never started`}
+        </button>
+      )}
 
       {displayPickups.length === 0 && (
         <div className={styles.empty}>

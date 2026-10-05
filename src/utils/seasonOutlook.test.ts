@@ -82,6 +82,15 @@ describe('seasonOutlooks', () => {
     expect(o.total).toBeCloseTo(30 + 2 * repl + 180, 5);
   });
 
+  it('projects nothing for a player with no NFL team', () => {
+    // Owner-reported 2026-10-05: Tyreek Hill, unsigned (FA) with 0 points,
+    // graded Great off a full-season projection.
+    const pool = { ...POOL, players: POOL.players.map(p => (p.id === 'wr10-wr' ? { ...p, team: 'FA' } : p)) };
+    const o = seasonOutlooks([pick(10, 'wr10-wr', 0)], pool, SHAPE, ctx).get('WR-wr10-wr')!;
+    expect(o.projectedPoints).toBe(0);
+    expect(o.projectedGames).toBe(0);
+  });
+
   it('gives weeks projected out zero, not replacement', () => {
     // No points yet, back in week 9: weeks 1-4 missed (history, at
     // replacement), weeks 5-8 projected out (future, zero).

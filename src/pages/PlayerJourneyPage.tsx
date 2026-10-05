@@ -373,7 +373,7 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
                       <span className={styles.points}>{p.totalSeasonPoints.toFixed(1)} pts</span>
                     )}
                     {p.events.length > 0 && (
-                      <span className={styles.eventCount}>{p.events.length} events</span>
+                      <span className={styles.eventCount}>{p.events.length} event{p.events.length === 1 ? '' : 's'}</span>
                     )}
                   </div>
                 </button>

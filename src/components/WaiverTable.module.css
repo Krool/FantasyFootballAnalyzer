@@ -157,6 +157,22 @@
 }
 
 /* ── Empty ── */
+.unstartedToggle {
+  display: block;
+  margin: 0.75rem 0 0;
+  padding: 0.45rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--bone-dim);
+  border: 1px solid var(--rule);
+  cursor: pointer;
+}
+.unstartedToggle:hover { color: var(--lime); border-color: var(--lime); }
+
 .empty {
   text-align: center;
   padding: 4rem 2rem;

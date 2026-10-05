@@ -142,6 +142,10 @@ export function seasonOutlooks(
     const thisSeason = ctx.season === undefined || pool.season === ctx.season;
     const bye = thisSeason ? (pooled?.bye ?? null) : null;
     const injury = thisSeason && !final ? injuryOf(pooled) : undefined;
+    // Not on an NFL roster (cut, unsigned, retired): no games ahead. Tyreek
+    // Hill, a free agent with 0 points, graded Great off a full-season
+    // projection the pool still carried for him.
+    const noNflTeam = thisSeason && !final && (pooled?.team ?? pick.player.team) === 'FA';
 
     // Did he play week w? Fact when that week's stats loaded; otherwise a
     // zero projection stands in (live only); otherwise unknown.
@@ -188,7 +192,7 @@ export function seasonOutlooks(
       // covers him (zero = projected out); otherwise assume every non-bye
       // week. The injury report overrides either.
       const plays = (w: number) =>
-        !ruledOut(w) && (weekly ? (weekly[w - 1] ?? 0) > 0 : true);
+        !noNflTeam && !ruledOut(w) && (weekly ? (weekly[w - 1] ?? 0) > 0 : true);
       // What each of those weeks is worth.
       const ownPace = games >= 2 ? soFar / games : undefined;
       let rate: (w: number) => number;

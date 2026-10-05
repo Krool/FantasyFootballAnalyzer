@@ -381,6 +381,19 @@ describe('calculateDraftSummary', () => {
     expect(summary.totalPicks).toBe(5);
     expect(summary.averageValue).toBeCloseTo(-0.2, 1); // (5+3+1-2-8)/5
   });
+  it('leaves keepers out, as the Draft page does', () => {
+    const pick = (i: number, keeper: boolean) => ({
+      ...makePick({ playerId: `k${i}`, pickNumber: i + 1 }),
+      positionRank: 1,
+      expectedRank: 1,
+      grade: 'great' as const,
+      valueOverExpected: 4,
+      isKeeper: keeper || undefined,
+    });
+    const summary = calculateDraftSummary([pick(0, false), pick(1, true)]);
+    expect(summary.great).toBe(1);
+    expect(summary.totalPicks).toBe(1);
+  });
 });
 
 describe('getGradeDisplayText', () => {

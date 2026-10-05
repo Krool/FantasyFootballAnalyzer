@@ -614,7 +614,10 @@ export function calculateDraftSummary(picks: GradedPick[]): DraftGradeSummary {
     totalPicks: picks.length,
   };
 
-  const graded = picks.filter(p => !p.pending);
+  // Keepers carry no verdict (their cost was set by the keeper rule), the
+  // same as on the Draft page; counting their grade made the Teams page
+  // disagree with it by one per keeper.
+  const graded = picks.filter(p => !p.pending && !p.isKeeper);
   summary.totalPicks = graded.length;
   if (graded.length === 0) return summary;
 

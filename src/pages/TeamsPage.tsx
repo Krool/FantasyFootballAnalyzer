@@ -137,7 +137,9 @@ export function TeamsPage({ league }: TeamsPageProps) {
           <section className={styles.skillSection}>
             <h2 className={styles.sectionTitle}>Manager Skill Score</h2>
             <p className={styles.sectionHint}>
-              Draft value (30%), waiver PAR (20%), trade PAR (15%), all-play results (35%).
+              {scores[0].components.trades === null
+                ? 'Draft value, waiver PAR, and all-play results (35 / 24 / 41%; no trades yet, so trades sit out).'
+                : 'Draft value (30%), waiver PAR (20%), trade PAR (15%), all-play results (35%).'}{' '}
               Each scored 0-100 against this league.
             </p>
             <div className={styles.skillList}>
@@ -147,9 +149,9 @@ export function TeamsPage({ league }: TeamsPageProps) {
                   <span className={styles.skillName}>{s.teamName}</span>
                   <span
                     className={styles.skillParts}
-                    title={`Draft ${s.components.draft} · Waivers ${s.components.waivers} · Trades ${s.components.trades} · Results ${s.components.results}`}
+                    title={`Draft ${s.components.draft} · Waivers ${s.components.waivers}${s.components.trades === null ? '' : ` · Trades ${s.components.trades}`} · Results ${s.components.results}`}
                   >
-                    D{s.components.draft} W{s.components.waivers} T{s.components.trades} R{s.components.results}
+                    D{s.components.draft} W{s.components.waivers}{s.components.trades === null ? '' : ` T${s.components.trades}`} R{s.components.results}
                   </span>
                   <div className={styles.skillBarTrack}>
                     <div className={styles.skillBarFill} style={{ width: `${s.score}%` }} />
