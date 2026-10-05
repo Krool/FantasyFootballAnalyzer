@@ -4,10 +4,10 @@
 // injury. calculateAllAwards appends these; every award here is skipped
 // when its data is missing or when no single team clearly wins it.
 
-import type { League, Player, WeeklyLineup } from '@/types';
+import type { League, LineupPlayer, Player, WeeklyLineup } from '@/types';
 import type { Award } from './awards';
 import { completedMatchups } from './completedMatchups';
-import { actualPoints, bestLineupPoints, ghostStarts, lineupChanges, startSitCalls, type MissedCall } from './lineups';
+import { actualPoints, bestLineupPoints, lineupChanges, startSitCalls, type MissedCall } from './lineups';
 import { leagueInjuryLuck } from './leagueInjuryLuck';
 import { indexPool, resolvePoolPlayer } from './consensusGrade';
 import { DEFAULT_ROSTER_SLOTS } from './projectedRoster';
@@ -86,6 +86,17 @@ function lineupAwards(
     changeWeeks: number;
   }
   const stats = new Map<string, Stats>();
+  // Whether a starter sat out that week. Sleeper lineups share ids with the
+  // games-played feed, which tells a played 0 from a no-show. Elsewhere a
+  // 0 stands in, except for kickers and defenses, whose 0 is often real.
+  const gp = league.gamesPlayed && league.gamesPlayed.season === league.season ? league.gamesPlayed : undefined;
+  const didNotPlay = (p: LineupPlayer, week: number): boolean => {
+    if (p.points !== 0) return false;
+    if (gp && league.platform === 'sleeper' && gp.weeks.includes(week)) {
+      return !(gp.bySleeperId[p.id] ?? []).includes(week);
+    }
+    return p.pos !== 'K' && p.pos !== 'DEF';
+  };
   const missed: MissedCall[] = [];
   const byTeam = new Map<string, WeeklyLineup[]>();
   for (const l of lineups) {
@@ -110,8 +121,11 @@ function lineupAwards(
       const calls = startSitCalls(l);
       s.calls += calls.calls;
       s.wrong += calls.wrong.length;
-      missed.push(...calls.wrong);
-      s.ghosts += ghostStarts(l);
+      // A starter who never took the field is a ghost start, not a start/sit
+      // call: "started Addison (0.0)" while he sat out a suspension belongs
+      // to Ghost Starter, not Worst Call.
+      missed.push(...calls.wrong.filter(c => !didNotPlay(c.started, l.week)));
+      s.ghosts += l.starters.filter(p => !p || didNotPlay(p, l.week)).length;
       if (i > 0 && list[i - 1].week === l.week - 1) {
         s.changes += lineupChanges(list[i - 1], l);
         s.changeWeeks++;
@@ -175,7 +189,8 @@ function lineupAwards(
       if (mine >= theirs) continue;
       const l = byKey.get(`${me}:${m.week}`);
       const best = l ? bestLineupPoints(l) : null;
-      if (best !== null && best > theirs) {
+      // A clear miss, not a rounding call: the best lineup had to win by a point.
+      if (best !== null && best >= theirs + 1) {
         const list = selfInflicted.get(me) ?? [];
         list.push(m.week);
         selfInflicted.set(me, list);
@@ -219,7 +234,7 @@ function lineupAwards(
       category: 'lineups',
       winner: winner(ghost.teamId),
       value: plural(ghost.value, 'start'),
-      detail: 'Empty slots and zero-point starters',
+      detail: 'Empty slots and starters who sat out',
       description: 'Most starts that produced nothing: byes, inactives, and empty slots',
       icon: '👻',
     });
@@ -272,6 +287,8 @@ function dropRegret(league: League, weeks: number[], winner: WinnerFn): Award[] 
   const weekly = league.playerWeeklyPoints;
   if (!weekly || weeks.length === 0) return [];
   const lastWeek = weeks[weeks.length - 1];
+  // Three games after the drop, so one big week isn't "regret" yet.
+  const MIN_GAMES = 3;
   let best: { teamId: string; player: Player; week: number; points: number; games: number } | undefined;
   for (const team of league.teams) {
     for (const t of team.transactions ?? []) {
@@ -288,6 +305,7 @@ function dropRegret(league: League, weeks: number[], winner: WinnerFn): Award[] 
             games++;
           }
         }
+        if (games < MIN_GAMES) continue;
         if (!best || points > best.points) best = { teamId: team.id, player: p, week: t.week, points, games };
       }
     }

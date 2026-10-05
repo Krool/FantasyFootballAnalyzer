@@ -35,6 +35,13 @@ function makeLeague(teams: Team[], trades?: Trade[]): League {
   };
 }
 
+// Four played weeks: luck and scoring-spread awards wait for this many.
+function fourWeeks(teamId: string): WeeklyScore[] {
+  return [1, 2, 3, 4].map(week => ({
+    teamId, week, pointsFor: 100, pointsAgainst: 100, won: false, tied: true, margin: 0,
+  }));
+}
+
 function makeLuckMetrics(overrides: Partial<LuckMetrics>): LuckMetrics {
   return {
     teamId: 't1',
@@ -155,7 +162,7 @@ describe('calculateAllAwards - Luck', () => {
   it('awards luckiest team when luck score is positive', () => {
     const teams = [makeTeam({ id: 't1' }), makeTeam({ id: 't2' })];
     const luckMetrics = [
-      makeLuckMetrics({ teamId: 't1', teamName: 'Lucky', luckScore: 3, actualWins: 10, expectedWins: 7 }),
+      makeLuckMetrics({ teamId: 't1', teamName: 'Lucky', luckScore: 3, actualWins: 10, expectedWins: 7, weeklyScores: fourWeeks('t1') }),
       makeLuckMetrics({ teamId: 't2', teamName: 'Normal', luckScore: 0 }),
     ];
     const awards = calculateAllAwards({ league: makeLeague(teams), luckMetrics });
@@ -163,13 +170,26 @@ describe('calculateAllAwards - Luck', () => {
     const luckiest = awards.find(a => a.id === 'luckiest');
     expect(luckiest).toBeDefined();
     expect(luckiest!.winner.teamId).toBe('t1');
+    expect(luckiest!.value).toBe('+3.0 wins');
+  });
+
+  it('holds the luck awards until four games are in', () => {
+    const teams = [makeTeam({ id: 't1' }), makeTeam({ id: 't2' })];
+    const threeWeeks = fourWeeks('t1').slice(0, 3);
+    const luckMetrics = [
+      makeLuckMetrics({ teamId: 't1', luckScore: 1, weeklyScores: threeWeeks }),
+      makeLuckMetrics({ teamId: 't2', luckScore: -1, weeklyScores: threeWeeks }),
+    ];
+    const awards = calculateAllAwards({ league: makeLeague(teams), luckMetrics });
+    expect(awards.find(a => a.id === 'luckiest')).toBeUndefined();
+    expect(awards.find(a => a.id === 'unluckiest')).toBeUndefined();
   });
 
   it('awards unluckiest team when luck score is negative', () => {
     const teams = [makeTeam({ id: 't1' }), makeTeam({ id: 't2' })];
     const luckMetrics = [
-      makeLuckMetrics({ teamId: 't1', luckScore: 0 }),
-      makeLuckMetrics({ teamId: 't2', teamName: 'Unlucky', luckScore: -3, actualWins: 4, expectedWins: 7 }),
+      makeLuckMetrics({ teamId: 't1', luckScore: 0, weeklyScores: fourWeeks('t1') }),
+      makeLuckMetrics({ teamId: 't2', teamName: 'Unlucky', luckScore: -3, actualWins: 4, expectedWins: 7, weeklyScores: fourWeeks('t2') }),
     ];
     const awards = calculateAllAwards({ league: makeLeague(teams), luckMetrics });
 
@@ -187,7 +207,7 @@ describe('calculateAllAwards - Luck', () => {
 
     const blowout = awards.find(a => a.id === 'biggest_blowout');
     expect(blowout).toBeDefined();
-    expect(blowout!.value).toBe('+65.3');
+    expect(blowout!.value).toBe('+65.3 pts');
   });
 
   it('awards best and worst single week', () => {
@@ -203,11 +223,11 @@ describe('calculateAllAwards - Luck', () => {
 
     const bestWeek = awards.find(a => a.id === 'best_week');
     expect(bestWeek).toBeDefined();
-    expect(bestWeek!.value).toBe('180.0');
+    expect(bestWeek!.value).toBe('180.0 pts');
 
     const worstWeek = awards.find(a => a.id === 'worst_week');
     expect(worstWeek).toBeDefined();
-    expect(worstWeek!.value).toBe('60.0');
+    expect(worstWeek!.value).toBe('60.0 pts');
   });
 
   it('skips luck awards when no luckMetrics provided', () => {
@@ -302,9 +322,11 @@ describe('calculateAllAwards - Draft', () => {
     expect(bust!.detail).toContain('BigBust');
   });
 
-  it('awards late round hero for round 8+ steals', () => {
-    // LateGem is the 13th WR taken (round 8) but finishes WR1. EarlyPick
-    // hits at RB but its round 1 is filtered out of the late-hero award.
+  it('awards late round hero for round 8+ steals, without repeating the Draft Steal', () => {
+    // LateGem is the 13th WR taken (round 8) but finishes WR1: the Draft
+    // Steal. LateGem2 (14th WR, round 9, finishes WR3) is the next-best late
+    // pick, so Late Round Hero goes to him instead of naming LateGem twice.
+    // EarlyPick hits at RB but its round 1 is filtered out of the late award.
     const fillerWrs = Array.from({ length: 12 }, (_, i) => ({
       pickNumber: i + 2,
       round: 1,
@@ -320,14 +342,20 @@ describe('calculateAllAwards - Draft', () => {
           { pickNumber: 1, round: 1, player: { id: 'early', platformId: 'early', name: 'EarlyPick', position: 'RB', team: 'KC' }, teamId: 't1', teamName: 'Team 1', seasonPoints: 300 },
         ],
       }),
+      makeTeam({
+        id: 't2',
+        draftPicks: [
+          { pickNumber: 108, round: 9, player: { id: 'gem2', platformId: 'gem2', name: 'LateGem2', position: 'WR', team: 'SF' }, teamId: 't2', teamName: 'Team 2', seasonPoints: 195 },
+        ],
+      }),
       makeTeam({ id: 'tf', name: 'Filler', draftPicks: fillerWrs }),
     ];
     const awards = calculateAllAwards({ league: makeLeague(teams) });
 
+    expect(awards.find(a => a.id === 'draft_steal')!.detail).toContain('LateGem (Rd 8)');
     const hero = awards.find(a => a.id === 'late_round_hero');
     expect(hero).toBeDefined();
-    expect(hero!.detail).toContain('LateGem');
-    expect(hero!.detail).toContain('Rd 8');
+    expect(hero!.detail).toBe('LateGem2 (Rd 9)');
   });
 
   it('emits zero draft awards and does not throw for a league with no draftPicks', () => {
@@ -474,6 +502,16 @@ describe('calculateAllAwards - Waivers', () => {
     };
   }
 
+  it('gives no Worst Waiver Pickup when every pickup beat replacement', () => {
+    const teams = [
+      makeTeam({ id: 't1', transactions: [makeTx('t1', 'A', 'tx1', [makeAdd({ id: 'p1', name: 'Good', par: 20 })], 20)] }),
+      makeTeam({ id: 't2', transactions: [makeTx('t2', 'B', 'tx2', [makeAdd({ id: 'p2', name: 'Fine', par: 3.6 })], 3.6)] }),
+    ];
+    const awards = calculateAllAwards({ league: makeLeague(teams) });
+    expect(awards.find(a => a.id === 'worst_waiver')).toBeUndefined();
+    expect(awards.find(a => a.id === 'best_waiver')!.value).toBe('20.0 PAR');
+  });
+
   it('awards best waiver pickup to the highest PAR add across the league', () => {
     const teams = [
       makeTeam({
@@ -562,7 +600,7 @@ describe('calculateAllAwards - Waivers', () => {
     const king = awards.find(a => a.id === 'waiver_king');
     expect(king).toBeDefined();
     expect(king!.winner.teamId).toBe('t1');
-    expect(king!.value).toBe('70.0');
+    expect(king!.value).toBe('70.0 PAR');
     expect(king!.detail).toContain('2 pickups');
 
     const slacker = awards.find(a => a.id === 'waiver_slacker');
@@ -584,19 +622,29 @@ describe('calculateAllAwards - Inline luck helpers', () => {
       { teamId: 't1', week: 1, pointsFor: 120, pointsAgainst: 118, won: true, tied: false, margin: 2 },
       { teamId: 't1', week: 2, pointsFor: 130, pointsAgainst: 128, won: true, tied: false, margin: 2 },
       { teamId: 't1', week: 3, pointsFor: 125, pointsAgainst: 122, won: true, tied: false, margin: 3 },
+      { teamId: 't1', week: 4, pointsFor: 128, pointsAgainst: 90, won: true, tied: false, margin: 38 },
     ];
     const weeklyT2: WeeklyScore[] = [
       { teamId: 't2', week: 1, pointsFor: 118, pointsAgainst: 120, won: false, tied: false, margin: -2 },
       { teamId: 't2', week: 2, pointsFor: 128, pointsAgainst: 130, won: false, tied: false, margin: -2 },
       { teamId: 't2', week: 3, pointsFor: 122, pointsAgainst: 125, won: false, tied: false, margin: -3 },
+      { teamId: 't2', week: 4, pointsFor: 120, pointsAgainst: 75, won: true, tied: false, margin: 45 },
     ];
     const weeklyT3: WeeklyScore[] = [
       { teamId: 't3', week: 1, pointsFor: 60, pointsAgainst: 90, won: false, tied: false, margin: -30 },
       { teamId: 't3', week: 2, pointsFor: 65, pointsAgainst: 95, won: false, tied: false, margin: -30 },
       { teamId: 't3', week: 3, pointsFor: 70, pointsAgainst: 100, won: false, tied: false, margin: -30 },
+      { teamId: 't3', week: 4, pointsFor: 75, pointsAgainst: 120, won: false, tied: false, margin: -45 },
     ];
 
-    const teams = [makeTeam({ id: 't1' }), makeTeam({ id: 't2' }), makeTeam({ id: 't3' })];
+    // Standings deliberately disagree with all-play (t2 tops the table, t1
+    // sits last): the all-play awards skip a team that already holds the
+    // matching record award.
+    const teams = [
+      makeTeam({ id: 't1', wins: 2 }),
+      makeTeam({ id: 't2', wins: 9 }),
+      makeTeam({ id: 't3', wins: 5 }),
+    ];
     const luckMetrics = [
       makeLuckMetrics({
         teamId: 't1', teamName: 'Clutch', actualWins: 3, actualLosses: 0,
@@ -631,13 +679,13 @@ describe('calculateAllAwards - Inline luck helpers', () => {
     const highs = awards.find(a => a.id === 'weekly_highs');
     expect(highs).toBeDefined();
     expect(highs!.winner.teamId).toBe('t1');
-    expect(highs!.value).toBe(3);
+    expect(highs!.value).toBe('4 weeks');
 
     const lows = awards.find(a => a.id === 'weekly_lows');
     expect(lows).toBeDefined();
     expect(lows!.winner.teamId).toBe('t3');
 
-    // Consistent + boom_bust both require >=3 valid weekly scores per team.
+    // Consistent + boom_bust both require >=4 valid weekly scores per team.
     // t1's scores (120/130/125) are tighter than t3's (60/65/70 has a similar
     // spread but t1's stdev is smaller). Just verify both awards emit.
     const consistent = awards.find(a => a.id === 'consistent');
@@ -645,6 +693,31 @@ describe('calculateAllAwards - Inline luck helpers', () => {
 
     const boomBust = awards.find(a => a.id === 'boom_bust');
     expect(boomBust).toBeDefined();
+  });
+
+  it('names the loser of the narrowest escape and skips Heartbreak for that same game', () => {
+    const t1: WeeklyScore[] = [{ teamId: 't1', week: 3, pointsFor: 100.5, pointsAgainst: 100, won: true, tied: false, margin: 0.5 }];
+    const t2: WeeklyScore[] = [
+      { teamId: 't2', week: 3, pointsFor: 100, pointsAgainst: 100.5, won: false, tied: false, margin: -0.5 },
+      { teamId: 't2', week: 4, pointsFor: 90, pointsAgainst: 94, won: false, tied: false, margin: -4 },
+    ];
+    const teams = [makeTeam({ id: 't1', name: 'Escaper' }), makeTeam({ id: 't2', name: 'Heartbroken' })];
+    const league = {
+      ...makeLeague(teams),
+      matchups: [{ week: 3, team1Id: 't1', team1Points: 100.5, team2Id: 't2', team2Points: 100 }],
+    };
+    const awards = calculateAllAwards({
+      league,
+      luckMetrics: [
+        makeLuckMetrics({ teamId: 't1', teamName: 'Escaper', weeklyScores: t1, biggestWin: 0.5 }),
+        makeLuckMetrics({ teamId: 't2', teamName: 'Heartbroken', weeklyScores: t2 }),
+      ],
+    });
+    expect(awards.find(a => a.id === 'narrowest_escape')!.detail).toBe('Week 3 over Heartbroken');
+    // The 0.5 loss is the same game, so Heartbreak takes the next-closest loss.
+    const heartbreak = awards.find(a => a.id === 'heartbreak')!;
+    expect(heartbreak.value).toBe('-4.0 pts');
+    expect(heartbreak.detail).toBe('Week 4');
   });
 
   it('emits narrowest escape and heartbreak loss for the tightest win/loss', () => {
@@ -658,12 +731,12 @@ describe('calculateAllAwards - Inline luck helpers', () => {
 
     const escape = awards.find(a => a.id === 'narrowest_escape');
     expect(escape).toBeDefined();
-    expect(escape!.value).toBe('+1.0');
+    expect(escape!.value).toBe('+1.0 pts');
     expect(escape!.detail).toBe('Week 1');
 
     const heartbreak = awards.find(a => a.id === 'heartbreak');
     expect(heartbreak).toBeDefined();
-    expect(heartbreak!.value).toBe('-2.0');
+    expect(heartbreak!.value).toBe('-2.0 pts');
     expect(heartbreak!.detail).toBe('Week 2');
   });
 });
@@ -686,7 +759,7 @@ describe('calculateAllAwards - Trade addict', () => {
     const addict = awards.find(a => a.id === 'trade_addict');
     expect(addict).toBeDefined();
     expect(addict!.winner.teamId).toBe('t1');
-    expect(addict!.value).toBe(4);
+    expect(addict!.value).toBe('4 trades');
   });
 
   it('does not award trade_addict when no team has 3+ trades', () => {

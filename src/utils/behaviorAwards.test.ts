@@ -90,6 +90,25 @@ describe('calculateBehaviorAwards - lineups', () => {
     expect(byId(awards, 'perfect_week')?.winner.teamId).toBe('b');
   });
 
+  it('treats a starter who sat out as a ghost start, not a start/sit call', () => {
+    // Team b starts a WR who didn't play (0.0, absent from the gp feed) over
+    // a 40-point bench WR: bigger than a's miss, but it's a no-show.
+    const ls = lineups().map(l =>
+      l.teamId === 'b' && l.week === 2
+        ? { ...l, starters: [l.starters[0], p('b-out', 'WR', 0)], bench: [...l.bench, p('b-wr9', 'WR', 40)] }
+        : l,
+    );
+    const gamesPlayed = {
+      season: 2024,
+      weeks: [1, 2],
+      bySleeperId: Object.fromEntries(
+        ls.flatMap(l => [...l.starters, ...l.bench]).filter(x => x && x.id !== 'b-out' && x.points > 0).map(x => [x!.id, [1, 2]]),
+      ),
+    };
+    const out = calculateBehaviorAwards(league({ weeklyLineups: ls, matchups, gamesPlayed }));
+    expect(byId(out, 'worst_call')?.winner.teamId).toBe('a');
+  });
+
   it('skips every lineup award in best ball', () => {
     const bb = calculateBehaviorAwards(league({ weeklyLineups: lineups(), matchups, isBestBall: true }));
     expect(bb.filter(a => a.category === 'lineups')).toEqual([]);
@@ -105,19 +124,21 @@ describe('calculateBehaviorAwards - lineups', () => {
 describe('calculateBehaviorAwards - drops and swings', () => {
   it('Drop Regret goes to the team whose dropped player scored the most afterward', () => {
     const drop = (id: string) => ({ id, platformId: id, name: id, position: 'WR', team: 'KC' });
+    const fourWeeks: WeeklyMatchup[] = [1, 2, 3, 4, 5].map(week => ({ week, team1Id: 'a', team1Points: 90, team2Id: 'b', team2Points: 80 }));
     const out = calculateBehaviorAwards(league({
-      matchups,
+      matchups: fourWeeks,
       teams: [
         team('a', { transactions: [{ id: 't1', type: 'free_agent', timestamp: 0, week: 1, teamId: 'a', teamName: 'A', adds: [], drops: [drop('p1')] }] }),
         team('b', { transactions: [{ id: 't2', type: 'waiver', timestamp: 0, week: 1, teamId: 'b', teamName: 'B', adds: [], drops: [drop('p2')] }] }),
-        team('c'),
+        team('c', { transactions: [{ id: 't3', type: 'free_agent', timestamp: 0, week: 4, teamId: 'c', teamName: 'C', adds: [], drops: [drop('p3')] }] }),
       ],
-      // Week 1 points were scored before the drop and don't count.
-      playerWeeklyPoints: { p1: { 1: 40, 2: 5 }, p2: { 2: 20 } },
+      // Week 1 points were scored before the drop and don't count. p3 had
+      // one big game since, too few to call regret.
+      playerWeeklyPoints: { p1: { 1: 40, 2: 5, 3: 5, 4: 5 }, p2: { 2: 10, 3: 10, 4: 10 }, p3: { 5: 60 } },
     }));
     const a = byId(out, 'drop_regret');
     expect(a?.winner.teamId).toBe('b');
-    expect(a?.value).toBe('20.0 pts');
+    expect(a?.value).toBe('30.0 pts');
   });
 
   it('Late Surge and Late Collapse compare the first four games to the last four', () => {

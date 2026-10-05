@@ -92,13 +92,6 @@ export function startSitCalls(lineup: WeeklyLineup): { calls: number; wrong: Mis
   return { calls, wrong };
 }
 
-// Starts that produced nothing: an empty slot, or a starter who scored 0
-// (on bye, inactive, or hurt early). Kickers and defenses can post a real 0,
-// but rarely enough that it still reads as a lineup mistake.
-export function ghostStarts(lineup: WeeklyLineup): number {
-  return lineup.starters.filter(p => !p || p.points === 0).length;
-}
-
 // Starters this week who were not starting last week.
 export function lineupChanges(prev: WeeklyLineup, cur: WeeklyLineup): number {
   const before = new Set(prev.starters.filter(Boolean).map(p => p!.id));

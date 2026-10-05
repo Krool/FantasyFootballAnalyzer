@@ -16,6 +16,11 @@ import { calculateBehaviorAwards } from './behaviorAwards';
 // renders "+-2.4" when the winning value is itself negative (a league whose
 // BEST draft still graded under water showed "Best Draft +-970.0").
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}`;
+const pts = (n: number) => `${n.toFixed(1)} pts`;
+
+// Luck and scoring-spread awards say nothing after a game or two: one result
+// decides "luckiest", and a spread of three scores isn't consistency.
+const MIN_GAMES_FOR_TRENDS = 4;
 
 export interface Award {
   id: string;
@@ -64,7 +69,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       category: 'performance',
       winner: { teamId: bestRecord.id, teamName: bestRecord.name, ownerName: bestRecord.ownerName },
       value: `${bestRecord.wins}-${bestRecord.losses}${bestRecord.ties ? `-${bestRecord.ties}` : ''}`,
-      description: 'Best regular season record',
+      description: 'Best record',
       icon: '🏆',
     });
   }
@@ -77,7 +82,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Highest Scorer',
       category: 'performance',
       winner: { teamId: mostPointsFor.id, teamName: mostPointsFor.name, ownerName: mostPointsFor.ownerName },
-      value: mostPointsFor.pointsFor.toFixed(1),
+      value: pts(mostPointsFor.pointsFor),
       description: 'Most total points scored',
       icon: '💯',
     });
@@ -92,7 +97,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       category: 'performance',
       winner: { teamId: worstRecord.id, teamName: worstRecord.name, ownerName: worstRecord.ownerName },
       value: `${worstRecord.wins}-${worstRecord.losses}${worstRecord.ties ? `-${worstRecord.ties}` : ''}`,
-      description: 'Worst regular season record',
+      description: 'Worst record',
       icon: '🪣',
     });
   }
@@ -105,7 +110,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Punching Bag',
       category: 'performance',
       winner: { teamId: mostPointsAgainst.id, teamName: mostPointsAgainst.name, ownerName: mostPointsAgainst.ownerName },
-      value: mostPointsAgainst.pointsAgainst.toFixed(1),
+      value: pts(mostPointsAgainst.pointsAgainst),
       description: 'Most points scored against',
       icon: '🥊',
     });
@@ -119,7 +124,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Easy Street',
       category: 'performance',
       winner: { teamId: leastPointsAgainst.id, teamName: leastPointsAgainst.name, ownerName: leastPointsAgainst.ownerName },
-      value: leastPointsAgainst.pointsAgainst.toFixed(1),
+      value: pts(leastPointsAgainst.pointsAgainst),
       description: 'Fewest points scored against',
       icon: '🛋️',
     });
@@ -133,7 +138,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Offensive Struggles',
       category: 'performance',
       winner: { teamId: lowestScorer.id, teamName: lowestScorer.name, ownerName: lowestScorer.ownerName },
-      value: lowestScorer.pointsFor.toFixed(1),
+      value: pts(lowestScorer.pointsFor),
       description: 'Fewest total points scored',
       icon: '📉',
     });
@@ -141,17 +146,20 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
 
   // ============ LUCK AWARDS ============
   if (luckMetrics && luckMetrics.length > 0) {
+    const gamesPlayed = Math.max(...luckMetrics.map(m => m.weeklyScores.length));
+    const enoughGames = gamesPlayed >= MIN_GAMES_FOR_TRENDS;
+
     // Luckiest Team
     const luckiest = luckMetrics.reduce((best, curr) =>
       curr.luckScore > best.luckScore ? curr : best
     );
-    if (luckiest.luckScore > 0) {
+    if (enoughGames && luckiest.luckScore > 0) {
       awards.push({
         id: 'luckiest',
         name: 'Luckiest Team',
         category: 'luck',
         winner: { teamId: luckiest.teamId, teamName: luckiest.teamName },
-        value: signed(luckiest.luckScore),
+        value: `${signed(luckiest.luckScore)} wins`,
         description: 'Most wins above expected',
         // Median leagues: luck is scored on the h2h record, so the detail
         // must show the same basis or the numbers won't add up.
@@ -166,13 +174,13 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
     const unluckiest = luckMetrics.reduce((worst, curr) =>
       curr.luckScore < worst.luckScore ? curr : worst
     );
-    if (unluckiest.luckScore < 0) {
+    if (enoughGames && unluckiest.luckScore < 0) {
       awards.push({
         id: 'unluckiest',
         name: 'Unluckiest Team',
         category: 'luck',
         winner: { teamId: unluckiest.teamId, teamName: unluckiest.teamName },
-        value: unluckiest.luckScore.toFixed(1),
+        value: `${unluckiest.luckScore.toFixed(1)} wins`,
         description: 'Most wins below expected',
         detail: unluckiest.medianAdjusted
           ? `${unluckiest.h2hWins} h2h W vs ${unluckiest.expectedWins.toFixed(1)} expected`
@@ -191,7 +199,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Biggest Blowout',
         category: 'luck',
         winner: { teamId: biggestBlowout.teamId, teamName: biggestBlowout.teamName },
-        value: signed(biggestBlowout.biggestWin),
+        value: `${signed(biggestBlowout.biggestWin)} pts`,
         description: 'Largest margin of victory',
         icon: '💪',
       });
@@ -208,15 +216,27 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         }
       }
     }
+    // The other side of that game, so Heartbreak can skip it: one 0.5-point
+    // game shouldn't fill two cards.
+    const narrowestGame = narrowestVictory
+      ? (league.matchups ?? []).find(
+          m => m.week === narrowestVictory!.week &&
+            (m.team1Id === narrowestVictory!.team.teamId || m.team2Id === narrowestVictory!.team.teamId),
+        )
+      : undefined;
+    const narrowestLoserId = narrowestGame
+      ? (narrowestGame.team1Id === narrowestVictory!.team.teamId ? narrowestGame.team2Id : narrowestGame.team1Id)
+      : undefined;
+    const narrowestLoser = league.teams.find(t => t.id === narrowestLoserId);
     if (narrowestVictory) {
       awards.push({
         id: 'narrowest_escape',
         name: 'Narrowest Escape',
         category: 'luck',
         winner: { teamId: narrowestVictory.team.teamId, teamName: narrowestVictory.team.teamName },
-        value: signed(narrowestVictory.margin),
+        value: `${signed(narrowestVictory.margin)} pts`,
         description: 'Smallest winning margin',
-        detail: `Week ${narrowestVictory.week}`,
+        detail: `Week ${narrowestVictory.week}${narrowestLoser ? ` over ${narrowestLoser.name}` : ''}`,
         icon: '😅',
       });
     }
@@ -225,7 +245,8 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
     let heartbreakLoss: { team: LuckMetrics; margin: number; week: number } | undefined = undefined;
     for (const m of luckMetrics) {
       for (const score of m.weeklyScores) {
-        if (!score.won && !score.tied && score.margin < 0) {
+        const sameGameAsEscape = m.teamId === narrowestLoserId && score.week === narrowestVictory?.week;
+        if (!score.won && !score.tied && score.margin < 0 && !sameGameAsEscape) {
           const absMargin = Math.abs(score.margin);
           if (!heartbreakLoss || absMargin < heartbreakLoss.margin) {
             heartbreakLoss = { team: m, margin: absMargin, week: score.week };
@@ -239,7 +260,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Heartbreak Award',
         category: 'luck',
         winner: { teamId: heartbreakLoss.team.teamId, teamName: heartbreakLoss.team.teamName },
-        value: `-${heartbreakLoss.margin.toFixed(1)}`,
+        value: `-${heartbreakLoss.margin.toFixed(1)} pts`,
         description: 'Smallest losing margin',
         detail: `Week ${heartbreakLoss.week}`,
         icon: '💔',
@@ -275,7 +296,8 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       const allPlayChamp = luckMetrics.reduce((best, curr) =>
         curr.allPlayWins > best.allPlayWins ? curr : best
       );
-      if (allPlayChamp.allPlayWins > 0) {
+      // Same team as Best Record: the card would repeat the standings.
+      if (allPlayChamp.allPlayWins > 0 && allPlayChamp.teamId !== bestRecord?.id) {
         const champGames = allPlayChamp.allPlayWins + allPlayChamp.allPlayLosses;
         awards.push({
           id: 'allplay_champ',
@@ -297,7 +319,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       );
       // Only award when there's an actual loss to point at — a tied 0-0
       // "loser" is just the alphabetically-first team.
-      if (allPlayLoser.allPlayLosses > 0) {
+      if (allPlayLoser.allPlayLosses > 0 && allPlayLoser.teamId !== worstRecord?.id) {
         awards.push({
           id: 'allplay_loser',
           name: 'All-Play Punching Bag',
@@ -325,7 +347,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Weekly Explosion',
         category: 'luck',
         winner: { teamId: bestWeek.team.teamId, teamName: bestWeek.team.teamName },
-        value: bestWeek.score.toFixed(1),
+        value: pts(bestWeek.score),
         description: 'Highest single-week score',
         detail: `Week ${bestWeek.week}`,
         icon: '🔥',
@@ -347,7 +369,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Toilet Bowl',
         category: 'luck',
         winner: { teamId: worstWeek.team.teamId, teamName: worstWeek.team.teamName },
-        value: worstWeek.score.toFixed(1),
+        value: pts(worstWeek.score),
         description: 'Lowest single-week score',
         detail: `Week ${worstWeek.week}`,
         icon: '🚽',
@@ -357,7 +379,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
     // Mr. Consistent (lowest score variance)
     const teamVariances = luckMetrics.map(m => {
       const scores = m.weeklyScores.filter(s => s.pointsFor > 0).map(s => s.pointsFor);
-      if (scores.length < 3) return { team: m, variance: Infinity };
+      if (scores.length < MIN_GAMES_FOR_TRENDS) return { team: m, variance: Infinity };
       const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
       const variance = scores.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / scores.length;
       return { team: m, variance: Math.sqrt(variance) };
@@ -372,7 +394,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Mr. Consistent',
         category: 'luck',
         winner: { teamId: mostConsistent.team.teamId, teamName: mostConsistent.team.teamName },
-        value: `±${mostConsistent.variance.toFixed(1)}`,
+        value: `±${mostConsistent.variance.toFixed(1)} pts`,
         description: 'Most consistent weekly scoring',
         icon: '📊',
       });
@@ -386,7 +408,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Boom or Bust',
         category: 'luck',
         winner: { teamId: boomBust.team.teamId, teamName: boomBust.team.teamName },
-        value: `±${boomBust.variance.toFixed(1)}`,
+        value: `±${boomBust.variance.toFixed(1)} pts`,
         description: 'Most volatile weekly scoring',
         icon: '🎢',
       });
@@ -426,7 +448,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
           name: 'Top Dog',
           category: 'luck',
           winner: { teamId: team.teamId, teamName: team.teamName },
-          value: mostHighs.count,
+          value: `${mostHighs.count} weeks`,
           description: 'Most weeks as highest scorer',
           icon: '🐕',
         });
@@ -448,7 +470,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
           name: 'Cellar Dweller',
           category: 'luck',
           winner: { teamId: team.teamId, teamName: team.teamName },
-          value: mostLows.count,
+          value: `${mostLows.count} weeks`,
           description: 'Most weeks as lowest scorer',
           icon: '📦',
         });
@@ -538,7 +560,10 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   }
 
   // Late Round Hero (best pick from rounds 8+)
-  const lateRoundHero = getLateRoundHero(gradedPicks);
+  // Not the Draft Steal again: when the steal came late it would win both.
+  const lateRoundHero = getLateRoundHero(
+    gradedPicks.filter(p => !(draftSteal && p.teamId === draftSteal.teamId && p.player.name === draftSteal.playerName)),
+  );
   if (lateRoundHero) {
     awards.push({
       id: 'late_round_hero',
@@ -566,22 +591,24 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Best Waiver Pickup',
       category: 'waivers',
       winner: { teamId: bestWaiver.teamId, teamName: bestWaiver.teamName },
-      value: bestWaiver.par.toFixed(1),
+      value: `${bestWaiver.par.toFixed(1)} PAR`,
       description: 'Highest PAR from single pickup',
       detail: bestWaiver.playerName,
       icon: '💎',
     });
   }
 
-  // Worst Waiver Pickup (min 2 games started)
+  // Worst Waiver Pickup (min 2 games started). Only a pickup that actually
+  // cost something: when the lowest one still beat replacement, there is no
+  // "worst" to hand out.
   const worstWaiver = getWorstWaiverPickup(league.teams);
-  if (hasPlayedGames && worstWaiver) {
+  if (hasPlayedGames && worstWaiver && worstWaiver.par < 0) {
     awards.push({
       id: 'worst_waiver',
       name: 'Worst Waiver Pickup',
       category: 'waivers',
       winner: { teamId: worstWaiver.teamId, teamName: worstWaiver.teamName },
-      value: worstWaiver.par.toFixed(1),
+      value: `${worstWaiver.par.toFixed(1)} PAR`,
       description: 'Lowest PAR from single pickup',
       detail: worstWaiver.playerName,
       icon: '🗑️',
@@ -608,7 +635,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Waiver Wire King',
       category: 'waivers',
       winner: { teamId: waiverKing.team.id, teamName: waiverKing.team.name, ownerName: waiverKing.team.ownerName },
-      value: waiverKing.totalPAR.toFixed(1),
+      value: `${waiverKing.totalPAR.toFixed(1)} PAR`,
       description: 'Most PAR from waiver pickups',
       detail: `${waiverKing.pickupCount} pickups`,
       icon: '👑',
@@ -625,7 +652,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Waiver Wire Slacker',
       category: 'waivers',
       winner: { teamId: waiverSlacker.team.id, teamName: waiverSlacker.team.name, ownerName: waiverSlacker.team.ownerName },
-      value: waiverSlacker.totalPAR.toFixed(1),
+      value: `${waiverSlacker.totalPAR.toFixed(1)} PAR`,
       description: 'Least PAR from waiver pickups',
       detail: `${waiverSlacker.pickupCount} pickups`,
       icon: '😴',
@@ -644,7 +671,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Most Active',
       category: 'activity',
       winner: { teamId: mostActive.team.id, teamName: mostActive.team.name, ownerName: mostActive.team.ownerName },
-      value: mostActive.transactionCount,
+      value: `${mostActive.transactionCount} moves`,
       description: 'Most transactions',
       icon: '🏃',
     });
@@ -659,7 +686,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
       name: 'Least Active',
       category: 'activity',
       winner: { teamId: leastActive.team.id, teamName: leastActive.team.name, ownerName: leastActive.team.ownerName },
-      value: leastActive.transactionCount,
+      value: `${leastActive.transactionCount} moves`,
       description: 'Fewest transactions',
       icon: '🦥',
     });
@@ -677,7 +704,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Trade Shark',
         category: 'trades',
         winner: { teamId: tradeShark.team.id, teamName: tradeShark.team.name, ownerName: tradeShark.team.ownerName },
-        value: signed(tradeShark.netPAR),
+        value: `${signed(tradeShark.netPAR)} PAR`,
         description: 'Best net PAR from trades',
         detail: `${tradeShark.wins}W-${tradeShark.losses}L`,
         icon: '🦈',
@@ -692,7 +719,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Trade Victim',
         category: 'trades',
         winner: { teamId: tradeVictim.team.id, teamName: tradeVictim.team.name, ownerName: tradeVictim.team.ownerName },
-        value: tradeVictim.netPAR.toFixed(1),
+        value: `${tradeVictim.netPAR.toFixed(1)} PAR`,
         description: 'Worst net PAR from trades',
         detail: `${tradeVictim.wins}W-${tradeVictim.losses}L`,
         icon: '🎯',
@@ -707,7 +734,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Best Trade',
         category: 'trades',
         winner: { teamId: bestTrade.teamId, teamName: bestTrade.teamName },
-        value: signed(bestTrade.netPAR),
+        value: `${signed(bestTrade.netPAR)} PAR`,
         description: 'Highest PAR gain from single trade',
         detail: `Week ${bestTrade.week}`,
         icon: '🤝',
@@ -722,7 +749,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Worst Trade',
         category: 'trades',
         winner: { teamId: worstTrade.teamId, teamName: worstTrade.teamName },
-        value: worstTrade.netPAR.toFixed(1),
+        value: `${worstTrade.netPAR.toFixed(1)} PAR`,
         description: 'Biggest PAR loss from single trade',
         detail: `Week ${worstTrade.week}`,
         icon: '🤦',
@@ -737,7 +764,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Trade Addict',
         category: 'trades',
         winner: { teamId: tradeAddict.team.id, teamName: tradeAddict.team.name, ownerName: tradeAddict.team.ownerName },
-        value: tradeAddict.count,
+        value: `${tradeAddict.count} trades`,
         description: 'Most trades completed',
         icon: '🔄',
       });
@@ -760,7 +787,7 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
         name: 'Lone Wolf',
         category: 'trades',
         winner: { teamId: tradeAvoiders[0].id, teamName: tradeAvoiders[0].name, ownerName: tradeAvoiders[0].ownerName },
-        value: '0',
+        value: '0 trades',
         description: 'The only team that made zero trades',
         icon: '🐺',
       });

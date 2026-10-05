@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { LineupPlayer, WeeklyLineup } from '@/types';
-import { actualPoints, bestLineupPoints, ghostStarts, lineupChanges, lineupPosition, startSitCalls } from './lineups';
+import { actualPoints, bestLineupPoints, lineupChanges, lineupPosition, startSitCalls } from './lineups';
 
 const p = (id: string, pos: string, points: number): LineupPlayer => ({ id, name: id, pos, points });
 
@@ -66,11 +66,7 @@ describe('startSitCalls', () => {
   });
 });
 
-describe('ghostStarts / lineupChanges / lineupPosition', () => {
-  it('counts empty slots and zero-point starters', () => {
-    expect(ghostStarts(lineup({ starters: [p('a', 'RB', 0), null, p('b', 'WR', 3)] }))).toBe(2);
-  });
-
+describe('lineupChanges / lineupPosition', () => {
   it('counts new starters week over week', () => {
     const a = lineup({ starters: [p('x', 'RB', 1), p('y', 'WR', 1)] });
     const b = lineup({ week: 2, starters: [p('x', 'RB', 1), p('z', 'WR', 1)] });

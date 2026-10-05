@@ -61,7 +61,17 @@ export function AwardsPage({ league }: AwardsPageProps) {
   // Category order
   const categoryOrder = ['performance', 'luck', 'lineups', 'draft', 'waivers', 'trades', 'activity'];
 
-  const records = useMemo(() => seasonRecords(league), [league]);
+  // Records the award cards already show (same game, same number) are
+  // dropped so the page doesn't say it twice.
+  const records = useMemo(() => {
+    const shown = new Set(awards.map(a => a.id));
+    const duplicateOf: Record<string, string> = {
+      'Highest score': 'best_week',
+      'Biggest blowout': 'biggest_blowout',
+      'Closest game': 'narrowest_escape',
+    };
+    return seasonRecords(league).filter(r => !shown.has(duplicateOf[r.label]));
+  }, [league, awards]);
   const timeline = useMemo(() => seasonTimeline(league), [league]);
 
   // Drafted but nothing played yet: only draft awards exist (awards.ts gates
