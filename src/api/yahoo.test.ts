@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll, vi } 
 import type { League } from '@/types';
 import {
   NFL_GAME_KEYS,
+  addInProgressWeek,
   loadLeague,
   enrichPlayersWithStats,
   parseRosterSettings,
@@ -1367,5 +1368,60 @@ describe('yahoo OAuth refresh flow', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('addInProgressWeek (season totals lag the live week)', () => {
+  // Owner-reported 2026-10-04: CeeDee Lamb 12.9 + 31.3 + 18.2 + a live
+  // 32.8 read as 62.4 for the season. Week 4 is in progress here.
+  const WEEKLY: Record<string, Record<number, number>> = {
+    'p.lamb': { 1: 12.9, 2: 31.3, 3: 18.2, 4: 32.8 },
+    'p.other': { 1: 10, 2: 10, 3: 10, 4: 5 },
+  };
+
+  function stubWeeks() {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const endpoint = decodeURIComponent(String(input).match(/endpoint=([^&]+)/)![1]);
+      const m = endpoint.match(/players;player_keys=([^/]+)\/stats;type=week;week=(\d+)$/)!;
+      const week = Number(m[2]);
+      return jsonResponse({
+        fantasy_content: { league: { players: { player: m[1].split(',').map(k => ({
+          player_key: k,
+          player_points: { total: String(WEEKLY[k]?.[week] ?? 0) },
+        })) } } },
+      });
+    }));
+  }
+
+  beforeEach(() => {
+    localStorage.setItem('yahoo_access_token', 'test-token');
+    localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.removeItem('yahoo_access_token');
+    localStorage.removeItem('yahoo_token_expiry');
+  });
+
+  it('adds the live week when the season total stops at the last closed week', async () => {
+    stubWeeks();
+    const map = new Map([['p.lamb', { points: 62.4 }], ['p.other', { points: 30 }]]);
+    expect(await addInProgressWeek('L', ['p.lamb', 'p.other'], 4, map)).toBe(true);
+    expect(map.get('p.lamb')?.points).toBeCloseTo(95.2, 5);
+    expect(map.get('p.other')?.points).toBeCloseTo(35, 5);
+  });
+
+  it('leaves totals alone once Yahoo has folded the week in', async () => {
+    stubWeeks();
+    const map = new Map([['p.lamb', { points: 95.2 }], ['p.other', { points: 35 }]]);
+    expect(await addInProgressWeek('L', ['p.lamb', 'p.other'], 4, map)).toBe(false);
+    expect(map.get('p.lamb')?.points).toBe(95.2);
+  });
+
+  it('leaves totals alone when the numbers do not reconcile', async () => {
+    stubWeeks();
+    const map = new Map([['p.lamb', { points: 70 }]]);
+    expect(await addInProgressWeek('L', ['p.lamb'], 4, map)).toBe(false);
+    expect(map.get('p.lamb')?.points).toBe(70);
   });
 });

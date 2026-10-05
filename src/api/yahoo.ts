@@ -979,6 +979,62 @@ function weekForTimestamp(ranges: GameWeekRange[], timestamp: number): number | 
   return ranges[ranges.length - 1].week;
 }
 
+// One week's league-scored points for many players (25 per call).
+async function weekPointsFor(
+  leagueKey: string,
+  keys: string[],
+  week: number,
+): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  const tasks: Array<() => Promise<void>> = [];
+  for (let i = 0; i < keys.length; i += 25) {
+    const batch = keys.slice(i, i + 25);
+    tasks.push(async () => {
+      const data = await yahooFetch<any>(
+        `/league/${leagueKey}/players;player_keys=${batch.join(',')}/stats;type=week;week=${week}`,
+      );
+      const node = data?.fantasy_content?.league?.players?.player;
+      for (const player of node ? (Array.isArray(node) ? node : [node]) : []) {
+        const total = parseFloat(player?.player_points?.total ?? '');
+        if (player?.player_key && Number.isFinite(total)) out.set(player.player_key, total);
+      }
+    });
+  }
+  await runBatched(tasks);
+  return out;
+}
+
+// Adds the in-progress week to season totals, but only once one scoring
+// player proves the season total excludes it: his season total must equal
+// the sum of his earlier weeks. Anything else (already included, or the
+// numbers disagree) leaves the totals alone - never double-count.
+// Exported for tests.
+export async function addInProgressWeek(
+  leagueKey: string,
+  keys: string[],
+  week: number,
+  playerMap: Map<string, { points?: number }>,
+): Promise<boolean> {
+  const current = await weekPointsFor(leagueKey, keys, week);
+  const probe = [...current.entries()]
+    .filter(([key, pts]) => pts > 1 && playerMap.get(key)?.points !== undefined)
+    .sort((a, b) => b[1] - a[1])[0];
+  if (!probe) return false;
+  const [probeKey, probeWeek] = probe;
+  let earlier = 0;
+  for (let w = 1; w < week; w++) {
+    earlier += (await weekPointsFor(leagueKey, [probeKey], w)).get(probeKey) ?? 0;
+  }
+  const season = playerMap.get(probeKey)?.points ?? 0;
+  const close = (a: number, b: number) => Math.abs(a - b) < 0.05;
+  if (!close(season, earlier) || close(season, earlier + probeWeek)) return false;
+  for (const [key, pts] of current) {
+    const entry = playerMap.get(key);
+    if (entry && pts !== 0) entry.points = Math.round(((entry.points ?? 0) + pts) * 100) / 100;
+  }
+  return true;
+}
+
 // Weekly matchup scores for luck analysis. Regular season only: luck metrics
 // compare against regular-season records, so playoff/consolation weeks would
 // bias scores against playoff teams. Unplayed 0-0 weeks are skipped too.
@@ -1235,6 +1291,21 @@ export async function enrichPlayersWithStats(
     } catch (e) {
       if (isRetryableFailure(e)) failedPlayerBatches++;
       completedCalls++;
+    }
+  }
+
+  // Yahoo's season total only counts CLOSED weeks: during a live week (from
+  // Sunday's games until Yahoo closes it) a player's in-progress points are
+  // missing, so CeeDee Lamb's 32.8 read as 62.4 for the season instead of 95.2
+  // (owner-reported, 2026-10-04) - and every rank and grade mixed players
+  // whose week counted with players whose didn't. Add the current week back
+  // when the season total provably lacks it.
+  if (league.status === 'live' && league.currentWeek && league.currentWeek > 1) {
+    try {
+      const added = await addInProgressWeek(league.id, playerArray, league.currentWeek, playerMap);
+      if (added) logger.debug(`[Yahoo] added in-progress week ${league.currentWeek} to season totals`);
+    } catch (e) {
+      logger.warn('[Yahoo] in-progress week check failed; season totals left as reported:', e);
     }
   }
 
