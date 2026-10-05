@@ -168,6 +168,28 @@ export interface RosterSlots {
 }
 
 // Weekly matchup data for luck analysis
+export interface LineupPlayer {
+  // Platform player id (same key space as playerWeeklyPoints).
+  id: string;
+  name: string;
+  // QB/RB/WR/TE/K/DEF, or an IDP position.
+  pos: string;
+  points: number;
+}
+
+export interface WeeklyLineup {
+  week: number;
+  teamId: string;
+  // Starting slots in lineup order, named like Sleeper's roster_positions
+  // (QB, RB, FLEX, SUPER_FLEX, ...). starters[i] filled slots[i]; null is a
+  // slot left empty.
+  slots: string[];
+  starters: (LineupPlayer | null)[];
+  // Everyone else on the roster that week except IR/taxi where the platform
+  // says so.
+  bench: LineupPlayer[];
+}
+
 export interface WeeklyMatchup {
   week: number;
   team1Id: string;
@@ -205,6 +227,10 @@ export interface League {
   // players who changed teams (capped). Player Journey uses it to score each
   // stint of a player's season ("6.2 ppg for you, 18.4 after the trade").
   playerWeeklyPoints?: Record<string, Record<number, number>>;
+  // Each team's lineup each week, starters and bench with points (Sleeper and
+  // ESPN; Yahoo would cost a call per team per week, so it is absent there).
+  // The lineup awards (bench points, start/sit calls) run on it.
+  weeklyLineups?: WeeklyLineup[];
   // Which NFL weeks each player has played (live or finished seasons), from
   // Sleeper's weekly stats (any platform; see api/sleeperGamesPlayed.ts).
   gamesPlayed?: GamesPlayed;

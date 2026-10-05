@@ -1,4 +1,5 @@
-import type { SleeperAPI, League, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, SeasonSummary, HeadToHeadRecord, RosterSlots, WeeklyMatchup } from '@/types';
+import type { SleeperAPI, League, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, SeasonSummary, HeadToHeadRecord, RosterSlots, WeeklyMatchup, WeeklyLineup, LineupPlayer } from '@/types';
+import { lineupPosition } from '@/utils/lineups';
 import { loadLastConnection } from '@/utils/lastConnection';
 import { logger } from '@/utils/logger';
 import { decideTradeWinner } from '@/utils/tradeVerdict';
@@ -828,6 +829,34 @@ export async function loadLeague(leagueId: string): Promise<League> {
     }
   });
 
+  // Each team's weekly lineup (starters + bench, with points) for the lineup
+  // awards. Starting slots come from roster_positions minus bench/IR/taxi,
+  // which is the order Sleeper's starters array follows; "0" in starters is a
+  // slot left empty. Weeks nobody has scored in yet are skipped.
+  const startingSlots = (leagueData.roster_positions || []).filter(
+    p => p !== 'BN' && p !== 'IR' && p !== 'TAXI',
+  );
+  const lineupPlayer = (id: string, points: number | undefined): LineupPlayer => {
+    const p = convertPlayer(id, players);
+    return { id, name: p.name, pos: lineupPosition(p.position), points: Math.round((points ?? 0) * 100) / 100 };
+  };
+  const weeklyLineups: WeeklyLineup[] = [];
+  allMatchups.forEach((weekMatchups, weekIndex) => {
+    const week = weekIndex + 1;
+    if (!weekMatchups.some(m => matchupPoints(m) > 0)) return;
+    for (const m of weekMatchups) {
+      if (!m.starters || m.starters.length !== startingSlots.length) continue;
+      const starters = m.starters.map((id, i) =>
+        id && id !== '0' ? lineupPlayer(id, m.starters_points?.[i] ?? m.players_points?.[id]) : null,
+      );
+      const started = new Set(m.starters);
+      const bench = (m.players ?? [])
+        .filter(id => !started.has(id))
+        .map(id => lineupPlayer(id, m.players_points?.[id]));
+      weeklyLineups.push({ week, teamId: String(m.roster_id), slots: startingSlots, starters, bench });
+    }
+  });
+
   // Build weekly matchups for luck analysis. Regular season only: luck
   // metrics compare against regular-season records, so playoff weeks would
   // bias scores against playoff teams. Unplayed weeks (both sides zero)
@@ -953,6 +982,7 @@ export async function loadLeague(leagueId: string): Promise<League> {
       p => p === 'SUPER_FLEX' || p === 'SUPERFLEX',
     ),
     playerWeeklyPoints,
+    weeklyLineups: weeklyLineups.length > 0 ? weeklyLineups : undefined,
     status,
     loadedAt: Date.now(),
     upcomingDraft,

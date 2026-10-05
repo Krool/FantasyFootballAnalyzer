@@ -10,6 +10,7 @@ import type { LuckMetrics } from './luck';
 import type { GradedPick } from './grading';
 import { gradeLeaguePicks, hasSeasonResults } from './consensusGrade';
 import { POOL } from '@/data/draftPool';
+import { calculateBehaviorAwards } from './behaviorAwards';
 
 // Signed display for value deltas: "+3.1" / "-2.4". A bare `+${n}` template
 // renders "+-2.4" when the winning value is itself negative (a league whose
@@ -19,7 +20,7 @@ const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}`;
 export interface Award {
   id: string;
   name: string;
-  category: 'performance' | 'luck' | 'activity' | 'draft' | 'trades' | 'waivers';
+  category: 'performance' | 'luck' | 'lineups' | 'activity' | 'draft' | 'trades' | 'waivers';
   winner: {
     teamId: string;
     teamName: string;
@@ -766,6 +767,9 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
     }
   }
 
+  // Lineup calls, drops, late swings, byes, games missed.
+  awards.push(...calculateBehaviorAwards(league));
+
   return awards;
 }
 
@@ -1243,6 +1247,7 @@ export function getCategoryDisplayName(category: string): string {
   switch (category) {
     case 'performance': return 'Performance';
     case 'luck': return 'Luck & Close Games';
+    case 'lineups': return 'Lineup Decisions';
     case 'activity': return 'Activity';
     case 'draft': return 'Draft';
     case 'trades': return 'Trades';

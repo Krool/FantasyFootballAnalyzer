@@ -17,7 +17,9 @@ import { logger } from '@/utils/logger';
 //     missing flex ids), ESPN status, Yahoo rosterSlots/scoringType, Sleeper
 //     champion — so every pre-fix snapshot is wrong data, and final-season
 //     snapshots would have served it for up to 30 more days.
-const CACHE_VERSION = 4;
+// v5: added League.weeklyLineups (Sleeper/ESPN). Optional, but a final-season
+//     snapshot without it would hide the lineup awards for up to 30 days.
+const CACHE_VERSION = 5;
 const KEY_PREFIX = 'ffa:league:v' + CACHE_VERSION + ':';
 
 interface CacheEntry {

@@ -1,4 +1,5 @@
-import type { ESPNAPI, League, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, RosterSlots, WeeklyMatchup, SeasonSummary, HeadToHeadRecord, MatchupResult } from '@/types';
+import type { ESPNAPI, League, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, RosterSlots, WeeklyMatchup, SeasonSummary, HeadToHeadRecord, MatchupResult, WeeklyLineup, LineupPlayer } from '@/types';
+import { lineupPosition } from '@/utils/lineups';
 import { logger } from '@/utils/logger';
 import { decideTradeWinner } from '@/utils/tradeVerdict';
 import { calculateReplacementLevels } from '@/utils/par';
@@ -348,6 +349,24 @@ export async function loadLeague(
   // PPG/PAR - on waiver receipts and trade verdicts in superflex leagues.
   const STARTER_SLOTS = new Set([0, 2, 3, 4, 5, 6, 7, 16, 17, 23]);
 
+  // Weekly lineups for the lineup awards, in Sleeper's slot names (see
+  // utils/lineups.ts). The slot list comes from lineupSlotCounts so a slot
+  // the manager left empty still shows up (as null). A slot id outside this
+  // map (IDP) is kept under its raw id, which marks the team-week as one the
+  // lineup math can't score rather than scoring it wrong.
+  const ESPN_SLOT_NAMES: Record<number, string> = {
+    0: 'QB', 2: 'RB', 3: 'WRRB_FLEX', 4: 'WR', 5: 'REC_FLEX', 6: 'TE',
+    7: 'SUPER_FLEX', 16: 'DEF', 17: 'K', 23: 'FLEX',
+  };
+  const slotName = (id: number) => ESPN_SLOT_NAMES[id] ?? `ESPN_${id}`;
+  const slotCounts = leagueData.settings?.rosterSettings?.lineupSlotCounts ?? {};
+  const startingSlotIds = Object.entries(slotCounts)
+    .map(([id, n]) => [Number(id), n] as const)
+    .filter(([id, n]) => n > 0 && id !== 20 && id !== 21)
+    .sort((a, b) => a[0] - b[0])
+    .flatMap(([id, n]) => Array.from({ length: n }, () => id));
+  const weeklyLineups: WeeklyLineup[] = [];
+
   // Concurrency limiter - run up to 5 requests in parallel
   async function withConcurrency<T>(tasks: (() => Promise<T>)[], limit: number): Promise<T[]> {
     const results: T[] = [];
@@ -394,6 +413,11 @@ export async function loadLeague(
 
     const weekRoster = new Map<number, number>();
     weekData.teams?.forEach(team => {
+      const starters: (LineupPlayer | null)[] = startingSlotIds.map(() => null);
+      const extraSlots: number[] = [];
+      const extraStarters: LineupPlayer[] = [];
+      const bench: LineupPlayer[] = [];
+      let weekHasPoints = false;
       team.roster?.entries?.forEach(entry => {
         const playerId = entry.playerId;
         weekRoster.set(playerId, team.id);
@@ -418,6 +442,25 @@ export async function loadLeague(
           (playerWeeklyPoints[String(playerId)] ??= {})[week] = weekPoints;
         }
 
+        const espnPlayer = entry.playerPoolEntry?.player;
+        const lp: LineupPlayer = {
+          id: String(playerId),
+          name: espnPlayer?.fullName ?? `Player ${playerId}`,
+          pos: lineupPosition(POSITION_MAP[espnPlayer?.defaultPositionId ?? -1] ?? 'Unknown'),
+          points: Math.round(weekPoints * 100) / 100,
+        };
+        if (weekPoints !== 0) weekHasPoints = true;
+        if (entry.lineupSlotId === 20) {
+          bench.push(lp);
+        } else if (entry.lineupSlotId !== 21) {
+          const i = startingSlotIds.findIndex((id, idx) => id === entry.lineupSlotId && starters[idx] === null);
+          if (i >= 0) starters[i] = lp;
+          else {
+            extraSlots.push(entry.lineupSlotId);
+            extraStarters.push(lp);
+          }
+        }
+
         if (STARTER_SLOTS.has(entry.lineupSlotId)) {
           const key = `${team.id}-${String(playerId)}`;
           const weekMap = playerStartsByTeamAndWeek.get(key) || new Map<number, number>();
@@ -425,6 +468,15 @@ export async function loadLeague(
           playerStartsByTeamAndWeek.set(key, weekMap);
         }
       });
+      if (weekHasPoints && startingSlotIds.length > 0) {
+        weeklyLineups.push({
+          week,
+          teamId: String(team.id),
+          slots: [...startingSlotIds, ...extraSlots].map(slotName),
+          starters: [...starters, ...extraStarters],
+          bench,
+        });
+      }
     });
     rostersByWeek.set(week, weekRoster);
   });
@@ -1695,6 +1747,7 @@ export async function loadLeague(
     leagueType,
     hasSuperflex,
     playerWeeklyPoints: Object.keys(playerWeeklyPoints).length > 0 ? playerWeeklyPoints : undefined,
+    weeklyLineups: weeklyLineups.length > 0 ? weeklyLineups : undefined,
     status,
     loadedAt: Date.now(),
     hasMedianMatchup: hasMedianMatchup || undefined,

@@ -1,21 +1,16 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import type { League, Player } from '@/types';
+import type { League } from '@/types';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
 import { completedMatchups } from '@/utils/completedMatchups';
 import {
-  injuryLuck,
   pointsAgainstMetrics,
   scheduleSwap,
   summarizeScheduleSwap,
   type ScheduleRecord,
 } from '@/utils/luckDetails';
 import { TeamLink, LuckIcon } from '@/components';
-import { POOL } from '@/data/draftPool';
-import { WEEKLY_SHAPE } from '@/data/weeklyShape';
-import { indexPool, resolvePoolPlayer } from '@/utils/consensusGrade';
-import { projectedPoints } from '@/utils/projectionValues';
-import { DEFAULT_ROSTER_SLOTS, replacementPerGame } from '@/utils/projectedRoster';
+import { leagueInjuryLuck } from '@/utils/leagueInjuryLuck';
 import styles from './LuckPage.module.css';
 
 interface LuckPageProps {
@@ -54,42 +49,7 @@ export function LuckPage({ league }: LuckPageProps) {
   const pa = useMemo(() => pointsAgainstMetrics(done, teamIds), [done, teamIds]);
   const swap = useMemo(() => scheduleSwap(done, teamIds), [done, teamIds]);
   const swapSummary = useMemo(() => summarizeScheduleSwap(swap), [swap]);
-  const injuries = useMemo(() => {
-    const scoring = league.scoringType ?? 'ppr';
-    const index = indexPool(POOL);
-    const pooled = (p: Player) => resolvePoolPlayer(p, index);
-    return injuryLuck(league, weeks, {
-      replacementPerGame: replacementPerGame(
-        POOL,
-        league.rosterSlots ?? DEFAULT_ROSTER_SLOTS,
-        league.totalTeams || league.teams.length,
-        scoring,
-        { passTdPoints: league.passTdPoints, tePremiumPerReception: league.tePremiumPerReception },
-      ),
-      gamesPlayed: league.gamesPlayed,
-      // Sleeper ids are the platform ids; ESPN and Yahoo join through the pool.
-      sleeperIdOf: p => (league.platform === 'sleeper' ? p.id : pooled(p)?.sleeperId),
-      // A player who hasn't played yet: his projected points per ACTIVE
-      // week (the weekly shape zeroes byes and suspensions, so season / 17
-      // would dilute a suspended starter). The shape is half PPR; scale it
-      // by his league-scoring / half-PPR season ratio. This season only.
-      projectedPerGame: p => {
-        if (POOL.season !== league.season) return undefined;
-        const pl = pooled(p);
-        if (!pl) return undefined;
-        const season = projectedPoints(pl, scoring);
-        const weeksOn = WEEKLY_SHAPE.season === league.season
-          ? (WEEKLY_SHAPE.players[pl.id] ?? []).filter(v => v > 0)
-          : [];
-        if (weeksOn.length > 0) {
-          const half = projectedPoints(pl, 'half_ppr');
-          const factor = half && season != null ? season / half : 1;
-          return (weeksOn.reduce((a, v) => a + v, 0) / weeksOn.length) * factor;
-        }
-        return season != null ? season / 17 : undefined;
-      },
-    });
-  }, [league, weeks]);
+  const injuries = useMemo(() => leagueInjuryLuck(league, weeks), [league, weeks]);
 
   if (luckMetrics.length === 0) {
     return (

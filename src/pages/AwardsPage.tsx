@@ -59,7 +59,7 @@ export function AwardsPage({ league }: AwardsPageProps) {
   }, [awards]);
 
   // Category order
-  const categoryOrder = ['performance', 'luck', 'draft', 'waivers', 'trades', 'activity'];
+  const categoryOrder = ['performance', 'luck', 'lineups', 'draft', 'waivers', 'trades', 'activity'];
 
   const records = useMemo(() => seasonRecords(league), [league]);
   const timeline = useMemo(() => seasonTimeline(league), [league]);
