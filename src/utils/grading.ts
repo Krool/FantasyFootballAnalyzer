@@ -561,21 +561,26 @@ export function describeOutlook(o: SeasonOutlook): string {
       : `${f(o.soFar)} ${o.final ? 'scored' : 'so far'}`,
   ];
   if (o.missedWeeks > 0) {
-    parts.push(
-      `${o.missedWeeks} week${o.missedWeeks === 1 ? '' : 's'} without a game (bye or missed) at replacement (${f(o.missedPoints)})`,
-    );
+    const what = o.byeKnown
+      ? `missed game${o.missedWeeks === 1 ? '' : 's'}`
+      : `week${o.missedWeeks === 1 ? '' : 's'} without a game (bye or missed)`;
+    parts.push(`${o.missedWeeks} ${what} at replacement (${f(o.missedPoints)})`);
   }
   if (o.remainingWeeks > 0 && o.basis !== 'none') {
-    const weeks = `the last ${o.remainingWeeks} week${o.remainingWeeks === 1 ? '' : 's'}`;
+    const out = o.seasonEnding
+      ? ' (out for the season: 0)'
+      : o.outWeeks > 0
+        ? ` (${o.outWeeks} week${o.outWeeks === 1 ? '' : 's'} projected out: 0)`
+        : '';
     const rest = {
-      projection: `${f(o.projectedPoints)} projected over ${weeks}${o.outWeeks > 0 ? ` (${o.outWeeks} projected out, at replacement)` : ''}`,
-      'season-projection': `${f(o.projectedPoints)} from his season projection over ${weeks}`,
-      pace: `${f(o.projectedPoints)} at his points per game over ${weeks} (no projection)`,
-      replacement: `${f(o.projectedPoints)} at replacement over ${weeks} (no projection, scoring below the waiver wire)`,
+      projection: `${f(o.projectedPoints)} projected for the rest of the season${out}`,
+      'season-projection': `${f(o.projectedPoints)} from his season projection for the rest of the season${out}`,
+      pace: `${f(o.projectedPoints)} at his points per game for the rest of the season${out} (no projection)`,
     }[o.basis];
     parts.push(rest);
   }
-  return `${o.final ? 'Season value' : 'Season outlook'} ${o.total.toFixed(0)}: ${parts.join(' + ')}.`;
+  const injury = o.injury ? ` ${o.injury}.` : '';
+  return `${o.final ? 'Season value' : 'Season outlook'} ${o.total.toFixed(0)}: ${parts.join(' + ')}.${injury}`;
 }
 
 // One line on the Grade column header: what the grades in this table measure.
@@ -585,7 +590,7 @@ export function describeGradeBasis(
 ): string {
   if (outlook && (basis === 'auction-results' || basis === 'snake-results')) {
     return outlook === 'live'
-      ? 'Season in progress: ranked on points so far, weeks without a game at replacement, and projected points for the rest of the season (injury timelines included). Hover a grade for the math.'
+      ? 'Season in progress: ranked on points so far, missed games at replacement, and projected points for the rest of the season (zero for weeks he is projected out; injury report included). Hover a grade for the math.'
       : 'Ranked on points scored plus a replacement-level starter for each week without a game, so points per game counts too. Hover a grade for the math.';
   }
   switch (basis) {

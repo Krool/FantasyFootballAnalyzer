@@ -21,7 +21,7 @@
 
 import type { DraftPick, GamesPlayed, League, RosterSlots, ScoringType } from '@/types';
 import { WEEKLY_SHAPE } from '@/data/weeklyShape';
-import type { DraftPoolFile } from '@/types/draft';
+import type { DraftPoolFile, PoolPlayer } from '@/types/draft';
 import type { WeeklyShapeFile } from '@/types/weeklyShape';
 import { indexPool, resolvePoolPlayer } from './consensusGrade';
 import { adjustedPoints, projectedPoints, vorConfigFor } from './projectionValues';
@@ -37,20 +37,26 @@ export interface SeasonOutlook {
   soFar: number;
   // Games played, when every counted week's games-played data loaded.
   games?: number;
-  // Counted weeks without a game (missed, or his bye), each credited at the
-  // replacement rate.
+  // Past weeks he did not play (his bye excluded when known), each credited
+  // at the replacement rate.
   missedWeeks: number;
   missedPoints: number;
+  // Whether his bye was known (this season's pool), so missedWeeks counts
+  // missed games only rather than "weeks without a game".
+  byeKnown: boolean;
   // Live only: weeks still to come (including this week if he hasn't played
-  // yet), projected where he is projected to play, replacement where not.
+  // yet). Projected where he is expected to play; zero where he is not.
   remainingWeeks: number;
   outWeeks: number;
   projectedPoints: number;
   replacementPerWeek: number;
   // Where the rest of season came from: the weekly shape, his pool season
-  // projection pro-rated, his points per game, or (below the waiver wire)
-  // a replacement streamer. 'none' for a finished season.
-  basis: 'projection' | 'season-projection' | 'pace' | 'replacement' | 'none';
+  // projection pro-rated, or his points per game. 'none' when finished.
+  basis: 'projection' | 'season-projection' | 'pace' | 'none';
+  // Live: the injury report ("IR: Knee - ACL (Surgery)"), and whether it
+  // reads as season-ending.
+  injury?: string;
+  seasonEnding?: boolean;
   total: number;
 }
 
@@ -61,10 +67,33 @@ export interface OutlookContext {
   // First week not yet complete. Ignored when `final`.
   currentWeek: number;
   final?: boolean;
+  // The league's season, so this season's bye weeks and injury report
+  // (from the pool) only apply to this season's league.
+  season?: number;
   extras?: ScoringExtras;
   gamesPlayed?: GamesPlayed;
   // Sleeper leagues: the pick's own player id is a Sleeper id.
   platform?: League['platform'];
+}
+
+// Statuses that keep a player off the field this week.
+const OUT_STATUSES = new Set(['IR', 'Out', 'PUP', 'NFI', 'Sus', 'COV']);
+// Injury descriptions that end a season. Deliberately narrow: IR alone is not
+// one (players return after four games), so most IR stints still follow the
+// weekly projection's return week.
+const SEASON_ENDING = /\b(ACL|Achilles)\b|season[- ]ending|out for (the )?(season|year)/i;
+
+// Sleeper's injury report as bundled in the pool (refreshed twice daily).
+export function injuryOf(
+  player: Pick<PoolPlayer, 'injuryStatus' | 'injuryBodyPart' | 'injuryNotes'> | undefined,
+): { label: string; outNow: boolean; seasonEnding: boolean } | undefined {
+  const status = player?.injuryStatus;
+  if (!status) return undefined;
+  const part = player.injuryBodyPart;
+  const notes = player.injuryNotes;
+  const label = part ? `${status}: ${part}${notes ? ` (${notes})` : ''}` : status;
+  const seasonEnding = status === 'IR' && SEASON_ENDING.test(`${part ?? ''} ${notes ?? ''}`);
+  return { label, outNow: OUT_STATUSES.has(status), seasonEnding };
 }
 
 // Keyed `${position}-${playerId}`, matching grading's rank maps.
@@ -100,6 +129,11 @@ export function seasonOutlooks(
         ? pick.player.id
         : undefined;
     const playedWeeks = gp && sid ? new Set(gp.bySleeperId[sid] ?? []) : undefined;
+    // The pool's bye weeks and injury report are this season's; a past
+    // season's league can't use them.
+    const thisSeason = ctx.season === undefined || pool.season === ctx.season;
+    const bye = thisSeason ? (pooled?.bye ?? null) : null;
+    const injury = thisSeason && !final ? injuryOf(pooled) : undefined;
 
     // Did he play week w? Fact when that week's stats loaded; otherwise a
     // zero projection stands in (live only); otherwise unknown.
@@ -112,51 +146,62 @@ export function seasonOutlooks(
     const playedThisWeek = !final && playedWeeks && loadedWeeks.has(current) && playedWeeks.has(current);
     const lastPast = playedThisWeek ? current : current - 1;
 
+    // History: a missed game (not his bye) is credited at replacement, the
+    // streamer you started instead.
     let missedWeeks = 0;
     let games = 0;
     let gamesKnown = true;
     for (let w = 1; w <= lastPast; w++) {
-      const p = played(w);
-      if (p === false) missedWeeks++;
-      if (p === true) games++;
       if (!(playedWeeks && loadedWeeks.has(w))) gamesKnown = false;
+      const p = played(w);
+      if (p === true) games++;
+      else if (p === false && w !== bye) missedWeeks++;
     }
     const missedPoints = missedWeeks * perWeek;
 
+    // The future: projected points where he is expected to play, ZERO where
+    // he is not. Replacement credit is for games already missed, never for
+    // a projected absence: an ACL tear is a lost season, not a streamer's
+    // worth of points (owner-reported, 2026-10-04: Achane).
     const firstFuture = lastPast + 1;
     const remainingWeeks = final ? 0 : Math.max(0, OUTLOOK_WEEKS - lastPast);
     let projected = 0;
     let outWeeks = 0;
     let basis: SeasonOutlook['basis'] = 'none';
     if (remainingWeeks > 0) {
+      // The injury report overrides a projection that hasn't caught up: a
+      // season-ending injury zeroes every week left, a player out now
+      // zeroes this week.
+      const ruledOut = (w: number) =>
+        injury?.seasonEnding === true || (w === current && injury?.outNow === true);
+      let rate: (w: number) => number;
       if (weekly && pooled) {
         basis = 'projection';
         const half = projectedPoints(pooled, 'half_ppr');
         const league = projectedPoints(pooled, ctx.scoring);
         const factor =
           half && half > 0 && league != null ? adjustedPoints(pooled, league, cfg) / half : 1;
-        for (let w = firstFuture; w <= OUTLOOK_WEEKS; w++) {
-          const pts = weekly[w - 1] ?? 0;
-          if (pts > 0) projected += pts * factor;
-          else {
-            outWeeks++;
-            projected += perWeek;
-          }
-        }
+        rate = w => (weekly[w - 1] ?? 0) * factor;
       } else {
         const seasonProj = pooled ? projectedPoints(pooled, ctx.scoring) : null;
-        let rate: number;
         if (pooled && seasonProj != null && seasonProj > 0) {
           basis = 'season-projection';
-          rate = adjustedPoints(pooled, seasonProj, cfg) / OUTLOOK_WEEKS;
+          // A season projection covers 16 games across 17 weeks (one bye).
+          const perGame = adjustedPoints(pooled, seasonProj, cfg) / (OUTLOOK_WEEKS - 1);
+          rate = () => perGame;
         } else {
           // Points per game when games are known, else per week.
+          basis = 'pace';
           const denom = gamesKnown && games > 0 ? games : lastPast;
           const pace = denom > 0 ? soFar / denom : 0;
-          basis = pace >= perWeek ? 'pace' : 'replacement';
-          rate = Math.max(pace, perWeek);
+          rate = () => pace;
         }
-        projected = rate * remainingWeeks;
+      }
+      for (let w = firstFuture; w <= OUTLOOK_WEEKS; w++) {
+        if (w === bye) continue;
+        const pts = ruledOut(w) ? 0 : rate(w);
+        if (pts > 0) projected += pts;
+        else outWeeks++;
       }
     }
 
@@ -166,11 +211,14 @@ export function seasonOutlooks(
       games: gamesKnown && lastPast > 0 ? games : undefined,
       missedWeeks,
       missedPoints,
+      byeKnown: bye !== null,
       remainingWeeks,
       outWeeks,
       projectedPoints: projected,
       replacementPerWeek: perWeek,
       basis,
+      injury: injury?.label,
+      seasonEnding: injury?.seasonEnding,
       total: soFar + missedPoints + projected,
     });
   }
@@ -209,6 +257,7 @@ export function leagueOutlooks(
     teamCount: league.totalTeams || league.teams.length,
     currentWeek: league.currentWeek ?? OUTLOOK_WEEKS + 1,
     final,
+    season: league.season,
     extras: { passTdPoints: league.passTdPoints, tePremiumPerReception: league.tePremiumPerReception },
     gamesPlayed,
     platform: league.platform,
