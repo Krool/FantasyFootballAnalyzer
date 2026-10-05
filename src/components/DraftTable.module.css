@@ -232,20 +232,50 @@
   border: 2px solid var(--bone);
   box-shadow: 4px 4px 0 var(--bone);
   background: var(--ink);
+  /* Shared by the header and every row so the columns line up. Stat
+     columns are fixed-width; the team name takes what is left and
+     truncates, so the board never scrolls sideways on a phone. */
+  --lb-template: 2.5ch minmax(0, 1fr) repeat(var(--lb-cols, 4), 7ch);
+}
+
+.leaderboardHead,
+.leaderboardRow {
+  display: grid;
+  grid-template-columns: var(--lb-template);
+  align-items: baseline;
+  column-gap: 0.9rem;
+  width: 100%;
+  padding: 0.45rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.leaderboardHead {
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.lbHeadName {
+  color: var(--bone-dim);
+}
+
+.lbHeadStat {
+  text-align: right;
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
 }
 
 .leaderboardRow {
-  display: flex;
-  align-items: baseline;
-  gap: 0.9rem;
-  width: 100%;
-  padding: 0.45rem 0.8rem;
   border: none;
   border-bottom: 1px dashed var(--rule);
   background: transparent;
   text-align: left;
   cursor: pointer;
-  font-family: var(--font-mono);
 }
 
 .leaderboardRow:hover {
@@ -258,14 +288,11 @@
 }
 
 .lbRank {
-  font-size: 0.7rem;
   font-weight: 700;
   color: var(--bone-dim);
-  min-width: 1.4ch;
 }
 
 .lbName {
-  flex: 1;
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 500;
@@ -276,22 +303,46 @@
   text-overflow: ellipsis;
 }
 
-.lbStat {
-  font-size: 0.7rem;
-  color: var(--bone-dim);
+.lbStat,
+.lbRegret,
+.lbGood {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.lbStat {
+  color: var(--bone-dim);
 }
 
 .lbRegret {
-  font-size: 0.7rem;
   color: var(--blood-text);
-  white-space: nowrap;
 }
 
 .lbGood {
-  font-size: 0.7rem;
   color: var(--color-good);
-  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .leaderboardGrid {
+    --lb-template: 2ch minmax(0, 1fr) repeat(var(--lb-cols, 4), 5.5ch);
+  }
+
+  .leaderboardHead,
+  .leaderboardRow {
+    column-gap: 0.45rem;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.65rem;
+  }
+
+  .leaderboardHead {
+    font-size: 0.55rem;
+    letter-spacing: 0.02em;
+  }
+
+  .lbName {
+    font-size: 0.85rem;
+  }
 }
 
 /* Grade cell for a kept player: same gold as the row's keeper tag, so the

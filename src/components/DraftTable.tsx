@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type CSSProperties } from 'react';
 import type { League, RosterSlots, ScoringType, Team } from '@/types';
 import { gradeAllPicks, isGraded, getGradeDisplayText, formatValueOverExpected, auctionBadgeWord, explainGrade, describeGradeBasis } from '@/utils/grading';
 import {
@@ -70,6 +70,19 @@ interface DraftTableProps {
   gamesPlayed?: League['gamesPlayed'];
   platform?: League['platform'];
 }
+
+// Leaderboard columns: a short header label, and what it means on hover.
+interface LbColumn {
+  label: string;
+  title: string;
+}
+
+const NOMINATION_COLUMNS: LbColumn[] = [
+  { label: 'Won', title: "Share of this team's nominations it went on to win" },
+  { label: 'Noms', title: 'Nominations won / nominations made' },
+  { label: 'On own', title: 'Dollars this team paid for players it nominated itself' },
+  { label: 'Bait $', title: 'Dollars the rest of the room paid for players this team put on the block' },
+];
 
 type SortField = 'pick' | 'round' | 'player' | 'position' | 'team' | 'points' | 'posRank' | 'value' | 'grade' | 'cost' | 'proj';
 type SortDirection = 'asc' | 'desc';
@@ -451,6 +464,35 @@ export function DraftTable({
     tePremiumPerReception,
   ]);
 
+
+  // Auction leagues get a cost-per-point column; snake drafts have no price.
+  const showCostPerPoint = leaderboard.some(r => r.costPerPoint !== null);
+  const lbColumns: LbColumn[] = hasResults
+    ? [
+        { label: 'Pts', title: 'Points scored by drafted players' },
+        { label: 'Hits', title: 'Share of live picks graded Great or Good' },
+        ...(showCostPerPoint ? [{ label: '$/pt', title: 'Auction dollars paid per point scored' }] : []),
+        {
+          label: 'Left',
+          title:
+            'Points left on the board, against the league average. For each pick: how much better the best same-position player drafted later turned out, summed over the team. Positive means this team left fewer points behind than the average team.',
+        },
+      ]
+    : [
+        {
+          label: 'Proj',
+          title:
+            "Projected points from this team's best legal lineup each week of the fantasy season (weeks 1-17), under this league's scoring. Byes are covered by the bench or a replacement-level pickup, so depth counts for what it beats the waiver wire by. A projection, not a result.",
+        },
+        {
+          label: valuesInDollars ? 'Vs mkt' : 'Vs cons',
+          title: valuesInDollars
+            ? "Market price minus price paid, summed over this team's live picks in league dollars. Positive means it bought below what the market says the players are worth. High value with a low projection means the team bought well but built a lopsided roster."
+            : "Draft slots gained on the FantasyPros consensus board, summed over this team's live picks. Positive means it kept taking players later than the market had them. High value with a low projection means the team bought well but built a lopsided roster.",
+        },
+        { label: 'Hits', title: 'Share of live picks graded Great or Good' },
+      ];
+
   return (
     <div className={styles.container}>
 
@@ -482,7 +524,22 @@ export function DraftTable({
           <h3 className={styles.leaderboardTitle}>
             {hasResults ? 'Whose draft won?' : 'Whose roster projects best?'}
           </h3>
-          <div className={styles.leaderboardGrid}>
+          {/* One grid, header row included, so every stat sits in a labelled,
+              aligned column; units live in the header, not the cells. The
+              header carries each column's explanation on hover. */}
+          <div
+            className={styles.leaderboardGrid}
+            style={{ '--lb-cols': lbColumns.length } as CSSProperties}
+          >
+            <div className={styles.leaderboardHead}>
+              <span className={styles.lbRank} title="Rank">#</span>
+              <span className={styles.lbHeadName}>Team</span>
+              {lbColumns.map(col => (
+                <span key={col.label} className={styles.lbHeadStat} title={col.title}>
+                  {col.label}
+                </span>
+              ))}
+            </div>
             {leaderboard.map((row, i) => (
               <button
                 key={row.teamId}
@@ -495,34 +552,24 @@ export function DraftTable({
                 <span className={styles.lbName}>{row.teamName}</span>
                 {hasResults ? (
                   <span className={styles.lbStat} title="Points scored by drafted players">
-                    {row.points.toFixed(0)} pts
+                    {row.points.toFixed(0)}
                   </span>
                 ) : (
                   <>
-                    <span
-                      className={styles.lbStat}
-                      title="Projected points from this team's best legal lineup each week of the fantasy season (weeks 1-17), under this league's scoring. Byes are covered by the bench or a replacement-level pickup, so depth counts for what it beats the waiver wire by. A projection, not a result."
-                    >
-                      {row.projStarters.toFixed(0)} proj
+                    <span className={styles.lbStat} title={lbColumns[0].title}>
+                      {row.projStarters.toFixed(0)}
                     </span>
-                    <span
-                      className={styles.lbStat}
-                      title={
-                        valuesInDollars
-                          ? "Market price minus price paid, summed over this team's live picks in league dollars. Positive means it bought below what the market says the players are worth. High value with a low projection means the team bought well but built a lopsided roster."
-                          : "Draft slots gained on the FantasyPros consensus board, summed over this team's live picks. Positive means it kept taking players later than the market had them. High value with a low projection means the team bought well but built a lopsided roster."
-                      }
-                    >
-                      {formatValueOverExpected(row.consensusValue, valuesInDollars)} vs {valuesInDollars ? 'market' : 'consensus'}
+                    <span className={styles.lbStat} title={lbColumns[1].title}>
+                      {formatValueOverExpected(row.consensusValue, valuesInDollars)}
                     </span>
                   </>
                 )}
                 <span className={styles.lbStat} title="Share of live picks graded great or good">
-                  {Math.round(row.hitRate * 100)}% hits
+                  {Math.round(row.hitRate * 100)}%
                 </span>
-                {hasResults && row.costPerPoint !== null && (
+                {hasResults && showCostPerPoint && (
                   <span className={styles.lbStat} title="Auction dollars paid per point scored">
-                    ${row.costPerPoint.toFixed(2)}/pt
+                    {row.costPerPoint !== null ? `$${row.costPerPoint.toFixed(2)}` : '-'}
                   </span>
                 )}
                 {hasResults && (
@@ -534,9 +581,9 @@ export function DraftTable({
                           ? styles.lbRegret
                           : styles.lbStat
                     }
-                    title={`Points left on the board vs the league average. For each pick, how much better the best same-position player drafted later turned out, summed over the team: ${row.regret.toFixed(0)} here. Positive means this team left fewer points on the board than the average team.`}
+                    title={`Points left on the board: ${row.regret.toFixed(0)} for this team. Shown against the league average; positive means it left fewer than average.`}
                   >
-                    {row.regretVsAvg >= 0 ? '+' : '−'}{Math.abs(row.regretVsAvg).toFixed(0)} vs avg
+                    {row.regretVsAvg >= 0 ? '+' : '−'}{Math.abs(row.regretVsAvg).toFixed(0)}
                   </span>
                 )}
               </button>
@@ -553,7 +600,19 @@ export function DraftTable({
             its actual targets; a low rate with big dollars extracted means it kept throwing bait
             and let the rest of the room burn its budget.
           </p>
-          <div className={styles.leaderboardGrid}>
+          <div
+            className={styles.leaderboardGrid}
+            style={{ '--lb-cols': NOMINATION_COLUMNS.length } as CSSProperties}
+          >
+            <div className={styles.leaderboardHead}>
+              <span className={styles.lbRank} title="Rank">#</span>
+              <span className={styles.lbHeadName}>Team</span>
+              {NOMINATION_COLUMNS.map(col => (
+                <span key={col.label} className={styles.lbHeadStat} title={col.title}>
+                  {col.label}
+                </span>
+              ))}
+            </div>
             {nominationBoard.map((row, i) => (
               <button
                 key={row.teamId}
@@ -564,26 +623,17 @@ export function DraftTable({
               >
                 <span className={styles.lbRank}>{i + 1}</span>
                 <span className={styles.lbName}>{row.teamName}</span>
-                <span
-                  className={styles.lbStat}
-                  title="Share of this team's nominations it went on to win"
-                >
-                  {Math.round(row.winRate * 100)}% won
+                <span className={styles.lbStat} title={NOMINATION_COLUMNS[0].title}>
+                  {Math.round(row.winRate * 100)}%
                 </span>
-                <span className={styles.lbStat} title="Nominations won / nominations made">
-                  {row.wonOwn}/{row.nominations} noms
+                <span className={styles.lbStat} title={NOMINATION_COLUMNS[1].title}>
+                  {row.wonOwn}/{row.nominations}
                 </span>
-                <span
-                  className={styles.lbStat}
-                  title="Dollars this team paid for players it nominated itself"
-                >
-                  ${row.spentOnOwn} on own
+                <span className={styles.lbStat} title={NOMINATION_COLUMNS[2].title}>
+                  ${row.spentOnOwn}
                 </span>
-                <span
-                  className={styles.lbStat}
-                  title="Dollars the rest of the room paid for players this team put on the block"
-                >
-                  ${row.extracted} extracted
+                <span className={styles.lbStat} title={NOMINATION_COLUMNS[3].title}>
+                  ${row.extracted}
                 </span>
               </button>
             ))}
