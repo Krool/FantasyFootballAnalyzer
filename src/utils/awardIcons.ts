@@ -40,8 +40,40 @@ import bestTrade from '@/images/awards/best_trade.png';
 import worstTrade from '@/images/awards/worst_trade.png';
 import tradeAddict from '@/images/awards/trade_addict.png';
 import tradeAvoider from '@/images/awards/trade_avoider.png';
+import benchWarmer from '@/images/awards/bench_warmer.png';
+import lineupSavant from '@/images/awards/lineup_savant.png';
+import setAndForget from '@/images/awards/set_and_forget.png';
+import selfInflicted from '@/images/awards/self_inflicted.png';
+import worstCall from '@/images/awards/worst_call.png';
+import ghostStarter from '@/images/awards/ghost_starter.png';
+import tinkerer from '@/images/awards/tinkerer.png';
+import loyalist from '@/images/awards/loyalist.png';
+import byePileup from '@/images/awards/bye_pileup.png';
+import byePlanner from '@/images/awards/bye_planner.png';
+import infirmary from '@/images/awards/infirmary.png';
+import ironMan from '@/images/awards/iron_man.png';
+import dropRegret from '@/images/awards/drop_regret.png';
+import lateSurge from '@/images/awards/late_surge.png';
+import lateCollapse from '@/images/awards/late_collapse.png';
+import perfectWeek from '@/images/awards/perfect_week.png';
 
 export const AWARD_ICONS: Record<string, string> = {
+  bench_warmer: benchWarmer,
+  lineup_savant: lineupSavant,
+  set_and_forget: setAndForget,
+  self_inflicted: selfInflicted,
+  worst_call: worstCall,
+  ghost_starter: ghostStarter,
+  tinkerer,
+  loyalist,
+  bye_pileup: byePileup,
+  bye_planner: byePlanner,
+  infirmary,
+  iron_man: ironMan,
+  drop_regret: dropRegret,
+  late_surge: lateSurge,
+  late_collapse: lateCollapse,
+  perfect_week: perfectWeek,
   best_record: bestRecord,
   most_points: mostPoints,
   worst_record: worstRecord,

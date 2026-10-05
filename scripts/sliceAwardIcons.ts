@@ -28,6 +28,12 @@ const NOISE_AREA = 40;
 // broken_heart is shared by the unluckiest + heartbreak awards (mapped in
 // src/utils/awardIcons.ts).
 const SHEETS: Record<string, string[]> = {
+  'lineups-byes.png': [
+    'bench_warmer', 'lineup_savant', 'set_and_forget', 'self_inflicted',
+    'worst_call', 'ghost_starter', 'tinkerer', 'loyalist',
+    'bye_pileup', 'bye_planner', 'infirmary', 'iron_man',
+    'drop_regret', 'late_surge', 'late_collapse', 'perfect_week',
+  ],
   'performance-weekly.png': [
     'best_record', 'most_points', 'worst_record', 'most_pa',
     'least_pa', 'lowest_scorer', 'best_week', 'worst_week',
