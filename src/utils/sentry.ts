@@ -120,12 +120,8 @@ const BENIGN_ERROR =
 //   - ESPN proxy "Malformed cookie" 400: a pasted cookie carrying a `;`
 //     (the whole cookie string in one field). The form now strips that
 //     before submit; the filter covers tabs still on the older form.
-//   - Yahoo "not authorized" 403: the per-app API lockdown (2026-08-22, see
-//     docs/API_REFERENCE.md). Every data call fails this way until Yahoo
-//     approves the app; nothing in this repo can fix it, and it was the top
-//     issue by volume. The filter pins the lockdown's exact wording so any
-//     OTHER Yahoo 403 (a genuinely rejected token) still reports — remove
-//     this line once the app is approved.
+// Yahoo's "not authorized" 403 (the 2026-08-22 per-app lockdown) is NOT
+// filtered: access went live 2026-10-02, so that error now means real breakage.
 const EXPECTED_USER_ERROR = new RegExp(
   [
     'this looks like a private league',
@@ -136,7 +132,6 @@ const EXPECTED_USER_ERROR = new RegExp(
     'Sleeper API error: 404',
     'Yahoo OAuth error: access_denied',
     'Invalid call to runtime\\.sendMessage',
-    'Yahoo API error: 403 - This application is not authorized',
   ].join('|'),
   'i',
 );

@@ -169,16 +169,10 @@ describe('isExpectedUserError', () => {
     expect(isExpectedUserError(exception('Invalid call to runtime.sendMessage(). Tab not found.'))).toBe(true);
   });
 
-  it('drops the Yahoo per-app lockdown 403 by its exact wording', () => {
-    // The 2026-08-22 API lockdown: every data call fails this way until Yahoo
-    // approves the app. Remove these expectations (and the filter line) once
-    // approval lands.
-    expect(isExpectedUserError(exception('Yahoo API error: 403 - This application is not authorized to perform this action.'))).toBe(true);
-    expect(isExpectedUserError({ message: '[useYahooValues] Fetch failed: Yahoo API error: 403 - This application is not authorized to perform this action.' } as ErrorEvent)).toBe(true);
-  });
-
-  it('keeps server failures and any other Yahoo 403', () => {
-    // A 403 with different wording is unexplained — it must report.
+  it('keeps server failures and any Yahoo 403', () => {
+    // Yahoo access went live 2026-10-02, so even the old lockdown wording is
+    // real breakage again and must report.
+    expect(isExpectedUserError(exception('Yahoo API error: 403 - This application is not authorized to perform this action.'))).toBe(false);
     expect(isExpectedUserError(exception('Yahoo API error: 403 - You are not allowed to view this page.'))).toBe(false);
     expect(isExpectedUserError(exception('Yahoo API error: 403'))).toBe(false);
     // 5xx means the proxy or the platform actually broke — including during

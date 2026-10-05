@@ -169,11 +169,11 @@ Stateless Vercel functions. Each has a `.test.js` next to it.
 - `yahoo-api.js` - authenticated Yahoo proxy. SSRF-guarded by path regex;
   converts XML to JSON (`fast-xml-parser`).
 
-**Yahoo is currently dead in production (2026-08-22)**: Yahoo gated its
-Fantasy API behind per-app approval, so OAuth succeeds but every data call
-403s ("This application is not authorized") until the owner's application at
-sports.yahoo.com/developer/access is approved. Nothing in this repo can fix
-it; don't debug our OAuth for it. Details in `docs/API_REFERENCE.md` (Yahoo
+**Yahoo Fantasy API access is approved and live (2026-10-02)** after the
+2026-08-22 per-app lockdown. The approved use is personal; keep the "Fantasy
+data provided by Yahoo Fantasy" attribution wherever Yahoo data shows. If
+calls ever 403 "This application is not authorized" again, that is Yahoo-side
+provisioning, not our OAuth. Details in `docs/API_REFERENCE.md` (Yahoo
 section).
 
 The client points at the proxy via `VITE_ESPN_PROXY_URL` / `VITE_YAHOO_API_URL`

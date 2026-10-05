@@ -351,11 +351,18 @@ not authorized to perform this action"** - even with `scope=fspt-r` granted
 and the developer-console app showing Fantasy Sports Read. Not a code, scope,
 or account problem: each app must be submitted (with its Client ID) at
 https://sports.yahoo.com/developer/access/ and approved before the Fantasy API
-answers. Until approval, Yahoo league import is broken for all users; ESPN,
-Sleeper, and guest mode are unaffected. Surfaced in Sentry as the post-OAuth
-403 cluster; the client now includes Yahoo's error description in thrown
-messages (`src/api/yahoo.ts` `yahooError`) so this class of failure is
-diagnosable from the issue title.
+answers. Surfaced in Sentry as the post-OAuth 403 cluster; the client
+includes Yahoo's error description in thrown messages (`src/api/yahoo.ts`
+`yahooError`) so this class of failure is diagnosable from the issue title.
+
+**Resolved 2026-10-02**: our app was approved 2026-09-29 (after a DocuSign
+API agreement and a Client ID confirmation form) and Yahoo turned access on
+2026-10-02; a real league import works in production. Yahoo's go-live email
+notes that an app created before Fantasy Sports access was enabled may still
+403; its fix is a brand-new developer app with Fantasy Sports checked, whose
+Client ID is submitted at
+https://sports.yahoo.com/developer/application-confirmation/ (editing the old
+app does not work).
 
 ## Browser access: a proxy is mandatory, full stop
 

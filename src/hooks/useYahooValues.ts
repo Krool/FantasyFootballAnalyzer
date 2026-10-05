@@ -9,10 +9,9 @@ import { logger } from '@/utils/logger';
 // Preferred source is the pool itself: the twice-daily build bundles Yahoo's
 // public draft_analysis averages as `yahooValue` (2026-09-03), which needs no
 // login and is what the Draft Room prices off. The OAuth fetch below is the
-// fallback for a pool built without that column; it is dead in production
-// while Yahoo's per-app approval is pending (every call 403s), so a pool
-// with prices must never trigger it or the room shows a bogus "failed to
-// load" alert to anyone who once signed in to Yahoo. Fetched rows are cached
+// fallback for a pool built without that column; a pool with prices must
+// never trigger it, since an OAuth failure would show a "failed to load"
+// alert to anyone who once signed in to Yahoo. Fetched rows are cached
 // in localStorage for 12 hours and joined onto the pool by name.
 
 const CACHE_VERSION = 1;
