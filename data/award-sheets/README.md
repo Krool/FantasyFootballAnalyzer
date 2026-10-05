@@ -42,3 +42,55 @@ word for word, so new icons match the existing set:
 Then drop the PNG here, add its filename and 12 award ids to `SHEETS` in
 `scripts/sliceAwardIcons.ts`, run `npm run build:award-icons`, and wire any
 new ids in `src/utils/awardIcons.ts`.
+
+## Sheet 4: lineups, byes, games missed (planned, 2026-10-04)
+
+Fifteen new awards plus one bonus (Perfect Week), so this sheet is a 4x4
+grid. The slicer chunks rows of 4, so it handles 16 cells with no code
+change. Generate it SQUARE (1024x1024 or 1536x1536) with the same style
+block, swapping the first sentence for:
+
+> A sprite sheet of 16 fantasy football award icons arranged in a strict
+> 4-column by 4-row grid on a solid, uniform, pure magenta background
+> (#FF00FF) for chroma-key cutout.
+
+and "all 12 icons" for "all 16 icons". Then append this list:
+
+> 1. A wooden team bench piled high with gold coins and footballs, coins
+>    spilling onto the ground.
+> 2. A clipboard with a lime checkmark and a play diagram, a whistle hanging
+>    off the clip.
+> 3. A sleeping football in a hammock tied between two goalposts, a "Zzz"
+>    floating above.
+> 4. A cleat stepping on a rake whose handle swings up into the football
+>    helmet wearing it, a small red impact burst.
+> 5. A giant red X stamped over a jersey, a crumpled lineup card underneath.
+> 6. An empty jersey with no player in it, floating like a ghost, a hollow
+>    zero on its chest.
+> 7. A wrench and screwdriver crossed over a lineup card, small motion lines
+>    showing constant fiddling.
+> 8. A padlock clamped shut on a lineup card, a gold seal on the lock.
+> 9. A wall calendar page with a pile of five helmets stacked on one date,
+>    the page curling.
+> 10. A calendar page with neat evenly spaced lime checkmarks and a single
+>     helmet on one date.
+> 11. A first-aid kit overflowing with bandage rolls, crutches leaning
+>     against it.
+> 12. A football helmet made of riveted iron with a gold rivet star,
+>     battle-dented but whole.
+> 13. A trash can with a football player's arm reaching out of it, the hand
+>     holding a gold trophy.
+> 14. A rocket launching straight up out of a football, a lime exhaust
+>     trail.
+> 15. A football falling off a cliff edge, crumbling rock beneath it.
+> 16. A lineup card with every row marked by a lime checkmark and a gold
+>     star sticker in the corner.
+
+SHEETS order for `lineups-byes.png`: `bench_warmer`, `lineup_savant`,
+`set_and_forget`, `self_inflicted`, `worst_call`, `ghost_starter`,
+`tinkerer`, `loyalist`, `bye_pileup`, `bye_planner`, `infirmary`,
+`iron_man`, `drop_regret`, `late_surge`, `late_collapse`, `perfect_week`.
+
+Check before slicing: 16 separate stickers, no pink or purple inside any
+icon, nothing touching a neighbor, and the ghost jersey (6) and the Zzz (3)
+attached closely enough to their sticker to crop with it.
