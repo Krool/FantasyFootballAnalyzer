@@ -307,3 +307,13 @@
 .gradeHint {
   cursor: help;
 }
+
+/* "RB3 (-1)": finish vs where he was bought. Dropped on phones for width. */
+.rankDelta {
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .rankDelta { display: none; }
+}

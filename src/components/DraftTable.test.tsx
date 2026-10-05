@@ -173,3 +173,30 @@ describe('DraftTable keeper-value panel gating', () => {
     expect(panel()).toBeInTheDocument();
   });
 });
+
+describe('DraftTable auction results position-rank delta', () => {
+  const pick = (n: number, id: string, cost: number, points: number) => ({
+    pickNumber: n,
+    round: 1,
+    player: { id, platformId: id, name: `Back ${id}`, position: 'RB', team: 'ATL' },
+    teamId: 't1',
+    teamName: 'Owner',
+    auctionValue: cost,
+    seasonPoints: points,
+  });
+  const auctionTeams = [
+    { id: 't1', name: 'Owner', draftPicks: [pick(1, 'a', 75, 90), pick(2, 'b', 71, 70), pick(3, 'c', 40, 80)] },
+  ] as unknown as Team[];
+
+  it('shows the finish against where he was bought: RB3 (-1) for the second-priciest back', () => {
+    render(
+      <MemoryRouter>
+        <DraftTable teams={auctionTeams} totalTeams={1} draftType="auction" auctionBudget={200} scoringType="ppr" leagueStatus="final" currentWeek={17} />
+      </MemoryRouter>,
+    );
+    // b cost the 2nd most and finished 3rd; c cost the 3rd most and finished 2nd.
+    expect(within(rowFor('Back b')).getByText('RB3')).toBeTruthy();
+    expect(rowFor('Back b').textContent).toContain('RB3 (-1)');
+    expect(rowFor('Back c').textContent).toContain('RB2 (+1)');
+  });
+});

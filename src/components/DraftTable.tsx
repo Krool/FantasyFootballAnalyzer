@@ -753,6 +753,17 @@ export function DraftTable({
                 </td>
                 <td className="font-mono text-center">
                   {pick.positionRank < 999 ? `${pick.player.position}${pick.positionRank}` : '-'}
+                  {/* Auction results have no Value column, so the finish
+                      carries its own delta vs where he was bought at his
+                      position: RB3 (-1) for the second RB off the board. */}
+                  {hasResults && isAuction && !valuesInDollars && pick.positionRank < 999 && (
+                    <span
+                      className={`${styles.rankDelta} ${pick.valueOverExpected > 0 ? 'grade-great' : pick.valueOverExpected < 0 ? 'grade-terrible' : ''}`}
+                      title={`Bought as the ${pick.player.position}${pick.expectedRank} by price`}
+                    >
+                      {' '}({pick.valueOverExpected > 0 ? '+' : ''}{pick.valueOverExpected})
+                    </span>
+                  )}
                 </td>
                 {/* Keepers keep their row — they are on the roster and their
                     rank and projection are real — but carry no verdict, since
