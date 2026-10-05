@@ -24,12 +24,6 @@ export function KeeperValuePanel({ rows }: KeeperValuePanelProps) {
       <h3 id="keeperValueTitle" className={styles.title}>
         Who got the best keeper?
       </h3>
-      <p className={styles.blurb}>
-        A keeper is a trade with the draft: you surrender the pick his cost round eats and receive a
-        player the board rates somewhere else. Both sides are priced on the same curve, which is
-        steep early and flat late, so turning a 6th into a 2nd beats turning a 13th into a 5th even
-        though the second jumps twice as many rounds.
-      </p>
 
       <div className={`${styles.tableWrap} scroll-x-hint`}>
         <table className={`table ${styles.table}`}>

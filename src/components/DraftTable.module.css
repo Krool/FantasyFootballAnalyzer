@@ -43,8 +43,18 @@
 }
 
 /* One-click group-chat ammo: the whole board as a PNG on the clipboard. */
-.shareBoard {
+.shareRow {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.6rem;
   align-self: center;
+}
+.shareBoard {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  white-space: nowrap;
   padding: 0.55rem 1rem;
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -61,6 +71,7 @@
   color: var(--ink);
 }
 .shareBoard:disabled { opacity: 0.6; cursor: wait; }
+.copyIcon { width: 14px; height: 14px; flex-shrink: 0; }
 
 /* Says which yardstick the grades came off: consensus before Week 1, real
    season points after. */
@@ -194,9 +205,18 @@
 }
 
 @media (max-width: 768px) {
-  .filters { flex-direction: column; align-items: stretch; }
-  .filter  { min-width: 100%; }
-  .summary { margin-left: 0; justify-content: center; }
+  /* Team and Position share one row: the team select takes the room and
+     ellipsizes a long name; Position only ever reads "All", "FLEX", or a
+     position, so it stays narrow. Summary and the copy buttons each take
+     a full row below. */
+  .filters { gap: 0.75rem; }
+  .filter { min-width: 0; }
+  .teamFilter { flex: 1 1 0; }
+  .positionFilter { flex: 0 0 6.5rem; }
+  .filter :global(select) { width: 100%; }
+  .summary { margin-left: 0; justify-content: center; width: 100%; }
+  .shareRow { width: 100%; }
+  .shareRow > .shareBoard { flex: 1 1 0; min-width: 0; padding: 0.55rem 0.5rem; }
 }
 
 .keeperTag {
@@ -393,14 +413,20 @@
     max-width: 0;
     width: 100%;
     overflow: hidden;
-    text-overflow: ellipsis;
+    /* Clip, not "…": the dots would eat room better spent on letters. */
+    text-overflow: clip;
   }
   .table :global(.grade-badge) {
     padding: 0.2rem 0.35rem;
     letter-spacing: 0.04em;
   }
 }
+/* Phone-only spellings: "J. Chase" and the 1.1 round.pick (Rd's column is
+   hidden there, so the pick cell carries it). */
+.narrowOnly { display: none; }
 @media (max-width: 480px) {
+  .wideOnly { display: none; }
+  .narrowOnly { display: inline; }
   .colRd { display: none; }
   .table { font-size: 0.75rem; }
   .table th, .table td { padding: 0.5rem 0.3rem; }

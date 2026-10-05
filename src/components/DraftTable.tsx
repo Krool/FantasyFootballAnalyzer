@@ -35,6 +35,24 @@ import { TeamLink } from './TeamLink';
 import { isPlaceholderPlayer } from '@/utils/placeholders';
 import styles from './DraftTable.module.css';
 
+// "Ja'Marr Chase" -> "J. Chase" for phone widths. Team defenses keep their
+// full name ("Detroit Lions" is not a first and last name).
+function shortPlayerName(name: string, position?: string): string {
+  if (position === 'DEF' || position === 'DST') return name;
+  const space = name.indexOf(' ');
+  if (space <= 0) return name;
+  return `${name[0]}. ${name.slice(space + 1)}`;
+}
+
+// Snake-board notation: round.pick-within-round, so overall pick 14 in a
+// 12-team draft is 2.2.
+function roundPick(pickNumber: number, round: number, teamCount: number): string {
+  if (!teamCount) return String(pickNumber);
+  let inRound = pickNumber - (round - 1) * teamCount;
+  if (inRound < 1 || inRound > teamCount) inRound = ((pickNumber - 1) % teamCount) + 1;
+  return `${round}.${inRound}`;
+}
+
 interface DraftTableProps {
   teams: Team[];
   totalTeams: number;
@@ -646,7 +664,7 @@ export function DraftTable({
       {/* Filters and the share buttons sit right on top of the table they act on;
           the leaderboards above are league-wide and ignore them (owner, 2026-09-02). */}
       <div className={styles.filters}>
-        <div className={styles.filter}>
+        <div className={`${styles.filter} ${styles.teamFilter}`}>
           <label htmlFor="teamFilter" className={styles.filterLabel}>
             Team
           </label>
@@ -665,7 +683,7 @@ export function DraftTable({
           </select>
         </div>
 
-        <div className={styles.filter}>
+        <div className={`${styles.filter} ${styles.positionFilter}`}>
           <label htmlFor="positionFilter" className={styles.filterLabel}>
             Position
           </label>
@@ -675,8 +693,8 @@ export function DraftTable({
             value={selectedPosition}
             onChange={(e) => handlePositionFilter(e.target.value)}
           >
-            <option value="all">All Positions</option>
-            <option value="FLEX">FLEX (RB/WR/TE)</option>
+            <option value="all">All</option>
+            <option value="FLEX" title="RB, WR, and TE">FLEX</option>
             {positions.map(pos => (
               <option key={pos} value={pos}>
                 {pos}
@@ -692,16 +710,19 @@ export function DraftTable({
           <span className={`grade-badge terrible`}>{summary.terrible} Terrible</span>
         </div>
 
+        {/* One row at every width: the copy icon stands in for the word
+            "Copy" so both buttons fit side by side on a phone. */}
+        <div className={styles.shareRow}>
         {(
           [
-            { which: 'teams', label: 'Copy rosters image', run: exportDraftBoard,
+            { which: 'teams', label: 'Rosters', aria: 'Copy rosters image', run: exportDraftBoard,
               hint: 'Every team’s haul as one image for the group chat' },
-            { which: 'order', label: 'Copy order image', run: exportDraftOrder,
+            { which: 'order', label: 'Draft', aria: 'Copy draft order image', run: exportDraftOrder,
               hint: isAuction
                 ? 'Every pick in price order, sectioned into rounds like a snake board'
                 : 'Every pick in draft order, sectioned by round' },
           ] as const
-        ).map(({ which, label, run, hint }) => {
+        ).map(({ which, label, aria, run, hint }) => {
           const state = shareState?.which === which ? shareState.state : null;
           return (
             <button
@@ -711,6 +732,7 @@ export function DraftTable({
               disabled={shareState?.state === 'busy'}
               aria-busy={state === 'busy'}
               title={hint}
+              aria-label={state === null ? aria : undefined}
               onClick={async () => {
                 if (shareState?.state === 'busy') return;
                 playSort();
@@ -747,10 +769,19 @@ export function DraftTable({
               {state === 'copied' && 'Copied!'}
               {state === 'saved' && 'Saved PNG'}
               {state === 'failed' && "Couldn't export"}
-              {state === null && label}
+              {state === null && (
+                <>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.copyIcon} aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  {label}
+                </>
+              )}
             </button>
           );
         })}
+        </div>
       </div>
 
       <div className={`${styles.tableWrapper} scroll-x-hint`}>
@@ -778,11 +809,11 @@ export function DraftTable({
                 Pos{getSortIndicator('position')}
               </th>
               <th onClick={() => handleSort('team')} onKeyDown={handleSortKeyDown('team')} tabIndex={0} aria-sort={ariaSortFor('team')} className={`${styles.sortable} ${styles.colTeam}`} role="button" aria-label="Sort by Team">
-                Fantasy Team{getSortIndicator('team')}
+                Team{getSortIndicator('team')}
               </th>
               {hasResults ? (
                 <th onClick={() => handleSort('points')} onKeyDown={handleSortKeyDown('points')} tabIndex={0} aria-sort={ariaSortFor('points')} className={`${styles.sortable} ${styles.colPts}`} role="button" aria-label="Sort by Points">
-                  Season Pts{getSortIndicator('points')}
+                  Pts{getSortIndicator('points')}
                 </th>
               ) : (
                 <th onClick={() => handleSort('proj')} onKeyDown={handleSortKeyDown('proj')} tabIndex={0} aria-sort={ariaSortFor('proj')} className={`${styles.sortable} ${styles.colPts}`} role="button" aria-label="Sort by Projected Points" title="Projected points for the season under this league's scoring. A projection, not a result.">
@@ -790,7 +821,7 @@ export function DraftTable({
                 </th>
               )}
               <th onClick={() => handleSort('posRank')} onKeyDown={handleSortKeyDown('posRank')} tabIndex={0} aria-sort={ariaSortFor('posRank')} className={styles.sortable} role="button" aria-label={hasResults ? 'Sort by Position Rank' : 'Sort by Consensus Rank'} title={hasResults ? 'Where he stands at his position among drafted players on points scored. The grade can also weigh missed games and the rest of the season; hover a grade to see it.' : 'Where the FantasyPros consensus ranked him at his position among drafted players'}>
-                {hasResults ? 'Pos Rank' : 'Consensus'}{getSortIndicator('posRank')}
+                {hasResults ? 'Rank' : 'Consensus'}{getSortIndicator('posRank')}
               </th>
               {(!isAuction || valuesInDollars) && (
                 <th onClick={() => handleSort('value')} onKeyDown={handleSortKeyDown('value')} tabIndex={0} aria-sort={ariaSortFor('value')} className={styles.sortable} role="button" aria-label="Sort by Value" title={valuesInDollars ? 'Market price minus price paid, in league dollars: positive means he went under what the market says he is worth' : hasResults ? 'Position rank beaten, versus where he was drafted at his position' : 'Draft slots gained on the consensus board: positive means he fell past where the market had him, negative means you reached'}>
@@ -809,14 +840,20 @@ export function DraftTable({
                   <td className="font-mono text-right">${pick.auctionValue || 0}</td>
                 ) : (
                   <>
-                    <td className="font-mono">{pick.pickNumber}</td>
+                    <td className="font-mono">
+                      <span className={styles.wideOnly}>{pick.pickNumber}</span>
+                      <span className={styles.narrowOnly}>{roundPick(pick.pickNumber, pick.round, totalTeams || teams.length)}</span>
+                    </td>
                     <td className={`font-mono ${styles.colRd}`}>{pick.round}</td>
                   </>
                 )}
                 <td>
                   <div className={styles.playerCell}>
                     <span className={styles.playerName}>
-                      {pick.player.name}
+                      <span className={styles.wideOnly}>{pick.player.name}</span>
+                      <span className={styles.narrowOnly} title={pick.player.name}>
+                        {shortPlayerName(pick.player.name, pick.player.position)}
+                      </span>
                       {pick.isKeeper && (
                         <span className={styles.keeperTag} title="Keeper: kept from last season, not a live pick">
                           K

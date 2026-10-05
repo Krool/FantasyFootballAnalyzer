@@ -14,11 +14,18 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
-  flex-wrap: wrap;
+  /* The copy button stays beside the title at every width. */
+  flex-wrap: nowrap;
 }
+.headerText { min-width: 0; }
 
 /* Same button as the Draft page's copy-image buttons. */
 .shareBoard {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: 0.55rem 1rem;
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -35,6 +42,7 @@
   color: var(--ink);
 }
 .shareBoard:disabled { opacity: 0.6; cursor: wait; }
+.copyIcon { width: 14px; height: 14px; flex-shrink: 0; }
 
 .title {
   font-family: var(--font-headline);
