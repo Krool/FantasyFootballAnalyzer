@@ -102,66 +102,40 @@ describe('calculateExpectedRank', () => {
   });
 });
 
-describe('gradePick', () => {
-  describe('early picks (expected top 3)', () => {
-    it('grades great when finishing top 3', () => {
-      expect(gradePick(makePick({}), 1, 1)).toBe('great');
-      expect(gradePick(makePick({}), 3, 2)).toBe('great');
-    });
-
-    it('grades good when finishing 4-6', () => {
-      expect(gradePick(makePick({}), 4, 1)).toBe('good');
-      expect(gradePick(makePick({}), 6, 3)).toBe('good');
-    });
-
-    it('grades bad when finishing 7-12', () => {
-      expect(gradePick(makePick({}), 7, 2)).toBe('bad');
-      expect(gradePick(makePick({}), 12, 1)).toBe('bad');
-    });
-
-    it('grades terrible when finishing outside top 12', () => {
-      expect(gradePick(makePick({}), 13, 1)).toBe('terrible');
-      expect(gradePick(makePick({}), 25, 3)).toBe('terrible');
-    });
+describe('gradePick (results vs draft slot)', () => {
+  // The band is a quarter of the slot, at least 2 spots.
+  it('always calls a top-3 finish great', () => {
+    expect(gradePick(makePick({}), 1, 1)).toBe('great');
+    expect(gradePick(makePick({}), 3, 30)).toBe('great');
   });
 
-  describe('mid-round picks (expected 4-8)', () => {
-    it('grades great when finishing top 5 or beating by 4+', () => {
-      expect(gradePick(makePick({}), 5, 5)).toBe('great');
-      expect(gradePick(makePick({}), 2, 8)).toBe('great'); // top 5
-      expect(gradePick(makePick({}), 4, 8)).toBe('great'); // valueOverExpected = 4
-    });
-
-    it('grades good when finishing top 10 or beating by 2+', () => {
-      expect(gradePick(makePick({}), 6, 8)).toBe('good'); // valueOverExpected = 2
-      expect(gradePick(makePick({}), 10, 5)).toBe('good'); // top 10
-    });
-
-    it('grades bad for moderate misses', () => {
-      expect(gradePick(makePick({}), 12, 5)).toBe('bad'); // top 15, valueOverExpected = -7
-    });
-
-    it('grades terrible for big misses', () => {
-      expect(gradePick(makePick({}), 20, 4)).toBe('terrible');
-    });
+  it('grades an early slot tightly (band of 2)', () => {
+    // Slot 2, band 2: RB4 is within it, RB5-8 a miss, RB9 a bust.
+    expect(gradePick(makePick({}), 3, 1)).toBe('great');
+    expect(gradePick(makePick({}), 4, 2)).toBe('good');
+    expect(gradePick(makePick({}), 6, 2)).toBe('bad');
+    expect(gradePick(makePick({}), 8, 2)).toBe('bad');
+    expect(gradePick(makePick({}), 9, 2)).toBe('terrible');
   });
 
-  describe('late picks (expected 9+)', () => {
-    it('grades great for big overperformance (+6)', () => {
-      expect(gradePick(makePick({}), 3, 10)).toBe('great'); // value = +7
-    });
+  it('gives a deep slot a proportionally wider band', () => {
+    // Slot 22, band 5.5: WR12 is a steal, WR27 fair, WR38 a miss, WR40 a bust.
+    expect(gradePick(makePick({}), 12, 22)).toBe('great');
+    expect(gradePick(makePick({}), 16, 22)).toBe('great');
+    expect(gradePick(makePick({}), 17, 22)).toBe('good');
+    expect(gradePick(makePick({}), 27, 22)).toBe('good');
+    expect(gradePick(makePick({}), 38, 22)).toBe('bad');
+    expect(gradePick(makePick({}), 39, 22)).toBe('terrible');
+  });
 
-    it('grades good for moderate overperformance (+2 to +5)', () => {
-      expect(gradePick(makePick({}), 7, 10)).toBe('good'); // value = +3
-    });
-
-    it('grades bad for slight misses (-4 to +1)', () => {
-      expect(gradePick(makePick({}), 12, 10)).toBe('bad'); // value = -2
-    });
-
-    it('grades terrible for big misses (-5 or worse)', () => {
-      expect(gradePick(makePick({}), 20, 10)).toBe('terrible'); // value = -10
-    });
+  it('grades the owner-reported rows the way they read', () => {
+    // 14-team, 3-WR auction (2026-10-04): price rank -> finish.
+    expect(gradePick(makePick({}), 12, 22)).toBe('great'); // Garrett Wilson
+    expect(gradePick(makePick({}), 7, 23)).toBe('great'); // Davante Adams
+    expect(gradePick(makePick({}), 20, 19)).toBe('good'); // Bucky Irving
+    expect(gradePick(makePick({}), 23, 23)).toBe('good'); // Quinshon Judkins
+    expect(gradePick(makePick({}), 33, 25)).toBe('bad'); // Terry McLaurin
+    expect(gradePick(makePick({}), 19, 3)).toBe('terrible'); // Colston Loveland
   });
 });
 
@@ -308,57 +282,12 @@ describe('gradeAllPicks for auctions', () => {
   });
 });
 
-describe('gradeAuctionPick', () => {
-  const allPicks = makePositionPicks('RB', 20);
-
-  it('grades elite spend ($40+) finishing top 3 as great', () => {
-    const pick = makePick({ auctionValue: 50 });
-    const result = gradeAuctionPick(pick, 2, allPicks);
-    expect(result.grade).toBe('great');
-    expect(result.auctionValueGrade).toBe('Elite Hit');
-  });
-
-  it('grades elite spend finishing outside top 12 as terrible', () => {
-    const pick = makePick({ auctionValue: 45 });
-    const result = gradeAuctionPick(pick, 15, allPicks);
-    expect(result.grade).toBe('terrible');
-    expect(result.auctionValueGrade).toBe('Bust');
-  });
-
-  it('grades bargain ($1-4) finishing top 10 as great', () => {
-    const pick = makePick({ auctionValue: 2 });
-    const result = gradeAuctionPick(pick, 8, allPicks);
-    expect(result.grade).toBe('great');
-    expect(result.auctionValueGrade).toBe('Jackpot');
-  });
-
-  it('grades medium spend ($15-39) finishing top 5 as great', () => {
-    const pick = makePick({ auctionValue: 25 });
-    const result = gradeAuctionPick(pick, 4, allPicks);
-    expect(result.grade).toBe('great');
-    expect(result.auctionValueGrade).toBe('Great Value');
-  });
-
-  it('grades low spend ($5-14) finishing top 8 as great', () => {
-    const pick = makePick({ auctionValue: 10 });
-    const result = gradeAuctionPick(pick, 6, allPicks);
-    expect(result.grade).toBe('great');
-    expect(result.auctionValueGrade).toBe('Steal');
-  });
-
-  it('scales spend bands to a $100 budget: $25 there is elite spend', () => {
-    // $25 of a $100 budget = $50 of the $200 baseline -> elite band.
-    const pick = makePick({ auctionValue: 25 });
-    const result = gradeAuctionPick(pick, 2, allPicks, 100);
-    expect(result.auctionValueGrade).toBe('Elite Hit');
-  });
-
-  it('scales spend bands to a $300 budget: $40 there is only medium spend', () => {
-    // $40 of a $300 budget = ~$27 of the $200 baseline -> medium band,
-    // where a top-5 finish is Great Value (not the elite band's Elite Hit).
-    const pick = makePick({ auctionValue: 40 });
-    const result = gradeAuctionPick(pick, 4, allPicks, 300);
-    expect(result.auctionValueGrade).toBe('Great Value');
+describe('gradeAuctionPick (results vs price rank)', () => {
+  it('labels each grade with the auction word', () => {
+    expect(gradeAuctionPick(1, 1)).toEqual({ grade: 'great', auctionValueGrade: 'Steal' });
+    expect(gradeAuctionPick(20, 19)).toEqual({ grade: 'good', auctionValueGrade: 'Fair' });
+    expect(gradeAuctionPick(33, 25)).toEqual({ grade: 'bad', auctionValueGrade: 'Overpay' });
+    expect(gradeAuctionPick(55, 2)).toEqual({ grade: 'terrible', auctionValueGrade: 'Bust' });
   });
 });
 
@@ -453,67 +382,7 @@ describe('getGradeDisplayText', () => {
   });
 });
 
-describe('gradeAuctionPick - bargain bin ($1-4)', () => {
-  // Bargain-tier covers cheap fliers; the bands stretch wider since cost is
-  // tiny. With <= 20 same-position picks the "Roster Filler" tier collapses
-  // into the elif: we need >=21 picks at the position so positionRank > 20 is
-  // still <= totalAtPosition, and >=22 to drop into the "Wasted $" fallback.
-  const big = makePositionPicks('RB', 22);
 
-  it('grades $1-4 finishing top 10 as great + Jackpot', () => {
-    const result = gradeAuctionPick(makePick({ auctionValue: 3 }), 8, big);
-    expect(result.grade).toBe('great');
-    expect(result.auctionValueGrade).toBe('Jackpot');
-  });
-
-  it('grades $1-4 finishing 11-20 as good + Nice Find', () => {
-    const result = gradeAuctionPick(makePick({ auctionValue: 2 }), 15, big);
-    expect(result.grade).toBe('good');
-    expect(result.auctionValueGrade).toBe('Nice Find');
-  });
-
-  it('grades $1-4 finishing 21..N as bad + Roster Filler', () => {
-    const result = gradeAuctionPick(makePick({ auctionValue: 1 }), 21, big);
-    expect(result.grade).toBe('bad');
-    expect(result.auctionValueGrade).toBe('Roster Filler');
-  });
-
-  it('grades $1-4 finishing past the position pool as terrible + Wasted $', () => {
-    // positionRank 23 > totalAtPosition (22) -> didn't even make the rankings.
-    const result = gradeAuctionPick(makePick({ auctionValue: 1 }), 23, big);
-    expect(result.grade).toBe('terrible');
-    expect(result.auctionValueGrade).toBe('Wasted $');
-  });
-});
-
-describe('gradeAuctionPick - low spend ($5-14)', () => {
-  // Mirrors the bargain bin but with a tighter "good" band.
-  const allPicks = makePositionPicks('RB', 25);
-
-  it('grades low-spend top-8 as great + Steal', () => {
-    const result = gradeAuctionPick(makePick({ auctionValue: 8 }), 6, allPicks);
-    expect(result.grade).toBe('great');
-    expect(result.auctionValueGrade).toBe('Steal');
-  });
-
-  it('grades low-spend 9-15 as good + Value', () => {
-    const result = gradeAuctionPick(makePick({ auctionValue: 8 }), 12, allPicks);
-    expect(result.grade).toBe('good');
-    expect(result.auctionValueGrade).toBe('Value');
-  });
-
-  it('grades low-spend 16-20 as bad + Meh', () => {
-    const result = gradeAuctionPick(makePick({ auctionValue: 8 }), 18, allPicks);
-    expect(result.grade).toBe('bad');
-    expect(result.auctionValueGrade).toBe('Meh');
-  });
-
-  it('grades low-spend past 20 as terrible + Wasted $', () => {
-    const result = gradeAuctionPick(makePick({ auctionValue: 8 }), 22, allPicks);
-    expect(result.grade).toBe('terrible');
-    expect(result.auctionValueGrade).toBe('Wasted $');
-  });
-});
 
 describe('getGradeColorClass', () => {
   it('maps each grade to its CSS class', () => {
@@ -666,30 +535,18 @@ describe('explainGrade', () => {
       ...overrides,
     }) as Parameters<typeof explainGrade>[0];
 
-  it('shows an auction result against its price tier, scaled to the budget', () => {
-    const text = explainGrade(
-      graded({ gradeBasis: 'auction-results', auctionValue: 67, auctionValueGrade: 'Bust' }),
-      { budget: 200 },
-    );
-    expect(text).toContain('Paid $67, finished WR55 among drafted WRs. Bust.');
-    expect(text).toContain('Elite price ($40+): top 3 Great');
-    // $30 in a $100 league is the same elite tier, with its bands in league dollars.
-    expect(explainGrade(graded({ gradeBasis: 'auction-results', auctionValue: 30 }), { budget: 100 }))
-      .toContain('Elite price ($20+)');
-  });
-
-  it('calls out a bargain pick that never scored', () => {
-    const text = explainGrade(graded({ gradeBasis: 'auction-results', auctionValue: 1, positionRank: 999 }));
-    expect(text).toContain('finished no points yet');
-    expect(text).toContain('no points Terrible');
+  it('shows an auction result against his price rank and the band', () => {
+    const text = explainGrade(graded({ gradeBasis: 'auction-results', auctionValue: 67 }));
+    expect(text).toContain('Paid $67, the price of a WR2; finished WR55 (-53).');
+    expect(text).toContain('give or take 2 spots: 2+ better (or a top-3 finish) Great, within 2 Good, up to 6 worse Bad');
   });
 
   it('shows a snake result against draft order at the position', () => {
     const text = explainGrade(
-      graded({ gradeBasis: 'snake-results', expectedRank: 12, positionRank: 4, valueOverExpected: 8 }),
+      graded({ gradeBasis: 'snake-results', expectedRank: 22, positionRank: 12, valueOverExpected: 10 }),
     );
     expect(text).toBe(
-      'Drafted as the 12th WR, finished WR4 (+8). A late WR is judged on beating his slot: 6+ better Great, 2+ better Good, within 4 worse Bad, worse Terrible.',
+      'Drafted as the WR22; finished WR12 (+10). Judged against his WR22 slot, give or take 5.5 spots: 5.5+ better (or a top-3 finish) Great, within 5.5 Good, up to 16.5 worse Bad, worse Terrible.',
     );
   });
 

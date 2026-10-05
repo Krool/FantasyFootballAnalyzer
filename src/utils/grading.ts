@@ -1,4 +1,4 @@
-import type { DraftPick, DraftGrade, League } from '@/types';
+﻿import type { DraftPick, DraftGrade, League } from '@/types';
 import type { SeasonOutlook } from './seasonOutlook';
 
 // Grading now considers draft position - early picks are judged on hitting,
@@ -37,7 +37,7 @@ export function isGraded(pick: GradedPick): boolean {
 }
 
 export type GradeBasis =
-  | 'auction-results' // season finish vs the price tier he cost
+  | 'auction-results' // season finish vs his price rank at the position
   | 'auction-market' // pre-season: price paid vs consensus market dollars
   | 'auction-consensus' // pre-season, no market price: cost rank vs consensus rank
   | 'snake-results' // season finish vs draft order at his position
@@ -153,71 +153,40 @@ export function calculateAuctionRounds(
   return roundMap;
 }
 
-// Grade a single pick using position-aware thresholds
-// Early picks (1st-3rd at position) are graded on hitting - did you get a top performer?
-// Later picks are graded on value - did you beat expectations?
+// Grading on results: where he finished at his position against where he was
+// taken there (draft order for snake, price rank for auctions). The band
+// scales with the slot: a quarter of it, at least 2 spots. Missing the 3rd
+// RB's slot by 4 is a bust; missing the 22nd WR's by 4 is a fair outcome,
+// and the old fixed cutoffs (an auction $15-39 player needed a top-5 finish
+// for Great, past 15th was Terrible) graded a 14-team, 3-WR league's WR12 on
+// a WR22 price as Bad (owner-reported, 2026-10-04). A top-3 finish at the
+// position is always Great.
+export function resultBand(expectedRank: number): number {
+  return Math.max(2, expectedRank / 4);
+}
+
+export function gradeAgainstSlot(positionRank: number, expectedRank: number): DraftGrade {
+  const band = resultBand(expectedRank);
+  if (positionRank <= 3 || positionRank <= expectedRank - band) return 'great';
+  if (positionRank <= expectedRank + band) return 'good';
+  if (positionRank <= expectedRank + 3 * band) return 'bad';
+  return 'terrible';
+}
+
 export function gradePick(
   _pick: DraftPick,
   positionRank: number,
-  expectedRank: number
+  expectedRank: number,
 ): DraftGrade {
-  const valueOverExpected = expectedRank - positionRank;
-
-  // For early position picks (expected top 3 at position), grade based on finishing position
-  // These are your premium picks - hitting on them is crucial
-  if (expectedRank <= 3) {
-    // Top 3 expected pick grading:
-    // Great: Finished top 3 at position (you hit on your premium pick)
-    // Good: Finished top 6 at position (still a starter-quality outcome)
-    // Bad: Finished 7-12 at position (disappointing but usable)
-    // Terrible: Finished outside top 12 (bust)
-    if (positionRank <= 3) {
-      return 'great';
-    } else if (positionRank <= 6) {
-      return 'good';
-    } else if (positionRank <= 12) {
-      return 'bad';
-    } else {
-      return 'terrible';
-    }
-  }
-
-  // For mid-round picks (expected 4-8 at position), blend of hitting and value
-  if (expectedRank <= 8) {
-    // Great: Finished top 5 OR beat expectation by 4+
-    // Good: Finished top 10 OR beat expectation by 2+
-    // Bad: Missed expectation by 4+ but still top 15
-    // Terrible: Missed badly
-    if (positionRank <= 5 || valueOverExpected >= 4) {
-      return 'great';
-    } else if (positionRank <= 10 || valueOverExpected >= 2) {
-      return 'good';
-    } else if (positionRank <= 15 || valueOverExpected >= -4) {
-      return 'bad';
-    } else {
-      return 'terrible';
-    }
-  }
-
-  // For later picks (expected 9+ at position), grade purely on value over expected
-  // These are dart throws - finding value is the goal
-  if (valueOverExpected >= 6) {
-    return 'great';  // Found a real sleeper
-  } else if (valueOverExpected >= 2) {
-    return 'good';   // Beat expectations
-  } else if (valueOverExpected >= -4) {
-    return 'bad';    // Slight miss
-  } else {
-    return 'terrible'; // Wasted pick
-  }
+  return gradeAgainstSlot(positionRank, expectedRank);
 }
 
 // Grade a pick against the FantasyPros consensus (pre-season, no results yet).
 //
 // gradePick's thresholds are tuned for season outcomes, where a player can
 // finish 20 spots off where he was drafted and "beat expectation by 2" is a
-// real result. Consensus deltas are far tighter — across a full 12-team draft
-// the median is 0 and the middle half lands between -2 and +1 — so reusing
+// real result. Consensus deltas are far tighter â€” across a full 12-team draft
+// the median is 0 and the middle half lands between -2 and +1 â€” so reusing
 // those bands calls every on-market pick "bad". These bands are cut from that
 // distribution: meeting the market is fine, beating it by a tier is the win,
 // and only a genuine reach grades out badly.
@@ -243,75 +212,21 @@ export function gradeConsensusBoardPick(
   return 'terrible'; // taken more than two rounds before the board had him
 }
 
-// Grade a pick for auction drafts based on cost vs performance
+// Auction results: the same yardstick, with his price rank at the position
+// (most expensive RB = RB1) as the slot. The label is the auction word.
+const AUCTION_RESULT_LABEL: Record<DraftGrade, string> = {
+  great: 'Steal',
+  good: 'Fair',
+  bad: 'Overpay',
+  terrible: 'Bust',
+};
+
 export function gradeAuctionPick(
-  pick: DraftPick,
   positionRank: number,
-  allPicks: DraftPick[],
-  budget: number = 200
+  priceRank: number,
 ): { grade: DraftGrade; auctionValueGrade: string } {
-  // The spend bands below are calibrated to a $200 budget; scale the pick's
-  // cost so a $50 player in a $100 league grades like a $100 player in $200.
-  const budgetScale = budget > 0 ? 200 / budget : 1;
-  const cost = (pick.auctionValue || 0) * budgetScale;
-
-  // Count how many players at this position were drafted
-  const positionPicks = allPicks.filter(p => p.player.position === pick.player.position);
-  const totalAtPosition = positionPicks.length;
-
-  // For auction, grade based on (at a $200 budget):
-  // - High spend ($40+): Did you get a top 3 performer? (you paid elite price)
-  // - Medium spend ($15-39): Did you get a starter? (top 8-10)
-  // - Low spend ($5-14): Did you find value? (top 15)
-  // - Bargain ($1-4): Any production is a win
-
-  if (cost >= 40) {
-    // Elite spend - must be elite performer
-    if (positionRank <= 3) {
-      return { grade: 'great', auctionValueGrade: 'Elite Hit' };
-    } else if (positionRank <= 6) {
-      return { grade: 'good', auctionValueGrade: 'Solid' };
-    } else if (positionRank <= 12) {
-      return { grade: 'bad', auctionValueGrade: 'Overpay' };
-    } else {
-      return { grade: 'terrible', auctionValueGrade: 'Bust' };
-    }
-  } else if (cost >= 15) {
-    // Medium spend - should be a starter
-    if (positionRank <= 5) {
-      return { grade: 'great', auctionValueGrade: 'Great Value' };
-    } else if (positionRank <= 10) {
-      return { grade: 'good', auctionValueGrade: 'Fair' };
-    } else if (positionRank <= 15) {
-      return { grade: 'bad', auctionValueGrade: 'Slight Overpay' };
-    } else {
-      return { grade: 'terrible', auctionValueGrade: 'Overpay' };
-    }
-  } else if (cost >= 5) {
-    // Low spend - looking for value
-    if (positionRank <= 8) {
-      return { grade: 'great', auctionValueGrade: 'Steal' };
-    } else if (positionRank <= 15) {
-      return { grade: 'good', auctionValueGrade: 'Value' };
-    } else if (positionRank <= 20) {
-      return { grade: 'bad', auctionValueGrade: 'Meh' };
-    } else {
-      return { grade: 'terrible', auctionValueGrade: 'Wasted $' };
-    }
-  } else {
-    // Bargain bin ($1-4)
-    if (positionRank <= 10) {
-      return { grade: 'great', auctionValueGrade: 'Jackpot' };
-    } else if (positionRank <= 20) {
-      return { grade: 'good', auctionValueGrade: 'Nice Find' };
-    } else if (positionRank <= totalAtPosition) {
-      // Valid roster filler - at least contributed at the position
-      return { grade: 'bad', auctionValueGrade: 'Roster Filler' };
-    } else {
-      // Didn't even make the position rankings - complete bust
-      return { grade: 'terrible', auctionValueGrade: 'Wasted $' };
-    }
-  }
+  const grade = gradeAgainstSlot(positionRank, priceRank);
+  return { grade, auctionValueGrade: AUCTION_RESULT_LABEL[grade] };
 }
 
 // Grade all picks in a league.
@@ -473,7 +388,7 @@ export function gradeAllPicks(
               : valueOverExpected >= -5 ? 'Slight Overpay'
               : 'Overpay',
           }
-        : gradeAuctionPick(pick, positionRank, allPicks, league.auctionBudget ?? 200);
+        : gradeAuctionPick(positionRank, expectedRank);
       return {
         ...pick,
         round: auctionRound ?? pick.round,
@@ -595,7 +510,7 @@ export function describeGradeBasis(
   }
   switch (basis) {
     case 'auction-results':
-      return 'Where he finished at his position versus the price tier he cost. Hover a grade for the math.';
+      return 'Where he finished at his position versus where his price ranked him there. Hover a grade for the math.';
     case 'auction-market':
       return 'Price paid versus the consensus market price. Hover a grade for the math.';
     case 'auction-consensus':
@@ -630,33 +545,16 @@ export function explainGrade(
   const vs = ranked ? ` (${signed(pick.valueOverExpected)})` : '';
 
   switch (pick.gradeBasis) {
-    case 'snake-results': {
-      const head = `Drafted as the ${ordinal(pick.expectedRank)} ${pos}, ${finishVerb} ${finish}${vs}.${outlookLine}`;
-      if (pick.expectedRank <= 3) {
-        return `${head} An early ${pos} is judged on the finish: top 3 Great, top 6 Good, top 12 Bad, worse Terrible.`;
-      }
-      if (pick.expectedRank <= 8) {
-        return `${head} A mid-tier ${pos} is judged on the finish or beating his slot: top 5 or 4+ better Great, top 10 or 2+ better Good, top 15 or within 4 Bad, worse Terrible.`;
-      }
-      return `${head} A late ${pos} is judged on beating his slot: 6+ better Great, 2+ better Good, within 4 worse Bad, worse Terrible.`;
-    }
+    case 'snake-results':
     case 'auction-results': {
-      const budget = opts.budget && opts.budget > 0 ? opts.budget : 200;
-      const $ = (n: number) => `$${Math.round((n * budget) / 200)}`;
-      const paid = pick.auctionValue ?? 0;
-      const scaled = (paid * 200) / budget;
-      const head = `Paid $${paid}, ${finishVerb} ${finish} among drafted ${pos}s.${outlookLine}`;
-      const label = pick.auctionValueGrade ? ` ${pick.auctionValueGrade}.` : '';
-      if (scaled >= 40) {
-        return `${head}${label} Elite price (${$(40)}+): top 3 Great, top 6 Good, top 12 Bad, worse Terrible.`;
-      }
-      if (scaled >= 15) {
-        return `${head}${label} Starter price (${$(15)}-${$(39)}): top 5 Great, top 10 Good, top 15 Bad, worse Terrible.`;
-      }
-      if (scaled >= 5) {
-        return `${head}${label} Value price (${$(5)}-${$(14)}): top 8 Great, top 15 Good, top 20 Bad, worse Terrible.`;
-      }
-      return `${head}${label} Bargain price (under ${$(5)}): top 10 Great, top 20 Good, any other finish Bad, no points Terrible.`;
+      const slot = `${pos}${pick.expectedRank}`;
+      const head =
+        pick.gradeBasis === 'auction-results'
+          ? `Paid $${pick.auctionValue ?? 0}, the price of a ${slot}; ${finishVerb} ${finish}${vs}.${outlookLine}`
+          : `Drafted as the ${slot}; ${finishVerb} ${finish}${vs}.${outlookLine}`;
+      const band = resultBand(pick.expectedRank);
+      const b = Number.isInteger(band) ? String(band) : band.toFixed(1);
+      return `${head} Judged against his ${slot} slot, give or take ${b} spots: ${b}+ better (or a top-3 finish) Great, within ${b} Good, up to ${Number((band * 3).toFixed(1))} worse Bad, worse Terrible.`;
     }
     case 'auction-market': {
       const market = describeAuctionMarket(pick.auctionValue ?? 0, pick.marketValue ?? 1);
