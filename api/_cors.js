@@ -3,7 +3,7 @@
 // allowlist so both work; any other origin gets the production value back
 // and the browser blocks the read.
 
-const PROD_ORIGIN = new URL(process.env.FRONTEND_URL || 'https://krool.github.io').origin;
+const PROD_ORIGIN = new URL(process.env.FRONTEND_URL || 'https://fantasyfootballanalyzer.app').origin;
 const DEV_ORIGINS = new Set([
   'http://localhost:5173',
   'http://127.0.0.1:5173',

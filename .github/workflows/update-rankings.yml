@@ -7,8 +7,8 @@ name: Update rankings
 
 on:
   schedule:
-    # Daily at 11:00 UTC (early morning US). Rankings move most July-September;
-    # the fetch is three cheap requests, so daily year-round is fine.
+    # Twice daily. 11:00 UTC (early morning US); rankings move most July-September,
+    # and the fetch is a handful of cheap requests, so year-round is fine.
     - cron: '0 11 * * *'
     # And 23:00 UTC (late afternoon US): most drafts run in the US evening, and
     # GitHub's scheduler drifts cron fires by hours, so the afternoon slot is
@@ -32,9 +32,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 20
           cache: npm
@@ -155,7 +155,7 @@ jobs:
 
       - name: Deploy to GitHub Pages
         if: steps.diff.outputs.changed == 'true'
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist

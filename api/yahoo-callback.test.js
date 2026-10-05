@@ -7,7 +7,7 @@ import handler from './yahoo-callback.js'
 // Most cases hit a redirect or status branch BEFORE the token exchange, so
 // they need no fetch mocking; the final describe covers the exchange itself.
 
-const PROD = 'https://krool.github.io'
+const PROD = 'https://fantasyfootballanalyzer.app'
 
 function mockReq({ method = 'GET', query = {}, headers = {} } = {}) {
   return { method, query, headers: { host: 'api.example.com', ...headers } }

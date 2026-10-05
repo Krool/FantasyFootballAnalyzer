@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { allowedFrontendBase, applyCors } from './_cors.js';
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://krool.github.io/FantasyFootballAnalyzer';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://fantasyfootballanalyzer.app';
 
 export default function handler(req, res) {
   if (applyCors(req, res, { methods: 'GET, OPTIONS' })) return;

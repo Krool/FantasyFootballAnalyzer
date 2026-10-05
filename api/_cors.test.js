@@ -4,7 +4,7 @@ import { allowedFrontendBase, applyCors, isAllowedFrontend } from './_cors.js'
 // isAllowedFrontend gates where the OAuth callback redirects freshly minted
 // access/refresh tokens. It is deliberately stricter than CORS reflection: a
 // regression that widens it leaks tokens to an attacker-supplied origin. These
-// lock the contract. (PROD_ORIGIN resolves to https://krool.github.io at import
+// lock the contract. (PROD_ORIGIN resolves to https://fantasyfootballanalyzer.app at import
 // time from the default FRONTEND_URL.)
 describe('isAllowedFrontend (OAuth token-redirect allowlist)', () => {
   const original = process.env.ALLOW_DEV_OAUTH
@@ -14,7 +14,7 @@ describe('isAllowedFrontend (OAuth token-redirect allowlist)', () => {
   })
 
   it('allows the production origin', () => {
-    expect(isAllowedFrontend('https://krool.github.io/FantasyFootballAnalyzer/')).toBe(true)
+    expect(isAllowedFrontend('https://fantasyfootballanalyzer.app/')).toBe(true)
   })
 
   it('rejects an arbitrary attacker origin', () => {
@@ -47,20 +47,20 @@ describe('isAllowedFrontend (OAuth token-redirect allowlist)', () => {
 // token-bearing redirect. These lock the canonicalization.
 describe('allowedFrontendBase (canonical OAuth redirect base)', () => {
   it('returns the base with trailing slashes stripped, path preserved', () => {
-    expect(allowedFrontendBase('https://krool.github.io/FantasyFootballAnalyzer/'))
-      .toBe('https://krool.github.io/FantasyFootballAnalyzer')
-    expect(allowedFrontendBase('https://krool.github.io'))
-      .toBe('https://krool.github.io')
+    expect(allowedFrontendBase('https://fantasyfootballanalyzer.app/'))
+      .toBe('https://fantasyfootballanalyzer.app')
+    expect(allowedFrontendBase('https://fantasyfootballanalyzer.app'))
+      .toBe('https://fantasyfootballanalyzer.app')
   })
 
   it('rejects an allowed origin carrying a query string or fragment', () => {
-    expect(allowedFrontendBase('https://krool.github.io/?q=1')).toBeNull()
-    expect(allowedFrontendBase('https://krool.github.io/#frag')).toBeNull()
-    expect(allowedFrontendBase('https://krool.github.io/path?x=#')).toBeNull()
+    expect(allowedFrontendBase('https://fantasyfootballanalyzer.app/?q=1')).toBeNull()
+    expect(allowedFrontendBase('https://fantasyfootballanalyzer.app/#frag')).toBeNull()
+    expect(allowedFrontendBase('https://fantasyfootballanalyzer.app/path?x=#')).toBeNull()
   })
 
   it('rejects embedded credentials on an allowed origin', () => {
-    expect(allowedFrontendBase('https://user:pw@krool.github.io/')).toBeNull()
+    expect(allowedFrontendBase('https://user:pw@fantasyfootballanalyzer.app/')).toBeNull()
   })
 
   it('returns null for a disallowed origin', () => {
@@ -73,9 +73,9 @@ describe('allowedFrontendBase (canonical OAuth redirect base)', () => {
 // (Access-Control-Allow-Credentials: true) with an Allow-Origin value. The risk
 // is reflecting an off-allowlist origin back, which would let any site read
 // those responses. These lock that the reflection never widens past the
-// allowlist. (PROD_ORIGIN resolves to https://krool.github.io from the default
+// allowlist. (PROD_ORIGIN resolves to https://fantasyfootballanalyzer.app from the default
 // FRONTEND_URL at import time.)
-const PROD = 'https://krool.github.io'
+const PROD = 'https://fantasyfootballanalyzer.app'
 
 function mockReq({ method = 'GET', headers = {} } = {}) {
   return { method, headers }

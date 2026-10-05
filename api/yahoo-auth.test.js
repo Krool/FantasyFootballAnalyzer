@@ -41,7 +41,7 @@ describe('yahoo-auth handler', () => {
     const res = mockRes()
     handler(mockReq({ query: { return_base: 'https://evil.example.com' } }), res)
     expect(res.statusCode).toBe(200)
-    expect(new URL(decodeBase(res.body.state)).origin).toBe('https://krool.github.io')
+    expect(new URL(decodeBase(res.body.state)).origin).toBe('https://fantasyfootballanalyzer.app')
   })
 
   it('honors an allowlisted dev base only when ALLOW_DEV_OAUTH is set', () => {
@@ -55,7 +55,7 @@ describe('yahoo-auth handler', () => {
     delete process.env.ALLOW_DEV_OAUTH
     const res = mockRes()
     handler(mockReq({ query: { return_base: 'http://localhost:5173' } }), res)
-    expect(new URL(decodeBase(res.body.state)).origin).toBe('https://krool.github.io')
+    expect(new URL(decodeBase(res.body.state)).origin).toBe('https://fantasyfootballanalyzer.app')
   })
 
   it('returns 500 when the Yahoo client id is not configured', () => {

@@ -40,6 +40,9 @@ const DIST_DIR = resolve(process.cwd(), 'dist')
 const DIST_HTML = resolve(DIST_DIR, 'index.html')
 const ROOT_PLACEHOLDER = '<div id="root"></div>'
 
+// Every interpolated value goes through esc(), numbers included: pool fields
+// come from upstream ranking feeds, and an unescaped string there would be
+// stored XSS on the production origin.
 function esc(s: unknown): string {
   return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
@@ -105,14 +108,14 @@ function buildRankingsMarkup(
       return (
         `<tr><td>${i + 1}</td>` +
         `<td>${esc(p.name)}${p.rookie ? ' (R)' : ''}</td>` +
-        `<td>${esc(p.pos)}${p.posRank ?? ''}</td>` +
+        `<td>${esc(p.pos)}${esc(p.posRank)}</td>` +
         `<td>${esc(p.team)}</td>` +
-        `<td>${p.bye ?? ''}</td>` +
+        `<td>${esc(p.bye)}</td>` +
         `<td>${avg(p).toFixed(1)}</td>` +
-        `<td>${p.overallRank ?? ''}</td>` +
-        `<td>${p.tier ?? ''}</td>` +
-        `<td>${p.espnAdp ?? ''}</td>` +
-        `<td>${sl ?? ''}</td></tr>`
+        `<td>${esc(p.overallRank)}</td>` +
+        `<td>${esc(p.tier)}</td>` +
+        `<td>${esc(p.espnAdp)}</td>` +
+        `<td>${esc(sl)}</td></tr>`
       )
     })
     .join('')
@@ -217,7 +220,7 @@ function buildTrendsMarkup(
           .map(
             ({ m, p }) =>
               `<tr><td>${esc(p.name)}</td><td>${esc(p.pos)}</td><td>${esc(p.team)}</td>` +
-              `<td>${m.delta > 0 ? '+' : ''}${m.delta}</td><td>${m.from}</td><td>${m.to}</td></tr>`,
+              `<td>${m.delta > 0 ? '+' : ''}${m.delta}</td><td>${esc(m.from)}</td><td>${esc(m.to)}</td></tr>`,
           )
           .join('')
         if (!rows) return ''
