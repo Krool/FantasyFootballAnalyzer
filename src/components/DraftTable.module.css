@@ -374,3 +374,44 @@
 @media (max-width: 600px) {
   .rankDelta { display: none; }
 }
+
+/* Narrow screens drop columns instead of scrolling sideways, in this order:
+   Pos first (the Pos Rank cell already reads "RB1"), then the points column,
+   then the fantasy team name gives up width: max-width:0 + width:100% makes
+   its column take only the space left over and ellipsize inside it. Rd goes
+   on phones too: the pick number already orders the board. */
+@media (max-width: 900px) {
+  .table { min-width: 0; }
+  .colPos { display: none; }
+  .table th, .table td { padding: 0.6rem 0.5rem; }
+  .table th { letter-spacing: 0.06em; }
+}
+@media (max-width: 800px) {
+  .colPts { display: none; }
+  .fantasyTeam,
+  .colTeam {
+    max-width: 0;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .table :global(.grade-badge) {
+    padding: 0.2rem 0.35rem;
+    letter-spacing: 0.04em;
+  }
+}
+@media (max-width: 480px) {
+  .colRd { display: none; }
+  .table { font-size: 0.75rem; }
+  .table th, .table td { padding: 0.5rem 0.3rem; }
+  .table th { font-size: 0.58rem; letter-spacing: 0.02em; }
+  /* Two-word headers ("Pos Rank") stack rather than set a column's width. */
+  .sortable:not(.colTeam) { white-space: normal; }
+  .playerName { font-size: 0.8rem; }
+  .table :global(.grade-badge) {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.25rem;
+    letter-spacing: 0;
+    box-shadow: none;
+  }
+}

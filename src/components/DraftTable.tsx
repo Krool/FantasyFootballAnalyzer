@@ -766,7 +766,7 @@ export function DraftTable({
                   <th onClick={() => handleSort('pick')} onKeyDown={handleSortKeyDown('pick')} tabIndex={0} aria-sort={ariaSortFor('pick')} className={styles.sortable} role="button" aria-label="Sort by Pick">
                     Pick{getSortIndicator('pick')}
                   </th>
-                  <th onClick={() => handleSort('round')} onKeyDown={handleSortKeyDown('round')} tabIndex={0} aria-sort={ariaSortFor('round')} className={styles.sortable} role="button" aria-label="Sort by Round">
+                  <th onClick={() => handleSort('round')} onKeyDown={handleSortKeyDown('round')} tabIndex={0} aria-sort={ariaSortFor('round')} className={`${styles.sortable} ${styles.colRd}`} role="button" aria-label="Sort by Round">
                     Rd{getSortIndicator('round')}
                   </th>
                 </>
@@ -774,18 +774,18 @@ export function DraftTable({
               <th onClick={() => handleSort('player')} onKeyDown={handleSortKeyDown('player')} tabIndex={0} aria-sort={ariaSortFor('player')} className={styles.sortable} role="button" aria-label="Sort by Player">
                 Player{getSortIndicator('player')}
               </th>
-              <th onClick={() => handleSort('position')} onKeyDown={handleSortKeyDown('position')} tabIndex={0} aria-sort={ariaSortFor('position')} className={styles.sortable} role="button" aria-label="Sort by Position">
+              <th onClick={() => handleSort('position')} onKeyDown={handleSortKeyDown('position')} tabIndex={0} aria-sort={ariaSortFor('position')} className={`${styles.sortable} ${styles.colPos}`} role="button" aria-label="Sort by Position">
                 Pos{getSortIndicator('position')}
               </th>
-              <th onClick={() => handleSort('team')} onKeyDown={handleSortKeyDown('team')} tabIndex={0} aria-sort={ariaSortFor('team')} className={styles.sortable} role="button" aria-label="Sort by Team">
+              <th onClick={() => handleSort('team')} onKeyDown={handleSortKeyDown('team')} tabIndex={0} aria-sort={ariaSortFor('team')} className={`${styles.sortable} ${styles.colTeam}`} role="button" aria-label="Sort by Team">
                 Fantasy Team{getSortIndicator('team')}
               </th>
               {hasResults ? (
-                <th onClick={() => handleSort('points')} onKeyDown={handleSortKeyDown('points')} tabIndex={0} aria-sort={ariaSortFor('points')} className={styles.sortable} role="button" aria-label="Sort by Points">
+                <th onClick={() => handleSort('points')} onKeyDown={handleSortKeyDown('points')} tabIndex={0} aria-sort={ariaSortFor('points')} className={`${styles.sortable} ${styles.colPts}`} role="button" aria-label="Sort by Points">
                   Season Pts{getSortIndicator('points')}
                 </th>
               ) : (
-                <th onClick={() => handleSort('proj')} onKeyDown={handleSortKeyDown('proj')} tabIndex={0} aria-sort={ariaSortFor('proj')} className={styles.sortable} role="button" aria-label="Sort by Projected Points" title="Projected points for the season under this league's scoring. A projection, not a result.">
+                <th onClick={() => handleSort('proj')} onKeyDown={handleSortKeyDown('proj')} tabIndex={0} aria-sort={ariaSortFor('proj')} className={`${styles.sortable} ${styles.colPts}`} role="button" aria-label="Sort by Projected Points" title="Projected points for the season under this league's scoring. A projection, not a result.">
                   Proj Pts{getSortIndicator('proj')}
                 </th>
               )}
@@ -810,7 +810,7 @@ export function DraftTable({
                 ) : (
                   <>
                     <td className="font-mono">{pick.pickNumber}</td>
-                    <td className="font-mono">{pick.round}</td>
+                    <td className={`font-mono ${styles.colRd}`}>{pick.round}</td>
                   </>
                 )}
                 <td>
@@ -826,13 +826,13 @@ export function DraftTable({
                     <NflTeamLabel team={pick.player.team} />
                   </div>
                 </td>
-                <td>
+                <td className={styles.colPos}>
                   <PosBadge pos={pick.player.position} />
                 </td>
                 <td className={styles.fantasyTeam}>
                   <TeamLink teamId={pick.teamId} name={pick.teamName} />
                 </td>
-                <td className="font-mono text-right">
+                <td className={`font-mono text-right ${styles.colPts}`}>
                   {hasResults
                     ? pick.seasonPoints !== undefined
                       ? pick.seasonPoints.toFixed(1)

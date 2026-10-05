@@ -100,13 +100,23 @@
   background: currentColor;
 }
 
-/* Below the header's stack breakpoint the trigger sits near the LEFT edge
-   (the header switches to a left-aligned column), so a right-anchored 220px
-   menu would hang off the left side of a phone screen. Anchor left instead. */
+/* Below 1000px the trigger sits mid-row between the logo and the league
+   card, so neither edge anchor is safe on a phone: right-anchored hangs off
+   the left side, left-anchored off the right. Center it under the trigger. */
 @media (max-width: 1000px) {
   .menu {
-    left: 0;
+    left: 50%;
     right: auto;
+    transform: translateX(-50%);
+  }
+}
+
+/* Smallest phones: the header row has no width to spare. */
+@media (max-width: 480px) {
+  .trigger {
+    gap: 0.25rem;
+    padding: 0.35rem 0.4rem;
+    letter-spacing: 0.04em;
   }
 }
 

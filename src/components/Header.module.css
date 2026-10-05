@@ -15,16 +15,28 @@
 
 .headerContent {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.9rem;
+}
+
+/* Back arrow, logo, year + league, and mute: ONE row at every width. Nothing
+   here wraps; the league name ellipsizes, and Header.tsx swaps the wordmark
+   for the "FFA" monogram before the name would have to truncate. */
+.topRow {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .logoSection {
   display: flex;
   align-items: center;
   gap: 0.85rem;
+  flex-shrink: 0;
 }
 
 .backButton {
@@ -60,21 +72,45 @@
   align-items: baseline;
   gap: 0.2em;
   white-space: nowrap;
+  position: relative;
 }
 .logoAccent { color: var(--blood); transition: color .2s ease; }
 .logo:hover .logoAccent { color: var(--lime); }
 
-/* The full wordmark on roomy viewports; the "FFA" monogram swaps in on
-   phones (see the narrow media query) so the masthead stays short. */
-.logoFull { display: inline; }
-.logoShort { display: none; }
+/* Both spellings stay laid out so Header.tsx can measure either one; the
+   idle one is pulled out of flow and hidden. right:0 makes it overhang to the
+   left, where overflow never creates a horizontal scrollbar. Before the JS
+   measures (prerender, first paint) the 640px breakpoint picks; after, the
+   logoWide/logoCompact classes on .topRow decide. */
+.logoFull,
+.logoShort { display: inline; }
+
+.logoShort,
+.topRow.logoWide .logoShort,
+.topRow.logoCompact .logoFull {
+  position: absolute;
+  right: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.topRow.logoWide .logoFull,
+.topRow.logoCompact .logoShort {
+  position: static;
+  visibility: visible;
+  pointer-events: auto;
+}
 
 .leagueGroup {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex: 0 1 auto;
+  min-width: 0;
 }
+.leagueGroup > * { flex-shrink: 0; }
+.leagueGroup > .leagueInfo { flex-shrink: 1; }
 
 .leagueInfo {
   display: flex;
@@ -86,11 +122,17 @@
   text-transform: uppercase;
   padding: 0.5rem 0.9rem;
   border: 2px solid var(--bone-dim);
+  min-width: 0;
 }
+.leagueInfo > :not(.leagueName) { flex-shrink: 0; }
 
 .leagueName {
   font-weight: 700;
   color: var(--bone);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .loadedAt {
@@ -125,17 +167,14 @@
   to { transform: rotate(360deg); }
 }
 
-/* The nav always gets its own full-width row, whether it holds two draft
-   tabs or the eight season tabs. Ordered last so the sound button (which
-   follows it in the DOM) keeps the same top-right spot in every view
-   instead of wrapping down to the end of the nav row. */
+/* The nav always gets its own full-width row below .topRow, whether it
+   holds the draft-prep tabs or the eight season tabs. */
 .nav {
   display: flex;
   gap: 0.25rem;
   align-items: center;
   flex-wrap: wrap;
   width: 100%;
-  order: 10;
 }
 
 .navLink {
@@ -188,7 +227,7 @@
   width: 38px;
   height: 38px;
   padding: 0;
-  margin-left: 0.5rem;
+  flex-shrink: 0;
 }
 .soundButton:hover {
   background: var(--lime);
@@ -284,26 +323,10 @@
 .connectCtaShort { display: none; }
 
 @media (max-width: 1000px) {
-  /* Phones lay the masthead out as a few stacked rows. A true column stranded
-     the sound button on a row of its own (it sorts before the order:10 nav, so
-     it landed between the league group and the tab bar). Instead keep a
-     wrapping row and drive the breaks with order + width:100%: row 1 is the
-     logo with the sound button parked at its right edge; the league group and
-     the nav each take a full row below. */
-  .headerContent {
-    align-items: center;
-    gap: 0.55rem 1rem;
-  }
+  .headerContent { gap: 0.55rem; }
+  .topRow { gap: 1rem; }
   .logo { font-size: 1.1rem; }
 
-  .soundButton {
-    order: 1;
-    margin-left: auto;
-  }
-  .leagueGroup {
-    order: 2;
-    width: 100%;
-  }
   /* A wrapped 8-link nav costs ~200px of masthead before any content;
      one scroll-snap row keeps it to ~50px. The eight season tabs plus the
      export button stop fitting one row around 1000px, so the scroll row
@@ -332,51 +355,61 @@
    the breakpoints equal closes the 601-640px band where the boards reserved
    for a compact header that never rendered. */
 @media (max-width: 640px) {
-  /* On phones the full "FANTASY FOOTBALL ANALYZER" wordmark wraps and eats
-     masthead height. Swap to the "FFA" monogram (middle F keeps the accent)
-     and trim the masthead padding to claw back space. */
+  /* Pre-measure default on phones is the "FFA" monogram (middle F keeps the
+     accent); trim the masthead padding to claw back space. */
   .header { padding: 0.65rem 0 0.55rem; }
-  .headerContent { gap: 0.55rem 0.9rem; }
-  .logoFull { display: none; }
-  .logoShort { display: inline; }
+  .topRow { gap: 0.6rem; }
+  .logoFull {
+    position: absolute;
+    right: 0;
+    top: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .logoShort {
+    position: static;
+    visibility: visible;
+    pointer-events: auto;
+  }
   .logo { font-size: 1.5rem; letter-spacing: 0; }
 
-  /* Connected league: the year selector + league card wrapped to two stacked
-     rows and pushed the masthead past 200px. Force one row: the card
-     flexes into whatever is left of the row and the league name ellipsizes
-     instead of wrapping. The "18d ago" stamp is the first thing to go; the
-     refresh button's title carries the exact updated time in its place
-     (set in Header.tsx). */
-  .leagueGroup { flex-wrap: nowrap; }
+  /* Connected league: the league card gives up width before anything else.
+     The "18d ago" stamp goes first; the refresh button's title carries the
+     exact updated time in its place (set in Header.tsx). */
+  .leagueGroup { gap: 0.4rem; }
   .leagueInfo {
-    flex: 1;
-    min-width: 0;
-    gap: 0.5rem;
-    padding: 0.4rem 0.6rem;
+    gap: 0.4rem;
+    padding: 0.3rem 0.45rem;
   }
-  .leagueName {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .leagueInfo > :not(.leagueName) { flex-shrink: 0; }
   .loadedAt { display: none; }
 
-  /* The "FFA" monogram is short enough to share row 1 with the guest chip, so
-     pull "Guest [Connect]" up beside it (order:0 + auto width override the
-     own-row full-width rule from the ≤1000 query). The sound button's
-     margin-left:auto still parks it at the right edge, so the chip lands
-     between the logo and the sound control and we save a stacked row. If the
-     row can't fit, flex-wrap drops the sound button instead, same height as
-     before. */
-  .guestGroup {
-    order: 0;
-    width: auto;
-  }
   .connectCtaFull { display: none; }
   .connectCtaShort { display: inline; }
+}
+
+/* Phones up to 480px (320-430 covers nearly all of them): squeeze the
+   league card's chrome so the name keeps readable characters next to the
+   year and mute. */
+@media (max-width: 480px) {
+  .logoSection { gap: 0.5rem; }
+  .logo { font-size: 1.3rem; }
+  .topRow { gap: 0.45rem; }
+  .backButton,
+  .soundButton { width: 34px; height: 34px; }
+  .leagueGroup { gap: 0.35rem; }
+  /* The platform badge folds into the card's left border color. */
+  .leagueInfo {
+    gap: 0.3rem;
+    padding: 0.25rem 0.35rem;
+    letter-spacing: 0.08em;
+  }
+  .leagueInfo :global(.platform-badge) { display: none; }
+  .leagueInfo[data-platform='sleeper'] { border-left: 4px solid var(--sleeper-color); }
+  .leagueInfo[data-platform='espn'] { border-left: 4px solid var(--espn-color); }
+  .leagueInfo[data-platform='yahoo'] { border-left: 4px solid var(--yahoo-color); }
+  .refreshButton { width: 26px; height: 26px; }
+  .guestTag { letter-spacing: 0.08em; }
+  .connectCta { padding: 0 0.5rem; }
 }
 
 @media (pointer: coarse) {
@@ -397,5 +430,19 @@
   }
   .exportButton {
     min-height: 44px;
+  }
+}
+
+/* On the narrowest phones a 44px floor on all three icon buttons leaves the
+   league name no room at all; 40/36px keeps them comfortably tappable. */
+@media (pointer: coarse) and (max-width: 480px) {
+  .backButton,
+  .soundButton {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .refreshButton {
+    min-width: 36px;
+    min-height: 36px;
   }
 }

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { League } from '@/types';
 import { useSounds } from '@/hooks/useSounds';
@@ -81,6 +81,45 @@ export function Header({
   // like a dead one and gets repeated.
   const [isExporting, setIsExporting] = useState(false);
 
+  // The logo, league controls, and mute button share one row that never
+  // wraps. The full wordmark shows only while everything fits at its natural
+  // width (league name untruncated); otherwise the "FFA" monogram takes its
+  // place. Both spellings stay in the layout (the idle one absolutely
+  // positioned and hidden) so either width can be measured from either mode.
+  // null until measured: prerendered HTML and the first paint fall back to
+  // the CSS breakpoint.
+  const topRowRef = useRef<HTMLDivElement>(null);
+  const [compactLogo, setCompactLogo] = useState<boolean | null>(null);
+  useLayoutEffect(() => {
+    const row = topRowRef.current;
+    if (!row || typeof ResizeObserver === 'undefined') return;
+    const measure = () => {
+      const full = row.querySelector<HTMLElement>(`.${styles.logoFull}`);
+      const short = row.querySelector<HTMLElement>(`.${styles.logoShort}`);
+      if (!full || !short) return;
+      const showingFull = getComputedStyle(full).position !== 'absolute';
+      const gap = parseFloat(getComputedStyle(row).columnGap) || 0;
+      const items = Array.from(row.children) as HTMLElement[];
+      let needed = gap * (items.length - 1);
+      for (const el of items) {
+        const cs = getComputedStyle(el);
+        needed += el.getBoundingClientRect().width + (parseFloat(cs.marginLeft) || 0) + (parseFloat(cs.marginRight) || 0);
+      }
+      // Width the ellipsized league name is missing.
+      const name = row.querySelector<HTMLElement>(`.${styles.leagueName}`);
+      if (name) needed += Math.max(0, name.scrollWidth - name.clientWidth);
+      const fullW = full.getBoundingClientRect().width;
+      const shortW = short.getBoundingClientRect().width;
+      if (!showingFull) needed += fullW - shortW;
+      setCompactLogo(needed > row.clientWidth + 0.5);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(row);
+    for (const el of Array.from(row.children)) ro.observe(el);
+    return () => ro.disconnect();
+  }, [leagueName, platform, isGuest, yearSelector, league?.loadedAt, location.pathname]);
+
   const handleExportPdf = () => {
     if (league && !isExporting) {
       playExport();
@@ -122,87 +161,117 @@ export function Header({
     // The module class is hashed, so a stable name is the only way in.
     <header className={`${styles.header} app-header`}>
       <div className={`container ${styles.headerContent}`}>
-        <div className={styles.logoSection}>
-          {league && !isGuest && (
-            <button
-              onClick={handleChangeLeague}
-              className={styles.backButton}
-              title="Change League"
-              aria-label="Change League"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.backIcon} aria-hidden="true">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-          )}
-          <Link to="/" className={styles.logo} aria-label="Fantasy Football Analyzer">
-            <span className={styles.logoFull}>
-              FANTASY <span className={styles.logoAccent}>FOOTBALL</span> ANALYZER
-            </span>
-            <span className={styles.logoShort} aria-hidden="true">
-              F<span className={styles.logoAccent}>F</span>A
-            </span>
-          </Link>
-        </div>
+        <div
+          ref={topRowRef}
+          className={`${styles.topRow} ${compactLogo === true ? styles.logoCompact : compactLogo === false ? styles.logoWide : ''}`}
+        >
+          <div className={styles.logoSection}>
+            {league && !isGuest && (
+              <button
+                onClick={handleChangeLeague}
+                className={styles.backButton}
+                title="Change League"
+                aria-label="Change League"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.backIcon} aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+            )}
+            <Link to="/" className={styles.logo} aria-label="Fantasy Football Analyzer">
+              <span className={styles.logoFull}>
+                FANTASY <span className={styles.logoAccent}>FOOTBALL</span> ANALYZER
+              </span>
+              <span className={styles.logoShort} aria-hidden="true">
+                F<span className={styles.logoAccent}>F</span>A
+              </span>
+            </Link>
+          </div>
 
-        {leagueName && (
-          <div className={styles.leagueGroup}>
-            {yearSelector}
-            <div className={styles.leagueInfo}>
-              <span className={styles.leagueName}>{leagueName}</span>
-              {platform && (
-                <span className={`platform-badge ${platform}`}>{platform}</span>
-              )}
-              {league?.loadedAt && (
-                <span className={styles.loadedAt} title={new Date(league.loadedAt).toLocaleString()}>
-                  {formatLoadedAt(league.loadedAt)}
-                </span>
-              )}
-              {onRefresh && (
+          {leagueName && (
+            <div className={styles.leagueGroup}>
+              {yearSelector}
+              <div className={styles.leagueInfo} data-platform={platform}>
+                <span className={styles.leagueName}>{leagueName}</span>
+                {platform && (
+                  <span className={`platform-badge ${platform}`}>{platform}</span>
+                )}
+                {league?.loadedAt && (
+                  <span className={styles.loadedAt} title={new Date(league.loadedAt).toLocaleString()}>
+                    {formatLoadedAt(league.loadedAt)}
+                  </span>
+                )}
+                {onRefresh && (
+                  <button
+                    type="button"
+                    onClick={() => { playClick(); onRefresh(); }}
+                    className={styles.refreshButton}
+                    title={
+                      league?.loadedAt
+                        ? `Refresh league data (updated ${new Date(league.loadedAt).toLocaleString()})`
+                        : 'Refresh league data'
+                    }
+                    aria-label="Refresh league data"
+                    disabled={isRefreshing}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`${styles.refreshIcon} ${isRefreshing ? styles.refreshIconSpinning : ''}`} aria-hidden="true">
+                      <polyline points="23 4 23 10 17 10" />
+                      <polyline points="1 20 1 14 7 14" />
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {isGuest && (
+            <div className={`${styles.leagueGroup} ${styles.guestGroup}`}>
+              <span className={styles.guestTag}>Guest</span>
+              {/* Everywhere but home, GuestBanner renders directly below this
+                  row with the same CTA, so the two sat a hundred pixels apart
+                  saying the same thing. The banner keeps it there: it carries
+                  the explanation of what a connection buys. Home has no banner,
+                  so the header owns the CTA. */}
+              {location.pathname === '/' && (
                 <button
-                  type="button"
-                  onClick={() => { playClick(); onRefresh(); }}
-                  className={styles.refreshButton}
-                  title={
-                    league?.loadedAt
-                      ? `Refresh league data (updated ${new Date(league.loadedAt).toLocaleString()})`
-                      : 'Refresh league data'
-                  }
-                  aria-label="Refresh league data"
-                  disabled={isRefreshing}
+                  onClick={handleChangeLeague}
+                  className={styles.connectCta}
+                  title="Connect your real league for team names, grades, and history"
+                  aria-label="Connect your league"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`${styles.refreshIcon} ${isRefreshing ? styles.refreshIconSpinning : ''}`} aria-hidden="true">
-                    <polyline points="23 4 23 10 17 10" />
-                    <polyline points="1 20 1 14 7 14" />
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                  </svg>
+                  <span className={styles.connectCtaFull}>Connect your league</span>
+                  <span className={styles.connectCtaShort} aria-hidden="true">Connect</span>
                 </button>
               )}
             </div>
-          </div>
-        )}
+          )}
 
-        {isGuest && (
-          <div className={`${styles.leagueGroup} ${styles.guestGroup}`}>
-            <span className={styles.guestTag}>Guest</span>
-            {/* Everywhere but home, GuestBanner renders directly below this
-                row with the same CTA, so the two sat a hundred pixels apart
-                saying the same thing. The banner keeps it there: it carries
-                the explanation of what a connection buys. Home has no banner,
-                so the header owns the CTA. */}
-            {location.pathname === '/' && (
-              <button
-                onClick={handleChangeLeague}
-                className={styles.connectCta}
-                title="Connect your real league for team names, grades, and history"
-                aria-label="Connect your league"
-              >
-                <span className={styles.connectCtaFull}>Connect your league</span>
-                <span className={styles.connectCtaShort} aria-hidden="true">Connect</span>
-              </button>
+          {/* Outside the nav on purpose: the home page plays load sounds, so
+              the mute control must exist where the first sound can fire. */}
+          <button
+            onClick={toggleMute}
+            className={styles.soundButton}
+            title={isMuted ? 'Enable sounds' : 'Mute sounds'}
+            aria-label={isMuted ? 'Enable sounds' : 'Mute sounds'}
+            aria-pressed={!isMuted}
+          >
+            {isMuted ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.soundIcon} aria-hidden="true">
+                <line x1="1" y1="1" x2="23" y2="23" />
+                <path d="M9 4L4 9H0v6h4l5 5V4z" />
+                <path d="M19 15l-6-6" />
+                <path d="M13 9l6 6" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.soundIcon} aria-hidden="true">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
             )}
-          </div>
-        )}
+          </button>
+        </div>
 
         {location.pathname !== '/' && (
           <nav className={styles.nav} aria-label="Main navigation">
@@ -371,30 +440,6 @@ export function Header({
           </nav>
         )}
 
-        {/* Outside the nav on purpose: the home page plays load sounds, so
-            the mute control must exist where the first sound can fire. */}
-        <button
-          onClick={toggleMute}
-          className={styles.soundButton}
-          title={isMuted ? 'Enable sounds' : 'Mute sounds'}
-          aria-label={isMuted ? 'Enable sounds' : 'Mute sounds'}
-          aria-pressed={!isMuted}
-        >
-          {isMuted ? (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.soundIcon} aria-hidden="true">
-              <line x1="1" y1="1" x2="23" y2="23" />
-              <path d="M9 4L4 9H0v6h4l5 5V4z" />
-              <path d="M19 15l-6-6" />
-              <path d="M13 9l6 6" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.soundIcon} aria-hidden="true">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-            </svg>
-          )}
-        </button>
       </div>
     </header>
   );
