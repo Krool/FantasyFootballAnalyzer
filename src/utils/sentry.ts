@@ -132,6 +132,11 @@ const EXPECTED_USER_ERROR = new RegExp(
     'Malformed cookie (value|header encoding): 400',
     'Sleeper API error: 404',
     'Yahoo OAuth error: access_denied',
+    // Yahoo session lapsed (refresh token rejected, or no token at all): the
+    // UI says "log in with Yahoo again". 401 is in the text on purpose so
+    // useLeague's classifier and this filter can both tell it from an outage.
+    'Token refresh failed \\(401\\)',
+    'Not authenticated with Yahoo \\(401\\)',
     'Invalid call to runtime\\.sendMessage',
   ].join('|'),
   'i',

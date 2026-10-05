@@ -183,6 +183,13 @@ describe('deriveDraftState (snake)', () => {
     expect(deriveDraftState(config, pool, events).onTheClockId).toBe('C');
   });
 
+  it('puts the current holder of a traded pick on the clock', () => {
+    // A traded its round-1 pick to C: C picks first, then B, then C again.
+    const traded = makeConfig({ draftType: 'snake', pickOwners: { 1: { A: 'C' } } });
+    expect(deriveDraftState(traded, pool, []).onTheClockId).toBe('C');
+    expect(deriveDraftState(traded, pool, [pick('RB1', 'C')]).onTheClockId).toBe('B');
+  });
+
   it('sorts available players by overall rank and excludes drafted ones', () => {
     const state = deriveDraftState(config, pool, [pick('QB1', 'A')]);
     expect(state.available[0].id).toBe('QB2');

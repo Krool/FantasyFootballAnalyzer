@@ -64,7 +64,9 @@ Firefox uses the WebExtensions API which is compatible. Load via
    [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole/).
 4. Upload the zip. Review usually takes 1-3 business days.
 5. Once published, copy the extension ID from the listing URL and set
-   `VITE_ESPN_EXTENSION_ID` in Vercel/build env before deploying the web app.
+   it as the `VITE_ESPN_EXTENSION_ID` repository variable (GitHub > Settings >
+   Secrets and variables > Actions > Variables). Both deploy workflows pass it
+   to the build; the frontend builds in GitHub Actions, not on Vercel.
 
 ### Firefox Add-ons (AMO)
 

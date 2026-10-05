@@ -90,6 +90,9 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          # Companion ESPN extension id (a repo variable, not a secret). Unset
+          # keeps the auto-fill dormant; set it once the extension is published.
+          VITE_ESPN_EXTENSION_ID: ${{ vars.VITE_ESPN_EXTENSION_ID }}
 
       # The prerender step degrades to an empty SPA on failure (exit 0) so the
       # unattended rankings deploy never breaks. That makes a broken prerender

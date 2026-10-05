@@ -327,8 +327,8 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
     if (config.draftType !== 'snake' || phase !== 'drafting') return null;
     const orderedIds = config.teams.map(t => t.id);
     const from = myTurn ? derived.pickCount + 1 : derived.pickCount;
-    return nextPickFor(config.myTeamId, orderedIds, from, derived.totalPicks, config.snakeFormat);
-  }, [config.draftType, config.snakeFormat, config.teams, config.myTeamId, phase, myTurn, derived.pickCount, derived.totalPicks]);
+    return nextPickFor(config.myTeamId, orderedIds, from, derived.totalPicks, config.snakeFormat, config.pickOwners);
+  }, [config.draftType, config.snakeFormat, config.pickOwners, config.teams, config.myTeamId, phase, myTurn, derived.pickCount, derived.totalPicks]);
 
   // Of the picks before the user's next turn, how many can actually take
   // someone off the open board. Keeper-locked slots don't count: those
@@ -347,6 +347,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
       allKeepers(config),
       derived.draftedPlayerIds,
       config.snakeFormat,
+      config.pickOwners,
     ).filter(p => !p.isMine && !p.keeperPlayerId).length;
   }, [
     config,
@@ -760,6 +761,7 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                   type="text"
                   className={watchBad ? styles.watchInputBad : styles.watchInput}
                   placeholder="Mock draft URL (optional)"
+                  aria-label="Sleeper mock draft URL to follow (optional)"
                   defaultValue={liveSync.watchId ?? ''}
                   onChange={e => {
                     // Blank clears back to the league's own draft.
@@ -768,7 +770,10 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                   title="Paste a sleeper.com draft URL to follow that draft instead of your league's. Sleeper doesn't list mocks under a league, so this is the only way to rehearse against one."
                 />
               )}
-              {!phoneSheet && liveSync.available && (
+              {/* On phones too: a Sleeper draft is often run from a phone,
+                  and without this the strip had no way to start or stop
+                  sync. Short labels keep the strip on one line. */}
+              {liveSync.available && (
                 <button
                   type="button"
                   className={liveSync.enabled ? styles.syncBtnOn : styles.syncBtn}
@@ -782,11 +787,11 @@ export function DraftRoomPage({ league, justConnected }: DraftRoomPageProps) {
                 >
                   {liveSync.enabled
                     ? liveSync.status === 'syncing'
-                      ? '● LIVE SYNC'
+                      ? phoneSheet ? '● LIVE' : '● LIVE SYNC'
                       : liveSync.status === 'error'
-                        ? '○ RECONNECTING'
-                        : '○ CONNECTING'
-                    : 'Live Sync'}
+                        ? phoneSheet ? '○ RETRY' : '○ RECONNECTING'
+                        : phoneSheet ? '○ WAIT' : '○ CONNECTING'
+                    : phoneSheet ? 'Sync' : 'Live Sync'}
                 </button>
               )}
               {!phoneSheet && (

@@ -156,6 +156,39 @@ describe('useLeague.load - cache behavior', () => {
   });
 });
 
+describe('useLeague.load - incomplete (throttled) loads', () => {
+  it('shows an incomplete league but never caches it', async () => {
+    mockedLoadCachedLeague.mockReturnValue(null);
+    const partial = makeLeague({ name: 'Partial', loadIncomplete: 'missing week 3' });
+    mockedLoadLeague.mockResolvedValue(partial);
+
+    const { result } = renderHook(() => useLeague());
+    await act(async () => {
+      await result.current.load(sleeperCreds);
+    });
+
+    expect(result.current.league?.loadIncomplete).toBe('missing week 3');
+    expect(mockedCacheLeague).not.toHaveBeenCalled();
+  });
+
+  it('keeps a stale snapshot on screen when the background refresh came back partial', async () => {
+    const cached = makeLeague({ name: 'Complete Snapshot' });
+    mockedLoadCachedLeague.mockReturnValue(cached);
+    mockedIsStale.mockReturnValue(true);
+    mockedLoadLeague.mockResolvedValue(makeLeague({ name: 'Partial', loadIncomplete: 'missing week 3' }));
+
+    const { result } = renderHook(() => useLeague());
+    let resolved: League | null = null;
+    await act(async () => {
+      resolved = await result.current.load(sleeperCreds);
+    });
+
+    expect(result.current.league?.name).toBe('Complete Snapshot');
+    expect(resolved).toBe(cached);
+    expect(mockedCacheLeague).not.toHaveBeenCalled();
+  });
+});
+
 describe('useLeague.load - return value', () => {
   // Callers route on what load() resolves with (e.g. a freshly renewed
   // preseason league goes to the Draft Room), so the contract matters.

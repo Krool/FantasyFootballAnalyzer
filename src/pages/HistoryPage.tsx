@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import type { League, SeasonSummary, HeadToHeadRecord } from '@/types';
 import { loadLeagueHistory as loadSleeperHistory, loadHeadToHeadRecords as loadSleeperH2H } from '@/api/sleeper';
 import { loadLeagueHistory as loadESPNHistory, loadHeadToHeadRecords as loadESPNH2H } from '@/api/espn';
+import { loadLeagueHistory as loadYahooHistory, loadHeadToHeadRecords as loadYahooH2H } from '@/api/yahoo';
 import { RivalryCard } from '@/components';
 import { AWARD_ICONS } from '@/utils/awardIcons';
 import { logger } from '@/utils/logger';
@@ -27,7 +28,8 @@ export function HistoryPage({ league }: HistoryPageProps) {
   const [rivalriesAttempt, setRivalriesAttempt] = useState(0);
 
   // Check if platform supports history
-  const supportsHistory = league.platform === 'sleeper' || league.platform === 'espn';
+  const supportsHistory =
+    league.platform === 'sleeper' || league.platform === 'espn' || league.platform === 'yahoo';
 
   // A team picked for one league means nothing in another (year switch via
   // the header reuses this mounted page).
@@ -38,7 +40,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
 
   useEffect(() => {
     if (!supportsHistory) {
-      setError('Historical data is only available for Sleeper and ESPN leagues.');
+      setError('Historical data is only available for Sleeper, ESPN, and Yahoo leagues.');
       return;
     }
 
@@ -57,6 +59,8 @@ export function HistoryPage({ league }: HistoryPageProps) {
         } else if (league.platform === 'espn') {
           const credentials = loadESPNCredentials(league.id);
           data = await loadESPNHistory(league.id, 5, credentials);
+        } else if (league.platform === 'yahoo') {
+          data = await loadYahooHistory(league.id, 5);
         } else {
           data = [];
         }
@@ -93,6 +97,8 @@ export function HistoryPage({ league }: HistoryPageProps) {
         } else if (league.platform === 'espn') {
           const credentials = loadESPNCredentials(league.id);
           result = await loadESPNH2H(league.id, selectedTeamId, 5, credentials, league.season);
+        } else if (league.platform === 'yahoo') {
+          result = await loadYahooH2H(league.id, selectedTeamId, 5);
         } else {
           result = { records: new Map(), teamName: '' };
         }
@@ -125,7 +131,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
   // Calculate all-time standings. Aggregate by stable owner id when the
   // platform supplied one so a manager who renames their team isn't split
   // across rows (and two managers who happened to share a name aren't merged).
-  // Fall back to team.name only when ownerId is missing (older caches, Yahoo).
+  // Fall back to team.name only when ownerId is missing (older caches).
   // Championships are only awarded when the platform tells us who actually
   // won the playoffs (championTeamId), never inferred from standings.
   const allTimeStats = useMemo(() => {
@@ -202,8 +208,7 @@ export function HistoryPage({ league }: HistoryPageProps) {
             <h1 className={styles.title}>League History</h1>
           </div>
           <div className={styles.notice}>
-            League history is built for Sleeper and ESPN leagues so far. For a
-            past Yahoo season, pick the year from the season menu in the header.
+            League history is built for Sleeper, ESPN, and Yahoo leagues.
           </div>
         </div>
       </div>

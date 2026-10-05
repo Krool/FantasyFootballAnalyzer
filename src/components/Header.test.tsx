@@ -55,6 +55,12 @@ describe('Header nav', () => {
     expect(screen.getByRole('button', { name: /Export PDF/ })).toBeInTheDocument();
   });
 
+  it('offers History for Yahoo leagues (renew chain), same as Sleeper and ESPN', () => {
+    renderAt('/trades', { league: { ...LEAGUE, platform: 'yahoo' } as League, leagueName: 'Test League' });
+
+    expect(screen.getByRole('link', { name: 'History' })).toBeInTheDocument();
+  });
+
   it('keeps the focused nav on draft-prep routes even with a league', () => {
     renderAt('/rankings', { league: LEAGUE, leagueName: 'Test League' });
 

@@ -787,7 +787,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                 <strong>Why?</strong> ESPN private leagues require authentication cookies that prove you're logged in.
               </p>
               <p className={styles.helpIntro}>
-                <strong>Easier way:</strong> install the free{' '}
+                <strong>Easier way:</strong> install the free third-party{' '}
                 <a
                   href="https://chromewebstore.google.com/detail/espn-cookie-finder/oapfffhnckhffnpiophbcmjnpomjkfcj"
                   target="_blank"
@@ -803,7 +803,8 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                 >
                   Firefox
                 </a>
-                ). Click the extension icon on espn.com, copy both cookies into the fields below. No DevTools needed.
+                ). It is not made by this site; it reads your ESPN login cookies, so install it only if you trust it.
+                Click the extension icon on espn.com, copy both cookies into the fields below. No DevTools needed.
               </p>
               <p className={styles.helpIntro}>
                 <strong>Or do it manually:</strong>
@@ -820,7 +821,7 @@ export function LeagueForm({ onSubmit, isLoading, onPlatformChange }: LeagueForm
                   <span className={styles.stepNumber}>2</span>
                   <div className={styles.stepContent}>
                     <strong>Open DevTools</strong>
-                    <span>Press <kbd>F12</kbd> (Windows) or <kbd>Cmd+Opt+I</kbd> (Mac)</span>
+                    <span>Press <kbd>F12</kbd> (Windows) or <kbd>Cmd+Opt+I</kbd> (Mac; in Safari, first turn on Settings {'>'} Advanced {'>'} Show features for web developers)</span>
                   </div>
                 </div>
                 <div className={styles.helpStep}>

@@ -407,7 +407,7 @@ export function deriveDraftState(
     const orderedIds = config.teams.map(t => t.id);
     const n = orderedIds.length;
     if (config.draftType === 'snake') {
-      onTheClockId = teamForPick(pickCount, orderedIds, config.snakeFormat);
+      onTheClockId = teamForPick(pickCount, orderedIds, config.snakeFormat, config.pickOwners);
     } else {
       // Auction nomination rotates in draft order, but a team with a full
       // roster forfeits its turn: walk forward from the round-robin slot to

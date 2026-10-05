@@ -210,7 +210,9 @@ Consequences:
   as `X-ESPN-S2`/`X-ESPN-SWID` headers, the proxy reassembles the real
   `Cookie` header server-side. The proxy allowlists views (SSRF guard):
   `mTeam, mRoster, mSettings, mDraftDetail, mMatchup, mTransactions2,
-  kona_league_communication` + the `communication` extend path.
+  kona_league_communication, mBoxscore, mMatchupScore, kona_player_info` +
+  the `communication` extend path (the last three are allowlisted ahead of
+  use, so adding them client-side can't fail silently on private leagues).
 - Cookie acquisition: user pastes them, or the companion browser extension
   supplies them (`LeagueForm.tsx` probes it). Stored per-league in
   sessionStorage (`espn_credentials:{leagueId}`).
@@ -282,19 +284,43 @@ AAV $60.96). This powers ESPN's own live draft results page.
 
 ## Trades: the empty-items problem
 
-`mTransactions2` shows `TRADE_ACCEPT` rows with empty `items`. Workarounds, in
-the order our adapter tries them (`src/api/espn.ts`):
+`mTransactions2` shows `TRADE_ACCEPT` rows with empty `items`. The adapter
+(`src/api/espn.ts`) runs every source below and MERGES them: a later source's
+trade is added only when no kept trade already covers the same teams within a
+week and shares a player. (Until 2026-10 the first source to find anything
+won, which lost preseason trades and 3-team trades.)
 
+0. **Draft vs week-1 rosters**: a player on a different team at week 1 than
+   the team that drafted him, with no waiver/FA add in between, moved in a
+   preseason trade (stamped week 1). Requires a mutual swap.
 1. **Week-over-week roster diffing** (most reliable - rosters provably changed).
 2. The communication endpoint
    (`/leagues/{id}/communication/?view=kona_league_communication`): topics of
    type `ACTIVITY_TRANSACTIONS`, matched to `TRADE_UPHOLD` timestamps.
    Message fields: `for` = receiving **team id**, but `from`/`to` =
    **lineup slot ids**, NOT team ids. Message types: 178 drop, 179 add,
-   180 trade-out, 181 trade-in, 188 general.
+   180 trade-out, 181 trade-in, 188 general. The trade's week is the
+   matched `TRADE_UPHOLD`'s `scoringPeriodId` (floor 1), so these get
+   post-trade verdicts too.
 3. `TRADE_ACCEPT` <-> `TRADE_PROPOSAL` pairing by `relatedTransactionId`,
-   team-set match within 14 days, or timestamp within 30 days. Unresolvable
-   trades become `isIncomplete: true` placeholders.
+   team-set match within 14 days, or timestamp within 3 days with the
+   accept's known teams all on the proposal. Proposals with a dead status
+   (DECLINED, CANCELED, EXPIRED, VETOED, FAILED_*) never pair; live status
+   names are unverified, so the filter excludes dead ones rather than
+   requiring a specific live one. Unresolvable trades become
+   `isIncomplete: true` placeholders.
+
+Trade verdicts are post-trade (since 2026-10): each received player's points
+in the receiving team's lineup from the trade week on, minus a per-week
+replacement baseline prorated by weeks played so far. A trade with no known
+week falls back to full-season value.
+
+**Week bounds.** In season the weekly loops read through the latest of
+`status.latestScoringPeriod`, top-level `scoringPeriodId`, and
+`currentMatchupPeriod`, capped at `status.finalScoringPeriod`; a finished
+season reads through `finalScoringPeriod` (17 when absent, so week 18 is
+covered only when ESPN reports 18). Field names come from espn-api and were
+not verified on a live payload (every reachable league 401s without cookies).
 
 ## Not available on ESPN
 
@@ -324,11 +350,10 @@ parallel season probe. Populates everything including `playerWeeklyPoints`
 (harvested from the weekly roster fetches, June 2026) and `isKeeper` from
 `mDraftDetail`'s `keeper` flag.
 
-Known adapter gaps: trade verdicts still use full-season totals even though
-weekly points now exist (post-trade verdicts would need the same windowed PAR
-treatment Yahoo got); season probe drops rate-limited/401 years silently -
-which post-Aug-2025 means cookie-less public leagues silently lose all but ~2
-years. (Fixed 2026-08: PAR now uses the league's real `lineupSlotCounts` via
+Known adapter gaps: none open on verdicts (post-trade since 2026-10). The
+season probe still drops 401 years, but now flags it (`olderNeedsCookies`)
+and the year menu says "Older seasons need ESPN cookies"; a cookie-less load
+of an old season says so with the 401 in the text. (Fixed 2026-08: PAR now uses the league's real `lineupSlotCounts` via
 the shared par.ts replacement model instead of a hardcoded classic lineup.
 ESPN flex is three slot ids — 23 RB/WR/TE, 3 RB/WR, 5 WR/TE — summed.)
 
@@ -483,9 +508,14 @@ format with an underscore, not a dot) and `renewed` (next season) - a proper
 two-direction chain. Data reaches back as far as the league existed (NFL game
 ids exist to ~2001); old seasons can have sparse sub-resources.
 
-Our adapter ignores the chain and matches leagues **by name** across hardcoded
-game keys, which drops renamed leagues and ambiguous duplicates. Walking
-`renew` would be strictly better.
+The History page (`loadLeagueHistory` / `loadHeadToHeadRecords` in
+`yahoo.ts`, 2026-10) walks `renew` (one `out=settings,standings` call per
+season, `449_555` -> `449.l.555`), falling back to a name match against the
+user's leagues one season back only when `renew` is missing. Managers are
+keyed by manager `guid` across seasons. Champion = final standings `rank` 1
+on a finished season, on the assumption that Yahoo's final rank reflects the
+playoffs (NOT yet verified on a real finished league). The header year
+dropdown (`getAvailableSeasons`) still name-matches.
 
 ## Settings and response edge cases (audited 2026-08 via yfpy/yahoo_fantasy_api source)
 
@@ -567,10 +597,11 @@ market ADP/auction costs. Since June 2026 the enrichment phase also fetches:
   adds + traded players, capped at 150), populating `playerWeeklyPoints`,
   real points-since-pickup, and post-trade trade verdicts.
 
-All three phases are best-effort: any failure degrades that capability back
-to the old season-totals behavior. Remaining true gaps: no `team.roster`
-fetch, no weekly lineups (so games-started stays unavailable), and history
-still name-matches instead of walking the `renew` chain.
+All phases are best-effort, plus weekly `roster;week={n}` lineups for real
+games-started counts. Failures (except 404s) are counted: the league gets
+`loadIncomplete` (a one-line notice), is NOT cached, and `yahooFetch` first
+retries 429/999/5xx twice with backoff. Remaining gaps: no `team.roster`
+fetch, no keeper flag (see Settings, draft, keepers).
 
 ---
 
@@ -607,19 +638,14 @@ serves today that the app doesn't fetch. (The June 2026 round closed the
 original top items: Yahoo scoreboard/weekly stats/game weeks, ESPN
 `playerWeeklyPoints` + keeper flag, Sleeper draft type + auction prices.)
 
-1. **Yahoo `renew` chain + weekly rosters** - real season history instead of
-   name-matching; `team.roster` is never populated; weekly lineups
-   (`roster;week={n}`) would give true games-started and starts-only
-   since-pickup math.
-2. **ESPN post-trade verdicts** - `playerWeeklyPoints` now exists on ESPN;
-   applying the same windowed PAR treatment Yahoo got would retire the last
-   full-season verdict basis.
-3. **Sleeper live auction state** - `nominated_player_id` / `highest_offer` on
+1. **Yahoo `team.roster`** - never populated; the last week's
+   `roster;week={n}` response (already fetched for starts) could fill it.
+2. **Sleeper live auction state** - `nominated_player_id` / `highest_offer` on
    the draft object would enable live auction sync, not just pick sync.
-4. **Yahoo weekly points for drafted-and-kept players** - the moved-player
+3. **Yahoo weekly points for drafted-and-kept players** - the moved-player
    set covers journeys and verdicts; full-pool coverage would multiply call
    volume for marginal gain, but would complete stint scoring parity.
-5. **Sleeper trending/research endpoints** - in-season waiver suggestions.
+4. **Sleeper trending/research endpoints** - in-season waiver suggestions.
 
 Platform gaps that are NOT fixable (don't burn time): ESPN/Yahoo live draft
 feeds, Yahoo auction budget, Yahoo pure-browser access, Sleeper write access,

@@ -4,7 +4,7 @@
 // src/utils/draftEngine.ts, and undo is simply popping the last event.
 
 import type { DraftType, RosterSlots, ScoringType } from './index';
-import type { SnakeFormat } from '@/utils/snakeOrder';
+import type { PickOwners, SnakeFormat } from '@/utils/snakeOrder';
 
 export interface DraftRoomTeam {
   id: string;
@@ -40,6 +40,10 @@ export interface DraftRoomConfig {
   // Snake pick-order variant. Ignored for auction drafts. Defaults to standard
   // when absent (older saved sessions).
   snakeFormat?: SnakeFormat;
+  // Traded picks (round -> original team id -> current holder), from the
+  // platform when it reports them (Sleeper). Absent = every team owns its
+  // own picks.
+  pickOwners?: PickOwners;
   // Order matters: this is the round-1 snake order / auction nomination order.
   teams: DraftRoomTeam[];
   myTeamId: string;

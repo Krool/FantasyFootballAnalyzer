@@ -153,14 +153,20 @@ function App() {
   // proxy; a PRIVATE ESPN league can't (cookies never ride in a URL), so its
   // link degrades to the connect form with the league prefilled — the
   // recipient adds their own cookies and is in. Yahoo needs OAuth, so no
-  // param. The ref remembers targets this session already tried so a failed
+  // param to SHARE. `?league=yahoo:<league_key>` exists only so a RELOAD of a
+  // loaded Yahoo league comes back up (it loads for the logged-in owner and
+  // nobody else); it is kept on the URL but never offered as a share link.
+  // The ref remembers targets this session already tried so a failed
   // load — or a deliberate "change league" with the param still in the URL —
   // doesn't re-load in a loop.
   const shareTarget = useMemo(() => {
     const param = searchParams.get('league');
-    const match = param ? /^(sleeper|espn):(\d+)$/.exec(param) : null;
+    const match = param ? /^(sleeper|espn|yahoo):([\w.]+)$/.exec(param) : null;
     if (!match) return null;
-    return { platform: match[1] as 'sleeper' | 'espn', id: match[2], key: match[0] };
+    const platform = match[1] as 'sleeper' | 'espn' | 'yahoo';
+    // Yahoo league keys look like 461.l.12345; the others are all digits.
+    if (!(platform === 'yahoo' ? /^\d+\.l\.\d+$/ : /^\d+$/).test(match[2])) return null;
+    return { platform, id: match[2], key: match[0] };
   }, [searchParams]);
   const attemptedShareRef = useRef<string | null>(null);
   // OAuth callback runs once per browser navigation. StrictMode would otherwise
@@ -170,6 +176,19 @@ function App() {
   // Yahoo login status for the header control. The OAuth redirect is a full
   // page load, so a fresh mount always reads the latest token state.
   const [yahooConnected, setYahooConnected] = useState(isAuthenticated);
+  // A rejected refresh token clears the tokens deep inside yahooFetch, which
+  // this state cannot see. Re-read it whenever a load starts, ends, or fails
+  // so the header stops claiming a login that is gone.
+  useEffect(() => {
+    setYahooConnected(isAuthenticated());
+  }, [league, error, isLoading]);
+  // The partial-load notice is derived from the loaded league; remember which
+  // message the user dismissed so a refresh that still has gaps can re-show it.
+  const [dismissedIncomplete, setDismissedIncomplete] = useState<string | null>(null);
+  const incompleteNotice =
+    league && !league.isGuest && league.loadIncomplete && league.loadIncomplete !== dismissedIncomplete
+      ? league.loadIncomplete
+      : null;
 
   // Reveal the app once mounted. The homepage (and the other prerendered
   // routes) ship static markup that createRoot() discards and rebuilds on mount
@@ -393,7 +412,7 @@ function App() {
   }, [credentials, location.pathname, location.search, playError]);
 
   const handleYahooDisconnect = useCallback(() => {
-    if (!window.confirm('Disconnect Yahoo? Live auction prices will stop loading.')) return;
+    if (!window.confirm('Disconnect Yahoo? You will need to log in again to load your Yahoo leagues.')) return;
     clearTokens();
     setYahooConnected(false);
   }, []);
@@ -512,12 +531,23 @@ function App() {
     }
     if (isLoading) return;
     attemptedShareRef.current = shareTarget.key;
+    // Yahoo restores only for a logged-in browser: the league needs OAuth, so
+    // a visitor without a session gets the connect form on the Yahoo tab
+    // (remembered connection) to log in, instead of a doomed 401 load.
+    if (shareTarget.platform === 'yahoo' && !isAuthenticated()) {
+      rememberConnection('yahoo', shareTarget.id, new Date().getFullYear());
+      navigate('/', { replace: true });
+      return;
+    }
     // Cookies never ride in the URL, but this tab may already hold them: a
     // private ESPN league connected earlier this session persisted its
     // espn_s2/SWID to sessionStorage. Reuse them so a reload of the share
     // link (or a stale-cache refresh) loads straight through instead of
     // 401ing and bouncing to the connect form for one more click.
     const stored = shareTarget.platform === 'espn' ? loadESPNCredentials(shareTarget.id) : undefined;
+    // A Yahoo reload is a cache hit (leagueCache matches Yahoo by id alone and
+    // renders instantly, refreshing in the background once stale), so it only
+    // costs the full ~150-call enrichment when nothing usable is cached.
     load({
       platform: shareTarget.platform,
       leagueId: shareTarget.id,
@@ -526,6 +556,11 @@ function App() {
       // Prefill the connect form for next visit, same as a manual connect.
       if (loaded) {
         rememberConnection(loaded.platform, loaded.id, loaded.season);
+      } else if (shareTarget.platform === 'yahoo') {
+        // Session lapsed or Yahoo refused: the connect form (Yahoo tab,
+        // remembered connection) is where they log in again.
+        rememberConnection('yahoo', shareTarget.id, new Date().getFullYear());
+        navigate('/', { replace: true });
       } else if (shareTarget.platform === 'espn') {
         // A cookie-less load of a private ESPN league fails by design. The
         // link still earns its keep: land on the connect form with the
@@ -564,8 +599,10 @@ function App() {
   useEffect(() => {
     // sleeper and espn both keep the param (espn links degrade to a
     // prefilled connect form for private leagues — still worth copying).
+    // yahoo keeps it too, but only so a reload restores the league (the
+    // restore needs this browser's login); it is not a share link.
     // The param NEVER carries credentials, only the public league id.
-    if (!league || league.isGuest || (league.platform !== 'sleeper' && league.platform !== 'espn')) return;
+    if (!league || league.isGuest) return;
     const wanted = `${league.platform}:${league.id}`;
     const path = location.pathname;
     if (path === '/yahoo-success' || path === '/yahoo-error') return;
@@ -708,6 +745,11 @@ function App() {
 
       {seasonFallbackNotice && (
         <SeasonFallbackNotice message={seasonFallbackNotice} onDismiss={dismissSeasonFallbackNotice} />
+      )}
+
+      {/* Same small notice for a Yahoo load that came back with gaps. */}
+      {incompleteNotice && !seasonFallbackNotice && (
+        <SeasonFallbackNotice message={incompleteNotice} onDismiss={() => setDismissedIncomplete(incompleteNotice)} />
       )}
 
       <main id="main-content" style={{ flex: 1, position: 'relative' }}>

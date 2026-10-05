@@ -54,8 +54,9 @@ export function useSuggestedPicks(room: UseDraftRoomReturn, enabled: boolean): U
         derived.pickCount + 1,
         derived.totalPicks,
         config.snakeFormat,
+        config.pickOwners,
       ),
-    [config.myTeamId, config.teams, config.snakeFormat, derived.pickCount, derived.totalPicks],
+    [config.myTeamId, config.teams, config.snakeFormat, config.pickOwners, derived.pickCount, derived.totalPicks],
   );
 
   // Simulated odds each board player is gone before the user's next pick.
@@ -86,6 +87,7 @@ export function useSuggestedPicks(room: UseDraftRoomReturn, enabled: boolean): U
       teams: derived.teams,
       rosterSlots: config.rosterSlots,
       snakeFormat: config.snakeFormat,
+      pickOwners: config.pickOwners,
       available: derived.available,
       scaledValues,
       adpOf,

@@ -130,4 +130,30 @@ describe('YearSelector draft prep entry', () => {
     // same-tick URL update and clobbered it, so picks looked dead.
     expect(screen.getByTestId('location').textContent).toBe('/draft-room');
   });
+
+  it('hints that older seasons need ESPN cookies when years were dropped for 401', () => {
+    vi.mocked(getCachedSeasons).mockReturnValue([
+      { year: 2025, leagueId: league.id, status: 'final', olderNeedsCookies: true },
+    ] as never);
+    render(
+      <MemoryRouter>
+        <YearSelector league={league} credentials={credentials} onPick={() => {}} />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByTitle('Switch season'));
+    expect(screen.getByText('Older seasons need ESPN cookies')).toBeInTheDocument();
+  });
+
+  it('shows no cookie hint for a normal season list', () => {
+    vi.mocked(getCachedSeasons).mockReturnValue([
+      { year: 2025, leagueId: league.id, status: 'final' },
+    ]);
+    render(
+      <MemoryRouter>
+        <YearSelector league={league} credentials={credentials} onPick={() => {}} />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByTitle('Switch season'));
+    expect(screen.queryByText('Older seasons need ESPN cookies')).toBeNull();
+  });
 });

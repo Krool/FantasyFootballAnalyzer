@@ -5,7 +5,10 @@ const ESPN_API_BASE = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/s
 // Allowlists for SSRF prevention
 const ALLOWED_VIEWS = new Set([
   'mTeam', 'mRoster', 'mSettings', 'mDraftDetail', 'mMatchup',
-  'mTransactions2', 'kona_league_communication'
+  'mTransactions2', 'kona_league_communication',
+  // Read-only views the adapter may use later (weekly box scores, season
+  // schedule scores, player pool). Same SSRF posture: only named views pass.
+  'mBoxscore', 'mMatchupScore', 'kona_player_info'
 ]);
 const ALLOWED_EXTEND = new Set(['communication']);
 

@@ -8,6 +8,8 @@ import {
   loadKeeperSourceTeams,
   loadLeague,
   loadLeagueHistory,
+  scoreStatsWithSettings,
+  tradedPickOwners,
 } from './sleeper';
 
 // Fixture: a 4-team half-PPR superflex league, season complete.
@@ -1089,5 +1091,181 @@ describe('sleeper getAllPlayers', () => {
     await expect(getAllPlayers()).rejects.toThrow('Failed to fetch');
     await expect(getAllPlayers()).resolves.toHaveProperty('1');
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('scoreStatsWithSettings', () => {
+  it('honors 6pt pass TD and TE premium that the preset columns miss', () => {
+    const qb = { pass_yd: 4000, pass_td: 30, pass_int: 10, pts_ppr: 999 };
+    expect(scoreStatsWithSettings(qb, { pass_yd: 0.04, pass_td: 6, pass_int: -2 })).toBe(160 + 180 - 20);
+    const te = { rec: 100, rec_yd: 1000, bonus_rec_te: 100 };
+    expect(scoreStatsWithSettings(te, { rec: 1, rec_yd: 0.1, bonus_rec_te: 0.5 })).toBe(100 + 100 + 50);
+  });
+
+  it('scores kickers and defenses from their bucket keys', () => {
+    const k = { fgm_20_29: 10, fgm_50p: 4, xpm: 40, fgmiss: 3 };
+    expect(scoreStatsWithSettings(k, { fgm_20_29: 3, fgm_50p: 5, xpm: 1, fgmiss: -1 })).toBe(30 + 20 + 40 - 3);
+    const def = { sack: 42, int: 6, def_td: 1, pts_allow_0: 1, pts_allow_28_34: 4, pts_allow: 454 };
+    expect(
+      scoreStatsWithSettings(def, { sack: 1, int: 2, def_td: 6, pts_allow_0: 5, pts_allow_28_34: -1, pts_allow: 0 }),
+    ).toBe(42 + 12 + 6 + 5 - 4);
+  });
+
+  it('returns undefined when no stat key is scored, so presets can fall back', () => {
+    expect(scoreStatsWithSettings({ pts_ppr: 300, rank_ppr: 4 }, { rec: 1 })).toBeUndefined();
+    expect(scoreStatsWithSettings(undefined, { rec: 1 })).toBeUndefined();
+    expect(scoreStatsWithSettings({ rec: 3 }, undefined)).toBeUndefined();
+  });
+});
+
+describe('tradedPickOwners', () => {
+  it('maps only the upcoming season picks that changed hands', () => {
+    const picks = [
+      { season: '2026', round: 2, roster_id: 4, previous_owner_id: 4, owner_id: 1 },
+      { season: '2026', round: 3, roster_id: 2, previous_owner_id: 1, owner_id: 2 }, // came home
+      { season: '2027', round: 1, roster_id: 3, previous_owner_id: 3, owner_id: 1 }, // future year
+    ];
+    expect(tradedPickOwners(picks, '2026')).toEqual({ 2: { '4': '1' } });
+    expect(tradedPickOwners([], '2026')).toBeUndefined();
+  });
+});
+
+describe('sleeper loadLeague trades with picks/FAAB, custom scoring, traded draft picks', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  async function loadWith(overrides: Record<string, unknown>): Promise<League> {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input).replace('https://api.sleeper.app/v1', '');
+      if (path in overrides) return jsonResponse(overrides[path]);
+      return jsonResponse(routeSleeper(String(input)));
+    }));
+    return loadLeague(LEAGUE_ID);
+  }
+
+  it('maps picks and FAAB onto each side and withholds the winner', async () => {
+    const trade: SleeperAPI.Transaction = {
+      ...transactionsWeek3[1],
+      transaction_id: 'tx-trade-picks',
+      draft_picks: [
+        { season: '2026', round: 2, roster_id: 2, previous_owner_id: 2, owner_id: 1 },
+      ],
+      waiver_budget: [{ sender: 1, receiver: 2, amount: 15 }],
+    };
+    const league = await loadWith({ [`/league/${LEAGUE_ID}/transactions/3`]: [trade] });
+    const t = league.trades.find(x => x.id === 'tx-trade-picks')!;
+    const s1 = t.teams.find(x => x.teamId === '1')!;
+    const s2 = t.teams.find(x => x.teamId === '2')!;
+    expect(s1.draftPicksReceived).toEqual([{ season: 2026, round: 2, originalOwner: '2' }]);
+    expect(s2.draftPicksSent).toEqual([{ season: 2026, round: 2, originalOwner: '2' }]);
+    expect(s1.faabSent).toBe(15);
+    expect(s2.faabReceived).toBe(15);
+    expect(t.winner).toBeUndefined();
+    expect(t.verdictNote).toMatch(/picks or FAAB/);
+  });
+
+  it('scores grading points from raw stats against the league scoring_settings', async () => {
+    const league = await loadWith({
+      [`/league/${LEAGUE_ID}`]: {
+        ...leagueFixture,
+        scoring_settings: { rec: 0.75, pass_yd: 0.04, pass_td: 6 },
+      },
+      [`/stats/nfl/regular/2025`]: {
+        ...seasonStatsFixture,
+        '101': { pass_yd: 4000, pass_td: 30, pts_std: 1, gp: 17 },
+      },
+    });
+    expect(league.scoringType).toBe('custom');
+    const josh = league.teams.find(t => t.id === '1')!.roster.find(p => p.platformId === '101')!;
+    expect(josh.seasonPoints).toBe(340);
+    // Computed, not guessed: the custom flag clears once raw scoring ran.
+    expect(league.scoringIsApproximate).toBeUndefined();
+  });
+
+  it('stays approximate when custom scoring cannot be computed from raw stats', async () => {
+    const league = await loadWith({
+      [`/league/${LEAGUE_ID}`]: { ...leagueFixture, scoring_settings: { rec: 0.75, pass_td: 6 } },
+    });
+    expect(league.scoringIsApproximate).toBe(true);
+    const josh = league.teams.find(t => t.id === '1')!.roster.find(p => p.platformId === '101')!;
+    expect(josh.seasonPoints).toBe(380); // preset fallback
+  });
+
+  it('carries traded picks for the upcoming draft as pickOwners', async () => {
+    const league = await loadWith({
+      [`/league/${LEAGUE_ID}`]: { ...leagueFixture, status: 'pre_draft' },
+      [`/draft/${DRAFT_ID}`]: { draft_id: DRAFT_ID, type: 'snake', status: 'pre_draft', slot_to_roster_id: null },
+      [`/draft/${DRAFT_ID}/picks`]: [],
+      [`/draft/${DRAFT_ID}/traded_picks`]: [
+        { season: '2025', round: 2, roster_id: 4, previous_owner_id: 4, owner_id: 1 },
+      ],
+    });
+    expect(league.upcomingDraft?.pickOwners).toEqual({ 2: { '4': '1' } });
+  });
+});
+
+describe('sleeper loadHeadToHeadRecords unplayed weeks and retries', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const mu = (rid: number, id: number, pts: number) => ({ roster_id: rid, matchup_id: id, points: pts });
+  const baseLeague = {
+    league_id: 'H1', name: 'L', season: '2025', status: 'complete', previous_league_id: '0',
+    settings: { playoff_week_start: 4 },
+  };
+  const users = [{ user_id: 'u1', display_name: 'A' }, { user_id: 'u2', display_name: 'B' }, { user_id: 'u3', display_name: 'C' }];
+  const rosters = [
+    { roster_id: 1, owner_id: 'u1', settings: {} },
+    { roster_id: 2, owner_id: 'u2', settings: {} },
+    { roster_id: 3, owner_id: 'u3', settings: {} },
+  ];
+
+  function stub(league: Record<string, unknown>, weeks: Record<number, unknown[] | 'fail-once'>) {
+    const attempts: Record<number, number> = {};
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input).replace('https://api.sleeper.app/v1', '');
+      const m = path.match(/^\/league\/H1\/matchups\/(\d+)$/);
+      if (m) {
+        const w = parseInt(m[1]);
+        attempts[w] = (attempts[w] ?? 0) + 1;
+        const v = weeks[w];
+        if (v === 'fail-once' && attempts[w] === 1) {
+          return { ok: false, status: 503, statusText: 'Unavailable', json: async () => ({}) } as Response;
+        }
+        return jsonResponse(v === 'fail-once' ? [mu(1, 1, 100), mu(2, 1, 90)] : (v ?? []));
+      }
+      if (path === '/league/H1') return jsonResponse(league);
+      if (path === '/league/H1/users') return jsonResponse(users);
+      if (path === '/league/H1/rosters') return jsonResponse(rosters);
+      throw new Error(`Unexpected Sleeper URL in test: ${path}`);
+    }));
+  }
+
+  it('creates no record for an opponent met only in an unplayed 0-0 week', async () => {
+    stub(baseLeague, {
+      1: [mu(1, 1, 100), mu(2, 1, 90), mu(3, 2, 80)],
+      2: [mu(1, 1, 0), mu(3, 1, 0), mu(2, 2, 70)],
+    });
+    const { records } = await loadHeadToHeadRecords('H1', '1', 1);
+    expect(records.has('u3')).toBe(false);
+    expect(records.get('u2')!.matchups).toHaveLength(1);
+  });
+
+  it('skips weeks past last_scored_leg in a live season', async () => {
+    stub({ ...baseLeague, status: 'in_season', settings: { playoff_week_start: 4, last_scored_leg: 1 } }, {
+      1: [mu(1, 1, 100), mu(2, 1, 90)],
+      2: [mu(1, 1, 50), mu(3, 1, 10)], // in progress: partial scores
+    });
+    const { records } = await loadHeadToHeadRecords('H1', '1', 1);
+    expect(records.has('u3')).toBe(false);
+    expect(records.get('u2')!.matchups).toHaveLength(1);
+  });
+
+  it('retries a failed weekly fetch once', async () => {
+    stub(baseLeague, { 1: 'fail-once' });
+    const { records } = await loadHeadToHeadRecords('H1', '1', 1);
+    expect(records.get('u2')!.wins).toBe(1);
   });
 });

@@ -39,6 +39,17 @@ export class ESPNAPIError extends Error {
   }
 }
 
+export const ESPN_HISTORY_WALL_MESSAGE =
+  'ESPN only shares older seasons with your cookies (401). Add espn_s2 and SWID to see them.';
+
+// ESPN's public window without cookies: the current season plus one prior.
+function isBeyondPublicWindow(season: number): boolean {
+  return season <= new Date().getFullYear() - 2;
+}
+
+// SeasonOption plus the history-wall hint (see getAvailableSeasons).
+export type EspnSeasonOption = SeasonOption & { olderNeedsCookies?: boolean };
+
 interface FetchOptions {
   espnS2?: string;
   swid?: string;
@@ -130,6 +141,13 @@ async function fetchESPN<T>(
 
   if (!response.ok) {
     if (response.status === 401) {
+      // Since 2025-08 ESPN serves only the current season plus one prior
+      // without cookies, even for public leagues. A 401 on an older season is
+      // that history wall, not a private league: say so (status in the text so
+      // the Sentry noise filter can tell it from an outage).
+      if (isBeyondPublicWindow(season)) {
+        throw new ESPNAPIError(ESPN_HISTORY_WALL_MESSAGE, response.status);
+      }
       // No cookies supplied — direct ESPN call hit a private league.
       throw new ESPNAPIError('ESPN: this looks like a private league. Provide your espn_s2 and SWID cookies to access it.', response.status);
     }
@@ -274,7 +292,32 @@ export async function loadLeague(
   // stay weekly even in leagues with 2-week playoff matchup rounds. If
   // playoff-round analysis is ever built, the matchup-period -> scoring-period
   // map is available at settings.scheduleSettings.matchupPeriods.
-  const currentWeek = hasDrafted ? Math.max(leagueData.status?.currentMatchupPeriod || 0, 17) : 0;
+  //
+  // Bounds come from ESPN's own status: finalScoringPeriod is the last NFL week
+  // the league plays (17, or 18 for leagues that use it); the live week is the
+  // newest of latestScoringPeriod / the top-level scoringPeriodId / the matchup
+  // period. In season we fetch only played weeks + the current one (so the
+  // `week < currentWeek` in-progress guard below means something); a finished
+  // season fetches every week through the final one. Fields are optional on
+  // the payload, so a missing finalScoringPeriod falls back to 17.
+  const statusBlock = leagueData.status as
+    { currentMatchupPeriod?: number; latestScoringPeriod?: number; finalScoringPeriod?: number } | undefined;
+  const finalPeriod = statusBlock?.finalScoringPeriod || 17;
+  const seasonOverForWeeks =
+    season < new Date().getFullYear() ||
+    (leagueData.teams.length > 0 && leagueData.teams.every(t => (t.rankCalculatedFinal || 0) > 0));
+  const livePeriod = Math.max(
+    statusBlock?.latestScoringPeriod || 0,
+    leagueData.scoringPeriodId || 0,
+    statusBlock?.currentMatchupPeriod || 0,
+  );
+  // A drafted preseason league still needs week 1 (draft-day rosters feed the
+  // preseason-trade diff), hence the floor of 1.
+  const currentWeek = !hasDrafted
+    ? 0
+    : seasonOverForWeeks
+      ? finalPeriod
+      : Math.min(Math.max(livePeriod, 1), finalPeriod);
   logger.debug('[ESPN] Current week:', currentWeek, hasDrafted ? '' : '(pre-draft league, skipping weekly fetches)');
 
   // Fetch weekly roster data to track who was STARTED each week
@@ -371,7 +414,7 @@ export async function loadLeague(
         // skipping it would inflate per-game stints in Player Journey. The
         // in-progress week still requires points, since a not-yet-played
         // game can carry a 0.0 actuals entry.
-        if (weekStat && (week < currentWeek || weekPoints !== 0)) {
+        if (weekStat && (week < currentWeek || seasonOverForWeeks || weekPoints !== 0)) {
           (playerWeeklyPoints[String(playerId)] ??= {})[week] = weekPoints;
         }
 
@@ -687,10 +730,12 @@ export async function loadLeague(
     });
 
     // Build a set of TRADE_UPHOLD timestamps - these indicate completed trades
-    const upholdTimestamps = new Set<number>();
+    // Timestamp -> the scoring period ESPN stamped on that TRADE_UPHOLD; it
+    // doubles as the trade's week (communication topics carry no week).
+    const upholdTimestamps = new Map<number, number>();
     tradeUpholds.forEach(tx => {
       if (tx.proposedDate) {
-        upholdTimestamps.add(tx.proposedDate);
+        upholdTimestamps.set(tx.proposedDate, tx.scoringPeriodId || 0);
       }
     });
     // Match communication topics to TRADE_UPHOLD timestamps (within 1 hour)
@@ -700,12 +745,17 @@ export async function loadLeague(
 
       // Check if this communication topic is near a TRADE_UPHOLD timestamp
       let isCompletedTrade = false;
-      for (const upholdTime of upholdTimestamps) {
+      let upholdWeek = 0;
+      let bestDiff = Infinity;
+      for (const [upholdTime, period] of upholdTimestamps) {
         const timeDiff = Math.abs(topicTime - upholdTime);
-        // Within 1 hour of a TRADE_UPHOLD
+        // Within 1 hour of a TRADE_UPHOLD; keep the closest one's week
         if (timeDiff < 60 * 60 * 1000) {
           isCompletedTrade = true;
-          break;
+          if (timeDiff < bestDiff) {
+            bestDiff = timeDiff;
+            upholdWeek = period;
+          }
         }
       }
 
@@ -759,7 +809,9 @@ export async function loadLeague(
         communicationTrades.push({
           id: topic.id,
           items,
-          week: 0,
+          // An executed trade (it matched an UPHOLD) before week 1 is a
+          // preseason trade: judge it from week 1, the first week it could play.
+          week: Math.max(1, upholdWeek),
           timestamp: topic.date,
         });
       }
@@ -848,8 +900,78 @@ export async function loadLeague(
     });
   }
 
-  // Use roster-detected trades as primary source (most reliable!)
-  let tradesToProcess: Array<{ id: string; items: ESPNAPI.TransactionItem[]; week: number; timestamp: number }> = [];
+  // PRESEASON TRADES: the weekly diff above starts at week 1, so a trade made
+  // after the draft but before week 1 is invisible to it. Diff the draft
+  // (who drafted each player) against the week-1 rosters instead: a player
+  // now on a different team than his drafter, whose arrival isn't explained by
+  // a waiver/FA add, moved by trade. Only MUTUAL swaps count, same as the
+  // weekly diff: a one-way move could be a drop plus a free-agent claim that
+  // an unauthenticated load (no transactions) can't see.
+  const week1Roster = rostersByWeek.get(1);
+  const drafterOf = new Map<number, number>();
+  leagueData.draftDetail?.picks?.forEach(pick => drafterOf.set(pick.playerId, pick.teamId));
+  if (week1Roster && drafterOf.size > 0) {
+    const movements = new Map<string, number[]>();
+    week1Roster.forEach((teamNow, playerId) => {
+      const drafter = drafterOf.get(playerId);
+      if (drafter === undefined || drafter === teamNow) return;
+      const addWeeks = waiverAddWeeks.get(`${teamNow}-${playerId}`);
+      if (addWeeks?.some(w => w <= 1)) return;
+      const key = `${drafter}-${teamNow}`;
+      const existing = movements.get(key) || [];
+      existing.push(playerId);
+      movements.set(key, existing);
+    });
+    movements.forEach((playersAtoB, keyAB) => {
+      const [teamA, teamB] = keyAB.split('-').map(Number);
+      const keyBA = `${teamB}-${teamA}`;
+      const playersBA = movements.get(keyBA);
+      if (playersBA && playersBA.length > 0) {
+        rosterDetectedTrades.push({
+          week: 1, // post-trade basis starts at week 1
+          teams: [teamA, teamB],
+          playersMovedToTeam1: playersBA,
+          playersMovedToTeam2: playersAtoB,
+        });
+        movements.delete(keyAB);
+        movements.delete(keyBA);
+      }
+    });
+  }
+
+  // Merge the sources instead of letting the first non-empty one win: the
+  // roster diff is the most reliable, but it can only see trades that survive
+  // to a week boundary, so communication and TRADE_ACCEPT trades are added
+  // when their team pair + week isn't already covered.
+  const tradesToProcess: Array<{ id: string; items: ESPNAPI.TransactionItem[]; week: number; timestamp: number }> = [];
+
+  const tradeTeamIds = (items: ESPNAPI.TransactionItem[]): Set<number> => {
+    const ids = new Set<number>();
+    items.forEach(i => {
+      if (i.fromTeamId) ids.add(i.fromTeamId);
+      if (i.toTeamId) ids.add(i.toTeamId);
+    });
+    return ids;
+  };
+  const tradePlayerIds = (items: ESPNAPI.TransactionItem[]): Set<number> =>
+    new Set(items.filter(i => i.playerId).map(i => i.playerId));
+  // Covered = an already-kept trade has all of the candidate's teams, within a
+  // week of it, and (when both name real players) shares at least one player.
+  // The share test keeps two genuinely separate trades between the same pair
+  // in adjacent weeks apart.
+  const isCovered = (cand: { items: ESPNAPI.TransactionItem[]; week: number }): boolean => {
+    const candTeams = tradeTeamIds(cand.items);
+    if (candTeams.size === 0) return false;
+    const candPlayers = tradePlayerIds(cand.items);
+    return tradesToProcess.some(t => {
+      const teams = tradeTeamIds(t.items);
+      if (![...candTeams].every(id => teams.has(id))) return false;
+      if (Math.abs(t.week - cand.week) > 1) return false;
+      const players = tradePlayerIds(t.items);
+      if (candPlayers.size === 0 || players.size === 0) return true;
+      return [...candPlayers].some(p => players.has(p));
+    });
+  };
 
   // PRIORITY 1: Roster-based detection (most reliable - we KNOW rosters changed)
   if (rosterDetectedTrades.length > 0) {
@@ -886,15 +1008,26 @@ export async function loadLeague(
     });
   }
   // PRIORITY 2: Communication endpoint (has timestamps but complex parsing)
-  else if (communicationTrades.length > 0) {
-    tradesToProcess = communicationTrades;
-    logger.debug('[ESPN] Using communication endpoint trades');
-  }
+  communicationTrades.forEach(commTrade => {
+    if (isCovered(commTrade)) return;
+    logger.debug('[ESPN] Adding communication endpoint trade:', commTrade.id);
+    tradesToProcess.push(commTrade);
+  });
   // PRIORITY 3: TRADE_ACCEPT/TRADE_PROPOSAL matching (fallback)
-  else {
-    // Fall back to matching TRADE_ACCEPT with TRADE_PROPOSAL by timestamp
-    // The relatedTransactionId often doesn't match, so we match by timestamp instead
-    const proposalsWithItems = tradeProposals.filter(tx => tx.items && tx.items.length > 0);
+  {
+    // Match TRADE_ACCEPT with its TRADE_PROPOSAL. A declined, cancelled or
+    // expired proposal must never be paired with an accept. Excluding the
+    // known-dead statuses, rather than requiring a guessed live one (the
+    // live status names are not verified on real data), keeps real trades
+    // from silently dropping; the team-overlap and 3-day window below are
+    // what stop a fuzzy match from fabricating one.
+    const isDeadProposal = (tx: ESPNAPI.Transaction) =>
+      ['DECLINED', 'CANCELED', 'CANCELLED', 'EXPIRED', 'REJECTED', 'VETOED', 'FAILED_INVALIDPLAYERS', 'FAILED_INVALIDTRANSACTION'].includes(tx.status);
+    const proposalsWithItems = tradeProposals.filter(tx => tx.items && tx.items.length > 0 && !isDeadProposal(tx));
+    // Candidates found here are merged into tradesToProcess afterwards, only
+    // when not already covered by the sources above (or each other: both
+    // sides of one trade carry their own TRADE_ACCEPT).
+    const fallbackTrades: Array<{ id: string; items: ESPNAPI.TransactionItem[]; week: number; timestamp: number; isIncomplete?: boolean }> = [];
 
     tradeAccepts.forEach(acceptTx => {
       let items: ESPNAPI.TransactionItem[] = [];
@@ -927,7 +1060,7 @@ export async function loadLeague(
       // Try to look up the related TRADE_PROPOSAL by ID (direct lookup)
       else if (acceptTx.relatedTransactionId) {
         const proposal = txById.get(String(acceptTx.relatedTransactionId));
-        if (proposal?.items && proposal.items.length > 0) {
+        if (proposal?.items && proposal.items.length > 0 && !isDeadProposal(proposal)) {
           items = proposal.items;
           logger.debug('[ESPN] Matched TRADE_PROPOSAL by direct relatedId:', acceptTx.relatedTransactionId);
           // Remove from proposalsWithItems to prevent double-matching
@@ -938,7 +1071,7 @@ export async function loadLeague(
       // Try reverse lookup - TRADE_PROPOSAL's relatedId might point to TRADE_ACCEPT
       if (items.length === 0) {
         const reverseMatch = proposalByRelatedId.get(String(acceptTx.id));
-        if (reverseMatch?.items && reverseMatch.items.length > 0) {
+        if (reverseMatch?.items && reverseMatch.items.length > 0 && !isDeadProposal(reverseMatch)) {
           items = reverseMatch.items;
           logger.debug('[ESPN] Matched TRADE_PROPOSAL by reverse relatedId:', reverseMatch.id);
           // Remove from proposalsWithItems to prevent double-matching
@@ -1019,18 +1152,21 @@ export async function loadLeague(
         }
       }
 
-      // Final fallback: try matching by timestamp only (less reliable)
-      if (items.length === 0 && acceptTx.proposedDate) {
-        logger.debug('[ESPN] Trying timestamp-only match for accept:', acceptTx.id, 'remaining proposals:', proposalsWithItems.length);
+      // Final fallback: a close timestamp, but ONLY among executed proposals
+      // that involve every team we know accepted. The old 30-day, timestamp-
+      // only match fabricated trades out of unrelated proposals; with no known
+      // team there is nothing to verify against, so it is skipped.
+      if (items.length === 0 && acceptTx.proposedDate && teamsInTrade.size > 0) {
+        logger.debug('[ESPN] Trying timestamp match for accept:', acceptTx.id, 'remaining proposals:', proposalsWithItems.length);
 
-        // Find a TRADE_PROPOSAL with items that has a similar timestamp
-        // Allow up to 30 days between proposal and accept
-        const tolerance = 30 * 24 * 60 * 60 * 1000;
+        const tolerance = 3 * 24 * 60 * 60 * 1000;
 
         // Find closest matching proposal
         let bestMatch: { proposal: ESPNAPI.Transaction; timeDiff: number } | null = null;
 
         for (const proposal of proposalsWithItems) {
+          const proposalTeams = tradeTeamIds(proposal.items || []);
+          if (![...teamsInTrade].every(t => proposalTeams.has(t))) continue;
           if (proposal.proposedDate) {
             const timeDiff = Math.abs(acceptTx.proposedDate - proposal.proposedDate);
             if (timeDiff < tolerance && (!bestMatch || timeDiff < bestMatch.timeDiff)) {
@@ -1056,14 +1192,17 @@ export async function loadLeague(
           logger.debug('[ESPN] No proposal matched within tolerance for accept:', acceptTx.id);
         }
       } else if (items.length === 0) {
-        logger.debug('[ESPN] Skipping timestamp match - no proposedDate for accept:', acceptTx.id);
+        logger.debug('[ESPN] Skipping timestamp match - no proposedDate or no known team for accept:', acceptTx.id);
       }
 
+      // A TRADE_ACCEPT stamped before week 1 is a preseason trade: judge it
+      // from week 1.
+      const acceptWeek = Math.max(1, acceptTx.scoringPeriodId || 0);
       if (items.length > 0) {
-        tradesToProcess.push({
+        fallbackTrades.push({
           id: String(acceptTx.id),
           items,
-          week: acceptTx.scoringPeriodId,
+          week: acceptWeek,
           timestamp: acceptTx.proposedDate || 0,
         });
       } else {
@@ -1081,13 +1220,13 @@ export async function loadLeague(
             type: 'TRADE' as const,
           }));
 
-          tradesToProcess.push({
+          fallbackTrades.push({
             id: String(acceptTx.id),
             items: placeholderItems,
-            week: acceptTx.scoringPeriodId,
+            week: acceptWeek,
             timestamp: acceptTx.proposedDate || 0,
             isIncomplete: true, // Flag to indicate missing player data
-          } as any);
+          });
         }
       }
     });
@@ -1108,15 +1247,25 @@ export async function loadLeague(
         itemCount: proposal.items?.length,
         players: proposal.items?.map(i => playerMap.get(String(i.playerId))?.name || `#${i.playerId}`),
       });
-      tradesToProcess.push({
+      fallbackTrades.push({
         id: String(proposal.id),
         items: proposal.items!,
-        week: proposal.scoringPeriodId,
+        week: Math.max(1, proposal.scoringPeriodId || 0),
         timestamp: proposal.proposedDate || 0,
       });
       // Remove from unmatched list
       const idx = proposalsWithItems.indexOf(proposal);
       if (idx > -1) proposalsWithItems.splice(idx, 1);
+    });
+
+    // Merge: keep only what the roster diff / communication feed (and earlier
+    // fallback entries) didn't already cover.
+    fallbackTrades.forEach(candidate => {
+      if (isCovered(candidate)) {
+        logger.debug('[ESPN] Fallback trade already covered, skipping:', candidate.id);
+        return;
+      }
+      tradesToProcess.push(candidate);
     });
   }
 
@@ -1566,9 +1715,11 @@ export async function getAvailableSeasons(
   leagueId: string,
   options?: { espnS2?: string; swid?: string },
   maxSeasons: number = 7,
-): Promise<SeasonOption[]> {
+): Promise<EspnSeasonOption[]> {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: maxSeasons }, (_, i) => currentYear - i);
+  // Years dropped because ESPN 401'd a cookie-less read of an old season.
+  let droppedFor401 = false;
 
   const probes = await Promise.all(years.map(async (year) => {
     try {
@@ -1591,11 +1742,18 @@ export async function getAvailableSeasons(
       return { year, leagueId, status, leagueName: data.settings?.name } as SeasonOption;
     } catch (err) {
       logger.debug(`[ESPN] getAvailableSeasons: year ${year} unreachable:`, err);
+      if (
+        err instanceof ESPNAPIError && err.status === 401 &&
+        !(options?.espnS2 && options?.swid) && isBeyondPublicWindow(year)
+      ) {
+        droppedFor401 = true;
+      }
       return null;
     }
   }));
 
-  return probes.filter((s): s is SeasonOption => s !== null);
+  const found = probes.filter((s): s is SeasonOption => s !== null);
+  return droppedFor401 ? found.map(s => ({ ...s, olderNeedsCookies: true })) : found;
 }
 
 // Load historical seasons for ESPN league

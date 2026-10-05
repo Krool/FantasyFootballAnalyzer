@@ -128,6 +128,9 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          # Companion ESPN extension id (a repo variable, not a secret). Unset
+          # keeps the auto-fill dormant; set it once the extension is published.
+          VITE_ESPN_EXTENSION_ID: ${{ vars.VITE_ESPN_EXTENSION_ID }}
 
       # This job must deploy its own commit. The push above uses the default
       # GITHUB_TOKEN, and GitHub does not trigger workflows (including ci.yml)

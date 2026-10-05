@@ -171,6 +171,12 @@ describe('isExpectedUserError', () => {
     expect(isExpectedUserError(exception('Invalid call to runtime.sendMessage(). Tab not found.'))).toBe(true);
   });
 
+  it('drops Yahoo session-lapse errors but keeps a refresh outage', () => {
+    expect(isExpectedUserError(exception('Token refresh failed (401) - please re-authenticate'))).toBe(true);
+    expect(isExpectedUserError(exception('Not authenticated with Yahoo (401)'))).toBe(true);
+    expect(isExpectedUserError(exception('Token refresh failed (503) - please try again'))).toBe(false);
+  });
+
   it('keeps server failures and any Yahoo 403', () => {
     // Yahoo access went live 2026-10-02, so even the old lockdown wording is
     // real breakage again and must report.

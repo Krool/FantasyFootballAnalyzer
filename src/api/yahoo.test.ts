@@ -7,6 +7,8 @@ import {
   parseRosterSettings,
   getUserLeagues,
   getAvailableSeasons,
+  loadLeagueHistory,
+  loadHeadToHeadRecords,
   getAccessToken,
   getRefreshToken,
   isAuthenticated,
@@ -653,6 +655,248 @@ describe('yahoo enrichPlayersWithStats (weekly lineups)', () => {
     expect(puka.gamesSincePickup).toBe(2);
     expect(tx.totalPointsGenerated).toBe(32);
     expect(tx.gamesStarted).toBe(2);
+  });
+
+  it('is not marked incomplete when every call lands', () => {
+    expect(league.loadIncomplete).toBeUndefined();
+  });
+});
+
+describe('yahoo enrichPlayersWithStats (throttled load)', () => {
+  const failing = (status: number) => ({
+    ok: false, status, statusText: 'err', json: async () => ({}),
+  }) as Response;
+
+  async function loadWith(route: (endpoint: string) => unknown | Response): Promise<League> {
+    localStorage.setItem('yahoo_access_token', 'test-token');
+    localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const endpoint = decodeURIComponent(String(input).match(/endpoint=([^&]+)/)![1]);
+      const body = route(endpoint);
+      const roster = endpoint.match(/\/teams\/roster;week=(\d+)$/);
+      if (roster && !body) return jsonResponse(rosterBody(parseInt(roster[1])));
+      return body && (body as Response).status ? (body as Response) : jsonResponse(routeYahooEnrich(String(input)));
+    }));
+    const league = await loadLeague(LEAGUE_KEY);
+    await enrichPlayersWithStats(league);
+    return league;
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.removeItem('yahoo_access_token');
+    localStorage.removeItem('yahoo_token_expiry');
+  });
+
+  it('marks the league incomplete, naming the failed weeks and player batch', async () => {
+    const league = await loadWith(endpoint => {
+      if (/scoreboard;week=(3|4)$/.test(endpoint)) return failing(500);
+      if (/;out=stats$/.test(endpoint)) return failing(500);
+      return null;
+    });
+    expect(league.loadIncomplete).toMatch(/player names and stats \(1 of 1 requests\)/);
+    expect(league.loadIncomplete).toMatch(/matchup scores for weeks 3, 4/);
+    // The rest of the load still lands: matchups for the weeks that worked.
+    expect(league.matchups!.some(m => m.week === 1)).toBe(true);
+    expect(league.matchups!.some(m => m.week === 3)).toBe(false);
+  });
+
+  it('does not mark a league incomplete for a genuinely missing (404) week', async () => {
+    const league = await loadWith(endpoint =>
+      /scoreboard;week=3$/.test(endpoint) ? failing(404) : null);
+    expect(league.loadIncomplete).toBeUndefined();
+  });
+});
+
+describe('yahoo loadLeague transaction and manager edge cases', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.removeItem('yahoo_access_token');
+    localStorage.removeItem('yahoo_token_expiry');
+  });
+
+  it('maps vetoed trades to vetoed and hides the --hidden-- manager name', async () => {
+    localStorage.setItem('yahoo_access_token', 'test-token');
+    localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
+    const league = structuredClone(leagueBody);
+    league.fantasy_content.league.teams.team[1].managers = { manager: { nickname: '--hidden--' } };
+    const txs = structuredClone(transactionsBody);
+    txs.fantasy_content.league.transactions.transaction[0].status = 'vetoed';
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const endpoint = decodeURIComponent(String(input).match(/endpoint=([^&]+)/)![1]);
+      if (endpoint.endsWith('/transactions')) return jsonResponse(txs);
+      if (endpoint.includes('out=settings')) return jsonResponse(league);
+      return jsonResponse(draftResultsBody);
+    }));
+    const loaded = await loadLeague(LEAGUE_KEY);
+    expect(loaded.trades![0].status).toBe('vetoed');
+    expect(loaded.teams.find(t => t.id === TEAM_2)!.ownerName).toBeUndefined();
+    expect(loaded.teams.find(t => t.id === TEAM_1)!.ownerName).toBe('Krool');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// History: walks the `renew` chain; H2H follows the manager guid.
+// ---------------------------------------------------------------------------
+
+describe('yahoo league history', () => {
+  const NOW = new Date().getFullYear();
+  const K25 = '461.l.777';
+  const K24 = '449.l.555';
+
+  function seasonBody(opts: {
+    season: number; renew?: string; finished: boolean;
+    teams: Array<{ key: string; name: string; guid: string; rank: number; wins: number }>;
+  }) {
+    return {
+      fantasy_content: {
+        league: {
+          name: 'Yahoo Test League',
+          season: String(opts.season),
+          renew: opts.renew ?? '',
+          is_finished: opts.finished ? '1' : '0',
+          current_week: '17',
+          end_week: '17',
+          settings: { uses_playoff: '1', playoff_start_week: '15' },
+          standings: {
+            teams: {
+              team: opts.teams.map(t => ({
+                team_key: t.key,
+                name: t.name,
+                managers: { manager: { guid: t.guid, nickname: '--hidden--' } },
+                team_standings: {
+                  rank: t.rank,
+                  outcome_totals: { wins: t.wins, losses: 14 - t.wins, ties: 0 },
+                  points_for: 1000 + t.wins,
+                  points_against: 900,
+                },
+              })),
+            },
+          },
+        },
+      },
+    };
+  }
+
+  const body25 = seasonBody({
+    season: 2025, renew: '449_555', finished: true,
+    teams: [
+      { key: TEAM_1, name: 'Krool Runnings', guid: 'G1', rank: 1, wins: 10 },
+      { key: TEAM_2, name: 'Gridiron Gang', guid: 'G2', rank: 2, wins: 4 },
+    ],
+  });
+  // Team keys renumber and names change between seasons; guids do not.
+  const body24 = seasonBody({
+    season: 2024, finished: true,
+    teams: [
+      { key: '449.l.555.t.4', name: 'Old Gang', guid: 'G2', rank: 1, wins: 9 },
+      { key: '449.l.555.t.5', name: 'Old Runnings', guid: 'G1', rank: 2, wins: 8 },
+    ],
+  });
+
+  function scoreboard(key: string, week: number) {
+    const a = key === K25 ? TEAM_1 : '449.l.555.t.5'; // G1 in each year
+    const b = key === K25 ? TEAM_2 : '449.l.555.t.4'; // G2 in each year
+    const playedWeeks: Record<number, [number, number, boolean?]> = {
+      1: [100, 90], 2: [80, 90], 3: [70, 60, true], // week 3 flagged playoffs
+    };
+    const w = playedWeeks[week] ?? [0, 0];
+    return {
+      fantasy_content: {
+        league: {
+          scoreboard: {
+            matchups: {
+              matchup: [{
+                is_playoffs: w[2] ? '1' : '0',
+                is_consolation: '0',
+                teams: { team: [
+                  { team_key: a, team_points: { total: String(w[0]) } },
+                  { team_key: b, team_points: { total: String(w[1]) } },
+                ] },
+              }],
+            },
+          },
+        },
+      },
+    };
+  }
+
+  function route(endpoint: string): unknown {
+    if (endpoint === `/league/${K25};out=settings,standings`) return body25;
+    if (endpoint === `/league/${K24};out=settings,standings`) return body24;
+    const sb = endpoint.match(/^\/league\/([\d.l]+)\/scoreboard;week=(\d+)$/);
+    if (sb) return scoreboard(sb[1], parseInt(sb[2]));
+    if (endpoint.startsWith('/users;use_login=1/games')) return {};
+    throw new Error(`Unexpected Yahoo endpoint in test: ${endpoint}`);
+  }
+
+  beforeEach(() => {
+    localStorage.setItem('yahoo_access_token', 'test-token');
+    localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      jsonResponse(route(decodeURIComponent(String(input).match(/endpoint=([^&]+)/)![1])))));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.removeItem('yahoo_access_token');
+    localStorage.removeItem('yahoo_token_expiry');
+  });
+
+  it('walks the renew chain newest first with guid owner ids and a champion', async () => {
+    expect(NOW).toBeGreaterThan(2024); // sanity: both fixture seasons are past
+    const history = await loadLeagueHistory(K25, 5);
+    expect(history.map(h => h.season)).toEqual([2025, 2024]);
+    expect(history[0].leagueId).toBe(K25);
+    expect(history[0].championTeamId).toBe(TEAM_1);
+    expect(history[0].isComplete).toBe(true);
+    expect(history[0].teams.map(t => t.ownerId)).toEqual(['G1', 'G2']);
+    expect(history[1].championTeamId).toBe('449.l.555.t.4');
+    expect(history[1].teams[1]).toMatchObject({ standing: 2, name: 'Old Runnings', wins: 8 });
+  });
+
+  it('honors maxSeasons', async () => {
+    expect((await loadLeagueHistory(K25, 1)).map(h => h.season)).toEqual([2025]);
+  });
+
+  it('crowns nobody in a season that is not finished', async () => {
+    const live = seasonBody({
+      season: 2025, finished: false,
+      teams: [{ key: TEAM_1, name: 'A', guid: 'G1', rank: 1, wins: 3 }],
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(live)));
+    const history = await loadLeagueHistory(K25, 5);
+    expect(history[0].championTeamId).toBeUndefined();
+    expect(history[0].isComplete).toBe(false);
+  });
+
+  it('falls back to a name match when the chain link is missing', async () => {
+    const noRenew = { ...body25, fantasy_content: { league: { ...body25.fantasy_content.league, renew: '' } } };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const endpoint = decodeURIComponent(String(input).match(/endpoint=([^&]+)/)![1]);
+      if (endpoint === `/league/${K25};out=settings,standings`) return jsonResponse(noRenew);
+      if (endpoint === '/users;use_login=1/games;game_keys=449/leagues') {
+        return jsonResponse({ fantasy_content: { users: { user: { games: { game: {
+          leagues: { league: { league_key: K24, name: 'Yahoo Test League' } },
+        } } } } } });
+      }
+      return jsonResponse(route(endpoint));
+    }));
+    const history = await loadLeagueHistory(K25, 5);
+    expect(history.map(h => h.season)).toEqual([2025, 2024]);
+  });
+
+  it('keeps head-to-head per manager across renumbered teams, regular season only', async () => {
+    const { records, teamName } = await loadHeadToHeadRecords(K25, TEAM_1, 5);
+    expect(teamName).toBe('Krool Runnings');
+    expect([...records.keys()]).toEqual(['G2']);
+    const rec = records.get('G2')!;
+    // 2025: W (100-90), L (80-90); 2024: W (100-90), L (80-90); the week-3
+    // playoff game and the 0-0 unplayed weeks are excluded.
+    expect(rec).toMatchObject({ wins: 2, losses: 2, ties: 0, opponentName: 'Gridiron Gang' });
+    expect(rec.pointsFor).toBe(360);
+    expect(rec.matchups.map(m => [m.season, m.week])).toEqual([[2025, 2], [2025, 1], [2024, 2], [2024, 1]]);
+    expect(rec.matchups[1]).toMatchObject({ teamScore: 100, opponentScore: 90, won: true });
   });
 });
 

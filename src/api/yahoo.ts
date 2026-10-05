@@ -1,4 +1,4 @@
-import type { League, LeagueCredentials, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, WeeklyMatchup } from '@/types';
+import type { League, LeagueCredentials, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, WeeklyMatchup, SeasonSummary, HeadToHeadRecord } from '@/types';
 import { logger } from '@/utils/logger';
 import { decideTradeWinner } from '@/utils/tradeVerdict';
 import { calculateGamesPAR, calculateReplacementLevels } from '@/utils/par';
@@ -250,7 +250,7 @@ function refreshAccessToken(): Promise<void> {
           // The refresh token itself was rejected; only then is signing
           // the user out the right call.
           clearTokens();
-          throw new Error('Token refresh failed - please re-authenticate');
+          throw new Error('Token refresh failed (401) - please re-authenticate');
         }
         throw new Error(`Token refresh failed (${response.status}) - please try again`);
       }
@@ -317,7 +317,7 @@ async function yahooFetch<T>(endpoint: string): Promise<T> {
 
   const accessToken = getAccessToken();
   if (!accessToken) {
-    throw new Error('Not authenticated with Yahoo');
+    throw new Error('Not authenticated with Yahoo (401)');
   }
 
   const response = await fetchWithThrottleRetry(
@@ -518,6 +518,22 @@ export function parseRosterSettings(settings: any): { QB: number; RB: number; WR
   return slots;
 }
 
+// The first manager of a team (co-managed teams list several; the proxy forces
+// `manager` to an array, but a bare object is tolerated).
+function firstManager(team: any): any {
+  const m = team?.managers?.manager;
+  return Array.isArray(m) ? m[0] : m;
+}
+
+// Yahoo masks managers who hide their identity as "--hidden--". That is not a
+// name; leave it undefined so surfaces fall back to the team name.
+function managerNickname(team: any): string | undefined {
+  const raw = firstManager(team)?.nickname;
+  if (typeof raw !== 'string') return undefined;
+  const name = raw.trim();
+  return !name || name === '--hidden--' ? undefined : name;
+}
+
 // Load a specific league
 export async function loadLeague(leagueKey: string): Promise<League> {
   logger.debug('[Yahoo] loadLeague called with leagueKey:', leagueKey);
@@ -596,7 +612,7 @@ export async function loadLeague(leagueKey: string): Promise<League> {
     return {
       id: team.team_key,
       name: team.name,
-      ownerName: team.managers?.manager?.nickname || team.managers?.manager?.[0]?.nickname,
+      ownerName: managerNickname(team),
       // Yahoo flags the authenticated user's own team directly.
       isMyTeam: String(team.is_owned_by_current_login) === '1' || undefined,
       wins: parseInt(outcomes.wins || '0'),
@@ -823,7 +839,10 @@ function parseTransactions(data: any, teams: Team[]): { transactions: Transactio
           id: tx.transaction_key,
           timestamp,
           week,
-          status: tx.status === 'successful' ? 'completed' : 'pending',
+          // Yahoo statuses: successful, vetoed, plus in-flight proposed/
+          // accepted/pending. A vetoed trade never happened; calling it
+          // 'pending' listed it as an open offer.
+          status: tx.status === 'successful' ? 'completed' : tx.status === 'vetoed' ? 'vetoed' : 'pending',
           teams: Array.from(tradeTeams.values())
         });
       } else if (type === 'add/drop' || type === 'add' || type === 'drop') {
@@ -914,6 +933,19 @@ async function runBatched<T>(tasks: Array<() => Promise<T>>, batchSize = 3): Pro
   return results;
 }
 
+// A 404 means the resource genuinely isn't there (sparse old season); retrying
+// won't help. Everything else (429/999 throttle that outlasted the retries, 5xx,
+// dropped connection) is the kind of gap a refresh can fill.
+function isRetryableFailure(e: unknown): boolean {
+  const text = e instanceof Error ? e.message : String(e);
+  return !/Yahoo API error: 404/.test(text);
+}
+
+function weekList(weeks: Iterable<number>): string {
+  const sorted = [...weeks].sort((a, b) => a - b);
+  return sorted.length > 6 ? `${sorted.length} weeks` : `week${sorted.length === 1 ? '' : 's'} ${sorted.join(', ')}`;
+}
+
 interface GameWeekRange { week: number; startMs: number; endMs: number }
 
 // Yahoo transactions carry only a Unix timestamp, no week number. The game's
@@ -955,6 +987,9 @@ export async function getWeeklyMatchups(
   leagueKey: string,
   maxWeek: number,
   onCallDone?: () => void,
+  // Collects the weeks whose call failed for a reason worth retrying, so the
+  // caller can report ONE summary instead of one warning per week.
+  failedWeeks?: Set<number>,
 ): Promise<WeeklyMatchup[]> {
   const tasks = Array.from({ length: maxWeek }, (_, i) => async () => {
     const week = i + 1;
@@ -962,7 +997,7 @@ export async function getWeeklyMatchups(
       const data = await yahooFetch<any>(`/league/${leagueKey}/scoreboard;week=${week}`);
       return { week, data };
     } catch (e) {
-      logger.warn(`[Yahoo] scoreboard week ${week} failed:`, e);
+      if (isRetryableFailure(e)) failedWeeks?.add(week);
       return { week, data: null as any };
     } finally {
       onCallDone?.();
@@ -1005,6 +1040,7 @@ export async function getWeeklyStarters(
   leagueKey: string,
   maxWeek: number,
   onCallDone?: () => void,
+  failedWeeks?: Set<number>,
 ): Promise<Map<number, Map<string, Set<string>>>> {
   const tasks = Array.from({ length: maxWeek }, (_, i) => async () => {
     const week = i + 1;
@@ -1012,7 +1048,7 @@ export async function getWeeklyStarters(
       const data = await yahooFetch<any>(`/league/${leagueKey}/teams/roster;week=${week}`);
       return { week, data };
     } catch (e) {
-      logger.warn(`[Yahoo] roster week ${week} failed:`, e);
+      if (isRetryableFailure(e)) failedWeeks?.add(week);
       return { week, data: null as any };
     } finally {
       onCallDone?.();
@@ -1048,9 +1084,10 @@ async function getWeeklyPlayerPoints(
   playerKeys: string[],
   maxWeek: number,
   onCallDone?: () => void,
-): Promise<{ points: Record<string, Record<number, number>>; failedKeys: Set<string> }> {
+): Promise<{ points: Record<string, Record<number, number>>; failedKeys: Set<string>; failedWeeks: Set<number> }> {
   const result: Record<string, Record<number, number>> = {};
   const failedKeys = new Set<string>();
+  const failedWeeks = new Set<number>();
   const batches: string[][] = [];
   for (let i = 0; i < playerKeys.length; i += 25) {
     batches.push(playerKeys.slice(i, i + 25));
@@ -1078,7 +1115,9 @@ async function getWeeklyPlayerPoints(
             }
           }
         } catch (e) {
-          logger.warn(`[Yahoo] weekly player stats week ${week} failed:`, e);
+          // Every failed key still falls back to season totals; only a
+          // retryable failure marks the load incomplete.
+          if (isRetryableFailure(e)) failedWeeks.add(week);
           for (const key of batch) failedKeys.add(key);
         } finally {
           onCallDone?.();
@@ -1088,7 +1127,7 @@ async function getWeeklyPlayerPoints(
   }
 
   await runBatched(tasks);
-  return { points: result, failedKeys };
+  return { points: result, failedKeys, failedWeeks };
 }
 
 // Progress callback type
@@ -1128,6 +1167,13 @@ export async function enrichPlayersWithStats(
   // Total API calls = just the player batches (skip broken weekly stats)
   const totalCalls = batches.length;
   let completedCalls = 0;
+  // Gaps from throttled/failed calls. The load still succeeds (degraded), but
+  // the league is marked incomplete so it is not cached and the user is told.
+  let failedPlayerBatches = 0;
+  let gameWeeksFailed = false;
+  const failedScoreboardWeeks = new Set<number>();
+  const failedStatWeeks = new Set<number>();
+  const failedRosterWeeks = new Set<number>();
 
   // Map for player info and season stats
   const playerMap = new Map<string, { name: string; position: string; team: string; points?: number }>();
@@ -1187,7 +1233,7 @@ export async function enrichPlayersWithStats(
       });
 
     } catch (e) {
-      logger.error('Error fetching player batch:', e);
+      if (isRetryableFailure(e)) failedPlayerBatches++;
       completedCalls++;
     }
   }
@@ -1291,7 +1337,7 @@ export async function enrichPlayersWithStats(
         }
       }
     } catch (e) {
-      logger.warn('[Yahoo] game_weeks fetch failed, transaction weeks stay approximate:', e);
+      if (isRetryableFailure(e)) gameWeeksFailed = true;
     }
 
     // 2. Weekly matchup scores: lights up luck analysis, awards, and
@@ -1306,7 +1352,7 @@ export async function enrichPlayersWithStats(
         total: maxWeek,
         detail: `Week ${scoreboardDone} of ${maxWeek}`,
       });
-    });
+    }, failedScoreboardWeeks);
     if (weeklyMatchups.length > 0) {
       league.matchups = weeklyMatchups;
     }
@@ -1349,6 +1395,7 @@ export async function enrichPlayersWithStats(
         });
       });
       weeklyPoints = fetched.points;
+      fetched.failedWeeks.forEach(w => failedStatWeeks.add(w));
       weeklyCoveredKeys = new Set(keys.filter(k => !fetched.failedKeys.has(k)));
       if (Object.keys(weeklyPoints).length > 0) {
         league.playerWeeklyPoints = weeklyPoints;
@@ -1363,7 +1410,7 @@ export async function enrichPlayersWithStats(
       startersByWeek = await getWeeklyStarters(league.id, maxWeek, () => {
         rosterDone++;
         onProgress?.({ stage: 'Fetching weekly lineups', current: rosterDone, total: maxWeek });
-      });
+      }, failedRosterWeeks);
     }
   }
 
@@ -1558,6 +1605,29 @@ export async function enrichPlayersWithStats(
   // column can label itself honestly when the weekly fetch didn't happen.
   league.waiverPointsBasis =
     weeksResolved && weeklyCoveredKeys.size > 0 ? 'since-pickup' : 'season';
+
+  // One summary for the whole pass (a warning per failed call made Sentry's
+  // throttle merge unrelated events), and the user-facing gap list.
+  const gaps: string[] = [];
+  if (failedPlayerBatches > 0) {
+    gaps.push(`player names and stats (${failedPlayerBatches} of ${batches.length} requests)`);
+  }
+  if (gameWeeksFailed) gaps.push('the week calendar');
+  if (failedScoreboardWeeks.size > 0) gaps.push(`matchup scores for ${weekList(failedScoreboardWeeks)}`);
+  if (failedStatWeeks.size > 0) gaps.push(`weekly player points for ${weekList(failedStatWeeks)}`);
+  if (failedRosterWeeks.size > 0) gaps.push(`lineups for ${weekList(failedRosterWeeks)}`);
+  if (gaps.length > 0) {
+    league.loadIncomplete = `Yahoo throttled some requests, so this league is missing ${gaps.join('; ')}. Refresh in a minute to fill the gaps.`;
+    logger.warn('[Yahoo] load incomplete (throttled or failed calls)', {
+      playerBatches: failedPlayerBatches,
+      scoreboardWeeks: failedScoreboardWeeks.size,
+      statWeeks: failedStatWeeks.size,
+      rosterWeeks: failedRosterWeeks.size,
+      gameWeeks: gameWeeksFailed,
+    });
+  } else {
+    delete league.loadIncomplete;
+  }
 }
 
 // --- Draft analysis: Yahoo market ADP and auction cost ---
@@ -1604,4 +1674,277 @@ export async function getDraftAnalysis(maxPlayers = 300): Promise<YahooDraftAnal
     if (page.length < 25) break;
   }
   return results;
+}
+
+// --- League history (renew chain) -------------------------------------------
+// Yahoo mints a new league key every season, but each league's metadata links
+// back to the previous one through `renew` ("{game_id}_{league_id}", with an
+// underscore). Walking that chain beats name-matching across game keys: it
+// survives renames and duplicate names. Return shapes match the Sleeper/ESPN
+// loaders so HistoryPage branches only on which function it calls.
+
+// "449_123456" -> "449.l.123456"; anything else is not a usable link.
+function renewToLeagueKey(renew: unknown): string | null {
+  const m = /^(\d+)_(\d+)$/.exec(String(renew ?? '').trim());
+  return m ? `${m[1]}.l.${m[2]}` : null;
+}
+
+interface HistoryTeam {
+  key: string;
+  ownerIds: string[]; // manager guids: the only stable identity across seasons
+  name: string;
+  wins: number;
+  losses: number;
+  ties: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  rank: number;
+}
+
+interface HistorySeason {
+  leagueKey: string;
+  name: string;
+  season: number;
+  isFinished: boolean;
+  renewKey: string | null;
+  startWeek: number;
+  // Last regular-season week (inclusive), capped by progress for a live season.
+  lastRegularWeek: number;
+  teams: HistoryTeam[];
+}
+
+// One call per season: league metadata, settings, and standings with each
+// team's managers. Throws on a failed fetch; callers decide whether that ends
+// the walk.
+async function fetchHistorySeason(leagueKey: string): Promise<HistorySeason> {
+  const data = await yahooFetch<any>(`/league/${leagueKey};out=settings,standings`);
+  const info = data?.fantasy_content?.league;
+  if (!info) throw new Error('Yahoo history: league data missing');
+
+  const standingsNode = info.standings?.teams?.team ?? info.teams?.team ?? [];
+  const list: any[] = Array.isArray(standingsNode) ? standingsNode : [standingsNode];
+  const teams: HistoryTeam[] = list
+    .filter(t => t?.team_key)
+    .map((t, index) => {
+      const st = t.team_standings || {};
+      const out = st.outcome_totals || {};
+      const managers = t.managers?.manager;
+      const mgrList: any[] = Array.isArray(managers) ? managers : managers ? [managers] : [];
+      const rank = parseInt(st.rank);
+      return {
+        key: String(t.team_key),
+        ownerIds: mgrList.map(m => (m?.guid != null ? String(m.guid) : '')).filter(Boolean),
+        name: String(t.name ?? t.team_key),
+        wins: parseInt(out.wins) || 0,
+        losses: parseInt(out.losses) || 0,
+        ties: parseInt(out.ties) || 0,
+        pointsFor: parseFloat(st.points_for) || 0,
+        pointsAgainst: parseFloat(st.points_against) || 0,
+        rank: Number.isFinite(rank) && rank > 0 ? rank : index + 1,
+      };
+    });
+
+  const isFinished = String(info.is_finished) === '1';
+  const settings = info.settings ?? {};
+  const playoffStart = String(settings.uses_playoff) === '1' ? parseInt(settings.playoff_start_week) : NaN;
+  const endWeek = parseInt(info.end_week);
+  const currentWeek = parseInt(info.current_week);
+  let lastRegularWeek = Number.isFinite(playoffStart) && playoffStart > 1
+    ? playoffStart - 1
+    : Number.isFinite(endWeek) ? endWeek : 17;
+  lastRegularWeek = Math.min(lastRegularWeek, SEASON_MAX_WEEK);
+  // A live season has nothing to read past its current week.
+  if (!isFinished && Number.isFinite(currentWeek) && currentWeek >= 1) {
+    lastRegularWeek = Math.min(lastRegularWeek, currentWeek);
+  }
+
+  return {
+    leagueKey,
+    name: String(info.name ?? ''),
+    season: parseInt(info.season),
+    isFinished,
+    renewKey: renewToLeagueKey(info.renew),
+    startWeek: Number.isFinite(parseInt(info.start_week)) ? Math.max(1, parseInt(info.start_week)) : 1,
+    lastRegularWeek,
+    teams,
+  };
+}
+
+// Previous season's key when the chain link is missing: the name match the
+// season dropdown uses (one call). Null when the year has no game key, the
+// name is absent, or the match is ambiguous.
+async function priorSeasonByName(name: string, season: number): Promise<string | null> {
+  if (!name || !Number.isFinite(season) || !NFL_GAME_KEYS[season - 1]) return null;
+  try {
+    const matches = (await getUserLeagues(season - 1)).filter(l => l.name === name);
+    return matches.length === 1 ? matches[0].id : null;
+  } catch (err) {
+    logger.debug('[Yahoo History] name fallback failed:', err);
+    return null;
+  }
+}
+
+async function nextHistoryKey(season: HistorySeason): Promise<string | null> {
+  return season.renewKey ?? (await priorSeasonByName(season.name, season.season));
+}
+
+export async function loadLeagueHistory(leagueKey: string, maxSeasons: number = 5): Promise<SeasonSummary[]> {
+  const history: SeasonSummary[] = [];
+  let currentKey: string | null = leagueKey;
+  const seen = new Set<string>();
+
+  while (currentKey && history.length < maxSeasons && !seen.has(currentKey)) {
+    seen.add(currentKey);
+    let season: HistorySeason;
+    try {
+      season = await fetchHistorySeason(currentKey);
+    } catch (err) {
+      // An old season can be sparse or gone; that ends the walk, but the
+      // seasons already collected still show.
+      logger.warn(`[Yahoo History] Could not load season ${currentKey}:`, err);
+      break;
+    }
+
+    // Yahoo's final standings rank already reflects the playoffs once the
+    // season is over, so rank 1 is the champion. An in-progress season
+    // crowns nobody.
+    const champion = season.isFinished ? season.teams.find(t => t.rank === 1) : undefined;
+    const teams = [...season.teams]
+      .sort((a, b) => a.rank - b.rank)
+      .map((t, index) => ({
+        id: t.key,
+        ownerId: t.ownerIds[0],
+        name: t.name,
+        wins: t.wins,
+        losses: t.losses,
+        ties: t.ties,
+        pointsFor: t.pointsFor,
+        pointsAgainst: t.pointsAgainst,
+        standing: index + 1,
+      }));
+
+    history.push({
+      season: season.season,
+      leagueId: season.leagueKey,
+      leagueName: season.name,
+      championTeamId: champion?.key,
+      isComplete: season.isFinished,
+      teams,
+    });
+
+    currentKey = await nextHistoryKey(season);
+  }
+
+  return history;
+}
+
+export async function loadHeadToHeadRecords(
+  leagueKey: string,
+  teamId: string,
+  maxSeasons: number = 5,
+): Promise<{ records: Map<string, HeadToHeadRecord>; teamName: string }> {
+  const records = new Map<string, HeadToHeadRecord>();
+  let teamName = '';
+  let currentKey: string | null = leagueKey;
+  let ourOwnerIds: string[] | null = null;
+  let seasonsSeen = 0;
+  let failedWeeks = 0;
+  const seen = new Set<string>();
+
+  while (currentKey && seasonsSeen < maxSeasons && !seen.has(currentKey)) {
+    seen.add(currentKey);
+    let season: HistorySeason;
+    try {
+      season = await fetchHistorySeason(currentKey);
+    } catch (err) {
+      logger.warn(`[Yahoo H2H] Could not load season ${currentKey}:`, err);
+      break;
+    }
+
+    // The selected team is a current-season key; in earlier seasons the same
+    // HUMAN is found by manager guid (team keys renumber between seasons).
+    let ours: HistoryTeam | undefined;
+    if (seasonsSeen === 0) {
+      ours = season.teams.find(t => t.key === teamId);
+      if (ours) {
+        ourOwnerIds = ours.ownerIds;
+        teamName = ours.name;
+      }
+    } else if (ourOwnerIds?.length) {
+      ours = season.teams.find(t => t.ownerIds.some(id => ourOwnerIds!.includes(id)));
+    }
+
+    if (ours) {
+      const ourKey = ours.key;
+      const weeks = Array.from(
+        { length: Math.max(0, season.lastRegularWeek - season.startWeek + 1) },
+        (_, i) => season.startWeek + i,
+      );
+      const byKey = new Map(season.teams.map(t => [t.key, t]));
+      const fetched = await runBatched(weeks.map(week => async () => {
+        try {
+          const data = await yahooFetch<any>(`/league/${season.leagueKey}/scoreboard;week=${week}`);
+          return { week, data };
+        } catch (e) {
+          if (isRetryableFailure(e)) failedWeeks++;
+          return { week, data: null as any };
+        }
+      }));
+
+      for (const { week, data } of fetched) {
+        const node = data?.fantasy_content?.league?.scoreboard?.matchups?.matchup;
+        if (!node) continue;
+        for (const m of Array.isArray(node) ? node : [node]) {
+          // Playoff and consolation games aren't rivalry games in the H2H
+          // sense and skew the totals (same rule as the other platforms).
+          if (String(m.is_playoffs) === '1' || String(m.is_consolation) === '1') continue;
+          const pair = Array.isArray(m.teams?.team) ? m.teams.team : [m.teams?.team];
+          if (pair.length !== 2 || !pair[0]?.team_key || !pair[1]?.team_key) continue;
+          const mine = pair.find((t: any) => t.team_key === ourKey);
+          const theirs = pair.find((t: any) => t.team_key !== ourKey);
+          if (!mine || !theirs) continue;
+          const ourScore = parseFloat(mine.team_points?.total ?? '0') || 0;
+          const oppScore = parseFloat(theirs.team_points?.total ?? '0') || 0;
+          // A 0-0 "matchup" is an unplayed week, not a tie.
+          if (ourScore === 0 && oppScore === 0) continue;
+
+          const opp = byKey.get(theirs.team_key);
+          const opponentId = opp?.ownerIds[0] ?? String(theirs.team_key);
+          let record = records.get(opponentId);
+          if (!record) {
+            record = {
+              opponentId,
+              // Seasons walk newest first, so the first name seen is the latest.
+              opponentName: opp?.name ?? String(theirs.name ?? opponentId),
+              wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0, matchups: [],
+            };
+            records.set(opponentId, record);
+          }
+          const won = ourScore > oppScore;
+          if (won) record.wins++;
+          else if (ourScore === oppScore) record.ties++;
+          else record.losses++;
+          record.pointsFor += ourScore;
+          record.pointsAgainst += oppScore;
+          record.matchups.push({ season: season.season, week, teamScore: ourScore, opponentScore: oppScore, won });
+        }
+      }
+    }
+
+    seasonsSeen++;
+    currentKey = await nextHistoryKey(season);
+  }
+
+  if (failedWeeks > 0) {
+    // One summary, not a warning per week.
+    logger.warn('[Yahoo H2H] some scoreboard weeks failed; records may be short', { failedWeeks });
+  }
+
+  // Most recent first, matching the other loaders: the rivalry card shows the
+  // top of this list as "Recent Matchups".
+  for (const record of records.values()) {
+    record.matchups.sort((a, b) => b.season - a.season || b.week - a.week);
+  }
+
+  return { records, teamName };
 }

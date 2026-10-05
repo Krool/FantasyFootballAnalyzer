@@ -172,8 +172,15 @@ export function useLeague(): UseLeagueReturn {
       // Only update state if this is still the current request and component is mounted
       if (isMountedRef.current && requestId === currentRequestRef.current) {
         logger.debug('[useLeague] League loaded successfully:', loadedLeague?.name);
+        // A throttled load (loadIncomplete: gaps the adapter degraded
+        // around) must not be cached, or the gaps stick for the cache TTL.
+        // And a background refresh that came back worse than the snapshot on
+        // screen must not replace it.
+        if (loadedLeague.loadIncomplete && isBackgroundRefresh && hydrated) {
+          return hydrated;
+        }
         setLeague(loadedLeague);
-        cacheLeague(loadedLeague);
+        if (!loadedLeague.loadIncomplete) cacheLeague(loadedLeague);
         // A real connection supersedes any guest session: drop the persisted
         // guest settings so a later logout + no-league visit starts clean.
         clearGuestSettings();

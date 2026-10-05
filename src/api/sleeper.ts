@@ -183,6 +183,10 @@ export async function getTransactions(leagueId: string, week: number): Promise<S
   return fetchJSON<SleeperAPI.Transaction[]>(`/league/${leagueId}/transactions/${week}`);
 }
 
+export async function getDraftTradedPicks(draftId: string): Promise<SleeperAPI.TradedPick[]> {
+  return fetchJSON<SleeperAPI.TradedPick[]>(`/draft/${draftId}/traded_picks`);
+}
+
 export async function getMatchups(leagueId: string, week: number): Promise<SleeperAPI.Matchup[]> {
   return fetchJSON<SleeperAPI.Matchup[]>(`/league/${leagueId}/matchups/${week}`);
 }
@@ -200,6 +204,29 @@ export async function getSeasonStats(season: string, week?: number): Promise<Sle
     ? `/stats/nfl/regular/${season}/${week}`
     : `/stats/nfl/regular/${season}`;
   return fetchJSON<SleeperAPI.SeasonStats>(endpoint);
+}
+
+// Score a player's raw season stat line against the league's scoring_settings:
+// sum(stat * weight) over keys present in both. Raw counts cover everything
+// Sleeper scores (6pt pass TD, bonus_rec_te, kicker distance buckets, DEF
+// points/yards-allowed buckets). Returns undefined when no stat key matches a
+// scoring key (preseason payloads carry ranks only), so the caller can fall
+// back to Sleeper's preset pts_* column.
+export function scoreStatsWithSettings(
+  stats: Record<string, number | undefined> | undefined,
+  scoringSettings: Record<string, number> | undefined,
+): number | undefined {
+  if (!stats || !scoringSettings) return undefined;
+  let total = 0;
+  let matched = 0;
+  for (const [key, weight] of Object.entries(scoringSettings)) {
+    const value = stats[key];
+    if (typeof value !== 'number' || typeof weight !== 'number') continue;
+    matched++;
+    total += value * weight;
+  }
+  if (matched === 0) return undefined;
+  return Math.round(total * 100) / 100;
 }
 
 // Helper to convert Sleeper player to common format
@@ -322,6 +349,23 @@ function draftOrderTeamIds(
   return order.length === rosters.length ? order : undefined;
 }
 
+// Traded picks for the upcoming draft as round -> original owner -> current
+// owner (all roster ids as strings). Picks that came back to their original
+// owner are dropped; undefined when nothing moved. Other seasons' picks
+// (dynasty leagues trade years ahead) are not this board's.
+export function tradedPickOwners(
+  picks: SleeperAPI.TradedPick[],
+  season: string,
+): Record<number, Record<string, string>> | undefined {
+  const out: Record<number, Record<string, string>> = {};
+  for (const p of picks) {
+    if (String(p.season) !== String(season)) continue;
+    if (p.owner_id === p.roster_id) continue;
+    (out[p.round] ??= {})[String(p.roster_id)] = String(p.owner_id);
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 // Load complete league data
 export async function loadLeague(leagueId: string): Promise<League> {
   // Fetch all required data in parallel
@@ -364,9 +408,15 @@ export async function loadLeague(leagueId: string): Promise<League> {
         // auto-enable the keeper section, and reserve those players out of
         // the pool. Sleeper flags genuine commish-placed stubs is_keeper, so
         // mid-draft only those count.
+        const tradedPicks = await getDraftTradedPicks(leagueData.draft_id).catch(err => {
+          logger.warn('Could not fetch traded picks:', err instanceof Error ? err.message : err);
+          return [] as SleeperAPI.TradedPick[];
+        });
+        const pickOwners = tradedPickOwners(tradedPicks, leagueData.season);
         upcomingDraft = {
           draftId: leagueData.draft_id,
           order: draftOrderTeamIds(draft, rosters),
+          ...(pickOwners && { pickOwners }),
           keepers: (draft.status === 'pre_draft'
             ? picks
             : picks.filter(pick => pick.is_keeper === true)
@@ -463,12 +513,22 @@ export async function loadLeague(leagueId: string): Promise<League> {
   // Pick the stat column matching the league's scoring rules. Used for both
   // replacement points and draft-pick season points: grading a standard or
   // half-PPR league on full-PPR points over-ranks reception-heavy players.
-  const pointsForScoring = (stats: { pts_ppr?: number; pts_half_ppr?: number; pts_std?: number } | undefined) =>
-    scoringType === 'ppr'
+  // Raw stat keys scored against the league's own scoring_settings come first
+  // (honors 6pt pass TD, TE premium, K/DEF buckets); the preset column is the
+  // fallback when the raw stats are missing.
+  let rawScoringUsed = false;
+  const pointsForScoring = (stats: SleeperAPI.SeasonStats[string] | undefined) => {
+    const raw = scoreStatsWithSettings(stats, scoringSettings);
+    if (raw !== undefined) {
+      rawScoringUsed = true;
+      return raw;
+    }
+    return scoringType === 'ppr'
       ? stats?.pts_ppr
       : scoringType === 'half_ppr'
         ? stats?.pts_half_ppr
         : stats?.pts_std;
+  };
 
   // Build position stats for all players to calculate replacement points
   const allPlayerStats: PositionStats[] = [];
@@ -687,11 +747,27 @@ export async function loadLeague(leagueId: string): Promise<League> {
           });
         });
 
+        // Picks: owner_id is the new holder, previous_owner_id the sender,
+        // roster_id the pick's original owner.
+        const toTradedPick = (p: NonNullable<SleeperAPI.Transaction['draft_picks']>[number]) => ({
+          season: parseInt(p.season, 10),
+          round: p.round,
+          originalOwner: String(p.roster_id),
+        });
+        const picksReceived = (tx.draft_picks ?? []).filter(p => p.owner_id === rosterId).map(toTradedPick);
+        const picksSent = (tx.draft_picks ?? []).filter(p => p.previous_owner_id === rosterId).map(toTradedPick);
+        const faabIn = (tx.waiver_budget ?? []).filter(b => b.receiver === rosterId).reduce((s, b) => s + b.amount, 0);
+        const faabOut = (tx.waiver_budget ?? []).filter(b => b.sender === rosterId).reduce((s, b) => s + b.amount, 0);
+
         return {
           teamId: String(rosterId),
           teamName: '', // Will be set later
           playersReceived: received.map(id => convertPlayer(id, players)),
           playersSent: sent.map(id => convertPlayer(id, players)),
+          ...(picksReceived.length > 0 && { draftPicksReceived: picksReceived }),
+          ...(picksSent.length > 0 && { draftPicksSent: picksSent }),
+          ...(faabIn > 0 && { faabReceived: faabIn }),
+          ...(faabOut > 0 && { faabSent: faabOut }),
           parGained: Math.round(parGained * 10) / 10,
           parLost: Math.round(parLost * 10) / 10,
           netPAR: Math.round((parGained - parLost) * 10) / 10,
@@ -702,7 +778,15 @@ export async function loadLeague(leagueId: string): Promise<League> {
       });
 
       // Determine winner based on PAR (not raw points)
-      const { winner, winnerMargin } = decideTradeWinner(tradeTeams, 'post-trade');
+      // PAR only sees players, so a deal that also moved picks or FAAB gets no
+      // winner: calling one would grade half the trade.
+      const hasNonPlayerAssets = tradeTeams.some(
+        t => (t.draftPicksReceived?.length ?? 0) + (t.draftPicksSent?.length ?? 0) > 0
+          || (t.faabReceived ?? 0) + (t.faabSent ?? 0) > 0,
+      );
+      const { winner, winnerMargin } = hasNonPlayerAssets
+        ? { winner: undefined, winnerMargin: 0 }
+        : decideTradeWinner(tradeTeams, 'post-trade');
 
       const trade: Trade = {
         id: tx.transaction_id,
@@ -713,6 +797,9 @@ export async function loadLeague(leagueId: string): Promise<League> {
         winner,
         winnerMargin,
         verdictBasis: 'post-trade',
+        ...(hasNonPlayerAssets && {
+          verdictNote: 'No winner called: draft picks or FAAB were part of this trade and are not valued.',
+        }),
       };
 
       allTrades.push(trade);
@@ -883,7 +970,9 @@ export async function loadLeague(leagueId: string): Promise<League> {
         : undefined,
     hasIDP:
       (leagueData.roster_positions || []).some(p => SLEEPER_IDP_POSITIONS.has(p)) || undefined,
-    scoringIsApproximate: scoringType === 'custom' || undefined,
+    // Only approximate when the custom scoring could not be computed from raw
+    // stats; otherwise grading points already follow the league's rules.
+    scoringIsApproximate: (scoringType === 'custom' && !rawScoringUsed) || undefined,
   };
 }
 
@@ -1152,9 +1241,29 @@ export async function loadHeadToHeadRecords(
       // games in the H2H sense and skew the totals.
       const playoffStart = leagueData.settings?.playoff_week_start || 15;
       const weekCount = Math.min(17, playoffStart - 1);
+      // A live season's unscored weeks (and the one in progress) are not
+      // results yet; last_scored_leg is Sleeper's own "scored through" mark.
+      const lastScored =
+        leagueData.status === 'in_season' ? leagueData.settings?.last_scored_leg : undefined;
       for (let week = 1; week <= weekCount; week++) {
+        if (lastScored != null && week > lastScored) break;
         try {
-          const matchups = await getMatchups(currentLeagueId, week);
+          let matchups: SleeperAPI.Matchup[];
+          try {
+            matchups = await getMatchups(currentLeagueId, week);
+          } catch (firstErr) {
+            // One retry: a dropped request here silently loses a rivalry game.
+            try {
+              matchups = await getMatchups(currentLeagueId, week);
+            } catch (retryErr) {
+              logger.warn(
+                `[Sleeper] H2H: week ${week} of league ${currentLeagueId} failed twice, skipping:`,
+                retryErr instanceof Error ? retryErr.message : retryErr,
+                firstErr instanceof Error ? firstErr.message : '',
+              );
+              continue;
+            }
+          }
 
           // Find our matchup
           const ourMatchup = matchups.find(m => m.roster_id === ourRosterId);
@@ -1168,6 +1277,12 @@ export async function loadHeadToHeadRecords(
 
           const opponentOwnerId = rosterToOwner.get(opponentMatchup.roster_id) || '';
           const opponentName = rosterToName.get(opponentMatchup.roster_id) || `Team ${opponentMatchup.roster_id}`;
+
+          // An unplayed week is not a game: bail before the record exists, or
+          // a rivalry card shows up with 0 games.
+          const ourScore = matchupPoints(ourMatchup);
+          const oppScore = matchupPoints(opponentMatchup);
+          if (ourScore === 0 && oppScore === 0) continue;
 
           // Get or create record
           let record = records.get(opponentOwnerId);
@@ -1185,10 +1300,7 @@ export async function loadHeadToHeadRecords(
             records.set(opponentOwnerId, record);
           }
 
-          // Update record. A 0-0 "matchup" is an unplayed week, not a tie.
-          const ourScore = matchupPoints(ourMatchup);
-          const oppScore = matchupPoints(opponentMatchup);
-          if (ourScore === 0 && oppScore === 0) continue;
+          // Update record.
           const won = ourScore > oppScore;
           const tied = ourScore === oppScore;
 

@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import type { ESPNAPI, League } from '@/types';
-import { loadHeadToHeadRecords, loadLeague, loadLeagueHistory, parseEspnRosterSlots } from './espn';
+import { getAvailableSeasons, loadHeadToHeadRecords, loadLeague, loadLeagueHistory, parseEspnRosterSlots } from './espn';
 import { gradeLeaguePicks, hasSeasonResults } from '@/utils/consensusGrade';
 import { POOL } from '@/data/draftPool';
 import { calculateReplacementLevels } from '@/utils/par';
@@ -1132,5 +1132,279 @@ describe('espn loadLeague mid-Week-1', () => {
     const graded = gradeLeaguePicks(w1League, POOL);
     // The old predicate graded 23 of these 24 Terrible off the single result.
     expect(graded.filter(g => g.grade === 'terrible').length).toBeLessThan(graded.length / 2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Trade-source merging, preseason trades, weekly bounds, history wall.
+// All of these reuse the 4-team fixture above with per-test overrides.
+// ---------------------------------------------------------------------------
+
+// Weekly rosters with NO mid-season swap (203 stays on team 1, 204 on team 2),
+// so the weekly roster diff finds nothing and the other sources are isolated.
+// swapped = true puts them on each other's team from week 1 on.
+function stableWeeklyRoster(week: number, swapped = false) {
+  const t1: Array<[number, number]> = [[201, 0], swapped ? [204, 2] : [203, 2]];
+  const t2: Array<[number, number]> = [[202, 0], swapped ? [203, 2] : [204, 2]];
+  const build = (id: number, players: Array<[number, number]>) => ({
+    id,
+    roster: {
+      entries: players.map(([pid, slot]) =>
+        rosterEntry(pid, slot, espnPlayer(pid, false, { week, points: 10 }))),
+    },
+  });
+  return { teams: [build(1, t1), build(2, t2), build(3, [[205, 4]]), build(4, [[206, 6]])] };
+}
+
+interface LoadOpts {
+  transactions?: unknown[];
+  topics?: unknown[];
+  roster?: (week: number) => unknown;
+  main?: Record<string, unknown>;
+  season?: number;
+}
+
+async function loadWith(opts: LoadOpts): Promise<{ league: League; fetchMock: ReturnType<typeof vi.fn> }> {
+  const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.includes('kona_league_communication')) return jsonResponse({ topics: opts.topics ?? [] });
+    if (url.includes('view=mTransactions2')) return jsonResponse({ transactions: opts.transactions ?? [] });
+    if (url.includes('view=mTeam')) return jsonResponse({ ...mainLeagueBody, ...(opts.main ?? {}) });
+    const m = url.match(/scoringPeriodId=(\d+)/);
+    if (m && url.includes('view=mRoster')) {
+      return jsonResponse((opts.roster ?? ((w: number) => stableWeeklyRoster(w)))(parseInt(m[1])));
+    }
+    throw new Error(`Unexpected ESPN URL in test: ${url}`);
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  const league = await loadLeague(LEAGUE_ID, opts.season ?? SEASON);
+  return { league, fetchMock };
+}
+
+const weeklyRosterCalls = (fetchMock: ReturnType<typeof vi.fn>) =>
+  fetchMock.mock.calls.map(c => String(c[0])).filter(u => u.includes('view=mRoster') && u.includes('scoringPeriodId='));
+const txCalls = (fetchMock: ReturnType<typeof vi.fn>) =>
+  fetchMock.mock.calls.map(c => String(c[0])).filter(u => u.includes('view=mTransactions2'));
+
+describe('espn loadLeague weekly fetch bounds', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  const liveMain = (period: number) => ({
+    scoringPeriodId: period,
+    status: { currentMatchupPeriod: period, latestScoringPeriod: period, finalScoringPeriod: 17, isActive: true },
+    // No final ranks: the season is still in progress.
+    teams: mainTeams.map(t => ({ ...t, rankCalculatedFinal: 0 })),
+  });
+
+  it('fetches only played weeks plus the current one in season', async () => {
+    const { fetchMock } = await loadWith({ main: liveMain(5), season: new Date().getFullYear() });
+    expect(weeklyRosterCalls(fetchMock)).toHaveLength(5);
+    // transactions run week 0..5
+    expect(txCalls(fetchMock)).toHaveLength(6);
+  });
+
+  it('covers week 18 after the season when ESPN reports it as the final period', async () => {
+    const { fetchMock } = await loadWith({
+      main: { status: { currentMatchupPeriod: 17, finalScoringPeriod: 18, isActive: false }, scoringPeriodId: 19 },
+    });
+    expect(weeklyRosterCalls(fetchMock)).toHaveLength(18);
+    expect(txCalls(fetchMock)).toHaveLength(19);
+  });
+
+  it('caps a live league at finalScoringPeriod', async () => {
+    const { fetchMock } = await loadWith({ main: liveMain(20), season: new Date().getFullYear() });
+    expect(weeklyRosterCalls(fetchMock)).toHaveLength(17);
+  });
+
+  it('still fetches week 1 for a drafted preseason league', async () => {
+    const { fetchMock } = await loadWith({
+      main: { ...liveMain(0), status: { currentMatchupPeriod: 0, isActive: false } },
+      season: new Date().getFullYear(),
+    });
+    expect(weeklyRosterCalls(fetchMock)).toHaveLength(1);
+  });
+});
+
+describe('espn loadLeague preseason trades', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  // Draft: 203 -> team 1, 204 -> team 2. Week-1 rosters (and every week
+  // after) have them swapped, so only the draft-vs-week-1 diff can see it.
+  const swappedFromWeek1 = (week: number) => stableWeeklyRoster(week, true);
+
+  it('detects a post-draft, pre-week-1 swap and judges it from week 1', async () => {
+    const { league } = await loadWith({ roster: swappedFromWeek1 });
+    expect(league.trades).toHaveLength(1);
+    const trade = league.trades![0];
+    expect(trade.week).toBe(1);
+    expect(trade.verdictBasis).toBe('post-trade');
+    const side1 = trade.teams.find(t => t.teamId === '1')!;
+    expect(side1.playersReceived.map(p => p.name)).toEqual(['Saquon Barkley']);
+    expect(side1.playersSent.map(p => p.name)).toEqual(['Bijan Robinson']);
+    // 17 started weeks at 10 a week from week 1 on
+    expect(side1.pointsGained).toBe(170);
+  });
+
+  it('does not read waiver claims made before week 1 as a trade', async () => {
+    const { league } = await loadWith({
+      roster: swappedFromWeek1,
+      transactions: [
+        { id: 8001, scoringPeriodId: 0, type: 'WAIVER', status: 'EXECUTED', proposedDate: 1,
+          items: [{ playerId: 204, fromTeamId: 0, toTeamId: 1, type: 'ADD' }] },
+        { id: 8002, scoringPeriodId: 0, type: 'FREEAGENT', status: 'EXECUTED', proposedDate: 2,
+          items: [{ playerId: 203, fromTeamId: 0, toTeamId: 2, type: 'ADD' }] },
+      ],
+    });
+    expect(league.trades ?? []).toHaveLength(0);
+  });
+
+  it('does not invent a trade when week-1 rosters match the draft', async () => {
+    const { league } = await loadWith({});
+    expect(league.trades ?? []).toHaveLength(0);
+  });
+});
+
+describe('espn loadLeague trade source merging', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  const commTopic = (id: string, date: number, msgs: Array<[string, number]>) => ({
+    id, type: 'ACTIVITY_TRANSACTIONS', date,
+    messages: msgs.map(([targetId, forTeam]) => ({ messageTypeId: 181, targetId, for: forTeam })),
+  });
+
+  it('keeps a communication trade alongside roster-diff trades and dedupes the overlap', async () => {
+    const T_SWAP = 1730000000000;
+    const T_OTHER = 1731000000000;
+    const { league } = await loadWith({
+      // Default fixture swap: 203/204 between teams 1 and 2 at week 4.
+      roster: (w: number) => weeklyRosterBody(w),
+      transactions: [
+        { id: 6001, scoringPeriodId: 4, type: 'TRADE_UPHOLD', status: 'EXECUTED', items: [], proposedDate: T_SWAP },
+        { id: 6002, scoringPeriodId: 3, type: 'TRADE_UPHOLD', status: 'EXECUTED', items: [], proposedDate: T_OTHER },
+      ],
+      topics: [
+        // The same 1<->2 swap the roster diff already found: must not double up.
+        commTopic('c-swap', T_SWAP, [['204', 1], ['203', 2]]),
+        // A 3<->4 trade the roster diff cannot see.
+        commTopic('c-other', T_OTHER, [['206', 3], ['205', 4]]),
+      ],
+    });
+    expect(league.trades).toHaveLength(2);
+    const other = league.trades!.find(t => t.teams.some(x => x.teamId === '3'))!;
+    // Week comes from the matched TRADE_UPHOLD, so it gets a post-trade verdict.
+    expect(other.week).toBe(3);
+    expect(other.verdictBasis).toBe('post-trade');
+    expect(league.trades!.filter(t => t.teams.some(x => x.teamId === '1'))).toHaveLength(1);
+  });
+
+  it('gives a communication trade before week 1 week 1', async () => {
+    const T = 1731000000000;
+    const { league } = await loadWith({
+      transactions: [{ id: 6003, scoringPeriodId: 0, type: 'TRADE_UPHOLD', status: 'EXECUTED', items: [], proposedDate: T }],
+      topics: [commTopic('c-pre', T, [['206', 3], ['205', 4]])],
+    });
+    expect(league.trades).toHaveLength(1);
+    expect(league.trades![0].week).toBe(1);
+    expect(league.trades![0].verdictBasis).toBe('post-trade');
+  });
+
+  const accept = (id: number, teamId: number, extra: Record<string, unknown> = {}) => ({
+    id, teamId, scoringPeriodId: 6, type: 'TRADE_ACCEPT', status: 'EXECUTED',
+    relatedTransactionId: 'R1', proposedDate: 1732000000000, items: [], ...extra,
+  });
+  const proposal = (id: number, status: string, date: number, items: ESPNAPI.TransactionItem[]) => ({
+    id, scoringPeriodId: 6, type: 'TRADE_PROPOSAL', status, proposedDate: date, items,
+  });
+  const swap34: ESPNAPI.TransactionItem[] = [
+    { playerId: 205, fromTeamId: 3, toTeamId: 4, type: 'TRADE' },
+    { playerId: 206, fromTeamId: 4, toTeamId: 3, type: 'TRADE' },
+  ];
+
+  it('does not pair an accept with a declined proposal between the same teams', async () => {
+    const { league } = await loadWith({
+      transactions: [
+        accept(7001, 3), accept(7002, 4),
+        proposal(7003, 'DECLINED', 1732000000000 - 3600_000, swap34),
+      ],
+    });
+    // Teams are known from the accepts but no EXECUTED proposal exists, so it
+    // is an incomplete placeholder, never the declined proposal's players.
+    expect(league.trades).toHaveLength(1);
+    const trade = league.trades![0] as unknown as { isIncomplete?: boolean; teams: Array<{ playersReceived: unknown[] }> };
+    expect(trade.isIncomplete).toBe(true);
+    expect(trade.teams.every(t => t.playersReceived.length === 0)).toBe(true);
+  });
+
+  it('pairs an accept with its EXECUTED proposal and collapses the two accepts into one trade', async () => {
+    const { league } = await loadWith({
+      transactions: [
+        accept(7011, 3), accept(7012, 4),
+        proposal(7013, 'EXECUTED', 1732000000000 - 3600_000, swap34),
+      ],
+    });
+    expect(league.trades).toHaveLength(1);
+    const side3 = league.trades![0].teams.find(t => t.teamId === '3')!;
+    expect(side3.playersReceived.map(p => p.name)).toEqual(['Sam LaPorta']);
+    expect(league.trades![0].week).toBe(6);
+  });
+
+  it('does not fabricate a trade from a timestamp-only match to unrelated teams', async () => {
+    const { league } = await loadWith({
+      transactions: [
+        // Only team 3 is known on the accept (no related id, no uphold).
+        accept(7021, 3, { relatedTransactionId: undefined }),
+        // An executed proposal that is close in time but between teams 1 and 2.
+        proposal(7022, 'EXECUTED', 1732000000000 - 3600_000, [
+          { playerId: 203, fromTeamId: 1, toTeamId: 2, type: 'TRADE' },
+          { playerId: 204, fromTeamId: 2, toTeamId: 1, type: 'TRADE' },
+        ]),
+      ],
+    });
+    // The proposal stands alone as a commissioner-style executed trade (real),
+    // but it is never attributed to the accept (the old code reported it
+    // under the accept's id, 7021): exactly one 1<->2 trade, id of the proposal.
+    expect(league.trades).toHaveLength(1);
+    expect(league.trades![0].id).toBe('7022');
+    expect(league.trades![0].teams.map(t => t.teamId).sort()).toEqual(['1', '2']);
+  });
+});
+
+describe('espn history wall (401 without cookies)', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  const year = new Date().getFullYear();
+  const wallFetch = () => vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    const season = parseInt(url.match(/seasons\/(\d{4})/)![1]);
+    if (season <= year - 2) {
+      return { ok: false, status: 401, statusText: 'Unauthorized', json: async () => ({}) } as Response;
+    }
+    return jsonResponse({ ...mainLeagueBody, seasonId: season });
+  });
+
+  it('explains the wall with the status in the text', async () => {
+    vi.stubGlobal('fetch', wallFetch());
+    await expect(loadLeague(LEAGUE_ID, year - 3)).rejects.toThrow(
+      'ESPN only shares older seasons with your cookies (401). Add espn_s2 and SWID to see them.',
+    );
+  });
+
+  it('keeps the private-league message for a recent season', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 401, statusText: 'Unauthorized', json: async () => ({}) }) as Response));
+    await expect(loadLeague(LEAGUE_ID, year)).rejects.toThrow(/private league/);
+  });
+
+  it('flags the season list when older years were dropped for 401', async () => {
+    vi.stubGlobal('fetch', wallFetch());
+    const seasons = await getAvailableSeasons(LEAGUE_ID);
+    expect(seasons.map(s => s.year)).toEqual([year, year - 1]);
+    expect(seasons.every(s => (s as { olderNeedsCookies?: boolean }).olderNeedsCookies)).toBe(true);
+  });
+
+  it('does not flag the hint when every year is reachable', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(mainLeagueBody)));
+    const seasons = await getAvailableSeasons(LEAGUE_ID);
+    expect(seasons.length).toBeGreaterThan(0);
+    expect(seasons.some(s => (s as { olderNeedsCookies?: boolean }).olderNeedsCookies)).toBe(false);
   });
 });

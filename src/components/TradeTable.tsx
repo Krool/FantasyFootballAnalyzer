@@ -126,6 +126,11 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
                 {isIncomplete && (
                   <span className={styles.incompleteTag}>Player data unavailable</span>
                 )}
+                {trade.verdictNote && (
+                  <span className={styles.marginTag} title={trade.verdictNote}>
+                    no winner: picks/FAAB not valued
+                  </span>
+                )}
               </div>
 
               <div className={styles.tradeSides}>
@@ -163,8 +168,15 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
                               <span className={styles.playerMeta}>draft pick</span>
                             </div>
                           ))}
+                          {(teamSide.faabReceived ?? 0) > 0 && (
+                            <div className={styles.player}>
+                              <span className={styles.playerName}>${teamSide.faabReceived} FAAB</span>
+                              <span className={styles.playerMeta}>waiver budget</span>
+                            </div>
+                          )}
                           {teamSide.playersReceived.length === 0 &&
-                            (teamSide.draftPicksReceived ?? []).length === 0 && (
+                            (teamSide.draftPicksReceived ?? []).length === 0 &&
+                            !((teamSide.faabReceived ?? 0) > 0) && (
                               <span className={styles.noPlayers}>Nothing</span>
                             )}
                         </div>
@@ -189,8 +201,15 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
                               <span className={styles.playerMeta}>draft pick</span>
                             </div>
                           ))}
+                          {(teamSide.faabSent ?? 0) > 0 && (
+                            <div className={styles.player}>
+                              <span className={styles.playerName}>${teamSide.faabSent} FAAB</span>
+                              <span className={styles.playerMeta}>waiver budget</span>
+                            </div>
+                          )}
                           {teamSide.playersSent.length === 0 &&
-                            (teamSide.draftPicksSent ?? []).length === 0 && (
+                            (teamSide.draftPicksSent ?? []).length === 0 &&
+                            !((teamSide.faabSent ?? 0) > 0) && (
                               <span className={styles.noPlayers}>Nothing</span>
                             )}
                         </div>

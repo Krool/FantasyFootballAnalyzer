@@ -86,6 +86,9 @@ export interface Trade {
     playersSent: Player[];
     draftPicksReceived?: TradedDraftPick[];
     draftPicksSent?: TradedDraftPick[];
+    // FAAB dollars that changed hands in the trade (Sleeper waiver_budget).
+    faabReceived?: number;
+    faabSent?: number;
     // Points Above Replacement after trade
     parGained: number;
     parLost: number;
@@ -102,6 +105,9 @@ export interface Trade {
   // three platforms when weekly data loads) or 'full-season' (season totals,
   // the fallback when the trade week or weekly data is missing). Per trade.
   verdictBasis?: 'post-trade' | 'full-season';
+  // Why the verdict was withheld or qualified (e.g. picks or FAAB moved,
+  // which PAR can't value). Shown as the tooltip on the no-winner tag.
+  verdictNote?: string;
 }
 
 export interface TradedDraftPick {
@@ -206,6 +212,11 @@ export interface League {
   // sums, or season totals standing in because the weekly fetch failed.
   // Set by the Yahoo adapter; the waiver column labels itself from this.
   waiverPointsBasis?: 'since-pickup' | 'season';
+  // Set when part of the load failed (a throttled player batch or week) and
+  // the adapter degraded instead of throwing. Holds the user-facing summary of
+  // what is missing. An incomplete league is never written to the cache, so a
+  // refresh retries instead of serving the gaps back.
+  loadIncomplete?: string;
   // Lifecycle phase for this season. Derived per platform from completion
   // signals + NFL state. Pages use this to choose summary vs. live views.
   status?: LeagueStatus;
@@ -224,6 +235,9 @@ export interface League {
     order?: string[];
     // Commissioner-set keepers already on the board, at the round they cost.
     keepers: Array<{ teamId: string; sleeperPlayerId: string; round: number }>;
+    // Traded picks for this draft: round -> original team id -> the team
+    // that holds that pick now. Absent when no picks changed hands.
+    pickOwners?: Record<number, Record<string, string>>;
   };
   // The league plays an extra weekly matchup against the league median
   // (Sleeper league_average_match, ESPN WIN_BONUS_TOP_HALF, Yahoo
@@ -357,6 +371,8 @@ export namespace SleeperAPI {
       // IR and taxi sizes live here, NOT in roster_positions.
       reserve_slots?: number;
       taxi_slots?: number;
+      // Last week with final scores; weeks after it are unplayed or live.
+      last_scored_leg?: number;
     };
     draft_id: string;
     // Points at last season's league: renewals chain backward, never forward.
@@ -443,6 +459,18 @@ export namespace SleeperAPI {
     } | null;
     created: number;
     leg: number;
+    // Trades only: picks and FAAB that moved. roster_id is the pick's
+    // original owner, owner_id the new holder, previous_owner_id the sender.
+    draft_picks?: TradedPick[] | null;
+    waiver_budget?: Array<{ sender: number; receiver: number; amount: number }> | null;
+  }
+
+  export interface TradedPick {
+    season: string;
+    round: number;
+    roster_id: number;
+    previous_owner_id: number;
+    owner_id: number;
   }
 
   export interface Player {

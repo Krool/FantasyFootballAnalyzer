@@ -5,6 +5,7 @@ import { useSounds } from '@/hooks/useSounds';
 import { getCachedSeasons, loadSeasons } from '@/utils/seasonsCache';
 import { isEmptyPreseason } from '@/utils/leaguePhase';
 import { logger } from '@/utils/logger';
+import type { EspnSeasonOption } from '@/api/espn';
 import styles from './YearSelector.module.css';
 
 interface YearSelectorProps {
@@ -183,6 +184,9 @@ export function YearSelector({ league, credentials, onPick, disabled }: YearSele
               </li>
             );
           })}
+          {!loading && seasons?.some(s => (s as EspnSeasonOption).olderNeedsCookies) && (
+            <li className={styles.empty}>Older seasons need ESPN cookies</li>
+          )}
         </ul>
       )}
     </div>

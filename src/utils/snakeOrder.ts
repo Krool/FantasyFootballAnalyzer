@@ -33,12 +33,19 @@ export function teamIndexForPick(
   return isReversedRound(round, format) ? teamCount - 1 - posInRound : posInRound;
 }
 
+// Traded picks: round (1-based) -> the seat's original team id -> the team
+// that holds that round's pick now.
+export type PickOwners = Record<number, Record<string, string>>;
+
 export function teamForPick(
   pickIndex: number,
   orderedTeamIds: string[],
   format: SnakeFormat = 'standard',
+  pickOwners?: PickOwners,
 ): string {
-  return orderedTeamIds[teamIndexForPick(pickIndex, orderedTeamIds.length, format)];
+  const seat = orderedTeamIds[teamIndexForPick(pickIndex, orderedTeamIds.length, format)];
+  const round = roundForPick(pickIndex, orderedTeamIds.length);
+  return pickOwners?.[round]?.[seat] ?? seat;
 }
 
 // The next 0-based pick index belonging to teamId at or after fromPick, or
@@ -51,9 +58,10 @@ export function nextPickFor(
   fromPick: number,
   totalPicks: number,
   format: SnakeFormat = 'standard',
+  pickOwners?: PickOwners,
 ): number | null {
   for (let pick = fromPick; pick < totalPicks; pick++) {
-    if (teamForPick(pick, orderedTeamIds, format) === teamId) return pick;
+    if (teamForPick(pick, orderedTeamIds, format, pickOwners) === teamId) return pick;
   }
   return null;
 }

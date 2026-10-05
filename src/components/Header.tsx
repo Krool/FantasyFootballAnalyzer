@@ -23,8 +23,8 @@ interface HeaderProps {
   // Header doesn't construct YearSelector itself so it stays decoupled from
   // credentials and the seasons cache. App.tsx renders it and hands it in.
   yearSelector?: ReactNode;
-  // Yahoo login control: connecting anywhere in the app feeds live Yahoo
-  // auction prices into the draft board, whatever platform the league is on.
+  // Yahoo login control: connect from anywhere in the app to load a Yahoo
+  // league. (Yahoo market prices are bundled with the pool; no login needed.)
   yahooConnected?: boolean;
   onYahooConnect?: () => void;
   onYahooDisconnect?: () => void;
@@ -294,9 +294,9 @@ export function Header({
             >
               Teams
             </Link>
-            {/* History needs multi-season APIs that only Sleeper and ESPN
-                offer; for Yahoo the tab would be a dead end. */}
-            {(league?.platform === 'sleeper' || league?.platform === 'espn') && (
+            {/* History walks prior seasons: Sleeper's previous_league_id,
+                ESPN's per-year endpoints, Yahoo's `renew` chain. */}
+            {(league?.platform === 'sleeper' || league?.platform === 'espn' || league?.platform === 'yahoo') && (
               <Link
                 to="/history"
                 className={`${styles.navLink} ${location.pathname === '/history' ? styles.active : ''}`}
@@ -359,8 +359,8 @@ export function Header({
                 className={yahooConnected ? styles.yahooButtonOn : styles.yahooButton}
                 title={
                   yahooConnected
-                    ? 'Yahoo connected: live auction prices load into the draft board. Click to disconnect.'
-                    : 'Connect Yahoo to pull live auction prices into the draft board'
+                    ? 'Yahoo connected: your Yahoo leagues can load. Click to disconnect.'
+                    : 'Connect Yahoo to load your Yahoo leagues'
                 }
                 aria-label={yahooConnected ? 'Disconnect Yahoo' : 'Connect Yahoo'}
                 aria-pressed={!!yahooConnected}

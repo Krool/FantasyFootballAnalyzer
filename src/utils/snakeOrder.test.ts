@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { roundForPick, teamForPick, teamIndexForPick } from './snakeOrder';
+import { nextPickFor, roundForPick, teamForPick, teamIndexForPick } from './snakeOrder';
 
 describe('snakeOrder', () => {
   it('runs forward in round 1 and reverses in round 2', () => {
@@ -65,6 +65,20 @@ describe('snakeOrder', () => {
     expect(teamForPick(11, ids)).toBe('t11'); // first pick of round 2 (reversed): same team, the turn
     expect(teamForPick(21, ids)).toBe('t1'); // last pick of round 2 (reversed)
     expect(teamForPick(22, ids)).toBe('t1'); // first pick of round 3 (forward again): same team, the turn
+  });
+
+  it('seats a traded pick with its current owner, only in the traded round', () => {
+    const ids = ['t1', 't2', 't3', 't4'];
+    const owners = { 2: { t4: 't1' } }; // t4's round-2 pick now belongs to t1
+    expect(teamForPick(0, ids, 'standard', owners)).toBe('t1');
+    // Round 2 is reversed, so pick index 4 is t4's seat -> t1.
+    expect(teamForPick(4, ids, 'standard', owners)).toBe('t1');
+    expect(teamForPick(3, ids, 'standard', owners)).toBe('t4'); // round 1 untouched
+    expect(teamForPick(8, ids, 'standard', owners)).toBe('t1'); // round 3 untouched
+    expect(teamForPick(7, ids, 'standard', owners)).toBe('t1'); // t1's own r2 seat
+    // t1 now holds two picks in round 2.
+    expect(nextPickFor('t1', ids, 1, 12, 'standard', owners)).toBe(4);
+    expect(nextPickFor('t4', ids, 4, 12, 'standard', owners)).toBe(11);
   });
 
   it('every format gives each team exactly one pick per round', () => {

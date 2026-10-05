@@ -96,6 +96,7 @@ function configFromLeague(league: League): DraftRoomConfig {
     leagueType: league.leagueType ?? 'redraft',
     dynastyMode: 'startup',
     snakeFormat: league.draftFormat ?? 'standard',
+    pickOwners: league.upcomingDraft?.pickOwners,
     teams,
     myTeamId: myLeagueTeam?.id ?? teams[0]?.id ?? '',
     rosterSlots,

@@ -124,6 +124,22 @@ describe('espn-proxy forwarding', () => {
     expect(opts.headers['x-fantasy-filter']).toBe('{"players":{}}')
   })
 
+  it.each(['mBoxscore', 'mMatchupScore', 'kona_player_info'])('allows the %s view through to ESPN', async (view) => {
+    const fetchMock = stubFetch({ ok: true, json: async () => ({}) })
+    const res = mockRes()
+    await handler(mockReq({ query: { season: '2025', leagueId: '123', view, scoringPeriodId: '3' } }), res)
+    expect(res.statusCode).toBe(200)
+    expect(fetchMock.mock.calls[0][0]).toContain(`view=${view}`)
+  })
+
+  it('still rejects a look-alike view name', async () => {
+    const fetchMock = stubFetch({ ok: true, json: async () => ({}) })
+    const res = mockRes()
+    await handler(mockReq({ query: { season: '2025', leagueId: '123', view: ['mTeam', 'mBoxscore2'] } }), res)
+    expect(res.statusCode).toBe(400)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   // Every other input to this proxy is allowlisted. The filter header is
   // forwarded to ESPN under our IP, so it gets validated too rather than
   // passing an arbitrary caller-supplied string through.

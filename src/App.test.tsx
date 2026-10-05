@@ -41,6 +41,7 @@ const h = vi.hoisted(() => {
     takeOAuthReturn: vi.fn(() => null),
     loggerError: vi.fn(),
     blockRedirect: false,
+    yahooAuthed: false,
   };
 });
 
@@ -85,7 +86,7 @@ vi.mock('@/hooks/useSounds', () => ({
 
 vi.mock('@/api/yahoo', async importOriginal => ({
   ...(await importOriginal<object>()),
-  isAuthenticated: () => false,
+  isAuthenticated: () => h.yahooAuthed,
   saveTokens: h.saveTokens,
   validateOAuthState: h.validateOAuthState,
   clearOAuthState: h.clearOAuthState,
@@ -106,12 +107,18 @@ vi.mock('@/utils/logger', () => ({
 }));
 
 // Chrome stubs: these tests pin routing, not chrome or page content.
-vi.mock('@/components/Header', () => ({ Header: () => <div data-testid="header" /> }));
+vi.mock('@/components/Header', () => ({
+  Header: ({ yahooConnected }: { yahooConnected?: boolean }) => (
+    <div data-testid="header" data-yahoo={String(!!yahooConnected)} />
+  ),
+}));
 vi.mock('@/components/YearSelector', () => ({ YearSelector: () => null }));
 vi.mock('@/components/SeasonLoadingOverlay', () => ({ SeasonLoadingOverlay: () => null }));
 vi.mock('@/components/DraftPrepBanner', () => ({ DraftPrepBanner: () => null }));
 vi.mock('@/components/GuestBanner', () => ({ GuestBanner: () => null }));
-vi.mock('@/components/SeasonFallbackNotice', () => ({ SeasonFallbackNotice: () => null }));
+vi.mock('@/components/SeasonFallbackNotice', () => ({
+  SeasonFallbackNotice: ({ message }: { message: string }) => <div data-testid="notice">{message}</div>,
+}));
 // The connect form stands in for the real one: a button that hands App the
 // credentials, so handleLoadLeague (load -> navigate) runs for real.
 vi.mock('@/pages/HomePage', () => ({
@@ -173,6 +180,7 @@ beforeEach(() => {
   h.store.league = null;
   h.store.isLoading = false;
   h.blockRedirect = false;
+  h.yahooAuthed = false;
   h.takeOAuthReturn.mockReturnValue(null);
   vi.spyOn(window, 'alert').mockImplementation(() => {});
   // Default load: succeed and swap the store's league in, like the real hook.
@@ -258,6 +266,76 @@ describe('share links (?league=sleeper:<id>)', () => {
     expect(JSON.parse(localStorage.getItem('ffa:lastconn:v1') ?? 'null')).toMatchObject({
       platform: 'espn',
     });
+  });
+});
+
+describe('Yahoo reload persistence (?league=yahoo:<league_key>)', () => {
+  const KEY = '461.l.12345';
+
+  it('restores a Yahoo league on reload when the browser is logged in, keeping the param', async () => {
+    h.yahooAuthed = true;
+    h.loadMock.mockImplementation(async ({ leagueId }: { leagueId: string }) => {
+      const league = sleeperLeague(leagueId, { platform: 'yahoo' } as Partial<League>);
+      h.store.set({ league });
+      return league;
+    });
+    renderApp(`/awards?league=yahoo:${KEY}`);
+    expect(await screen.findByTestId('awards-page')).toBeTruthy();
+    expect(h.loadMock).toHaveBeenCalledTimes(1);
+    expect(h.loadMock).toHaveBeenCalledWith({ platform: 'yahoo', leagueId: KEY });
+    expect(decodeURIComponent(screen.getByTestId('loc').textContent ?? '')).toBe(
+      `/awards?league=yahoo:${KEY}`,
+    );
+  });
+
+  it('sends a logged-out visitor to the connect form on the Yahoo tab without loading', async () => {
+    renderApp(`/awards?league=yahoo:${KEY}`);
+    expect(await screen.findByTestId('home-page')).toBeTruthy();
+    expect(h.loadMock).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem('ffa:lastconn:v1') ?? 'null')).toMatchObject({
+      platform: 'yahoo',
+      yahoo: { leagueId: KEY },
+    });
+  });
+
+  it('ignores a malformed Yahoo key', async () => {
+    h.yahooAuthed = true;
+    renderApp('/awards?league=yahoo:notakey');
+    expect(await screen.findByTestId('home-page')).toBeTruthy();
+    expect(h.loadMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('header Yahoo login state', () => {
+  it('drops to logged-out when a failed refresh clears the tokens mid-session', async () => {
+    h.yahooAuthed = true;
+    h.store.league = sleeperLeague('55');
+    renderApp('/awards');
+    expect((await screen.findByTestId('header')).getAttribute('data-yahoo')).toBe('true');
+    // The adapter's refresh failure calls clearTokens(); the next load state
+    // change must re-read it instead of showing a stale "connected".
+    h.yahooAuthed = false;
+    await act(async () => { h.store.set({ isLoading: true }); });
+    await act(async () => { h.store.set({ isLoading: false }); });
+    expect(screen.getByTestId('header').getAttribute('data-yahoo')).toBe('false');
+  });
+});
+
+describe('partial Yahoo load notice', () => {
+  it('tells the user what is missing when the loaded league is incomplete', async () => {
+    h.store.league = sleeperLeague('461.l.1', {
+      platform: 'yahoo',
+      loadIncomplete: 'Yahoo throttled some requests, so this league is missing matchup scores for week 3.',
+    } as Partial<League>);
+    renderApp('/awards');
+    expect((await screen.findByTestId('notice')).textContent).toMatch(/missing matchup scores for week 3/);
+  });
+
+  it('shows no notice for a complete league', async () => {
+    h.store.league = sleeperLeague('461.l.1', { platform: 'yahoo' } as Partial<League>);
+    renderApp('/awards');
+    expect(await screen.findByTestId('awards-page')).toBeTruthy();
+    expect(screen.queryByTestId('notice')).toBeNull();
   });
 });
 
