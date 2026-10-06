@@ -5,7 +5,7 @@ import { RouteErrorBoundary } from './RouteErrorBoundary';
 // The boundary logs the caught error; silence the side effects so the suite
 // output stays clean and we don't hit Sentry.
 vi.mock('@/utils/logger', () => ({ logger: { error: vi.fn() } }));
-vi.mock('@/utils/sentry', () => ({ captureError: vi.fn() }));
+vi.mock('@/utils/sentry', () => ({ captureError: vi.fn(), captureMessage: vi.fn() }));
 
 function Boom({ message }: { message: string }): never {
   throw new Error(message);
@@ -44,6 +44,11 @@ describe('RouteErrorBoundary chunk-failure detection', () => {
     renderWithError(message);
     expect(screen.getByText(/part of the app did not load/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /reload/i })).toBeTruthy();
+  });
+
+  it('follows a chunk failure with the probe of which file failed', async () => {
+    renderWithError('Importing a module script failed.');
+    expect(await screen.findByText('No chunk requests found to check.')).toBeTruthy();
   });
 
   it('shows a retryable error for a normal render crash', () => {

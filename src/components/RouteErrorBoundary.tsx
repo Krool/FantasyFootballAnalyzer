@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { logger } from '@/utils/logger';
-import { captureError } from '@/utils/sentry';
+import { captureError, captureMessage } from '@/utils/sentry';
+import { attemptedChunkUrls, probeChunks, summarizeProbe } from '@/utils/chunkProbe';
 
 interface Props {
   children: ReactNode;
@@ -12,6 +13,19 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  /** Which chunk failed and how, once the probe finishes (chunk failures only). */
+  diagnosis: string | null;
+}
+
+// A dynamic import that 404s after a redeploy (stale chunk hashes on gh-pages)
+// needs a reload, not a retry. Each browser phrases the failure differently:
+// Chrome "Failed to fetch dynamically imported module", Firefox "error loading
+// dynamically imported module", Safari "Importing a module script failed",
+// plus webpack-era "Loading chunk N failed".
+function isChunkFailure(error: Error | null): boolean {
+  return /(failed to fetch|error loading) dynamically imported module|importing a module script failed|loading chunk/i.test(
+    error?.message ?? '',
+  );
 }
 
 // Per-route boundary: a render crash inside one page must not take down the
@@ -20,7 +34,7 @@ interface State {
 export class RouteErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, diagnosis: null };
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -34,26 +48,39 @@ export class RouteErrorBoundary extends Component<Props, State> {
       resetKey: this.props.resetKey,
       componentStack: errorInfo.componentStack,
     });
+    // Reaching this screen means the stale-chunk reloads already ran out, so
+    // the failure is not a passing redeploy. Find out which file and why:
+    // the browser's own message rarely says, and Sentry drops it as noise.
+    if (isChunkFailure(error)) void this.diagnose();
+  }
+
+  private async diagnose() {
+    try {
+      const results = await probeChunks(attemptedChunkUrls());
+      const diagnosis = summarizeProbe(results);
+      if (this.state.hasError) this.setState({ diagnosis });
+      // Worded to stay clear of sentry.ts's BENIGN_ERROR filter, which would
+      // drop anything echoing the browser's chunk-failure strings.
+      captureMessage(`Route chunk import diagnosis: ${results.filter(r => r.problem).length} of ${results.length} files bad`, 'error', {
+        resetKey: this.props.resetKey,
+        userAgent: navigator.userAgent,
+        results,
+      });
+    } catch {
+      // Diagnostics are best-effort; the Reload button still works.
+    }
   }
 
   componentDidUpdate(prevProps: Props) {
     if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
-      this.setState({ hasError: false, error: null });
+      this.setState({ hasError: false, error: null, diagnosis: null });
     }
   }
 
   render() {
     if (this.state.hasError) {
-      const error = this.state.error;
-      // A dynamic import that 404s after a redeploy (stale chunk hashes on
-      // gh-pages) needs a reload, not a retry. Each browser phrases the failure
-      // differently: Chrome "Failed to fetch dynamically imported module",
-      // Firefox "error loading dynamically imported module", Safari "Importing
-      // a module script failed", plus webpack-era "Loading chunk N failed".
-      const chunkFailure =
-        /(failed to fetch|error loading) dynamically imported module|importing a module script failed|loading chunk/i.test(
-          error?.message ?? '',
-        );
+      const { error, diagnosis } = this.state;
+      const chunkFailure = isChunkFailure(error);
       return (
         <div
           style={{
@@ -87,7 +114,7 @@ export class RouteErrorBoundary extends Component<Props, State> {
           <button
             type="button"
             onClick={() =>
-              chunkFailure ? window.location.reload() : this.setState({ hasError: false, error: null })
+              chunkFailure ? window.location.reload() : this.setState({ hasError: false, error: null, diagnosis: null })
             }
             style={{
               padding: '0.7rem 1.4rem',
@@ -105,6 +132,22 @@ export class RouteErrorBoundary extends Component<Props, State> {
           >
             {chunkFailure ? 'Reload' : 'Try Again'}
           </button>
+          {chunkFailure && diagnosis && (
+            <pre
+              style={{
+                marginTop: '1.5rem',
+                maxWidth: 520,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                textAlign: 'left',
+                color: 'var(--bone-dim)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.7rem',
+              }}
+            >
+              {diagnosis}
+            </pre>
+          )}
         </div>
       );
     }
