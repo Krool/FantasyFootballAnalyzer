@@ -257,14 +257,19 @@ Fonts are self-hosted via `@fontsource` (not Google Fonts), declared in `src/fon
   (2026-09-02, after a day of frequent deploys put stale-chunk errors on
   five pages). A single-file asset outside `assets/` would not get this
   protection.
-- **Content blockers**: built filenames carry module names, and Safari
-  content blockers match URLs by substring (`assets/consensus-*.js` matched
-  the cookie-banner lists' `consensu` rule and killed /draft in iOS Safari,
-  2026-10-06). `vite.config.ts` renames any chunk/asset whose name matches
-  `scripts/chunkNames.ts` to `chunk-<hash>`; extend that list, never ship
-  around it. A page chunk that still fails is re-imported under a fresh URL
-  (`importChunk`), and the route error screen probes and names the failing
-  file (`src/utils/chunkProbe.ts`).
+- **Blocked chunks**: on 2026-10-06 iOS Safari refused one 1.4KB shared
+  chunk (the consensus helpers) through every reload while Chrome on the same
+  phone loaded it, killing /draft, /rankings, /values and /draft-room.
+  Renaming it (`consensus-*` -> `chunk-*`, same hash) did not help, so a name
+  rule was not the cause; the actual Safari mechanism is unconfirmed. Defenses
+  in place: `vite.config.ts` merges chunks under 20KB
+  (`experimentalMinChunkSize`) so there are fewer files to lose, uses hex
+  hashes, and renames chunks whose names match filter-list words
+  (`scripts/chunkNames.ts`). A page chunk that fails is re-imported under a
+  fresh URL (`importChunk`); a failed idle warm-up never reloads the page
+  (only a failed stylesheet does, in `main.tsx`); the route error screen
+  probes and names the failing file (`src/utils/chunkProbe.ts`) and reports
+  it to Sentry under a message the benign filter keeps.
 - **Reading production errors**: org `krool-world`, project `javascript-react`.
   The owner's user env has a read-only personal token (`SENTRY_AUTH_TOKEN`,
   scopes event:read/org:read/project:read) for the Sentry API; the CI secret

@@ -101,6 +101,18 @@ export default defineConfig({
     // blocker's URL rules would match (scripts/chunkNames.ts).
     rollupOptions: {
       output: {
+        // Fewer, larger lazy chunks: every separate file is one more request a
+        // phone's flaky link, a stale cache entry, or a content blocker can
+        // kill, and one dead shared chunk takes every page importing it down
+        // (2026-10-06: a 1.4KB shared chunk blocked in iOS Safari broke /draft,
+        // /rankings, /values and /draft-room). Rollup folds chunks under this
+        // size into a chunk that always loads alongside them. Cost measured
+        // 2026-10-06: ~19KB of small shared UI (TeamLink, NflTeamLabel) moved
+        // into the entry; the draft pool stays in a lazy chunk (33 -> 20 files).
+        experimentalMinChunkSize: 20_000,
+        // Hex fingerprints: no mixed-case letter runs for a URL filter rule
+        // to match by accident.
+        hashCharacters: 'hex',
         chunkFileNames: chunk => `assets/${blockerSafeName(chunk.name)}-[hash].js`,
         assetFileNames: asset => {
           const name = asset.names[0] ?? 'asset';
