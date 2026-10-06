@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-10-06T02:50:12.266Z",
+ "fetchedAt": "2026-10-06T17:02:04.869Z",
  "data": {
   "scoring": "HALF",
   "players": [
@@ -68,15 +68,15 @@
     "tier": 2
    },
    {
-    "name": "Malik Nabers",
-    "team": "NYG",
+    "name": "CeeDee Lamb",
+    "team": "DAL",
     "pos": "WR",
     "rank": 10,
     "tier": 2
    },
    {
-    "name": "CeeDee Lamb",
-    "team": "DAL",
+    "name": "Malik Nabers",
+    "team": "NYG",
     "pos": "WR",
     "rank": 11,
     "tier": 2
@@ -117,30 +117,30 @@
     "tier": 3
    },
    {
-    "name": "Josh Allen",
-    "team": "BUF",
-    "pos": "QB",
-    "rank": 17,
-    "tier": 3
-   },
-   {
-    "name": "Trey McBride",
-    "team": "ARI",
-    "pos": "TE",
-    "rank": 18,
-    "tier": 3
-   },
-   {
     "name": "Kenneth Walker III",
     "team": "KC",
     "pos": "RB",
-    "rank": 19,
+    "rank": 17,
     "tier": 3
    },
    {
     "name": "Jonathan Taylor",
     "team": "IND",
     "pos": "RB",
+    "rank": 18,
+    "tier": 3
+   },
+   {
+    "name": "Josh Allen",
+    "team": "BUF",
+    "pos": "QB",
+    "rank": 19,
+    "tier": 3
+   },
+   {
+    "name": "Trey McBride",
+    "team": "ARI",
+    "pos": "TE",
     "rank": 20,
     "tier": 3
    },
@@ -166,37 +166,37 @@
     "tier": 4
    },
    {
-    "name": "Emeka Egbuka",
-    "team": "TB",
+    "name": "Zay Flowers",
+    "team": "BAL",
     "pos": "WR",
     "rank": 24,
     "tier": 4
    },
    {
-    "name": "De'Von Achane",
-    "team": "MIA",
-    "pos": "RB",
-    "rank": 25,
-    "tier": 4
-   },
-   {
-    "name": "Zay Flowers",
-    "team": "BAL",
+    "name": "Emeka Egbuka",
+    "team": "TB",
     "pos": "WR",
-    "rank": 26,
+    "rank": 25,
     "tier": 4
    },
    {
     "name": "Lamar Jackson",
     "team": "BAL",
     "pos": "QB",
-    "rank": 27,
+    "rank": 26,
     "tier": 4
    },
    {
     "name": "Garrett Wilson",
     "team": "NYJ",
     "pos": "WR",
+    "rank": 27,
+    "tier": 4
+   },
+   {
+    "name": "De'Von Achane",
+    "team": "MIA",
+    "pos": "RB",
     "rank": 28,
     "tier": 4
    },
@@ -222,15 +222,15 @@
     "tier": 4
    },
    {
-    "name": "Ladd McConkey",
-    "team": "LAC",
+    "name": "Luther Burden III",
+    "team": "CHI",
     "pos": "WR",
     "rank": 32,
     "tier": 4
    },
    {
-    "name": "Luther Burden III",
-    "team": "CHI",
+    "name": "Ladd McConkey",
+    "team": "LAC",
     "pos": "WR",
     "rank": 33,
     "tier": 4
@@ -278,29 +278,29 @@
     "tier": 5
    },
    {
+    "name": "Tee Higgins",
+    "team": "CIN",
+    "pos": "WR",
+    "rank": 40,
+    "tier": 5
+   },
+   {
     "name": "Jordyn Tyson",
     "team": "NO",
     "pos": "WR",
-    "rank": 40,
+    "rank": 41,
     "tier": 5
    },
    {
     "name": "Tyler Warren",
     "team": "IND",
     "pos": "TE",
-    "rank": 41,
+    "rank": 42,
     "tier": 5
    },
    {
     "name": "Rashee Rice",
     "team": "KC",
-    "pos": "WR",
-    "rank": 42,
-    "tier": 5
-   },
-   {
-    "name": "Tee Higgins",
-    "team": "CIN",
     "pos": "WR",
     "rank": 43,
     "tier": 5
@@ -313,15 +313,15 @@
     "tier": 5
    },
    {
-    "name": "Jaylen Waddle",
-    "team": "DEN",
+    "name": "Parker Washington",
+    "team": "JAC",
     "pos": "WR",
     "rank": 45,
     "tier": 5
    },
    {
-    "name": "Parker Washington",
-    "team": "JAC",
+    "name": "Jaylen Waddle",
+    "team": "DEN",
     "pos": "WR",
     "rank": 46,
     "tier": 5
@@ -492,7 +492,7 @@
     "team": "BUF",
     "pos": "WR",
     "rank": 70,
-    "tier": 7
+    "tier": 6
    },
    {
     "name": "Cam Skattebo",
@@ -502,15 +502,15 @@
     "tier": 7
    },
    {
-    "name": "Marvin Harrison Jr.",
-    "team": "ARI",
+    "name": "KC Concepcion Jr.",
+    "team": "CLE",
     "pos": "WR",
     "rank": 72,
     "tier": 7
    },
    {
-    "name": "KC Concepcion Jr.",
-    "team": "CLE",
+    "name": "Marvin Harrison Jr.",
+    "team": "ARI",
     "pos": "WR",
     "rank": 73,
     "tier": 7
@@ -740,30 +740,30 @@
     "tier": 8
    },
    {
-    "name": "Courtland Sutton",
-    "team": "DEN",
-    "pos": "WR",
+    "name": "Chuba Hubbard",
+    "team": "CAR",
+    "pos": "RB",
     "rank": 106,
     "tier": 8
    },
    {
-    "name": "Michael Pittman Jr.",
-    "team": "PIT",
+    "name": "Courtland Sutton",
+    "team": "DEN",
     "pos": "WR",
     "rank": 107,
-    "tier": 8
-   },
-   {
-    "name": "Chuba Hubbard",
-    "team": "CAR",
-    "pos": "RB",
-    "rank": 108,
     "tier": 8
    },
    {
     "name": "Blake Corum",
     "team": "LAR",
     "pos": "RB",
+    "rank": 108,
+    "tier": 8
+   },
+   {
+    "name": "Michael Pittman Jr.",
+    "team": "PIT",
+    "pos": "WR",
     "rank": 109,
     "tier": 8
    },
@@ -852,16 +852,16 @@
     "tier": 8
    },
    {
-    "name": "Bryce Young",
-    "team": "CAR",
-    "pos": "QB",
+    "name": "Juwan Johnson",
+    "team": "NO",
+    "pos": "TE",
     "rank": 122,
     "tier": 8
    },
    {
-    "name": "Juwan Johnson",
-    "team": "NO",
-    "pos": "TE",
+    "name": "Bryce Young",
+    "team": "CAR",
+    "pos": "QB",
     "rank": 123,
     "tier": 8
    },
