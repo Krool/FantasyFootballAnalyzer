@@ -257,6 +257,14 @@ Fonts are self-hosted via `@fontsource` (not Google Fonts), declared in `src/fon
   (2026-09-02, after a day of frequent deploys put stale-chunk errors on
   five pages). A single-file asset outside `assets/` would not get this
   protection.
+- **Content blockers**: built filenames carry module names, and Safari
+  content blockers match URLs by substring (`assets/consensus-*.js` matched
+  the cookie-banner lists' `consensu` rule and killed /draft in iOS Safari,
+  2026-10-06). `vite.config.ts` renames any chunk/asset whose name matches
+  `scripts/chunkNames.ts` to `chunk-<hash>`; extend that list, never ship
+  around it. A page chunk that still fails is re-imported under a fresh URL
+  (`importChunk`), and the route error screen probes and names the failing
+  file (`src/utils/chunkProbe.ts`).
 - **Reading production errors**: org `krool-world`, project `javascript-react`.
   The owner's user env has a read-only personal token (`SENTRY_AUTH_TOKEN`,
   scopes event:read/org:read/project:read) for the Sentry API; the CI secret

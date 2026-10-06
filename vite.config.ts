@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 import path from 'path'
 import { execSync } from 'node:child_process'
+import { blockerSafeName } from './scripts/chunkNames'
 
 const SITE_URL = 'https://fantasyfootballanalyzer.app/'
 
@@ -94,7 +95,22 @@ export default defineConfig({
   base: '/',
   // 'hidden' emits maps for upload but no sourceMappingURL comment, so nothing
   // dangles after the plugin deletes them. Off entirely when not uploading.
-  build: { sourcemap: SENTRY_AUTH_TOKEN ? 'hidden' : false },
+  build: {
+    sourcemap: SENTRY_AUTH_TOKEN ? 'hidden' : false,
+    // Chunk and asset filenames carry module names; rename any that a content
+    // blocker's URL rules would match (scripts/chunkNames.ts).
+    rollupOptions: {
+      output: {
+        chunkFileNames: chunk => `assets/${blockerSafeName(chunk.name)}-[hash].js`,
+        assetFileNames: asset => {
+          const name = asset.names[0] ?? 'asset';
+          const dot = name.lastIndexOf('.');
+          const stem = dot > 0 ? name.slice(0, dot) : name;
+          return `assets/${blockerSafeName(stem)}-[hash][extname]`;
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
