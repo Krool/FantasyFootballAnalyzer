@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { importChunk, reloadOnceForStaleChunk, resolveLazyPageModule, runtime } from './staleChunk';
+import { importChunk, pageChunkUrl, reloadOnceForStaleChunk, resolveLazyPageModule, runtime } from './staleChunk';
 
 // These pin the stale-deploy self-heal: a visitor on an old tab whose lazy
 // import resolves against a mixed build (chunk loads, named export missing)
@@ -223,5 +223,71 @@ describe('importChunk', () => {
     const boom = new TypeError('Failed to fetch dynamically imported module');
     await expect(importChunk(() => Promise.reject(boom), 'page DraftPage')).rejects.toThrow(boom);
     expect(runtime.reload).not.toHaveBeenCalled();
+  });
+});
+
+describe('cache-busted page re-import', () => {
+  const boom = new TypeError('Importing a module script failed.');
+
+  function preload(href: string) {
+    const link = document.createElement('link');
+    link.rel = 'modulepreload';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    window.name = '';
+    runtime.inFlight = false;
+    vi.spyOn(runtime, 'reload').mockImplementation(() => {});
+    preload('/assets/DraftPageExtras-zzz.js');
+    preload('/assets/DraftPage-CXjLcAr1.js');
+    preload('/assets/DraftPage-CJfRswMh.css');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.head.innerHTML = '';
+    sessionStorage.clear();
+  });
+
+  it("finds the page's own chunk, not a prefix match or its CSS", () => {
+    expect(pageChunkUrl('DraftPage')).toMatch(/\/assets\/DraftPage-CXjLcAr1\.js$/);
+    expect(pageChunkUrl('TeamsPage')).toBeNull();
+  });
+
+  // iOS Safari kept failing /draft through every reload while Chrome on the
+  // same phone loaded it (owner-reported 2026-10-05): the failure was pinned to
+  // that URL, so the rescue has to ask for the file under a new one.
+  it('renders from a fresh URL when the original import rejects, without reloading', async () => {
+    const Page = () => null;
+    const importFresh = vi.spyOn(runtime, 'importFresh').mockResolvedValue({ DraftPage: Page });
+    const mod = await resolveLazyPageModule(
+      () => Promise.reject(boom) as Promise<{ DraftPage: typeof Page }>,
+      'DraftPage',
+    );
+    expect(mod.default).toBe(Page);
+    expect(importFresh.mock.calls[0][0]).toMatch(/\/assets\/DraftPage-CXjLcAr1\.js\?fresh=\d+$/);
+    expect(runtime.reload).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the reload when the fresh import fails too', async () => {
+    vi.spyOn(runtime, 'importFresh').mockRejectedValue(boom);
+    let outcome = 'pending';
+    void importChunk(() => Promise.reject(boom), 'page DraftPage', 'DraftPage')
+      .then(() => { outcome = 'resolved'; })
+      .catch(() => { outcome = 'rejected'; });
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect(outcome).toBe('pending');
+    expect(runtime.reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves non-page imports (no page name) on the reload path', async () => {
+    const importFresh = vi.spyOn(runtime, 'importFresh');
+    void importChunk(() => Promise.reject(boom), 'PDF export').catch(() => {});
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect(importFresh).not.toHaveBeenCalled();
+    expect(runtime.reload).toHaveBeenCalledTimes(1);
   });
 });

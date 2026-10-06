@@ -108,7 +108,38 @@ export const runtime = {
   // its way (Sentry, 2026-09-02: dozens of "missing after a reload attempt"
   // on tabs that had never reloaded). Reset only by the reload itself.
   inFlight: false,
+  // Seam for the cache-busted re-import below; tests stub it.
+  importFresh: (url: string): Promise<unknown> => import(/* @vite-ignore */ url),
 };
+
+// The page chunk's own URL, found among the modulepreload links Vite's
+// preload helper added for the failed import (the page chunk is named after
+// its module, e.g. DraftPage-<hash>.js). Null when it isn't there to find.
+export function pageChunkUrl(name: string, doc: Document = document): string | null {
+  const own = new RegExp(`/${name}-[\\w-]+\\.js$`);
+  for (const link of doc.querySelectorAll<HTMLLinkElement>('link[rel="modulepreload"]')) {
+    if (own.test(link.href)) return link.href;
+  }
+  return null;
+}
+
+// A failed module is remembered by URL for the life of the page (and Safari
+// can keep serving a bad cached copy across reloads), so neither retrying the
+// same import nor reloading reaches the network fresh. The same file under a
+// new query string is a new module record and a new request. Owner-reported
+// 2026-10-05: /draft dead in iOS Safari through every reload while the same
+// build loaded in Chrome on the same phone.
+async function importPageFresh<M>(name: string): Promise<M | null> {
+  const url = pageChunkUrl(name);
+  if (!url) return null;
+  try {
+    const mod = (await runtime.importFresh(`${url}?fresh=${Date.now()}`)) as M;
+    logger.warn(`[importChunk] page ${name} import failed; a cache-busted re-import recovered it`);
+    return mod;
+  } catch {
+    return null;
+  }
+}
 
 // True when a reload was initiated; false when one was already attempted
 // recently (or storage is unavailable) and the caller should let the error
@@ -136,11 +167,18 @@ export function reloadOnceForStaleChunk(): boolean {
 // tabs) while the reload is already on its way. Hand back a never-settling
 // promise in that case so the caller stays quiet until the navigation lands;
 // throw only when a reload was already tried and the deploy itself is broken.
-export async function importChunk<M>(load: () => Promise<M>, what: string): Promise<M> {
+export async function importChunk<M>(
+  load: () => Promise<M>,
+  what: string,
+  /** A lazy page's chunk name, enabling the cache-busted re-import first. */
+  pageName?: string,
+): Promise<M> {
   let mod: M;
   try {
     mod = await load();
   } catch (err) {
+    const fresh = pageName ? await importPageFresh<M>(pageName) : null;
+    if (fresh) return fresh;
     // A REJECTED import used to propagate straight past every self-heal here
     // and land in the route error boundary. Retrying in place does NOT help:
     // a failed dynamic import is recorded against that specifier, so calling
@@ -168,7 +206,7 @@ export async function resolveLazyPageModule<M, K extends keyof M>(
   load: () => Promise<M>,
   name: K,
 ): Promise<{ default: M[K] }> {
-  const mod = await importChunk(load, `page ${String(name)}`);
+  const mod = await importChunk(load, `page ${String(name)}`, String(name));
   const component = mod[name];
   if (component === undefined) {
     if (runtime.inFlight || reloadOnceForStaleChunk()) {
