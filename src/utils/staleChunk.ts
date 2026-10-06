@@ -11,8 +11,9 @@ import { logger } from './logger';
 //      the reload.  Before that retry existed, a dropped request went straight
 //      to the route error boundary, which told the user a new version had
 //      shipped when none had (owner-reported 2026-09-12, on the current build).
-//   1. The old chunk filename 404s — Vite fires `vite:preloadError`, handled
-//      in main.tsx via reloadOnceForStaleChunk().
+//   1. The old chunk filename 404s — the import rejects and importChunk
+//      handles it like case 0 (a 404'd stylesheet goes through Vite's
+//      `vite:preloadError` instead, handled in main.tsx).
 //   2. The import RESOLVES but against a mixed build (old entry chunk, new
 //      page chunk, or a cached module whose exports moved), so the named
 //      export the old code expects is undefined. No preloadError fires;
@@ -158,7 +159,7 @@ export function reloadOnceForStaleChunk(): boolean {
   return true;
 }
 
-// A dynamic import() that survives a redeploy. When the chunk hash 404s,
+// A dynamic import() that survives a redeploy. When a page's stylesheet 404s,
 // main.tsx's vite:preloadError handler starts the one-shot reload and
 // swallows Vite's rethrow — after which Vite resolves the import to
 // `undefined` rather than rejecting. Callers that destructure the module

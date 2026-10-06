@@ -12,17 +12,20 @@ import './index.css'
 initSentry()
 sweepStaleCacheVersions()
 
-// A redeploy rehashes every lazy chunk, so a visitor whose index.html (or a
-// prerendered /rankings, /draft-room shell) predates the current build asks
-// for a chunk filename that no longer exists; gh-pages answers with 404.html
-// (text/html) and the import throws. Vite fires `vite:preloadError` for that.
-// Reload once to pick up the fresh chunk graph before the user ever sees an
-// error screen. Guard against a loop: if a chunk is genuinely missing (a bad
-// deploy, not just a stale tab), reloading won't help, so after one recent
-// attempt we let the error propagate to RouteErrorBoundary's manual Reload.
-// The guard is shared with lazyPage (utils/staleChunk.ts), which covers the
-// sibling failure where the chunk loads but its named export is missing.
+// A page's stylesheet that fails to load (a redeploy rehashed it away under a
+// stale tab) leaves the page unstyled, so it buys the one-shot reload here.
+// A failed SCRIPT does not: Vite fires this event for every failed dynamic
+// import, including the idle warm-ups below that nobody is waiting on, and
+// reloading for those yanked the page out from under whatever the user was
+// doing - owner-reported 2026-10-06: tapping "Load league" ~2.5s after
+// arrival refreshed the page, because Safari's content blocker failed a
+// warm-up chunk. Script failures fall through to the importer instead:
+// importChunk/lazyPage retry and reload for a route the user opened, and a
+// warm-up's .catch just drops it. The reload guard (utils/staleChunk.ts)
+// stops a genuinely missing stylesheet from reload-looping.
 window.addEventListener('vite:preloadError', (event) => {
+  const err = (event as Event & { payload?: unknown }).payload
+  if (!(err instanceof Error) || !/unable to preload css/i.test(err.message)) return;
   if (reloadOnceForStaleChunk()) {
     event.preventDefault(); // swallow Vite's rethrow; we're reloading instead
   }
@@ -58,11 +61,12 @@ createRoot(document.getElementById('root')!).render(
 
 // Warm the heaviest route chunks during idle so the first navigation to them
 // (and the prerendered /rankings and /draft-room handoff) lands on an already
-// fetched chunk instead of flashing the Suspense spinner. Best-effort; a stale
-// chunk hash is still caught by the preloadError reload above.
+// fetched chunk instead of flashing the Suspense spinner. Best-effort: a
+// failed warm-up is dropped here and never reloads the page; the route's own
+// import recovers when the user actually opens it.
 const warmRouteChunks = () => {
-  // Swallow rejections: warming is best-effort, and a stale chunk hash here is
-  // already handled by the vite:preloadError reload above. Without the .catch,
+  // Swallow rejections: warming is best-effort, and the route's own import
+  // handles a failed chunk when it is actually needed. Without the .catch,
   // a failed warm-up import is an uncaught rejection (no Suspense boundary
   // sits over a fire-and-forget import) that surfaces via window's
   // unhandledrejection handler and reports to Sentry as noise the user never saw.

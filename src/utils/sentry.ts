@@ -83,7 +83,8 @@ export function scrub<T>(value: T): T {
 // free-tier quota:
 //   - Stale-chunk failures after a redeploy: a visitor on an old tab asks for a
 //     chunk hash the new build rehashed away. The app already self-heals these
-//     (the vite:preloadError reload in main.tsx and RouteErrorBoundary's manual
+//     (importChunk's retry and reload, the vite:preloadError reload in main.tsx for
+//     stylesheets, and RouteErrorBoundary's manual
 //     Reload), so the report adds noise without a fix. Each browser phrases the
 //     failure differently, hence the alternation; "unable to preload css" is the
 //     stylesheet-chunk variant.
