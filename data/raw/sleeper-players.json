@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-10-05T19:29:52.488Z",
+ "fetchedAt": "2026-10-06T02:50:11.727Z",
  "data": {
   "players": [
    {
@@ -144,7 +144,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 13,
-    "depthChartOrder": 1
+    "depthChartOrder": null
    },
    {
     "sleeperId": "1373",
@@ -547,7 +547,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 10,
-    "depthChartOrder": 3
+    "depthChartOrder": null
    },
    {
     "sleeperId": "3202",
@@ -797,6 +797,19 @@
     "depthChartOrder": 1
    },
    {
+    "sleeperId": "4018",
+    "name": "Joe Mixon",
+    "pos": "RB",
+    "team": "SEA",
+    "status": "Active",
+    "injuryStatus": "Active",
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 9,
+    "depthChartOrder": null
+   },
+   {
     "sleeperId": "4033",
     "name": "David Njoku",
     "pos": "TE",
@@ -828,8 +841,8 @@
     "pos": "RB",
     "team": "NO",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Knee",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
@@ -1179,8 +1192,8 @@
     "pos": "QB",
     "team": "ATL",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Coach's Decision",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
@@ -1769,7 +1782,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
-    "depthChartOrder": 9
+    "depthChartOrder": null
    },
    {
     "sleeperId": "5844",
@@ -1868,12 +1881,12 @@
     "pos": "TE",
     "team": "NO",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Abdomen",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 2
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "5859",
@@ -2263,7 +2276,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 4
+    "depthChartOrder": null
    },
    {
     "sleeperId": "6271",
@@ -2432,7 +2445,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 4
+    "depthChartOrder": null
    },
    {
     "sleeperId": "6677",
@@ -2900,7 +2913,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 5
+    "depthChartOrder": null
    },
    {
     "sleeperId": "7066",
@@ -3043,7 +3056,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 9
+    "depthChartOrder": null
    },
    {
     "sleeperId": "7521",
@@ -3168,8 +3181,8 @@
     "pos": "QB",
     "team": "NO",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Coach's Decision",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
@@ -4896,10 +4909,10 @@
     "name": "Tank Bigsby",
     "pos": "RB",
     "team": "PHI",
-    "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Undisclosed",
-    "injuryNotes": null,
+    "status": "Inactive",
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Lower Body",
+    "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 3,
     "depthChartOrder": 2
@@ -4915,7 +4928,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "9227",
@@ -5422,7 +5435,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 2
+    "depthChartOrder": null
    },
    {
     "sleeperId": "10218",
@@ -5825,7 +5838,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 4
+    "depthChartOrder": null
    },
    {
     "sleeperId": "11199",
@@ -7177,7 +7190,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 6
+    "depthChartOrder": null
    },
    {
     "sleeperId": "11942",
@@ -8841,7 +8854,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 5
+    "depthChartOrder": null
    },
    {
     "sleeperId": "12908",
@@ -9205,7 +9218,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 9
+    "depthChartOrder": null
    },
    {
     "sleeperId": "13199",
@@ -9473,8 +9486,8 @@
     "pos": "RB",
     "team": "ARI",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Ankle",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -9816,7 +9829,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "13320",
@@ -10355,7 +10368,7 @@
     "sleeperId": "13418",
     "name": "Robert Henry",
     "pos": "RB",
-    "team": "WAS",
+    "team": "SEA",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
@@ -10773,8 +10786,8 @@
     "pos": "QB",
     "team": "ATL",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Coach's Decision",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
