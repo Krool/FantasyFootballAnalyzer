@@ -260,9 +260,11 @@ Fonts are self-hosted via `@fontsource` (not Google Fonts), declared in `src/fon
 - **Blocked chunks**: on 2026-10-06 iOS Safari refused one 1.4KB shared
   chunk (the consensus helpers) through every reload while Chrome on the same
   phone loaded it, killing /draft, /rankings, /values and /draft-room.
-  Renaming it (`consensus-*` -> `chunk-*`, same hash) did not help, so a name
-  rule was not the cause; the actual Safari mechanism is unconfirmed. Defenses
-  in place: `vite.config.ts` merges chunks under 20KB
+  Cause: the Crystal content blocker (confirmed: turning content blockers off
+  loaded the page). Renaming it (`consensus-*` -> `chunk-*`, same hash) did
+  not help, so the rule matched the mixed-case hash `CjHbsxGa`, not the
+  name; the build with hex hashes and merged small chunks loads with Crystal
+  on (owner-verified 2026-10-07). Defenses in place: `vite.config.ts` merges chunks under 20KB
   (`experimentalMinChunkSize`) so there are fewer files to lose, uses hex
   hashes, and renames chunks whose names match filter-list words
   (`scripts/chunkNames.ts`). A page chunk that fails is re-imported under a
