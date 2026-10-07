@@ -282,6 +282,26 @@ describe('gradeConsensusPick bands', () => {
 });
 
 describe('marketAuctionValues and dollar-mode auction grading', () => {
+  // Every price sheet is a 1QB market: a superflex QB bought at a fair
+  // superflex price graded as a $15 overpay (audit 2026-10-07: 21 of 28 QBs
+  // terrible). QBs now price off the league-shaped values the Draft Room used.
+  it('prices superflex QBs at superflex prices, not the 1QB sheets', () => {
+    const sfSlots: RosterSlots = { ...DEFAULT_ROSTER_SLOTS, SUPERFLEX: 1 };
+    const qbs = REAL_POOL.players.filter(p => p.pos === 'QB').sort((a, b) => a.overallRank - b.overallRank).slice(0, 4);
+    const picks = qbs.map((q, i) => ({
+      ...pick(i + 1, { id: q.id, platformId: q.id, name: q.name, position: 'QB', team: q.team }),
+      round: 1,
+      auctionValue: 1,
+    }));
+    const oneQb = marketAuctionValues(picks, REAL_POOL, 200);
+    const sf = marketAuctionValues(picks, REAL_POOL, 200, {
+      superflex: true, teams: 12, rounds: 16, rosterSlots: sfSlots, scoring: 'half_ppr',
+    });
+    for (const q of qbs) {
+      expect(sf.get(`QB-${q.id}`)!).toBeGreaterThan(oneQb.get(`QB-${q.id}`)!);
+    }
+  });
+
   const auctionPool = {
     season: 2026,
     generatedAt: '',

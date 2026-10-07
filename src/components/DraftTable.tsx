@@ -9,6 +9,7 @@ import {
   consensusPositionRanks,
   hasSeasonResults,
   marketAuctionValues,
+  auctionMarketContext,
 } from '@/utils/consensusGrade';
 import { exportDraftBoard, exportDraftOrder } from '@/utils/exportDraftBoard';
 import { logger } from '@/utils/logger';
@@ -171,7 +172,14 @@ export function DraftTable({
     // Pre-season auction values grade in dollars vs the market, not rank
     // deltas (which the $1-4 tail distorts into false Terribles).
     const market =
-      !hasResults && isAuction ? marketAuctionValues(allPicks, POOL, auctionBudget ?? 200) : undefined;
+      !hasResults && isAuction
+        ? marketAuctionValues(
+            allPicks,
+            POOL,
+            auctionBudget ?? 200,
+            auctionMarketContext({ scoringType, rosterSlots, totalTeams, teams }, allPicks),
+          )
+        : undefined;
     // Snake consensus grades on the overall board, so a pick is judged on the
     // round it cost, not only on being the right player at his position (a
     // round-1 kicker used to grade the same as one taken in the 13th).

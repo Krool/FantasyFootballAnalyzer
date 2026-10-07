@@ -21,6 +21,7 @@ import { BOARD_SPECIAL_POSITIONS, gradeAllPicks, type GradedPick } from './gradi
 import { basePosition, canonicalTeam, matchKey } from './playerNames';
 import { isPlaceholderPlayer } from './placeholders';
 import { leagueOutlooks } from './seasonOutlook';
+import { draftValues } from './projectionValues';
 
 export interface PoolIndex {
   bySleeperId: Map<string, PoolPlayer>;
@@ -237,28 +238,118 @@ export function consensusBoardCoverage(picks: DraftPick[], pool: DraftPoolFile):
 // markets. Blend whichever
 // exist, scale to the league's budget, floor at the $1 a nomination costs.
 // Players the pool can't match get no entry - grading treats them as $1.
+// How the league looks to the market pricer. Optional: without it the market
+// is the plain 1QB blend scaled to the budget.
+export interface AuctionMarketContext {
+  superflex?: boolean;
+  teams?: number;
+  rounds?: number;
+  rosterSlots?: RosterSlots;
+  scoring?: ScoringType;
+}
+
+// The three price sheets are built for different rooms: in the 2026-10-07
+// pool baseValue sums to ~$2,380 (12 teams x $200) while ESPN's sums to
+// ~$1,775 and Yahoo's to ~$2,050 (10-team-shaped). Averaged raw, ESPN and
+// Yahoo dragged every price down. Scale each to baseValue's total first.
+const MIN_PRICED_FOR_SCALE = 100;
+// Spend normalization needs a substantially complete auction: a few early
+// prices are no sample of what the room spends.
+const MIN_PRICED_PICKS_PER_TEAM = 8;
+const sourceScaleCache = new WeakMap<DraftPoolFile, { espn: number; yahoo: number }>();
+function sourceScales(pool: DraftPoolFile): { espn: number; yahoo: number } {
+  const cached = sourceScaleCache.get(pool);
+  if (cached) return cached;
+  const sum = (f: (p: PoolPlayer) => number | null | undefined) =>
+    pool.players.reduce((s, p) => s + Math.max(0, f(p) ?? 0), 0);
+  const priced = (f: (p: PoolPlayer) => number | null | undefined) =>
+    pool.players.filter(p => (f(p) ?? 0) > 0).length;
+  // Only a real sheet has a total worth matching; a handful of priced players
+  // (a test pool, a source that barely joined) would scale on noise.
+  const ratio = (f: (p: PoolPlayer) => number | null | undefined) => {
+    const base = sum(p => p.baseValue);
+    const other = sum(f);
+    return priced(f) >= MIN_PRICED_FOR_SCALE && priced(p => p.baseValue) >= MIN_PRICED_FOR_SCALE && base > 0 && other > 0
+      ? base / other
+      : 1;
+  };
+  const scales = { espn: ratio(p => p.espnValue), yahoo: ratio(p => p.yahooValue) };
+  sourceScaleCache.set(pool, scales);
+  return scales;
+}
+
 export function marketAuctionValues(
   picks: DraftPick[],
   pool: DraftPoolFile,
   budget: number = 200,
+  context: AuctionMarketContext = {},
 ): Map<string, number> {
   const index = indexPool(pool);
   const scale = budget > 0 ? budget / 200 : 1;
-  const map = new Map<string, number>();
+  const scales = sourceScales(pool);
+  // Superflex: every sheet above is a 1QB market, so a QB bought at a fair
+  // superflex price graded as a $15 overpay (audit 2026-10-07: 21 of 28 QBs
+  // "terrible" when bought at the app's own superflex prices). Price QBs with
+  // the same league-shaped values the Draft Room showed instead.
+  const sfValues =
+    context.superflex && context.teams && context.rounds && context.rosterSlots
+      ? draftValues(pool.players, pool.baseline, {
+          budget,
+          teams: context.teams,
+          rounds: context.rounds,
+          rosterSlots: context.rosterSlots,
+          scoring: context.scoring ?? 'half_ppr',
+        })
+      : undefined;
+  const raw = new Map<string, number>();
+  let marketOfPaid = 0;
+  let paid = 0;
+  let pricedPicks = 0;
   for (const pick of picks) {
     const pooled = resolvePoolPlayer(pick.player, index);
     if (!pooled) continue;
-    const sources = [pooled.baseValue, pooled.espnValue, pooled.yahooValue].filter(
-      (v): v is number => typeof v === 'number' && v > 0,
-    );
-    if (sources.length === 0) continue;
-    const market = sources.reduce((sum, v) => sum + v, 0) / sources.length;
-    map.set(
-      `${pick.player.position}-${pick.player.id}`,
-      Math.max(1, Math.round(market * scale)),
-    );
+    let market: number | undefined;
+    if (sfValues && pooled.pos === 'QB') {
+      market = sfValues.get(pooled.id);
+    } else {
+      const sources = [
+        pooled.baseValue,
+        pooled.espnValue != null ? pooled.espnValue * scales.espn : undefined,
+        pooled.yahooValue != null ? pooled.yahooValue * scales.yahoo : undefined,
+      ].filter((v): v is number => typeof v === 'number' && v > 0);
+      if (sources.length > 0) market = (sources.reduce((sum, v) => sum + v, 0) / sources.length) * scale;
+    }
+    if (market === undefined) continue;
+    raw.set(`${pick.player.position}-${pick.player.id}`, market);
+    if (pick.auctionValue && pick.auctionValue > 0) {
+      paid += pick.auctionValue;
+      marketOfPaid += market;
+      pricedPicks++;
+    }
   }
+  // Fair price is a share of the money this room actually spent: a room
+  // spends its whole budget, so a market quoting $2,078 for a $2,400 room
+  // graded every team as overpaying (audit 2026-10-07). Normalize the market
+  // to the room's spend on the players it priced.
+  const enough = !!context.teams && pricedPicks >= context.teams * MIN_PRICED_PICKS_PER_TEAM;
+  const toSpend = enough && paid > 0 && marketOfPaid > 0 ? paid / marketOfPaid : 1;
+  const map = new Map<string, number>();
+  for (const [key, market] of raw) map.set(key, Math.max(1, Math.round(market * toSpend)));
   return map;
+}
+
+// The league shape marketAuctionValues needs to price superflex QBs.
+export function auctionMarketContext(
+  league: Pick<League, 'scoringType' | 'totalTeams' | 'teams'> & { rosterSlots?: RosterSlots },
+  picks: DraftPick[],
+): AuctionMarketContext {
+  return {
+    superflex: boardFormatFor(league).superflex,
+    teams: league.totalTeams || league.teams.length,
+    rounds: picks.reduce((max, p) => Math.max(max, p.round || 0), 0) || undefined,
+    rosterSlots: league.rosterSlots,
+    scoring: league.scoringType,
+  };
 }
 
 // Opening week, still running. The majority rule below is a data heuristic and
@@ -343,7 +434,7 @@ function computeLeaguePicks(league: League, pool: DraftPoolFile): GradedPick[] {
     league.draftType === 'auction' ||
     allPicks.some(p => p.auctionValue !== undefined && p.auctionValue > 0);
   const market = isAuction
-    ? marketAuctionValues(allPicks, pool, league.auctionBudget ?? 200)
+    ? marketAuctionValues(allPicks, pool, league.auctionBudget ?? 200, auctionMarketContext(league, allPicks))
     : undefined;
   // Snake drafts grade on the overall board (reach vs steal in draft slots),
   // which needs the pool to actually recognize the board. Below the floor the
