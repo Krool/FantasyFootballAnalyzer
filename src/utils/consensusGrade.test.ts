@@ -46,6 +46,16 @@ const pick = (pickNumber: number, p: Player, seasonPoints?: number, teamId = 't1
 });
 
 describe('resolvePoolPlayer', () => {
+  // ESPN names defenses "Texans D/ST", Yahoo "Houston" at position DEF;
+  // neither matched the pool's "Houston Texans" by name (audit 2026-10-07).
+  it('resolves ESPN and Yahoo team defenses by team', () => {
+    const index = indexPool(POOL);
+    const espn: Player = { id: '-16034', platformId: '-16034', name: 'Texans D/ST', position: 'D/ST', team: 'HOU' };
+    const yahoo: Player = { id: '461.p.100034', platformId: '461.p.100034', name: 'Houston', position: 'DEF', team: 'Hou' };
+    expect(resolvePoolPlayer(espn, index)?.id).toBe('dst-hou');
+    expect(resolvePoolPlayer(yahoo, index)?.id).toBe('dst-hou');
+  });
+
   const index = indexPool(POOL);
 
   it('matches a Sleeper pick by its platform player id', () => {
@@ -493,6 +503,11 @@ describe('grading a draft on the overall consensus board', () => {
     const oneQb = gradeLeaguePicks(leagueDrafting(order, DEFAULT_ROSTER_SLOTS), REAL_POOL)
       .filter(g => g.player.position === 'QB' && g.pickNumber <= TEAMS);
     expect(oneQb.filter(g => g.grade === 'terrible').length).toBeGreaterThan(2);
+  });
+
+  it('treats a true 2QB league (two QB slots, no OP) as superflex', () => {
+    expect(boardFormatFor({ scoringType: 'ppr', rosterSlots: { ...DEFAULT_ROSTER_SLOTS, QB: 2 } }))
+      .toEqual({ scoring: 'ppr', superflex: true });
   });
 
   it('reads superflex off the roster slot, not the league flag', () => {

@@ -463,7 +463,7 @@ export function parseRosterSettings(settings: any): { QB: number; RB: number; WR
       case 'RB': slots.RB += count; parsedAny = true; break;
       case 'WR': slots.WR += count; parsedAny = true; break;
       case 'TE': slots.TE += count; parsedAny = true; break;
-      case 'W/R/T': case 'W/R': case 'FLEX': slots.FLEX += count; parsedAny = true; break;
+      case 'W/R/T': case 'W/R': case 'W/T': case 'FLEX': slots.FLEX += count; parsedAny = true; break;
       // Superflex: counted as FLEX for slot math, but flagged so the Draft
       // Room can warn that 1QB values badly underprice QBs here.
       case 'Q/W/R/T': slots.SUPERFLEX += count; slots.hasSuperflex = true; parsedAny = true; break;
@@ -572,8 +572,9 @@ export async function loadLeague(leagueKey: string): Promise<League> {
     [];
   const scoringSettings = Array.isArray(statData) ? statData : [statData];
   const receptionStat = scoringSettings.find((s: any) => String(s.stat_id) === '21'); // Receptions
-  // stat_id 4 = Passing Touchdowns; parse before the 6pt comparison.
-  const passTdStat = scoringSettings.find((s: any) => String(s.stat_id) === '4');
+  // stat_id 5 = Passing Touchdowns (4 is passing YARDS; reading 4 gave every
+  // league ~0.04 per TD, so 6pt leagues were never detected - audit 2026-10-07).
+  const passTdStat = scoringSettings.find((s: any) => String(s.stat_id) === '5');
   const passTdPoints = passTdStat ? parseFloat(passTdStat.value) : undefined;
   if (receptionStat) {
     const recValue = parseFloat(receptionStat.value);

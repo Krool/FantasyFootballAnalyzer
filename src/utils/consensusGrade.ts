@@ -18,7 +18,7 @@ import type { DraftPick, League, Player, RosterSlots, ScoringType } from '@/type
 import { consensusAvg } from './consensus';
 import type { DraftPoolFile, PoolPlayer } from '@/types/draft';
 import { gradeAllPicks, type GradedPick } from './grading';
-import { matchKey } from './playerNames';
+import { basePosition, canonicalTeam, matchKey } from './playerNames';
 import { isPlaceholderPlayer } from './placeholders';
 import { leagueOutlooks } from './seasonOutlook';
 
@@ -65,6 +65,14 @@ export function resolvePoolPlayer(player: Player, index: PoolIndex): PoolPlayer 
     index.bySleeperId.get(player.id) ??
     (player.platformId ? index.bySleeperId.get(player.platformId) : undefined);
   if (byId) return byId;
+  // Team defenses resolve by team: ESPN names them "Texans D/ST" and Yahoo
+  // "Houston" (position DEF), neither of which matches the pool's "Houston
+  // Texans". Without this every ESPN/Yahoo DST graded as unranked - a reach -
+  // and lost its price, bye and projection (audit 2026-10-07).
+  if (player.position && basePosition(player.position) === 'DST' && player.team) {
+    const dst = index.byId.get(`dst-${canonicalTeam(player.team).toLowerCase()}`);
+    if (dst) return dst;
+  }
   if (!player.name || !player.position || isPlaceholderPlayer(player.name)) return undefined;
   return index.byNameKey.get(matchKey(player.name, player.position)) ?? undefined;
 }
@@ -128,7 +136,9 @@ export function boardFormatFor(
 ): BoardFormat {
   return {
     scoring: league.scoringType,
-    superflex: (league.rosterSlots?.SUPERFLEX ?? 0) > 0,
+    // A true 2QB league (two QB slots, no OP) prices QBs like superflex; the
+    // 1QB board graded its first round as reaches the same way.
+    superflex: (league.rosterSlots?.SUPERFLEX ?? 0) > 0 || (league.rosterSlots?.QB ?? 1) >= 2,
   };
 }
 

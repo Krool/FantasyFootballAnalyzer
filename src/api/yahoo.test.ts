@@ -48,6 +48,16 @@ describe('parseRosterSettings', () => {
     roster_positions: { roster_position: positions },
   });
 
+  it('counts a W/T (WR/TE) flex slot as FLEX', () => {
+    const slots = parseRosterSettings(rosterSettings([
+      { position: 'QB', count: '1' },
+      { position: 'WR', count: '2' },
+      { position: 'W/T', count: '1' },
+      { position: 'BN', count: '5' },
+    ]));
+    expect(slots.FLEX).toBe(1);
+  });
+
   it('respects a real no-kicker / no-defense league instead of forcing K and DST', () => {
     // Modern Yahoo leagues can drop K and DST entirely. The old code forced
     // K=1/DST=1 whenever they parsed as 0, inventing a phantom slot the user
@@ -1138,14 +1148,16 @@ describe('yahoo loadLeague scoring detection', () => {
 
   // Regression: the adapters used to ignore points-per-passing-TD, so a 6pt
   // league priced and projected every QB off the pool's 4pt columns.
-  it('reads points-per-passing-TD from stat_id 4', async () => {
+  // stat_id 4 is passing YARDS (0.04/yd); reading it as the TD value gave
+  // every real league passTdPoints 0.04 and hid 6pt leagues (audit 2026-10-07).
+  it('reads points-per-passing-TD from stat_id 5, not passing yards (4)', async () => {
     const sixPt = await loadWithModifiers({
-      stats: { stat: [{ stat_id: 21, value: 0.5 }, { stat_id: 4, value: 6 }] },
+      stats: { stat: [{ stat_id: 21, value: 0.5 }, { stat_id: 4, value: 0.04 }, { stat_id: 5, value: 6 }] },
     });
     expect(sixPt.passTdPoints).toBe(6);
 
     const fourPt = await loadWithModifiers({
-      stats: { stat: [{ stat_id: 21, value: 0.5 }, { stat_id: 4, value: 4 }] },
+      stats: { stat: [{ stat_id: 21, value: 0.5 }, { stat_id: 4, value: 0.04 }, { stat_id: 5, value: 4 }] },
     });
     expect(fourPt.passTdPoints).toBe(4);
   });

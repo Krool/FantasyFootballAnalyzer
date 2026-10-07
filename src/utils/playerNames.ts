@@ -44,9 +44,10 @@ export function normalizeName(name: string): string {
   return tokens.join(' ');
 }
 
-// "RB12" -> "RB", "DST3" -> "DST", "D/ST" -> "DST"
+// "RB12" -> "RB", "DST3" -> "DST", "D/ST" -> "DST", Yahoo's "DEF" -> "DST"
 export function basePosition(pos: string): string {
-  return pos.toUpperCase().replace(/\//g, '').replace(/\d+$/, '');
+  const base = pos.toUpperCase().replace(/\//g, '').replace(/\d+$/, '');
+  return base === 'DEF' ? 'DST' : base;
 }
 
 export function matchKey(name: string, pos?: string): string {
