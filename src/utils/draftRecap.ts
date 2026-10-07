@@ -61,6 +61,15 @@ export function gradeDraftSession(
     config.rosterSlots.FLEX +
     config.rosterSlots.SUPERFLEX;
 
+  // Snake: what a pick at overall slot n is normally worth - the n-th richest
+  // value on the board. Scoring raw totals let the 1.01 win on position alone:
+  // values fall fastest at the top, so over 60 even-skill mocks slot 1 graded
+  // A/A+ 44 times and slot 12 once (audit 2026-10-07). A snake team is now
+  // scored on what it got over what its slots normally return.
+  const boardValues = isAuction ? [] : [...scaledValues.values()].sort((a, b) => b - a);
+  const expectedAt = (pickNumber: number) =>
+    boardValues.length === 0 ? 0 : boardValues[Math.min(pickNumber, boardValues.length) - 1];
+
   const raw = config.teams.map(team => {
     const state = derived.teams.get(team.id);
     const picks: RecapPickLine[] = (state?.picks ?? []).map(pick => {
@@ -70,6 +79,7 @@ export function gradeDraftSession(
     });
 
     const totalValue = picks.reduce((sum, line) => sum + line.value, 0);
+    const slotValue = isAuction ? totalValue : picks.reduce((sum, line) => sum + expectedAt(line.pick.pickNumber), 0);
     const spent = picks.reduce((sum, line) => sum + (line.price ?? 0), 0);
 
     const filled = state
@@ -112,6 +122,8 @@ export function gradeDraftSession(
       teamId: team.id,
       name: team.name,
       totalValue,
+      // Snake only: value over what the team's pick slots normally return.
+      overSlots: totalValue - slotValue,
       spent,
       startersFilled: filled,
       starterSlots,
@@ -123,11 +135,14 @@ export function gradeDraftSession(
     };
   });
 
-  const avgValue = raw.length > 0 ? raw.reduce((sum, t) => sum + t.totalValue, 0) / raw.length : 0;
+  // Auction: everyone had the same budget, so raw value is comparable. Snake:
+  // compare value over each team's own pick slots.
+  const merit = (t: (typeof raw)[number]) => (isAuction ? t.totalValue : t.overSlots);
+  const avgValue = raw.length > 0 ? raw.reduce((sum, t) => sum + merit(t), 0) / raw.length : 0;
 
   // Score: value surplus over the room, starter coverage, bye-stack penalty.
   const scored = raw.map(t => {
-    const surplus = t.totalValue - avgValue;
+    const surplus = merit(t) - avgValue;
     const coverage = t.starterSlots > 0 ? t.startersFilled / t.starterSlots : 1;
     const byePenalty = t.byeWorstWeek ? (t.byeWorstWeek.count - 2) * 3 : 0;
     const score = surplus + coverage * 20 - byePenalty;

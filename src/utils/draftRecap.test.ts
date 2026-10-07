@@ -138,3 +138,27 @@ describe('rosterAsText', () => {
     expect(text).toContain('$25');
   });
 });
+
+// Snake recaps scored raw value totals, which the 1.01 wins on position alone
+// (audit 2026-10-07: slot 1 graded A/A+ 44 of 60 even-skill mocks, slot 12
+// once). A draft that takes the board in order is now even across slots.
+describe('gradeDraftSession (snake slot bias)', () => {
+  it('scores a board-order snake draft even, not by draft slot', () => {
+    const board = Array.from({ length: 8 }, (_, i) => player({ pos: i % 2 ? 'WR' : 'RB' }));
+    const curve = [60, 45, 34, 26, 20, 15, 11, 8];
+    const boardValues = new Map(board.map((p, i) => [p.id, curve[i]]));
+    const snakeConfig: DraftRoomConfig = {
+      ...config,
+      draftType: 'snake',
+      rosterSlots: { ...config.rosterSlots, BENCH: 2 },
+      rounds: 4,
+    };
+    // Snake order a, b, b, a, a, b, b, a: each team takes the best left.
+    const order = ['a', 'b', 'b', 'a', 'a', 'b', 'b', 'a'];
+    const events: DraftEvent[] = board.map((p, i) => ({
+      kind: 'snake_pick', seq: i, ts: i, playerId: p.id, teamId: order[i],
+    }));
+    const recap = gradeDraftSession(snakeConfig, deriveDraftState(snakeConfig, events, board), boardValues);
+    for (const team of recap) expect(team.surplus).toBe(0);
+  });
+});
