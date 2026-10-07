@@ -26,6 +26,17 @@ export function sleeperAdpFor(
   return player.sleeperAdp;
 }
 
+// ESPN's ADP tops out near 170: every player rarely drafted on ESPN sits at
+// 160-170 (218 of 384 in the 2026-10-07 pool), so a value up there means "not
+// really drafted", not a draft slot. Averaged in as a slot it dragged every
+// deep player ~25-40 picks early and filled /values' ESPN reaches with the
+// ceiling. Treat it as missing; the raw column on /rankings still shows it.
+export const ESPN_ADP_CEILING = 160;
+
+export function espnAdpSignal(player: PoolPlayer): number | undefined {
+  return player.espnAdp != null && player.espnAdp < ESPN_ADP_CEILING ? player.espnAdp : undefined;
+}
+
 // The market ADP a pick or suggestion is judged against: the scoring-matched
 // Sleeper ADP with ESPN's as the fallback when Sleeper doesn't cover the
 // player. The single home for that fallback order.
@@ -34,7 +45,7 @@ export function marketAdp(
   scoring: ScoringType,
   superflex = false,
 ): number | undefined {
-  return sleeperAdpFor(player, scoring, superflex) ?? player.espnAdp;
+  return sleeperAdpFor(player, scoring, superflex) ?? espnAdpSignal(player);
 }
 
 export function consensusAvg(
@@ -52,7 +63,7 @@ export function consensusAvg(
   const signals = (
     superflex
       ? [player.overallRankSF ?? player.overallRank, sleeperAdpFor(player, scoring, true)]
-      : [player.overallRank, player.espnAdp, player.yahooAdpRank, sleeperAdpFor(player, scoring, false)]
+      : [player.overallRank, espnAdpSignal(player), player.yahooAdpRank, sleeperAdpFor(player, scoring, false)]
   ).filter((n): n is number => n != null);
   // The lead signal (overallRank / overallRankSF fallback) is always present,
   // so signals is never empty.
@@ -90,7 +101,7 @@ export function platformRankSource(
         describe: superflex
           ? "ESPN's ADP is a 1QB market, so superflex compares the FantasyPros superflex rank against the consensus instead."
           : 'ESPN ADP minus the consensus average. Positive: ESPN drafts him later than consensus, so he should fall to you.',
-        value: p => (superflex ? p.overallRankSF ?? p.overallRank : p.espnAdp),
+        value: p => (superflex ? p.overallRankSF ?? p.overallRank : espnAdpSignal(p)),
       };
     case 'yahoo':
       // Yahoo's board is 1QB-only, so a superflex league gets no meaningful

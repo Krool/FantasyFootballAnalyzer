@@ -394,23 +394,51 @@ describe('consensusBoardSlots', () => {
       pick(4, player('9221', 'RB')),      // overall 1
     ];
     const slots = consensusBoardSlots(picks, POOL);
-    expect(slots.get('RB-9221')).toBe(1);
-    expect(slots.get('RB-11584')).toBe(2);
-    expect(slots.get('RB-12000')).toBe(3);
+    // Skill players rank among the skill picks (2, 3, 4); the defense, which
+    // spent pick 1, sits on the full board, where he is last.
+    expect(slots.get('RB-9221')).toBe(2);
+    expect(slots.get('RB-11584')).toBe(3);
+    expect(slots.get('RB-12000')).toBe(4);
     expect(slots.get('DST-HOU')).toBe(4);
   });
 
-  it('sorts players the pool cannot rank behind the ones it can', () => {
+  // Keepers held picks 1 and 2 without being chosen; the live picks must be
+  // judged against the slots that were actually open (audit 2026-10-07).
+  it('leaves keepers off the board and slots live picks into the open pick numbers', () => {
+    const keeper = (n: number, p: Player): DraftPick => ({ ...pick(n, p), isKeeper: true });
+    const picks = [
+      keeper(1, player('11584', 'RB')),
+      keeper(2, player('12000', 'RB')),
+      pick(3, player('9221', 'RB')),
+    ];
+    const slots = consensusBoardSlots(picks, POOL);
+    expect(slots.get('RB-9221')).toBe(3);
+    expect(slots.has('RB-11584')).toBe(false);
+  });
+
+  it('does not let a late defense push the skill picks after it into reaches', () => {
+    const picks = [
+      pick(1, player('9221', 'RB')),
+      pick(2, player('11584', 'RB')),
+      pick(3, player('12000', 'RB')),
+      pick(4, player('HOU', 'DST')),
+    ];
+    const slots = consensusBoardSlots(picks, POOL);
+    expect([1, 2, 3].map(n => slots.get(['RB-9221', 'RB-11584', 'RB-12000'][n - 1]))).toEqual([1, 2, 3]);
+  });
+
+  // Sorted to the end, an unmatched pick graded as a reach of up to the whole
+  // draft and pushed known players toward steals (audit 2026-10-07).
+  it('leaves players the pool cannot rank off the board', () => {
     const picks = [
       pick(1, player('99999', 'WR')),   // not in the pool
       pick(2, player('9221', 'RB')),    // overall 1
       pick(3, player('88888', 'WR')),   // not in the pool either
     ];
     const slots = consensusBoardSlots(picks, POOL);
-    expect(slots.get('RB-9221')).toBe(1);
-    // Unranked keep draft order behind everyone the board knows.
-    expect(slots.get('WR-99999')).toBe(2);
-    expect(slots.get('WR-88888')).toBe(3);
+    expect(slots.get('RB-9221')).toBe(2);
+    expect(slots.has('WR-99999')).toBe(false);
+    expect(slots.has('WR-88888')).toBe(false);
   });
 
   it('reports how much of the board the pool recognized', () => {

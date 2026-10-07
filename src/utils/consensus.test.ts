@@ -28,6 +28,12 @@ describe('consensusAvg', () => {
     expect(consensusAvg(player({ overallRank: 10 }))).toBe(10);
   });
 
+  // ESPN parks every rarely-drafted player at 160-170 (audit 2026-10-07).
+  it('ignores ESPN ADP at its ~170 ceiling', () => {
+    expect(consensusAvg(player({ overallRank: 200, espnAdp: 168, sleeperAdp: 190 }))).toBe(195);
+    expect(consensusAvg(player({ overallRank: 140, espnAdp: 150, sleeperAdp: 130 }))).toBe(140);
+  });
+
   it('blends Yahoo in as a fourth signal', () => {
     const p = player({ overallRank: 10, espnAdp: 14, sleeperAdp: 12, yahooAdpRank: 8 });
     expect(consensusAvg(p)).toBe(11); // (10+14+12+8)/4

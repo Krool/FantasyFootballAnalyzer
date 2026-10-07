@@ -17,7 +17,7 @@
 import type { DraftPick, League, Player, RosterSlots, ScoringType } from '@/types';
 import { consensusAvg } from './consensus';
 import type { DraftPoolFile, PoolPlayer } from '@/types/draft';
-import { gradeAllPicks, type GradedPick } from './grading';
+import { BOARD_SPECIAL_POSITIONS, gradeAllPicks, type GradedPick } from './grading';
 import { basePosition, canonicalTeam, matchKey } from './playerNames';
 import { isPlaceholderPlayer } from './placeholders';
 import { leagueOutlooks } from './seasonOutlook';
@@ -165,23 +165,54 @@ export function consensusBoardSlots(
   format: BoardFormat = {},
 ): Map<string, number> {
   const index = indexPool(pool);
-  const ranked = picks.map(pick => {
-    const pooled = resolvePoolPlayer(pick.player, index);
-    return {
-      pick,
-      rank: pooled ? consensusAvg(pooled, format.scoring ?? 'half_ppr', format.superflex ?? false) : null,
-    };
-  });
-  ranked.sort((a, b) => {
+  // Keepers are not live picks: they hold early pick numbers without being
+  // chosen, and left on the board they pushed every live pick a keeper's
+  // worth of slots "early" (audit 2026-10-07: one keeper per team, the rest
+  // drafted exactly by ADP, graded 93 of 168 live picks Bad or Terrible).
+  const ranked = picks
+    .filter(pick => !pick.isKeeper)
+    .map(pick => {
+      const pooled = resolvePoolPlayer(pick.player, index);
+      return {
+        pick,
+        special: BOARD_SPECIAL_POSITIONS.has(basePosition(pick.player.position)),
+        rank: pooled ? consensusAvg(pooled, format.scoring ?? 'half_ppr', format.superflex ?? false) : null,
+      };
+    });
+  const byRank = (a: (typeof ranked)[number], b: (typeof ranked)[number]) => {
     if (a.rank !== null && b.rank !== null) return a.rank - b.rank;
     if (a.rank !== null) return -1;
     if (b.rank !== null) return 1;
     return a.pick.pickNumber - b.pick.pickNumber;
-  });
+  };
+  // A board slot is the PICK NUMBER the board would have used: the i-th
+  // player in consensus order gets the i-th pick number of the set being
+  // ranked. With no keepers and no exclusions that is just 1..N; with
+  // keepers it skips the slots they occupied.
+  const assign = (entries: typeof ranked, slots: Map<string, number>, only?: (e: (typeof ranked)[number]) => boolean) => {
+    const pickNumbers = entries.map(e => e.pick.pickNumber).sort((a, b) => a - b);
+    [...entries].sort(byRank).forEach((entry, i) => {
+      if (only && !only(entry)) return;
+      slots.set(`${entry.pick.player.position}-${entry.pick.player.id}`, pickNumbers[i]);
+    });
+  };
   const slots = new Map<string, number>();
-  ranked.forEach((entry, i) => {
-    slots.set(`${entry.pick.player.position}-${entry.pick.player.id}`, i + 1);
-  });
+  // Skill players are ranked among skill picks only. Kickers and defenses sit
+  // on the consensus board around picks 110-140 but go in the last rounds in
+  // most rooms, so mixed in they made every round-10+ skill pick read as a
+  // reach of a slot per K/DST still on the board.
+  //
+  // Players the pool cannot match stay off both boards: sorted to the end they
+  // took the last pick numbers, which graded each one a reach of up to the
+  // whole draft and nudged every known player toward "Great" (audit
+  // 2026-10-07: 12 unmatched round-6 picks, each -108). Without a board slot
+  // they fall back to the positional consensus comparison.
+  const known = ranked.filter(e => e.rank !== null);
+  assign(known.filter(e => !e.special), slots);
+  // Kickers and defenses are still placed on the FULL board, so a round-one
+  // kicker reads as the reach it is (2026-09-06); gradeAllPicks caps their
+  // upside, since taking one late is the norm, not a steal.
+  assign(known, slots, e => e.special);
   return slots;
 }
 

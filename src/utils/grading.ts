@@ -1,5 +1,11 @@
 import type { DraftPick, DraftGrade, League } from '@/types';
 import type { SeasonOutlook } from './seasonOutlook';
+import { basePosition } from './playerNames';
+
+// Kickers and defenses: graded on the full consensus board (an early one is
+// still a reach) but kept off the skill board, and never graded a steal for
+// going late (see consensusBoardSlots).
+export const BOARD_SPECIAL_POSITIONS = new Set(['K', 'DST']);
 
 // Grading now considers draft position - early picks are judged on hitting,
 // later picks are judged on finding value. This creates a sliding scale.
@@ -432,12 +438,17 @@ export function gradeAllPicks(
       // (expectedRank - positionRank): the market had him at slot 20 and you
       // got him at 34, that is +14 of value. A reach is negative.
       const boardValue = pick.pickNumber - boardSlot;
+      const boardGrade = gradeConsensusBoardPick(
+        boardValue,
+        league.totalTeams || league.teams.length || 0,
+      );
+      // A kicker or defense going later than the board had him is how most
+      // rooms draft them, not a steal (audit 2026-10-07: 25 of 28 graded
+      // Great in a 14-teamer). Reaching for one still grades as a reach.
+      const special = BOARD_SPECIAL_POSITIONS.has(basePosition(pick.player.position));
       return {
         ...pick,
-        grade: gradeConsensusBoardPick(
-          boardValue,
-          league.totalTeams || league.teams.length || 0,
-        ),
+        grade: special && boardGrade === 'great' ? 'good' : boardGrade,
         positionRank,
         expectedRank: boardSlot,
         valueOverExpected: boardValue,
