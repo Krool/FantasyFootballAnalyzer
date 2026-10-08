@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TREND_RELEVANCE_CAP, computeTrends, sameWindow } from './trends';
+import { TREND_NOISE_FLOOR, TREND_RELEVANCE_CAP, computeTrends, sameWindow } from './trends';
 import type { AdpHistoryFile, AdpSnapshot } from '@/types/adpHistory';
 
 // Every format gets the same ranks unless a per-format override is given.
@@ -29,7 +29,7 @@ describe('computeTrends', () => {
     const s = computeTrends(
       history(
         snap('2026-08-26', { a: 10, b: 20, c: 30, d: 40 }),
-        snap('2026-08-27', { a: 2, b: 25, c: 29, d: 40 }),
+        snap('2026-08-27', { a: 2, b: 25, c: 26, d: 40 }),
       ),
       1,
     )!;
@@ -37,18 +37,28 @@ describe('computeTrends', () => {
     expect(s.currentDate).toBe('2026-08-27');
     expect(s.risers).toEqual([
       { id: 'a', from: 10, to: 2, delta: 8 },
-      { id: 'c', from: 30, to: 29, delta: 1 },
+      { id: 'c', from: 30, to: 26, delta: 4 },
     ]);
     expect(s.fallers).toEqual([{ id: 'b', from: 20, to: 25, delta: -5 }]);
   });
 
   it('ignores players missing from either snapshot (no fake deltas)', () => {
     const s = computeTrends(
-      history(snap('2026-08-26', { a: 1, gone: 2 }), snap('2026-08-27', { a: 2, arrived: 1 })),
+      history(snap('2026-08-26', { a: 1, gone: 2 }), snap('2026-08-27', { a: 5, arrived: 1 })),
       1,
     )!;
     const ids = [...s.risers, ...s.fallers].map(m => m.id);
     expect(ids).toEqual(['a']);
+  });
+
+  // FantasyPros alternates two boards by time of day and the four-source
+  // blend jiggles neighbours; a spot or two is noise (audit 2026-10-07).
+  it(`drops moves under ${TREND_NOISE_FLOOR} spots as noise`, () => {
+    const s = computeTrends(
+      history(snap('2026-08-26', { a: 2, b: 3, c: 40 }), snap('2026-08-27', { a: 3, b: 2, c: 37 })),
+      1,
+    )!;
+    expect([...s.risers, ...s.fallers].map(m => m.id)).toEqual(['c']);
   });
 
   it('day window falls back to the previous change after a quiet gap', () => {

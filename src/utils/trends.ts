@@ -36,6 +36,13 @@ export interface TrendWindow {
 // Same cap and reasoning as the Values page cards.
 export const TREND_RELEVANCE_CAP = 150;
 
+// Moves smaller than this are noise, not market. FantasyPros serves two
+// slightly different boards by time of day (Chase 2/Bijan 3 in the morning
+// run, swapped in the evening, every day since at least 2026-10-03), and four
+// sources averaged into one ordinal jiggle neighbours by a spot or two. Before
+// this floor the day window's "top riser" was routinely +2 (audit 2026-10-07).
+export const TREND_NOISE_FLOOR = 3;
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const utc = (date: string) => Date.parse(`${date}T00:00:00Z`);
@@ -78,7 +85,7 @@ export function computeTrends(
   const movers: TrendMover[] = [];
   for (const [id, to] of Object.entries(currentBoard)) {
     const from = baselineBoard[id];
-    if (from == null || from === to) continue;
+    if (from == null || Math.abs(from - to) < TREND_NOISE_FLOOR) continue;
     if (Math.min(from, to) > TREND_RELEVANCE_CAP) continue;
     movers.push({ id, from, to, delta: from - to });
   }

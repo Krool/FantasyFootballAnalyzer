@@ -5,7 +5,7 @@ import { ADP_HISTORY } from '@/data/adpHistory';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { playerHeadshotUrl } from '@/data/nflTeams';
 import { useSounds } from '@/hooks/useSounds';
-import { TREND_RELEVANCE_CAP, computeTrends, sameWindow, type TrendMover } from '@/utils/trends';
+import { TREND_NOISE_FLOOR, TREND_RELEVANCE_CAP, computeTrends, sameWindow, type TrendMover } from '@/utils/trends';
 import type { League } from '@/types';
 import type { TrendFormat } from '@/types/adpHistory';
 import type { PoolPlayer } from '@/types/draft';
@@ -222,7 +222,7 @@ export function TrendsPage({ league }: TrendsPageProps) {
                     </h3>
                     {col.rows.length === 0 ? (
                       <p className={styles.empty}>
-                        Nothing {col.rising ? 'rose' : 'fell'} since{' '}
+                        Nothing {col.rising ? 'rose' : 'fell'} {TREND_NOISE_FLOOR}+ spots since{' '}
                         {fmtDate(w.trends!.baselineDate)}.
                       </p>
                     ) : (
