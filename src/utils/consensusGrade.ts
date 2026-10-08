@@ -289,8 +289,8 @@ export function marketAuctionValues(
   const scales = sourceScales(pool);
   // Superflex: every sheet above is a 1QB market, so a QB bought at a fair
   // superflex price graded as a $15 overpay (audit 2026-10-07: 21 of 28 QBs
-  // "terrible" when bought at the app's own superflex prices). Price QBs with
-  // the same league-shaped values the Draft Room showed instead.
+  // "terrible" when bought at the app's own superflex prices). Price the room
+  // with the same league-shaped values the Draft Room showed instead.
   const sfValues =
     context.superflex && context.teams && context.rounds && context.rosterSlots
       ? draftValues(pool.players, pool.baseline, {
@@ -309,9 +309,14 @@ export function marketAuctionValues(
     const pooled = resolvePoolPlayer(pick.player, index);
     if (!pooled) continue;
     let market: number | undefined;
-    if (sfValues && pooled.pos === 'QB') {
+    if (sfValues) {
+      // The whole room, not just QBs: a superflex room reprices everyone
+      // (QBs up, so backs and receivers down), and mixing superflex QBs with
+      // 1QB prices for the rest let the spend normalization below pull the
+      // QBs back into "overpay".
       market = sfValues.get(pooled.id);
-    } else {
+    }
+    if (market === undefined) {
       const sources = [
         pooled.baseValue,
         pooled.espnValue != null ? pooled.espnValue * scales.espn : undefined,
