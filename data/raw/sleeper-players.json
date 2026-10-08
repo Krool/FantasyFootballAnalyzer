@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-10-08T02:37:36.443Z",
+ "fetchedAt": "2026-10-08T17:41:46.152Z",
  "data": {
   "players": [
    {
@@ -1600,7 +1600,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "5095",
@@ -2661,7 +2661,7 @@
     "pos": "WR",
     "team": "PIT",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Foot",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -6969,7 +6969,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 8
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "11637",
@@ -6995,7 +6995,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 11
+    "depthChartOrder": 12
    },
    {
     "sleeperId": "11643",
@@ -7295,6 +7295,19 @@
     "injuryStartDate": null,
     "yearsExp": 2,
     "depthChartOrder": 4
+   },
+   {
+    "sleeperId": "11959",
+    "name": "Bryce Oliver",
+    "pos": "WR",
+    "team": "HOU",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 2,
+    "depthChartOrder": null
    },
    {
     "sleeperId": "11963",
@@ -9000,6 +9013,19 @@
     "depthChartOrder": 4
    },
    {
+    "sleeperId": "12939",
+    "name": "Anthony Tyus",
+    "pos": "RB",
+    "team": "CAR",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 1,
+    "depthChartOrder": null
+   },
+   {
     "sleeperId": "12946",
     "name": "Dontae Fleming",
     "pos": "WR",
@@ -10232,7 +10258,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "13392",
@@ -10453,7 +10479,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 12
+    "depthChartOrder": 13
    },
    {
     "sleeperId": "13418",
