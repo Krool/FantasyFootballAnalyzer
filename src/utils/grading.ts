@@ -24,6 +24,11 @@ export interface GradedPick extends DraftPick {
   // was not an eligible overpay.
   marketValue?: number;
   auctionDamage?: number;
+  // Results mode: the points he was graded on (season, or season outlook)
+  // and what the player at his draft slot scored, when the grade was points-
+  // based (gradeAgainstPoints). Absent when it fell back to rank bands.
+  gradePoints?: number;
+  slotPoints?: number;
   // Which yardstick produced the grade, so the table can explain it on hover
   // (explainGrade). Optional only so hand-built test picks stay valid.
   gradeBasis?: GradeBasis;
@@ -189,6 +194,37 @@ export function gradeAgainstSlot(
   if (positionRank <= eliteFinish(teamCount) || positionRank <= expectedRank - band) return 'great';
   if (positionRank <= expectedRank + band) return 'good';
   if (positionRank <= expectedRank + 3 * band) return 'bad';
+  return 'terrible';
+}
+
+// Results grading in POINTS: what he scored against what the player who
+// finished at his draft slot scored. Rank bands are unfair across the board:
+// points between ranks are wide at the top and bunched deep, so the same
+// season-long noise moved a 1.01 back many fewer ranks than it moved an
+// RB30 but still graded him Terrible far more often. With 20% noise on every
+// projection, rank bands graded 28% of the first six picks at each position
+// Terrible and 3% of picks 25-36; points grade them 9% and 3% (audit
+// 2026-10-07; a 1.01 RB finishing RB8 is no longer a bust). A top-third
+// finish (eliteFinish) is still always Great.
+export const POINTS_GREAT = 1.15; // 15%+ more than his slot scored
+export const POINTS_GOOD = 0.85; // within 15% under
+export const POINTS_BAD = 0.65; // down to 35% under; below that Terrible
+
+export function gradeAgainstPoints(
+  points: number,
+  slotPoints: number,
+  positionRank: number,
+  expectedRank: number,
+  teamCount = 12,
+): DraftGrade {
+  if (positionRank <= eliteFinish(teamCount)) return 'great';
+  // No scoring at the slot to compare against (nothing played yet at a deep
+  // slot): the rank bands are all there is.
+  if (!(slotPoints > 0)) return gradeAgainstSlot(positionRank, expectedRank, teamCount);
+  const ratio = points / slotPoints;
+  if (ratio >= POINTS_GREAT) return 'great';
+  if (ratio >= POINTS_GOOD) return 'good';
+  if (ratio >= POINTS_BAD) return 'bad';
   return 'terrible';
 }
 
@@ -358,6 +394,34 @@ export function gradeAllPicks(
       ? calculatePositionRanks(allPicks, allPicks, pick => outlookFor(pick)?.total ?? pick.seasonPoints ?? 0)
       : positionRanks;
 
+  // Results mode: the points each pick is graded on, and per position the
+  // drafted players' points high to low, so "what did the RB12 slot score"
+  // is the 12th entry. Same population calculatePositionRanks ranks.
+  const gradePointsOf = (pick: DraftPick) => outlookFor(pick)?.total ?? pick.seasonPoints ?? 0;
+  const pointsByPosition = new Map<string, number[]>();
+  if (!positionRanksOverride) {
+    for (const pick of allPicks) {
+      const list = pointsByPosition.get(pick.player.position) ?? [];
+      list.push(gradePointsOf(pick));
+      pointsByPosition.set(pick.player.position, list);
+    }
+    for (const list of pointsByPosition.values()) list.sort((a, b) => b - a);
+  }
+  const slotPointsAt = (position: string, expected: number): number => {
+    const list = pointsByPosition.get(position);
+    if (!list || list.length === 0) return 0;
+    return list[Math.min(Math.max(1, expected), list.length) - 1];
+  };
+  const teamCount = league.totalTeams || league.teams.length || 12;
+  const resultsGrade = (pick: DraftPick, gradeRank: number, expectedRank: number) => {
+    const points = gradePointsOf(pick);
+    const slotPoints = slotPointsAt(pick.player.position, expectedRank);
+    return {
+      grade: gradeAgainstPoints(points, slotPoints, gradeRank, expectedRank, teamCount),
+      ...(slotPoints > 0 ? { gradePoints: Math.round(points), slotPoints: Math.round(slotPoints) } : {}),
+    };
+  };
+
   // Detect if this is an auction draft
   const isAuction = league.draftType === 'auction' || allPicks.some(p => p.auctionValue !== undefined && p.auctionValue > 0);
 
@@ -404,24 +468,27 @@ export function gradeAllPicks(
           gradeBasis: 'auction-market',
         };
       }
-      const { grade, auctionValueGrade } = positionRanksOverride
-        ? {
-            grade: gradeConsensusPick(valueOverExpected),
-            auctionValueGrade:
-              valueOverExpected >= 4 ? 'Steal'
-              : valueOverExpected >= -1 ? 'Fair Price'
-              : valueOverExpected >= -5 ? 'Slight Overpay'
-              : 'Overpay',
-          }
-        : gradeAuctionPick(gradeRank, expectedRank, league.totalTeams || league.teams.length || 12);
+      const verdict: { grade: DraftGrade; auctionValueGrade: string; gradePoints?: number; slotPoints?: number } =
+        positionRanksOverride
+          ? {
+              grade: gradeConsensusPick(valueOverExpected),
+              auctionValueGrade:
+                valueOverExpected >= 4 ? 'Steal'
+                : valueOverExpected >= -1 ? 'Fair Price'
+                : valueOverExpected >= -5 ? 'Slight Overpay'
+                : 'Overpay',
+            }
+          : (() => {
+              const r = resultsGrade(pick, gradeRank, expectedRank);
+              return { ...r, auctionValueGrade: AUCTION_RESULT_LABEL[r.grade] };
+            })();
       return {
         ...pick,
         round: auctionRound ?? pick.round,
-        grade,
+        ...verdict,
         positionRank,
         expectedRank,
         valueOverExpected,
-        auctionValueGrade,
         gradeBasis: positionRanksOverride ? 'auction-consensus' : 'auction-results',
       };
     }
@@ -455,13 +522,13 @@ export function gradeAllPicks(
         gradeBasis: 'snake-board',
       };
     }
-    const grade = positionRanksOverride
-      ? gradeConsensusPick(valueOverExpected)
-      : gradePick(pick, gradeRank, expectedRank, league.totalTeams || league.teams.length || 12);
+    const verdict = positionRanksOverride
+      ? { grade: gradeConsensusPick(valueOverExpected) }
+      : resultsGrade(pick, gradeRank, expectedRank);
 
     return {
       ...pick,
-      grade,
+      ...verdict,
       positionRank,
       expectedRank,
       valueOverExpected,
@@ -593,9 +660,15 @@ export function explainGrade(
         pick.gradeBasis === 'auction-results'
           ? `Paid $${pick.auctionValue ?? 0}, the price of a ${slot}; ${finishVerb} ${finish}${pick.outlook && !pick.outlook.final ? ' so far' : ''}${vs}.${gradedOn}${outlookLine}`
           : `Drafted as the ${slot}; ${finishVerb} ${finish}${pick.outlook && !pick.outlook.final ? ' so far' : ''}${vs}.${gradedOn}${outlookLine}`;
+      const top = eliteFinish(opts.teamCount ?? 12);
+      if (pick.slotPoints !== undefined && pick.gradePoints !== undefined) {
+        const pct = Math.round((pick.gradePoints / pick.slotPoints - 1) * 100);
+        const pts = `${pick.gradePoints} points against the ${pick.slotPoints} his ${slot} slot scored (${pct >= 0 ? '+' : ''}${pct}%)`;
+        const pctOf = (r: number) => Math.round(Math.abs(1 - r) * 100);
+        return `${head} Graded on ${pts}: ${pctOf(POINTS_GREAT)}%+ more (or a top-${top} finish) Great, within ${pctOf(POINTS_GOOD)}% under Good, up to ${pctOf(POINTS_BAD)}% under Bad, worse Terrible.`;
+      }
       const band = resultBand(pick.expectedRank);
       const b = Number.isInteger(band) ? String(band) : band.toFixed(1);
-      const top = eliteFinish(opts.teamCount ?? 12);
       return `${head} Judged against his ${slot} slot, give or take ${b} spots: ${b}+ better (or a top-${top} finish) Great, within ${b} Good, up to ${Number((band * 3).toFixed(1))} worse Bad, worse Terrible.`;
     }
     case 'auction-market': {

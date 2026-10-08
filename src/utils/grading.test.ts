@@ -5,6 +5,7 @@ import {
   calculateExpectedRanksByCost,
   calculateAuctionRounds,
   gradePick,
+  gradeAgainstPoints,
   gradeConsensusBoardPick,
   gradeAuctionPick,
   gradeAllPicks,
@@ -619,3 +620,45 @@ describe('pending grades (live season, no points yet)', () => {
     expect(b.valueOverExpected).toBe(-1);
   });
 });
+
+// Results grades in points (audit 2026-10-07): rank bands graded the first
+// picks at a position Terrible far more often than late ones for the same
+// season-long noise, because points between ranks are wide at the top.
+describe('gradeAgainstPoints (results in points vs the draft slot)', () => {
+  it('grades on points against what the slot scored', () => {
+    expect(gradeAgainstPoints(240, 200, 20, 20)).toBe('great'); // +20%
+    expect(gradeAgainstPoints(180, 200, 20, 20)).toBe('good'); // -10%
+    expect(gradeAgainstPoints(140, 200, 20, 20)).toBe('bad'); // -30%
+    expect(gradeAgainstPoints(120, 200, 20, 20)).toBe('terrible'); // -40%
+  });
+
+  it('keeps a top-third finish Great whatever the slot scored', () => {
+    expect(gradeAgainstPoints(250, 330, 4, 1)).toBe('great');
+  });
+
+  it('falls back to the rank bands when the slot has no points yet', () => {
+    expect(gradeAgainstPoints(0, 0, 10, 3)).toBe('terrible');
+  });
+
+  it('no longer calls a 1.01 back who finishes RB8 a bust', () => {
+    // Realistic finish curve: RB1 330, RB2 300 ... RB8 245.
+    const curve = [330, 300, 285, 275, 265, 258, 250, 245, 238, 230, 222, 215];
+    const picks = curve.map((pts, i) =>
+      makePick({ playerId: `rb${i + 1}`, position: 'RB', pickNumber: i + 1, points: pts }),
+    );
+    // The 1.01 (drafted RB1) is the one who finished RB8.
+    picks[0] = { ...picks[0], seasonPoints: 245 };
+    picks[7] = { ...picks[7], seasonPoints: 330 };
+    const league: League = {
+      id: 'L1', platform: 'sleeper', name: 'Test', season: 2024, draftType: 'snake',
+      teams: [{ id: 't1', name: 'Team 1', draftPicks: picks }],
+      scoringType: 'ppr', totalTeams: 12, isLoaded: true,
+    };
+    const first = gradeAllPicks(league).find(p => p.player.id === 'rb1')!;
+    expect(first.positionRank).toBe(8);
+    expect(first.grade).toBe('bad'); // 245 vs the RB1 slot's 330: -26%
+    expect(first.slotPoints).toBe(330);
+    expect(explainGrade(first)).toContain('245 points against the 330');
+  });
+});
+
