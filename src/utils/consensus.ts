@@ -37,6 +37,20 @@ export function espnAdpSignal(player: PoolPlayer): number | undefined {
   return player.espnAdp != null && player.espnAdp < ESPN_ADP_CEILING ? player.espnAdp : undefined;
 }
 
+// Yahoo's board is a dense rank, not a true ADP. Through ~125 it tracks
+// Yahoo's own average pick within a few slots; past that Yahoo's avgPick
+// flattens near 121-141 while the dense rank keeps spreading the same players
+// across 130-226, which manufactured fake Yahoo "values" (Wan'Dale Robinson
+// +52 at rank 190 vs avgPick 130; audit 2026-10-07). Past the cutoff it says
+// nothing reliable, so it is left out.
+export const YAHOO_RANK_CUTOFF = 125;
+
+export function yahooRankSignal(player: PoolPlayer): number | undefined {
+  return player.yahooAdpRank != null && player.yahooAdpRank <= YAHOO_RANK_CUTOFF
+    ? player.yahooAdpRank
+    : undefined;
+}
+
 // The market ADP a pick or suggestion is judged against: the scoring-matched
 // Sleeper ADP with ESPN's as the fallback when Sleeper doesn't cover the
 // player. The single home for that fallback order.
@@ -63,7 +77,7 @@ export function consensusAvg(
   const signals = (
     superflex
       ? [player.overallRankSF ?? player.overallRank, sleeperAdpFor(player, scoring, true)]
-      : [player.overallRank, espnAdpSignal(player), player.yahooAdpRank, sleeperAdpFor(player, scoring, false)]
+      : [player.overallRank, espnAdpSignal(player), yahooRankSignal(player), sleeperAdpFor(player, scoring, false)]
   ).filter((n): n is number => n != null);
   // The lead signal (overallRank / overallRankSF fallback) is always present,
   // so signals is never empty.
@@ -112,7 +126,7 @@ export function platformRankSource(
         describe: superflex
           ? "Yahoo's ADP board is 1QB-only, so superflex compares the FantasyPros superflex rank against the consensus instead."
           : 'Yahoo ADP rank minus the consensus average. Positive: Yahoo drafts him later than consensus, so he should fall to you.',
-        value: p => (superflex ? p.overallRankSF ?? p.overallRank : p.yahooAdpRank),
+        value: p => (superflex ? p.overallRankSF ?? p.overallRank : yahooRankSignal(p)),
       };
   }
 }

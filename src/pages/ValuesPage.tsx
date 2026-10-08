@@ -371,7 +371,7 @@ export function ValuesPage({ league, onUpdateGuest }: ValuesPageProps) {
                   'CONS',
                   superflex
                     ? 'Consensus average of the FantasyPros superflex rank and Sleeper superflex ADP'
-                    : 'Consensus average of FantasyPros rank, ESPN ADP, Yahoo ADP rank, and Sleeper ADP',
+                    : 'Consensus average of FantasyPros rank, ESPN ADP (when under 160), Yahoo ADP rank (top 125 only), and Sleeper ADP',
                 )}
                 {SITES.map(site =>
                   sortableTh(site, SITE_LABEL[site].toUpperCase(), sources[site].describe),

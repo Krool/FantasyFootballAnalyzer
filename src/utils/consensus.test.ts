@@ -34,6 +34,10 @@ describe('consensusAvg', () => {
     expect(consensusAvg(player({ overallRank: 140, espnAdp: 150, sleeperAdp: 130 }))).toBe(140);
   });
 
+  it('ignores Yahoo dense ranks past 125', () => {
+    expect(consensusAvg(player({ overallRank: 180, yahooAdpRank: 130, sleeperAdp: 170 }))).toBe(175);
+  });
+
   it('blends Yahoo in as a fourth signal', () => {
     const p = player({ overallRank: 10, espnAdp: 14, sleeperAdp: 12, yahooAdpRank: 8 });
     expect(consensusAvg(p)).toBe(11); // (10+14+12+8)/4
