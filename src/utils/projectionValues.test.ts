@@ -6,8 +6,11 @@ import {
   replacementRanks,
   projectionValues,
   draftValues,
+  vorConfigFor,
+  MARKET_BLEND,
   type ValueLeague,
 } from './projectionValues';
+import { scaleValues } from './valueScaling';
 
 const BASE_SLOTS: RosterSlots = {
   QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SUPERFLEX: 0, K: 1, DST: 1, BENCH: 6, IR: 1,
@@ -195,6 +198,41 @@ describe('projectionValues', () => {
     expect(blended.get('RB1')).toBe(Math.round((rb1Model + 40) / 2));
     // K1: model $1, sheet $5 -> $3. The flat-$1 K/DST tail gets a real price.
     expect(blended.get('K1')).toBe(3);
+  });
+
+  // The sheet is a 1QB, no-premium market; blending toward it halved the
+  // superflex QB and TE premium bumps (audit 2026-10-07).
+  it('prices superflex QBs off the model alone, conserving league money', () => {
+    const pool = makePool();
+    // The sheet prices QB1 like a 1QB market would.
+    pool.find(p => p.id === 'QB1')!.baseValue = 20;
+    pool.find(p => p.id === 'RB1')!.baseValue = 50;
+    const baseline = { budget: 200, teams: 12, rounds: 14 };
+    const sfLeague = league({ rosterSlots: { ...BASE_SLOTS, SUPERFLEX: 1 } });
+    const model = projectionValues(pool, sfLeague);
+    const values = draftValues(pool, baseline, sfLeague);
+    const halfway = Math.round((model.get('QB1')! + 20) / 2);
+    expect(values.get('QB1')!).toBeGreaterThan(halfway);
+    // Discretionary money (above the $1 floor) stays within rounding of what
+    // the plain 50/50 blend would have spent.
+    const sheet = scaleValues(pool, baseline, baseline, 'half_ppr');
+    const plainSpend = pool.reduce((sum, p) => {
+      const mv = model.get(p.id) ?? 1;
+      const sv = sheet.get(p.id) ?? 1;
+      return sum + Math.max(0, mv + (sv - mv) * MARKET_BLEND - 1);
+    }, 0);
+    const spend = [...values.values()].reduce((sum, v) => sum + (v - 1), 0);
+    expect(Math.abs(spend - plainSpend)).toBeLessThan(pool.length * 0.5);
+  });
+
+  it('prices TE premium tight ends off the model alone', () => {
+    const pool = makePool();
+    pool.find(p => p.id === 'TE1')!.baseValue = 10;
+    const baseline = { budget: 200, teams: 12, rounds: 14 };
+    const tep = vorConfigFor({ tePremium: true });
+    const model = projectionValues(pool, league(), undefined, tep);
+    const values = draftValues(pool, baseline, league(), tep);
+    expect(values.get('TE1')!).toBeGreaterThan(Math.round((model.get('TE1')! + 10) / 2));
   });
 
   it('prices everyone at $1 when the whole pool sits at replacement level (sumVor <= 0)', () => {

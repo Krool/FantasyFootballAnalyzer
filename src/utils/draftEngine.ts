@@ -374,8 +374,18 @@ export function deriveDraftState(
   // bottom in dynasty mode rather than vanishing.
   const isDynasty = config.leagueType === 'dynasty';
   const rookieOnly = isDynasty && config.dynastyMode === 'rookie';
+  // Superflex (an OP slot, or two QB slots) orders by FantasyPros' superflex
+  // rank. The 1QB order kept mid-tier QBs outside the 40-deep window the mock
+  // AI and the pick suggestions read, so they went 15-20 picks past their 2QB
+  // ADP and were never suggested (audit 2026-10-07: Mahomes, 2QB ADP 44.5,
+  // went 64th on average; Darnold 86.7 went 102nd).
+  const superflex = config.rosterSlots.SUPERFLEX > 0 || config.rosterSlots.QB >= 2;
   const boardRank = (p: PoolPlayer) =>
-    isDynasty ? (p.dynastyRank ?? p.overallRank + 1000) : p.overallRank;
+    isDynasty
+      ? (p.dynastyRank ?? p.overallRank + 1000)
+      : superflex
+        ? (p.overallRankSF ?? p.overallRank)
+        : p.overallRank;
   const available = pool
     .filter(
       p =>

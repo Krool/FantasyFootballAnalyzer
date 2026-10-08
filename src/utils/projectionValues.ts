@@ -269,7 +269,9 @@ export function projectionValues(
 // rooms actually pay, and everyone past ~#100 flattens to $1 even though the
 // sheet prices ~175 players. Averaging the two anchors the top to the market
 // and restores a priced tail, while keeping half of the model's league-shape
-// adjustments (superflex, scoring format) that the static sheet can't see.
+// adjustments (scoring format, league size) that the static sheet can't see.
+// Superflex QBs and TE-premium TEs skip the blend entirely (see draftValues):
+// for them the sheet prices a different game.
 // 0 = pure model, 1 = pure sheet.
 export const MARKET_BLEND = 0.5;
 
@@ -288,11 +290,34 @@ export function draftValues(
   const fallback = scaleValues(players, baseline, shape, league.scoring);
   if (!USE_PROJECTION_VALUES) return fallback;
   const model = projectionValues(players, league, fallback, cfg);
-  const out = new Map<string, number>();
+  // The sheet is a 1QB, no-premium market. Blending toward it is right where
+  // it prices the same game, and wrong for the positions the league format
+  // reprices: it halved the superflex QB bump (Allen $40 in a 12-team
+  // superflex room, 10th by dollars, against the $40-60 first-rounder the
+  // format makes him) and the TE premium bump (audit 2026-10-07). Those take
+  // the model alone; the rest still blends.
+  const superflex = league.rosterSlots.SUPERFLEX > 0 || league.rosterSlots.QB >= 2;
+  const modelOnly = (p: PoolPlayer) =>
+    (superflex && p.pos === 'QB') || (cfg.tePremiumMult > 1 && p.pos === 'TE');
+  const raw = new Map<string, number>();
+  let blendedTotal = 0;
+  let rawTotal = 0;
   for (const p of players) {
     const mv = model.get(p.id) ?? 1;
     const sv = fallback.get(p.id) ?? 1;
-    out.set(p.id, Math.max(1, Math.round(mv + (sv - mv) * MARKET_BLEND)));
+    const blended = mv + (sv - mv) * MARKET_BLEND;
+    const value = modelOnly(p) ? mv : blended;
+    raw.set(p.id, value);
+    // Only dollars above the $1 floor are discretionary money to conserve.
+    blendedTotal += Math.max(0, blended - 1);
+    rawTotal += Math.max(0, value - 1);
+  }
+  // Pricing those positions higher must not mint money: rescale everyone's
+  // discretionary dollars back to what the plain blend spent.
+  const conserve = rawTotal > 0 ? blendedTotal / rawTotal : 1;
+  const out = new Map<string, number>();
+  for (const [id, value] of raw) {
+    out.set(id, Math.max(1, Math.round(1 + Math.max(0, value - 1) * conserve)));
   }
   return out;
 }
