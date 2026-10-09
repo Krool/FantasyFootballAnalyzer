@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-10-09T02:52:30.709Z",
+ "fetchedAt": "2026-10-09T17:17:08.748Z",
  "data": {
   "players": [
    {
@@ -1473,19 +1473,6 @@
     "depthChartOrder": 1
    },
    {
-    "sleeperId": "4992",
-    "name": "Dante Pettis",
-    "pos": "WR",
-    "team": "SF",
-    "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Calf",
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 8,
-    "depthChartOrder": null
-   },
-   {
     "sleeperId": "4993",
     "name": "Mike Gesicki",
     "pos": "TE",
@@ -1860,7 +1847,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "5854",
@@ -2531,8 +2518,8 @@
     "pos": "WR",
     "team": "DAL",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Quadriceps",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
@@ -3914,7 +3901,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 5
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "8117",
@@ -4260,7 +4247,7 @@
     "pos": "RB",
     "team": "NYJ",
     "status": "Active",
-    "injuryStatus": "Doubtful",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Quadriceps",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -5932,19 +5919,6 @@
     "depthChartOrder": null
    },
    {
-    "sleeperId": "11199",
-    "name": "Emari Demercado",
-    "pos": "RB",
-    "team": "DAL",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 3,
-    "depthChartOrder": null
-   },
-   {
     "sleeperId": "11201",
     "name": "Blake Whiteheart",
     "pos": "TE",
@@ -6111,7 +6085,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "11371",
@@ -6847,7 +6821,7 @@
     "pos": "WR",
     "team": "NYJ",
     "status": "Active",
-    "injuryStatus": "Doubtful",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Finger",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -8303,9 +8277,9 @@
     "pos": "RB",
     "team": "CHI",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Thumb",
-    "injuryNotes": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Toe",
+    "injuryNotes": "Sprain",
     "injuryStartDate": null,
     "yearsExp": 1,
     "depthChartOrder": 2
@@ -9525,8 +9499,8 @@
     "pos": "WR",
     "team": "TEN",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Back",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -10350,19 +10324,6 @@
     "injuryStartDate": null,
     "yearsExp": 0,
     "depthChartOrder": 3
-   },
-   {
-    "sleeperId": "13405",
-    "name": "Kaytron Allen",
-    "pos": "RB",
-    "team": "WAS",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 0,
-    "depthChartOrder": null
    },
    {
     "sleeperId": "13407",
