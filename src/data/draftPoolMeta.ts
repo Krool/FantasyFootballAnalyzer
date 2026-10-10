@@ -4,7 +4,7 @@
 // of the eager entry chunk. See buildDraftPool.ts for why.
 
 export const POOL_SEASON = 2026;
-export const POOL_GENERATED_AT = "2026-10-10T02:13:12.415Z";
+export const POOL_GENERATED_AT = "2026-10-10T16:05:43.209Z";
 export const POOL_BASELINE = {"budget":200,"teams":12,"rounds":14};
 
 /** Top 5 of the consensus board, for the homepage hero. */
