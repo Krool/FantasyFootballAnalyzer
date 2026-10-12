@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-10-12T02:12:33.510Z",
+ "fetchedAt": "2026-10-12T20:05:54.406Z",
  "data": {
   "players": [
    {
@@ -131,7 +131,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 13,
-    "depthChartOrder": 2
+    "depthChartOrder": null
    },
    {
     "sleeperId": "1373",
@@ -300,7 +300,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 12,
-    "depthChartOrder": 5
+    "depthChartOrder": null
    },
    {
     "sleeperId": "2118",
@@ -1707,13 +1707,26 @@
     "depthChartOrder": null
    },
    {
+    "sleeperId": "5374",
+    "name": "Justin Watson",
+    "pos": "WR",
+    "team": "KC",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 8,
+    "depthChartOrder": null
+   },
+   {
     "sleeperId": "5409",
     "name": "Tanner Hudson",
     "pos": "TE",
     "team": "CIN",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Pectoral",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
@@ -2401,9 +2414,9 @@
     "pos": "WR",
     "team": "DET",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Knee",
-    "injuryNotes": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Knee - MCL",
+    "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 7,
     "depthChartOrder": 5
@@ -2692,7 +2705,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 6
+    "depthChartOrder": null
    },
    {
     "sleeperId": "6865",
@@ -3069,7 +3082,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 5
+    "depthChartOrder": null
    },
    {
     "sleeperId": "7521",
@@ -3636,7 +3649,7 @@
     "pos": "WR",
     "team": "PIT",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Leg",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -3706,7 +3719,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 8
+    "depthChartOrder": null
    },
    {
     "sleeperId": "7891",
@@ -3758,7 +3771,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 4
+    "depthChartOrder": null
    },
    {
     "sleeperId": "8002",
@@ -4389,10 +4402,10 @@
     "name": "Tyquan Thornton",
     "pos": "WR",
     "team": "KC",
-    "status": "Active",
-    "injuryStatus": "Out",
+    "status": "Inactive",
+    "injuryStatus": "IR",
     "injuryBodyPart": "Ankle",
-    "injuryNotes": null,
+    "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 4,
     "depthChartOrder": 6
@@ -4629,7 +4642,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 7
+    "depthChartOrder": null
    },
    {
     "sleeperId": "8254",
@@ -5305,7 +5318,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 3
+    "depthChartOrder": null
    },
    {
     "sleeperId": "9511",
@@ -5695,7 +5708,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 5
+    "depthChartOrder": null
    },
    {
     "sleeperId": "10857",
@@ -5890,7 +5903,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 4
+    "depthChartOrder": null
    },
    {
     "sleeperId": "11201",
@@ -6007,7 +6020,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 3
+    "depthChartOrder": null
    },
    {
     "sleeperId": "11304",
@@ -6275,8 +6288,8 @@
     "pos": "QB",
     "team": "ATL",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Ribs",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
@@ -6899,8 +6912,8 @@
     "pos": "WR",
     "team": "LAC",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Foot",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
@@ -7229,7 +7242,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 7
+    "depthChartOrder": null
    },
    {
     "sleeperId": "11942",
@@ -7243,6 +7256,19 @@
     "injuryStartDate": null,
     "yearsExp": 2,
     "depthChartOrder": 4
+   },
+   {
+    "sleeperId": "11959",
+    "name": "Bryce Oliver",
+    "pos": "WR",
+    "team": "HOU",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 2,
+    "depthChartOrder": null
    },
    {
     "sleeperId": "11963",
@@ -7684,7 +7710,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 8
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "12485",
@@ -8061,7 +8087,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 5
+    "depthChartOrder": null
    },
    {
     "sleeperId": "12517",
@@ -8828,7 +8854,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 10
+    "depthChartOrder": null
    },
    {
     "sleeperId": "12889",
@@ -10375,7 +10401,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 6
+    "depthChartOrder": null
    },
    {
     "sleeperId": "13417",
@@ -11006,6 +11032,19 @@
     "name": "Kansei Matsuzawa",
     "pos": "K",
     "team": "LV",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 0,
+    "depthChartOrder": null
+   },
+   {
+    "sleeperId": "13816",
+    "name": "Mark Gronowski",
+    "pos": "QB",
+    "team": "HOU",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
