@@ -247,7 +247,9 @@ export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
       totals.set(pickup.transaction.teamId, {
         points: current.points + pickup.totalPoints,
         par: current.par + pickup.par,
-        pickups: current.pickups + 1,
+        // Every add counts, repeats included, as the team cards and awards
+        // count them; the row merge only keeps overlapping weeks out of PAR.
+        pickups: current.pickups + pickup.pickupCount,
         faab: current.faab + pickup.faabSpent,
       });
     });
@@ -315,7 +317,7 @@ export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
         <div className={styles.stats}>
           <div className={styles.stat}>
             <span className={styles.statLabel}>Total Pickups</span>
-            <span className={styles.statValue}>{displayPickups.length}</span>
+            <span className={styles.statValue}>{displayPickups.reduce((sum, p) => sum + p.pickupCount, 0)}</span>
           </div>
           <div className={styles.stat}>
             <span className={styles.statLabel}>Total PAR</span>

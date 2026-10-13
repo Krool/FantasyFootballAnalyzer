@@ -1520,7 +1520,14 @@ export async function enrichPlayersWithStats(
       const byTeam = startersByWeek.get(w);
       if (!byTeam) return null;
       if (byTeam.get(teamId)?.has(playerId)) {
-        points += weeklyPoints?.[playerId]?.[w] ?? 0;
+        const pts = weeklyPoints?.[playerId]?.[w];
+        // Yahoo rolls current_week on Tuesday, before that week kicks off,
+        // and its roster call already returns the lineup set for it. A start
+        // there counts once he has points for it; otherwise every rostered
+        // pickup read one extra scoreless game, which dragged its PAR down
+        // by a replacement week (Raiders: 6 games after 5 weeks, 2026-10-13).
+        if (w === maxWeek && pts === undefined) continue;
+        points += pts ?? 0;
         games++;
       }
     }

@@ -610,8 +610,10 @@ describe('yahoo enrichPlayersWithStats (weekly data)', () => {
 });
 
 // Weekly lineups: Krool started Puka in weeks 6 and 8 and benched him in 7.
-function rosterBody(week: number) {
-  const slot = week === 6 || week === 8 ? 'WR' : 'BN';
+// startedThisWeek also starts him in week 16, the fixture's current week,
+// where he has no points yet.
+function rosterBody(week: number, startedThisWeek = false) {
+  const slot = week === 6 || week === 8 || (startedThisWeek && week === 16) ? 'WR' : 'BN';
   return {
     fantasy_content: {
       league: {
@@ -671,6 +673,35 @@ describe('yahoo enrichPlayersWithStats (weekly lineups)', () => {
 
   it('is not marked incomplete when every call lands', () => {
     expect(league.loadIncomplete).toBeUndefined();
+  });
+});
+
+describe('yahoo enrichPlayersWithStats (current week not played yet)', () => {
+  afterAll(() => {
+    vi.unstubAllGlobals();
+    localStorage.removeItem('yahoo_access_token');
+    localStorage.removeItem('yahoo_token_expiry');
+  });
+
+  it('does not count a start in the current week before he has points', async () => {
+    // Yahoo rolls current_week on Tuesday and its roster call already holds
+    // that week's lineup. Counting it read the Raiders at 6 games after 5
+    // weeks and docked every rostered pickup a replacement week of PAR.
+    localStorage.setItem('yahoo_access_token', 'test-token');
+    localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const endpoint = decodeURIComponent(String(input).match(/endpoint=([^&]+)/)![1]);
+      const roster = endpoint.match(new RegExp(`^/league/${LEAGUE_KEY}/teams/roster;week=(\\d+)$`));
+      if (roster) return jsonResponse(rosterBody(parseInt(roster[1]), true));
+      return jsonResponse(routeYahooEnrich(String(input)));
+    }));
+    const league = await loadLeague(LEAGUE_KEY);
+    await enrichPlayersWithStats(league);
+    const tx = league.teams.find(t => t.id === TEAM_1)!.transactions![0];
+    const puka = tx.adds[0];
+    expect(puka.gamesSincePickup).toBe(2);
+    expect(puka.pointsSincePickup).toBe(32);
+    expect(tx.gamesStarted).toBe(2);
   });
 });
 

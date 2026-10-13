@@ -7,7 +7,7 @@
 
 import type { League, Team, Trade } from '@/types';
 import type { LuckMetrics } from './luck';
-import type { GradedPick } from './grading';
+import { isGraded, type GradedPick } from './grading';
 import { gradeLeaguePicks, hasSeasonResults } from './consensusGrade';
 import { POOL } from '@/data/draftPool';
 import { calculateBehaviorAwards } from './behaviorAwards';
@@ -486,7 +486,9 @@ export function calculateAllAwards(input: AwardCalculationInput): Award[] {
   // gradeLeaguePicks swaps in consensus ranks before Week 1 so a finished
   // pre-season draft grades against the market instead of zeroed stats.
   // Pending picks (no points yet, mid-season) get no verdict, so no award.
-  const gradedPicks = gradeLeaguePicks(league, POOL).filter(p => !p.pending);
+  // Nor do keepers: the team cards leave them out of the average, and Best
+  // Draft read +3.8 against a card's +3.2 when they rode along (2026-10-13).
+  const gradedPicks = gradeLeaguePicks(league, POOL).filter(isGraded);
   const teamMap = new Map(league.teams.map(t => [t.id, t]));
 
   // Pre-season auction grading measures value in league dollars (market
