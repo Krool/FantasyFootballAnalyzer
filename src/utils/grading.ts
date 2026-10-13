@@ -37,6 +37,8 @@ export interface GradedPick extends DraftPick {
   // "Pending", and summaries, awards, and exports leave him out (isGraded).
   // At season's end everyone is graded, so a lost season still reads as one.
   pending?: boolean;
+  // Live, no points yet, and the bands said Great: shown as Good instead.
+  noPointsCap?: boolean;
   // Live season with weekly projections: the season value he was ranked on
   // (points so far, missed weeks at replacement, projected rest of season).
   outlook?: SeasonOutlook;
@@ -546,7 +548,14 @@ export function gradeAllPicks(
     // from the exempt list, an IR rookie's return); only a live pick with
     // neither points nor a projection waits.
     if (outlook) {
-      return { ...pick, outlook, outlookRank: gradeRanks.get(`${pick.player.position}-${pick.player.id}`) };
+      const outlookRank = gradeRanks.get(`${pick.player.position}-${pick.player.id}`);
+      // No points yet caps at Good: a projection can say he may still pay
+      // off, not that he already has. Late-round slots are worth so little
+      // that 17 projected points read +750% on McMillan (owner, 2026-10-13).
+      if (!outlook.final && outlook.soFar <= 0 && pick.grade === 'great') {
+        return { ...pick, grade: 'good', outlook, outlookRank, noPointsCap: true };
+      }
+      return { ...pick, outlook, outlookRank };
     }
     if (league.status !== 'live' || (pick.seasonPoints ?? 0) > 0) return pick;
     return { ...pick, pending: true, valueOverExpected: 0 };
@@ -665,15 +674,16 @@ export function explainGrade(
           ? `Paid $${pick.auctionValue ?? 0}, the price of a ${slot}; ${finishVerb} ${finish}${pick.outlook && !pick.outlook.final ? ' so far' : ''}${vs}.${gradedOn}${outlookLine}`
           : `Drafted as the ${slot}; ${finishVerb} ${finish}${pick.outlook && !pick.outlook.final ? ' so far' : ''}${vs}.${gradedOn}${outlookLine}`;
       const top = eliteFinish(opts.teamCount ?? 12);
+      const cap = pick.noPointsCap ? ' No points yet, so Good at best.' : '';
       if (pick.slotPoints !== undefined && pick.gradePoints !== undefined) {
         const pct = Math.round((pick.gradePoints / pick.slotPoints - 1) * 100);
         const pts = `${pick.gradePoints} points against the ${pick.slotPoints} his ${slot} slot scored (${pct >= 0 ? '+' : ''}${pct}%)`;
         const pctOf = (r: number) => Math.round(Math.abs(1 - r) * 100);
-        return `${head} Graded on ${pts}: ${pctOf(POINTS_GREAT)}%+ more (or a top-${top} finish) Great, within ${pctOf(POINTS_GOOD)}% under Good, up to ${pctOf(POINTS_BAD)}% under Bad, worse Terrible.`;
+        return `${head} Graded on ${pts}: ${pctOf(POINTS_GREAT)}%+ more (or a top-${top} finish) Great, within ${pctOf(POINTS_GOOD)}% under Good, up to ${pctOf(POINTS_BAD)}% under Bad, worse Terrible.${cap}`;
       }
       const band = resultBand(pick.expectedRank);
       const b = Number.isInteger(band) ? String(band) : band.toFixed(1);
-      return `${head} Judged against his ${slot} slot, give or take ${b} spots: ${b}+ better (or a top-${top} finish) Great, within ${b} Good, up to ${Number((band * 3).toFixed(1))} worse Bad, worse Terrible.`;
+      return `${head} Judged against his ${slot} slot, give or take ${b} spots: ${b}+ better (or a top-${top} finish) Great, within ${b} Good, up to ${Number((band * 3).toFixed(1))} worse Bad, worse Terrible.${cap}`;
     }
     case 'auction-market': {
       const market = describeAuctionMarket(pick.auctionValue ?? 0, pick.marketValue ?? 1);

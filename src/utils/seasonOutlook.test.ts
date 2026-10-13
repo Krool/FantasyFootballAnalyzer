@@ -199,6 +199,21 @@ describe('grading on the season outlook', () => {
     expect(explainGrade(starPick)).toContain('2 missed games at replacement');
   });
 
+  it('caps a player with no points yet at Good', () => {
+    // Owner, 2026-10-13: McMillan (0.0 points) read Great at +750% because
+    // the late slot he was judged against was worth 2 points.
+    const capped = {
+      ...league,
+      teams: [{ draftPicks: [pick(1, 'wr3-wr', undefined), pick(2, 'wr2-wr', 1)] }],
+    };
+    const graded = gradeAllPicks(capped as never, undefined, undefined, undefined, leagueOutlooks(capped, POOL, SHAPE));
+    const out = graded.find(p => p.player.id === 'wr3-wr')!;
+    expect(out.outlookRank).toBe(1);
+    expect(out.grade).toBe('good');
+    expect(out.noPointsCap).toBe(true);
+    expect(explainGrade(out)).toContain('No points yet, so Good at best.');
+  });
+
   it('grades a not-yet-played player on his projection instead of holding him', () => {
     const outlook = leagueOutlooks(league, POOL, SHAPE);
     const graded = gradeAllPicks(league as never, undefined, undefined, undefined, outlook);
