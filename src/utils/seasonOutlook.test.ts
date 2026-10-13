@@ -93,12 +93,26 @@ describe('seasonOutlooks', () => {
   });
 
   it('gives weeks projected out zero, not replacement', () => {
-    // No points yet, back in week 9: weeks 1-4 missed (history, at
-    // replacement), weeks 5-8 projected out (future, zero).
+    // No points yet, back in week 9: weeks 1-4 missed (history), weeks 5-8
+    // projected out (future, zero).
     const o = seasonOutlooks([pick(3, 'wr3-wr', undefined)], POOL, SHAPE, ctx).get('WR-wr3-wr')!;
     expect(o.missedWeeks).toBe(4);
     expect(o.outWeeks).toBe(4);
     expect(o.projectedPoints).toBeCloseTo(8 * 12, 5);
+  });
+
+  it('gives a player who has not played yet no replacement credit', () => {
+    // Owner, 2026-10-13: 0-point Tyreek Hill, Charbonnet and Pacheco graded
+    // Great on five weeks of streamer credit. He is graded on his projection.
+    const o = seasonOutlooks([pick(3, 'wr3-wr', undefined)], POOL, SHAPE, ctx).get('WR-wr3-wr')!;
+    expect(o.neverPlayed).toBe(true);
+    expect(o.missedPoints).toBe(0);
+    expect(o.total).toBeCloseTo(8 * 12, 5);
+    expect(describeOutlook(o)).toContain('4 missed games, no replacement credit');
+    // One game in, the missed weeks earn it again.
+    const star = seasonOutlooks([pick(1, 'wr1-wr', 30)], POOL, SHAPE, ctx).get('WR-wr1-wr')!;
+    expect(star.neverPlayed).toBeUndefined();
+    expect(star.missedPoints).toBeCloseTo(2 * repl, 5);
   });
 
   it('zeroes the rest of the season for a season-ending injury the projection missed', () => {

@@ -232,8 +232,8 @@ export interface League {
   // players who changed teams (capped). Player Journey uses it to score each
   // stint of a player's season ("6.2 ppg for you, 18.4 after the trade").
   playerWeeklyPoints?: Record<string, Record<number, number>>;
-  // Each team's lineup each week, starters and bench with points (Sleeper and
-  // ESPN; Yahoo would cost a call per team per week, so it is absent there).
+  // Each team's lineup each week, starters and bench with points (all three
+  // platforms; Yahoo prices its rosters with ~10 extra stats calls a week).
   // The lineup awards (bench points, start/sit calls) run on it.
   weeklyLineups?: WeeklyLineup[];
   // Which NFL weeks each player has played (live or finished seasons), from

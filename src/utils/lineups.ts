@@ -1,6 +1,6 @@
 // Weekly lineups and the start/sit math the lineup awards run on.
 //
-// The loaders (Sleeper, ESPN) keep each team's weekly lineup as a
+// The loaders (Sleeper, ESPN, Yahoo) keep each team's weekly lineup as a
 // WeeklyLineup: the starting slots in order, who filled them, and the bench,
 // each with that week's points. From there this file answers "what was the
 // best legal lineup that week" and "which start/sit calls were wrong".

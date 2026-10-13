@@ -226,7 +226,7 @@ export function LuckPage({ league }: LuckPageProps) {
                       Bad L / Lucky W
                     </th>
                   )}
-                  <th scope="col">Worst Beating</th>
+                  <th scope="col" title="The most points one opponent scored against you, and whether you still won">Most Allowed</th>
                 </tr>
               </thead>
               <tbody>
@@ -258,7 +258,8 @@ export function LuckPage({ league }: LuckPageProps) {
                         <>
                           {m.worstBeating.points.toFixed(1)}
                           <span className={styles.dim}>
-                            W{m.worstBeating.week} by {nameOf(m.worstBeating.oppId)}
+                            Wk {m.worstBeating.week} vs {nameOf(m.worstBeating.oppId)},{' '}
+                            {m.worstBeating.result === 'W' ? 'won' : m.worstBeating.result === 'L' ? 'lost' : 'tied'}
                           </span>
                         </>
                       ) : (

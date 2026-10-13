@@ -52,6 +52,8 @@ export interface SeasonOutlook {
   // at the replacement rate.
   missedWeeks: number;
   missedPoints: number;
+  // No games played at all: missed weeks earn no replacement credit.
+  neverPlayed?: boolean;
   // Whether his bye was known (this season's pool), so missedWeeks counts
   // missed games only rather than "weeks without a game".
   byeKnown: boolean;
@@ -189,7 +191,12 @@ export function seasonOutlooks(
       if (p === true) games++;
       else if (p === false && w !== bye) missedWeeks++;
     }
-    const missedPoints = missedWeeks * perWeek;
+    // ...but only for a player who has suited up. One who hasn't played a
+    // snap is graded on his projection alone: five weeks of streamer credit
+    // turned 0-point Tyreek Hill, Charbonnet (PUP) and Pacheco (IR) into
+    // Great picks (owner, 2026-10-13).
+    const neverPlayed = games === 0 && missedWeeks > 0;
+    const missedPoints = neverPlayed ? 0 : missedWeeks * perWeek;
 
     // The future: projected points where he is expected to play, ZERO where
     // he is not. Replacement credit is for games already missed, never for
@@ -272,6 +279,7 @@ export function seasonOutlooks(
       games: gamesKnown && lastPast > 0 ? games : undefined,
       missedWeeks,
       missedPoints,
+      neverPlayed: neverPlayed || undefined,
       byeKnown: bye !== null,
       remainingWeeks,
       outWeeks,

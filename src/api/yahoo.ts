@@ -1,4 +1,5 @@
-import type { League, LeagueCredentials, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, WeeklyMatchup, SeasonSummary, HeadToHeadRecord } from '@/types';
+import type { League, LeagueCredentials, LeagueStatus, SeasonOption, Team, DraftPick, Transaction, Player, Trade, WeeklyMatchup, SeasonSummary, HeadToHeadRecord, LineupPlayer, RosterSlots, WeeklyLineup } from '@/types';
+import { lineupPosition } from '@/utils/lineups';
 import { logger } from '@/utils/logger';
 import { decideTradeWinner } from '@/utils/tradeVerdict';
 import { calculateGamesPAR, calculateReplacementLevels } from '@/utils/par';
@@ -1081,14 +1082,25 @@ export async function getWeeklyMatchups(
 // is a start.
 const NON_STARTING_SLOTS = new Set(['BN', 'IR', 'IR+', 'NA']);
 
+// One player on a team's roster in a given week, and the slot he sat in.
+export interface YahooRosterEntry {
+  key: string;
+  name: string;
+  pos: string;
+  slot: string;
+}
+
 // Who each team STARTED each week: week -> team_key -> player_keys. One
 // league-wide roster call per week. A week whose call failed is absent, so
-// the caller can tell "benched" from "unknown".
+// the caller can tell "benched" from "unknown". rostersOut, when passed,
+// collects the whole roster per week (week -> team_key -> entries) for the
+// weekly lineups.
 export async function getWeeklyStarters(
   leagueKey: string,
   maxWeek: number,
   onCallDone?: () => void,
   failedWeeks?: Set<number>,
+  rostersOut?: Map<number, Map<string, YahooRosterEntry[]>>,
 ): Promise<Map<number, Map<string, Set<string>>>> {
   const tasks = Array.from({ length: maxWeek }, (_, i) => async () => {
     const week = i + 1;
@@ -1108,17 +1120,28 @@ export async function getWeeklyStarters(
     const teamsNode = data?.fantasy_content?.league?.teams?.team;
     if (!teamsNode) continue;
     const byTeam = new Map<string, Set<string>>();
+    const rosterByTeam = new Map<string, YahooRosterEntry[]>();
     for (const team of Array.isArray(teamsNode) ? teamsNode : [teamsNode]) {
       if (!team?.team_key) continue;
       const started = new Set<string>();
+      const entries: YahooRosterEntry[] = [];
       const players = team.roster?.players?.player;
       for (const p of players ? (Array.isArray(players) ? players : [players]) : []) {
         const slot = p?.selected_position?.position;
-        if (p?.player_key && slot && !NON_STARTING_SLOTS.has(slot)) started.add(p.player_key);
+        if (!p?.player_key || !slot) continue;
+        if (!NON_STARTING_SLOTS.has(slot)) started.add(p.player_key);
+        entries.push({
+          key: p.player_key,
+          name: p.name?.full ?? p.player_key,
+          pos: String(p.primary_position ?? p.display_position ?? ''),
+          slot,
+        });
       }
       byTeam.set(team.team_key, started);
+      rosterByTeam.set(team.team_key, entries);
     }
     starters.set(week, byTeam);
+    rostersOut?.set(week, rosterByTeam);
   }
   return starters;
 }
@@ -1176,6 +1199,129 @@ async function getWeeklyPlayerPoints(
 
   await runBatched(tasks);
   return { points: result, failedKeys, failedWeeks };
+}
+
+// League-scored points for every player on a roster each week, 25 players a
+// call. Players in `covered` already have all their weeks (step 3's moved
+// players) and are skipped. A week with any failed batch is reported in
+// failedWeeks so its lineups are left out rather than built with holes.
+async function getRosterWeekPoints(
+  leagueKey: string,
+  rosters: Map<number, Map<string, YahooRosterEntry[]>>,
+  covered: Set<string>,
+  onCallDone?: () => void,
+): Promise<{ points: Record<string, Record<number, number>>; failedWeeks: Set<number> }> {
+  const points: Record<string, Record<number, number>> = {};
+  const failedWeeks = new Set<number>();
+  const tasks: Array<() => Promise<void>> = [];
+  for (const [week, byTeam] of rosters) {
+    const keys = new Set<string>();
+    for (const entries of byTeam.values()) {
+      for (const e of entries) if (!covered.has(e.key)) keys.add(e.key);
+    }
+    const list = [...keys];
+    for (let i = 0; i < list.length; i += 25) {
+      const batch = list.slice(i, i + 25);
+      tasks.push(async () => {
+        try {
+          const data = await yahooFetch<any>(
+            `/league/${leagueKey}/players;player_keys=${batch.join(',')}/stats;type=week;week=${week}`
+          );
+          const node = data?.fantasy_content?.league?.players?.player;
+          for (const player of node ? (Array.isArray(node) ? node : [node]) : []) {
+            const total = parseFloat(player?.player_points?.total ?? '');
+            if (Number.isFinite(total) && total !== 0 && player.player_key) {
+              (points[player.player_key] ??= {})[week] = total;
+            }
+          }
+        } catch {
+          failedWeeks.add(week);
+        } finally {
+          onCallDone?.();
+        }
+      });
+    }
+  }
+  await runBatched(tasks);
+  return { points, failedWeeks };
+}
+
+// Yahoo lineup slot names onto the lineup module's (Sleeper's) names.
+const YAHOO_SLOT: Record<string, string> = {
+  'W/R/T': 'FLEX',
+  'W/R': 'WRRB_FLEX',
+  'W/T': 'REC_FLEX',
+  'Q/W/R/T': 'SUPER_FLEX',
+  'D/ST': 'DEF',
+  DST: 'DEF',
+};
+const yahooSlot = (slot: string) => YAHOO_SLOT[slot] ?? slot;
+// Canonical lineup order, and the RosterSlots count each slot fills. The
+// three flex spellings share RosterSlots.FLEX (parseRosterSettings folds them).
+const SLOT_ORDER = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'WRRB_FLEX', 'REC_FLEX', 'SUPER_FLEX', 'K', 'DEF'];
+const SLOT_COUNT_KEY: Record<string, keyof RosterSlots> = {
+  QB: 'QB', RB: 'RB', WR: 'WR', TE: 'TE',
+  FLEX: 'FLEX', WRRB_FLEX: 'FLEX', REC_FLEX: 'FLEX',
+  SUPER_FLEX: 'SUPERFLEX', K: 'K', DEF: 'DST',
+};
+
+// Each team's lineup each week from the weekly rosters. Starters come from
+// their selected slot; a slot the league has but nobody filled is padded in
+// as empty (Yahoo lists players, not slots), so an empty slot still counts
+// against the manager. IR/NA players are off the bench, as on Sleeper.
+// Weeks nobody has scored in yet (Yahoo's rolled-over current week) and
+// weeks whose points failed to load are skipped.
+export function buildYahooLineups(
+  rosters: Map<number, Map<string, YahooRosterEntry[]>>,
+  rosterSlots: RosterSlots | undefined,
+  pointsFor: (key: string, week: number) => number,
+  skipWeeks: Set<number> = new Set(),
+): WeeklyLineup[] {
+  const lineups: WeeklyLineup[] = [];
+  const player = (e: YahooRosterEntry, week: number): LineupPlayer => ({
+    id: e.key,
+    name: e.name,
+    pos: lineupPosition(e.pos),
+    points: Math.round(pointsFor(e.key, week) * 100) / 100,
+  });
+  for (const week of [...rosters.keys()].sort((a, b) => a - b)) {
+    if (skipWeeks.has(week)) continue;
+    const byTeam = rosters.get(week)!;
+    const weekLineups: WeeklyLineup[] = [];
+    let anyPoints = false;
+    for (const [teamId, entries] of byTeam) {
+      const filled: Array<{ slot: string; p: LineupPlayer | null }> = entries
+        .filter(e => !NON_STARTING_SLOTS.has(e.slot))
+        .map(e => ({ slot: yahooSlot(e.slot), p: player(e, week) }));
+      if (entries.some(e => pointsFor(e.key, week) !== 0)) anyPoints = true;
+      if (rosterSlots) {
+        const used = new Map<keyof RosterSlots, number>();
+        for (const f of filled) {
+          const k = SLOT_COUNT_KEY[f.slot];
+          if (k) used.set(k, (used.get(k) ?? 0) + 1);
+        }
+        for (const slot of ['QB', 'RB', 'WR', 'TE', 'FLEX', 'SUPER_FLEX', 'K', 'DEF']) {
+          const k = SLOT_COUNT_KEY[slot];
+          const missing = (rosterSlots[k] ?? 0) - (used.get(k) ?? 0);
+          for (let i = 0; i < missing; i++) filled.push({ slot, p: null });
+        }
+      }
+      const rank = (slot: string) => {
+        const i = SLOT_ORDER.indexOf(slot);
+        return i === -1 ? SLOT_ORDER.length : i;
+      };
+      filled.sort((a, b) => rank(a.slot) - rank(b.slot));
+      weekLineups.push({
+        week,
+        teamId,
+        slots: filled.map(f => f.slot),
+        starters: filled.map(f => f.p),
+        bench: entries.filter(e => e.slot === 'BN').map(e => player(e, week)),
+      });
+    }
+    if (anyPoints) lineups.push(...weekLineups);
+  }
+  return lineups;
 }
 
 // Progress callback type
@@ -1469,18 +1615,32 @@ export async function enrichPlayersWithStats(
       if (Object.keys(weeklyPoints).length > 0) {
         league.playerWeeklyPoints = weeklyPoints;
       }
-
-      // 4. Weekly lineups, so a pickup is credited only with the weeks this
-      //    team actually started him (like Sleeper/ESPN). Without them, a
-      //    player dropped before ever playing got every point he scored for
-      //    his NEXT team (owner-reported, 2026-10-04).
-      let rosterDone = 0;
-      onProgress?.({ stage: 'Fetching weekly lineups', current: 0, total: maxWeek });
-      startersByWeek = await getWeeklyStarters(league.id, maxWeek, () => {
-        rosterDone++;
-        onProgress?.({ stage: 'Fetching weekly lineups', current: rosterDone, total: maxWeek });
-      }, failedRosterWeeks);
     }
+
+    // 4. Weekly lineups, so a pickup is credited only with the weeks this
+    //    team actually started him (like Sleeper/ESPN). Without them, a
+    //    player dropped before ever playing got every point he scored for
+    //    his NEXT team (owner-reported, 2026-10-04).
+    const rosters = new Map<number, Map<string, YahooRosterEntry[]>>();
+    let rosterDone = 0;
+    onProgress?.({ stage: 'Fetching weekly lineups', current: 0, total: maxWeek });
+    startersByWeek = await getWeeklyStarters(league.id, maxWeek, () => {
+      rosterDone++;
+      onProgress?.({ stage: 'Fetching weekly lineups', current: rosterDone, total: maxWeek });
+    }, failedRosterWeeks, rosters);
+
+    // 5. Each lineup's points, for the lineup awards and the team cards'
+    //    top scorers (Yahoo had neither). Only the league-wide stats URL
+    //    scores players by league rules, and the roster call can't carry
+    //    them (Yahoo drops /stats under a league's teams), so price each
+    //    week's rostered players in batches, skipping the moved players
+    //    step 3 already covered.
+    const lineupPoints = await getRosterWeekPoints(league.id, rosters, weeklyCoveredKeys);
+    lineupPoints.failedWeeks.forEach(w => failedRosterWeeks.add(w));
+    const pointsFor = (key: string, week: number): number =>
+      lineupPoints.points[key]?.[week] ?? weeklyPoints?.[key]?.[week] ?? 0;
+    const lineups = buildYahooLineups(rosters, league.rosterSlots, pointsFor, lineupPoints.failedWeeks);
+    if (lineups.length > 0) league.weeklyLineups = lineups;
   }
 
   // Weekly data is usable per player, and only when the week calendar landed

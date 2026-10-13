@@ -578,7 +578,11 @@ export function describeOutlook(o: SeasonOutlook): string {
     const what = o.byeKnown
       ? `missed game${o.missedWeeks === 1 ? '' : 's'}`
       : `week${o.missedWeeks === 1 ? '' : 's'} without a game (bye or missed)`;
-    parts.push(`${o.missedWeeks} ${what} at replacement (${f(o.missedPoints)})`);
+    parts.push(
+      !o.neverPlayed
+        ? `${o.missedWeeks} ${what} at replacement (${f(o.missedPoints)})`
+        : `${o.missedWeeks} ${what}, no replacement credit (has not played yet)`,
+    );
   }
   if (o.remainingWeeks > 0 && o.basis !== 'none') {
     const out = o.seasonEnding

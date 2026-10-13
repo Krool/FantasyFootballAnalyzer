@@ -56,7 +56,7 @@ export function TeamCard({ league, team, onClick, luckMetrics }: TeamCardProps) 
     };
   }, [team]);
 
-  // Top three scorers FOR THIS TEAM. With weekly lineups (Sleeper, ESPN),
+  // Top three scorers FOR THIS TEAM. With weekly lineups (every platform),
   // that's points scored while on this roster: a waiver add's season total
   // includes weeks he spent elsewhere (Kalif Raymond read 51.4 for a team
   // he'd scored 2.6 for). Without them, the current roster's season totals.

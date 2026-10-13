@@ -153,7 +153,21 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
       });
     });
 
-    // 5. Sort events by timestamp for each player
+    // 5. Undrafted and now unrostered (picked up, then dropped): no pick or
+    // roster carries his total, so take it from his transactions. Dontayvion
+    // Wicks and the 49ers DST read no points at all (2026-10-13).
+    league.teams.forEach(team => {
+      team.transactions?.forEach(tx => {
+        [...tx.adds, ...tx.drops].forEach(player => {
+          const entry = playerMap.get(player.id);
+          if (entry && entry.totalSeasonPoints === undefined && player.seasonPoints !== undefined) {
+            entry.totalSeasonPoints = player.seasonPoints;
+          }
+        });
+      });
+    });
+
+    // 6. Sort events by timestamp for each player
     playerMap.forEach(entry => {
       entry.events.sort((a, b) => a.timestamp - b.timestamp);
     });

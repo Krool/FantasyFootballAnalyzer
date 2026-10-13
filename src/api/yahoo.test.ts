@@ -1,11 +1,14 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import type { League } from '@/types';
+import { bestLineupPoints } from '@/utils/lineups';
 import {
   NFL_GAME_KEYS,
   addInProgressWeek,
   loadLeague,
   enrichPlayersWithStats,
   parseRosterSettings,
+  buildYahooLineups,
+  type YahooRosterEntry,
   getUserLeagues,
   getAvailableSeasons,
   loadLeagueHistory,
@@ -669,6 +672,13 @@ describe('yahoo enrichPlayersWithStats (weekly lineups)', () => {
     expect(puka.gamesSincePickup).toBe(2);
     expect(tx.totalPointsGenerated).toBe(32);
     expect(tx.gamesStarted).toBe(2);
+  });
+
+  it('builds weekly lineups with points for the lineup awards', () => {
+    const week6 = league.weeklyLineups?.find(l => l.week === 6 && l.teamId === TEAM_1);
+    expect(week6?.starters.find(p => p?.id === '461.p.200')?.points).toBe(12);
+    const week7 = league.weeklyLineups?.find(l => l.week === 7 && l.teamId === TEAM_1);
+    expect(week7?.bench.map(p => p.id)).toEqual(['461.p.200']);
   });
 
   it('is not marked incomplete when every call lands', () => {
@@ -1520,5 +1530,41 @@ describe('addInProgressWeek (season totals lag the live week)', () => {
     const map = new Map([['p.lamb', { points: 70 }]]);
     expect(await addInProgressWeek('L', ['p.lamb'], 4, map)).toBe(false);
     expect(map.get('p.lamb')?.points).toBe(70);
+  });
+});
+
+describe('buildYahooLineups', () => {
+  const e = (key: string, pos: string, slot: string): YahooRosterEntry => ({ key, name: key, pos, slot });
+  const slots = { QB: 1, RB: 2, WR: 1, TE: 0, FLEX: 1, SUPERFLEX: 0, K: 0, DST: 1, BENCH: 3, IR: 1 };
+  const roster = [
+    e('qb', 'QB', 'QB'),
+    e('rb1', 'RB', 'RB'),
+    e('wr1', 'WR', 'W/R/T'),
+    e('wr2', 'WR', 'WR'),
+    e('def', 'DEF', 'DEF'),
+    e('rb2', 'RB', 'BN'),
+    e('hurt', 'WR', 'IR'),
+  ];
+  const pts: Record<string, number> = { qb: 20, rb1: 8, wr1: 5, wr2: 12, def: 6, rb2: 15, hurt: 0 };
+  const rosters = new Map([
+    [1, new Map([['t1', roster]])],
+    // The rolled-over current week: lineups set, nobody has played.
+    [2, new Map([['t1', roster]])],
+  ]);
+  const pointsFor = (key: string, week: number) => (week === 1 ? pts[key] ?? 0 : 0);
+
+  it('maps Yahoo slots, pads an unfilled slot as empty, and keeps IR off the bench', () => {
+    const [lineup, ...rest] = buildYahooLineups(rosters, slots, pointsFor);
+    expect(rest).toHaveLength(0); // week 2 has no points yet
+    expect(lineup.week).toBe(1);
+    expect(lineup.slots).toEqual(['QB', 'RB', 'RB', 'WR', 'FLEX', 'DEF']);
+    expect(lineup.starters.map(p => p?.id ?? null)).toEqual(['qb', 'rb1', null, 'wr2', 'wr1', 'def']);
+    expect(lineup.bench.map(p => p.id)).toEqual(['rb2']);
+    // The lineup math runs on it: rb2 belonged in the empty RB slot.
+    expect(bestLineupPoints(lineup)).toBe(20 + 8 + 15 + 12 + 5 + 6);
+  });
+
+  it('leaves out a week whose points failed to load', () => {
+    expect(buildYahooLineups(rosters, slots, pointsFor, new Set([1]))).toHaveLength(0);
   });
 });

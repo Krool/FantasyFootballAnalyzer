@@ -58,7 +58,8 @@ export interface PointsAgainstMetrics {
   // Won while scoring below half the league that week.
   luckyWins: number;
   // The most points hung on this team in one week.
-  worstBeating: { week: number; points: number; oppId: string } | null;
+  // The most any opponent scored on this team, and how that game went.
+  worstBeating: { week: number; points: number; oppId: string; result: 'W' | 'L' | 'T' } | null;
 }
 
 export function pointsAgainstMetrics(matchups: WeeklyMatchup[], teamIds: string[]): PointsAgainstMetrics[] {
@@ -106,7 +107,12 @@ export function pointsAgainstMetrics(matchups: WeeklyMatchup[], teamIds: string[
         if (g.pf < g.pa && g.pf > med) unluckyLosses++;
         if (g.pf > g.pa && g.pf < med) luckyWins++;
         if (!worstBeating || g.pa > worstBeating.points) {
-          worstBeating = { week: g.week, points: g.pa, oppId: g.oppId };
+          worstBeating = {
+            week: g.week,
+            points: g.pa,
+            oppId: g.oppId,
+            result: g.pf > g.pa ? 'W' : g.pf < g.pa ? 'L' : 'T',
+          };
         }
       }
       return {
