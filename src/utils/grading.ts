@@ -579,9 +579,9 @@ export function describeOutlook(o: SeasonOutlook): string {
       ? `missed game${o.missedWeeks === 1 ? '' : 's'}`
       : `week${o.missedWeeks === 1 ? '' : 's'} without a game (bye or missed)`;
     parts.push(
-      !o.neverPlayed
+      !o.noPointsYet
         ? `${o.missedWeeks} ${what} at replacement (${f(o.missedPoints)})`
-        : `${o.missedWeeks} ${what}, no replacement credit (has not played yet)`,
+        : `${o.missedWeeks} ${what}, no replacement credit (no points yet)`,
     );
   }
   if (o.remainingWeeks > 0 && o.basis !== 'none') {
