@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-10-16T15:10:01.798Z",
+ "fetchedAt": "2026-10-17T01:12:21.273Z",
  "data": {
   "players": [
    {
@@ -11,18 +11,18 @@
     "avgCost": 27.9
    },
    {
-    "name": "Jahmyr Gibbs",
-    "team": "DET",
-    "pos": "RB",
-    "avgPick": 1.3,
-    "avgCost": 73.7
-   },
-   {
     "name": "Jaxon Smith-Njigba",
     "team": "SEA",
     "pos": "WR",
     "avgPick": 7.4,
     "avgCost": 58.1
+   },
+   {
+    "name": "Jahmyr Gibbs",
+    "team": "DET",
+    "pos": "RB",
+    "avgPick": 1.3,
+    "avgCost": 73.7
    },
    {
     "name": "Brock Purdy",
@@ -256,6 +256,13 @@
     "avgCost": 40.9
    },
    {
+    "name": "Bo Nix",
+    "team": "DEN",
+    "pos": "QB",
+    "avgPick": 98.6,
+    "avgCost": 1.5
+   },
+   {
     "name": "Bucky Irving",
     "team": "TB",
     "pos": "RB",
@@ -298,18 +305,18 @@
     "avgCost": 19.8
    },
    {
-    "name": "Bo Nix",
-    "team": "DEN",
-    "pos": "QB",
-    "avgPick": 98.6,
-    "avgCost": 1.5
-   },
-   {
     "name": "Will Reichard",
     "team": "MIN",
     "pos": "K",
     "avgPick": 142.1,
     "avgCost": 1.1
+   },
+   {
+    "name": "Sam Darnold",
+    "team": "SEA",
+    "pos": "QB",
+    "avgPick": 121.1,
+    "avgCost": 1.2
    },
    {
     "name": "Ja'Marr Chase",
@@ -424,6 +431,13 @@
     "avgCost": 3.5
    },
    {
+    "name": "Jason Myers",
+    "team": "SEA",
+    "pos": "K",
+    "avgPick": 122.8,
+    "avgCost": 1.5
+   },
+   {
     "name": "Malik Nabers",
     "team": "NYG",
     "pos": "WR",
@@ -464,13 +478,6 @@
     "pos": "TE",
     "avgPick": 47.2,
     "avgCost": 13.2
-   },
-   {
-    "name": "Sam Darnold",
-    "team": "SEA",
-    "pos": "QB",
-    "avgPick": 121.1,
-    "avgCost": 1.2
    },
    {
     "name": "Justin Jefferson",
@@ -536,18 +543,18 @@
     "avgCost": 1.3
    },
    {
-    "name": "Jason Myers",
-    "team": "SEA",
-    "pos": "K",
-    "avgPick": 122.8,
-    "avgCost": 1.5
-   },
-   {
     "name": "Daniel Jones",
     "team": "IND",
     "pos": "QB",
     "avgPick": 126.8,
     "avgCost": 1.1
+   },
+   {
+    "name": "Broncos",
+    "team": "DEN",
+    "pos": "DST",
+    "avgPick": 104.9,
+    "avgCost": 2.4
    },
    {
     "name": "Pat Freiermuth",
@@ -620,6 +627,13 @@
     "avgCost": 44.5
    },
    {
+    "name": "Seahawks",
+    "team": "SEA",
+    "pos": "DST",
+    "avgPick": 108.9,
+    "avgCost": 2.1
+   },
+   {
     "name": "Cam Skattebo",
     "team": "NYG",
     "pos": "RB",
@@ -639,6 +653,13 @@
     "pos": "QB",
     "avgPick": 65.4,
     "avgCost": 3.8
+   },
+   {
+    "name": "J.K. Dobbins",
+    "team": "DEN",
+    "pos": "RB",
+    "avgPick": 94.6,
+    "avgCost": 2.6
    },
    {
     "name": "Jeremiyah Love",
@@ -690,18 +711,18 @@
     "avgCost": 10.7
    },
    {
+    "name": "Jaylen Waddle",
+    "team": "DEN",
+    "pos": "WR",
+    "avgPick": 38.9,
+    "avgCost": 17.7
+   },
+   {
     "name": "Chris Boswell",
     "team": "PIT",
     "pos": "K",
     "avgPick": 130.6,
     "avgCost": 1.2
-   },
-   {
-    "name": "Seahawks",
-    "team": "SEA",
-    "pos": "DST",
-    "avgPick": 108.9,
-    "avgCost": 2.1
    },
    {
     "name": "Stefon Diggs",
@@ -746,11 +767,25 @@
     "avgCost": 1.1
    },
    {
+    "name": "Wil Lutz",
+    "team": "DEN",
+    "pos": "K",
+    "avgPick": 136.1,
+    "avgCost": 1.2
+   },
+   {
     "name": "David Montgomery",
     "team": "HOU",
     "pos": "RB",
     "avgPick": 52.8,
     "avgCost": 12.2
+   },
+   {
+    "name": "RJ Harvey",
+    "team": "DEN",
+    "pos": "RB",
+    "avgPick": 112,
+    "avgCost": 2
    },
    {
     "name": "Kyler Murray",
@@ -823,13 +858,6 @@
     "avgCost": 3.4
    },
    {
-    "name": "Jaylen Waddle",
-    "team": "DEN",
-    "pos": "WR",
-    "avgPick": 38.9,
-    "avgCost": 17.7
-   },
-   {
     "name": "DK Metcalf",
     "team": "PIT",
     "pos": "WR",
@@ -849,13 +877,6 @@
     "pos": "K",
     "avgPick": 143.9,
     "avgCost": 1
-   },
-   {
-    "name": "Broncos",
-    "team": "DEN",
-    "pos": "DST",
-    "avgPick": 104.9,
-    "avgCost": 2.4
    },
    {
     "name": "Steelers",
@@ -956,13 +977,6 @@
     "avgCost": 9.7
    },
    {
-    "name": "Wil Lutz",
-    "team": "DEN",
-    "pos": "K",
-    "avgPick": 136.1,
-    "avgCost": 1.2
-   },
-   {
     "name": "Trey Smack",
     "team": "GB",
     "pos": "K",
@@ -1019,18 +1033,18 @@
     "avgCost": 1.2
    },
    {
-    "name": "J.K. Dobbins",
-    "team": "DEN",
-    "pos": "RB",
-    "avgPick": 94.6,
-    "avgCost": 2.6
-   },
-   {
     "name": "Darren Waller",
     "team": "CAR",
     "pos": "TE",
     "avgPick": 120.9,
     "avgCost": 1
+   },
+   {
+    "name": "Rashid Shaheed",
+    "team": "SEA",
+    "pos": "WR",
+    "avgPick": 127.5,
+    "avgCost": 1.1
    },
    {
     "name": "Bears",
@@ -1073,6 +1087,13 @@
     "pos": "TE",
     "avgPick": 127.2,
     "avgCost": 1.2
+   },
+   {
+    "name": "Cooper Kupp",
+    "team": "SEA",
+    "pos": "WR",
+    "avgPick": 118.7,
+    "avgCost": 1
    },
    {
     "name": "Rashee Rice",
@@ -1159,13 +1180,6 @@
     "avgCost": 2.2
    },
    {
-    "name": "RJ Harvey",
-    "team": "DEN",
-    "pos": "RB",
-    "avgPick": 112,
-    "avgCost": 2
-   },
-   {
     "name": "Tyler Allgeier",
     "team": "ARI",
     "pos": "RB",
@@ -1185,6 +1199,13 @@
     "pos": "WR",
     "avgPick": 115,
     "avgCost": 1.2
+   },
+   {
+    "name": "AJ Barner",
+    "team": "SEA",
+    "pos": "TE",
+    "avgPick": 123.9,
+    "avgCost": 1.1
    },
    {
     "name": "Jaxson Dart",
@@ -1236,11 +1257,11 @@
     "avgCost": 1.1
    },
    {
-    "name": "Cooper Kupp",
-    "team": "SEA",
+    "name": "Courtland Sutton",
+    "team": "DEN",
     "pos": "WR",
-    "avgPick": 118.7,
-    "avgCost": 1
+    "avgPick": 109.3,
+    "avgCost": 1.6
    },
    {
     "name": "Chris Rodriguez Jr.",
@@ -1250,25 +1271,11 @@
     "avgCost": 1.2
    },
    {
-    "name": "AJ Barner",
-    "team": "SEA",
-    "pos": "TE",
-    "avgPick": 123.9,
-    "avgCost": 1.1
-   },
-   {
     "name": "Lions",
     "team": "DET",
     "pos": "DST",
     "avgPick": 135.7,
     "avgCost": 1.2
-   },
-   {
-    "name": "Rashid Shaheed",
-    "team": "SEA",
-    "pos": "WR",
-    "avgPick": 127.5,
-    "avgCost": 1.1
    },
    {
     "name": "Isaac TeSlaa",
@@ -1290,13 +1297,6 @@
     "pos": "DST",
     "avgPick": 88.2,
     "avgCost": 3.8
-   },
-   {
-    "name": "Courtland Sutton",
-    "team": "DEN",
-    "pos": "WR",
-    "avgPick": 109.3,
-    "avgCost": 1.6
    },
    {
     "name": "Kyle Pitts Sr.",
