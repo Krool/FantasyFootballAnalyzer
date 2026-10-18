@@ -222,7 +222,9 @@ describe('DraftRoomPage phone auction nomination', () => {
     expect(screen.queryByText('No player selected')).not.toBeInTheDocument();
     expect(screen.getAllByText(name).length).toBeGreaterThan(0);
     expect(screen.getByText(/Won By/)).toBeInTheDocument();
-  });
+    // Four logged sales through the full-pool phone board: ~2.5s locally,
+    // and a loaded CI runner crossed the 5s default (2026-10-17).
+  }, 20000);
 
   it('routes a queued-player tap into the Log tab too', () => {
     // The phone list has no queue toggle (queueing is a desktop-table
