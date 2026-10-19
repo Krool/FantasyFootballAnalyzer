@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-10-19T01:00:27.686Z",
+ "fetchedAt": "2026-10-19T17:18:54.814Z",
  "data": {
   "players": [
    {
@@ -106,6 +106,19 @@
     "injuryStartDate": null,
     "yearsExp": 15,
     "depthChartOrder": 2
+   },
+   {
+    "sleeperId": "829",
+    "name": "Andy Dalton",
+    "pos": "QB",
+    "team": "ATL",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 15,
+    "depthChartOrder": null
    },
    {
     "sleeperId": "1166",
@@ -1187,19 +1200,6 @@
     "depthChartOrder": 40
    },
    {
-    "sleeperId": "4574",
-    "name": "Cooper Rush",
-    "pos": "QB",
-    "team": "ATL",
-    "status": "Active",
-    "injuryStatus": "Out",
-    "injuryBodyPart": "Coach's Decision",
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 9,
-    "depthChartOrder": 2
-   },
-   {
     "sleeperId": "4602",
     "name": "Robert Tonyan",
     "pos": "TE",
@@ -1724,8 +1724,8 @@
     "name": "Tanner Hudson",
     "pos": "TE",
     "team": "CIN",
-    "status": "Active",
-    "injuryStatus": "Out",
+    "status": "Inactive",
+    "injuryStatus": "IR",
     "injuryBodyPart": "Pectoral",
     "injuryNotes": "Strain",
     "injuryStartDate": null,
@@ -2744,7 +2744,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "6904",
@@ -2901,6 +2901,19 @@
     "injuryStartDate": null,
     "yearsExp": 6,
     "depthChartOrder": 2
+   },
+   {
+    "sleeperId": "7050",
+    "name": "Josiah Deguara",
+    "pos": "TE",
+    "team": "SEA",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 6,
+    "depthChartOrder": null
    },
    {
     "sleeperId": "7066",
@@ -4330,7 +4343,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "8180",
@@ -4884,7 +4897,7 @@
     "pos": "WR",
     "team": "DAL",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Ribs",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -6137,7 +6150,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 2
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "11435",
@@ -6930,7 +6943,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 9
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "11637",
@@ -10154,7 +10167,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 6
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "13350",
