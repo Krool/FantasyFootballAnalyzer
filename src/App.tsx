@@ -673,6 +673,11 @@ function App() {
     if (!league || league.isGuest || location.pathname !== '/') return;
     const timer = setTimeout(() => {
       if (strandReportedRef.current) return;
+      // History already left '/' and the router is still committing it (the
+      // startTransition lag above), held there while the next page's chunk
+      // downloads. A slow phone took over 2s on connect and false-alarmed
+      // (iOS Safari, 2026-10-20). A settled location re-runs this effect.
+      if (window.location.pathname !== routerPathToUrl('/')) return;
       strandReportedRef.current = true;
       logger.error('[App] Stranded on the home route with a league loaded', {
         // No ids: the league is identifiable and Sentry scrubs them anyway.

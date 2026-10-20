@@ -483,6 +483,25 @@ describe('stranded-on-home detector', () => {
     expect(JSON.stringify(strandCalls[0][1])).not.toContain('55');
   });
 
+  it('stays quiet while history has moved on and the router has not caught up', async () => {
+    // React Router commits navigations in a transition, so useLocation()
+    // reads '/' while the next page's chunk downloads; history already says
+    // /draft. pushState here moves history without telling the router.
+    h.blockRedirect = true;
+    h.store.league = sleeperLeague('55');
+    window.history.replaceState(null, '', '/');
+    render(
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>,
+    );
+    window.history.pushState(null, '', '/draft');
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(
+      h.loggerError.mock.calls.filter(c => String(c[0]).includes('Stranded on the home route')),
+    ).toHaveLength(0);
+  });
+
   it('stays quiet on a healthy connect that reaches a page', async () => {
     renderApp('/');
     fireEvent.click(await screen.findByRole('button', { name: 'Load League' }));
