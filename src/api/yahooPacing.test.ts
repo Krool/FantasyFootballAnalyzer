@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { pacedYahooFetch, resetYahooPacingForTests, yahooPacing } from './yahooPacing';
+import { pacedYahooFetch, resetYahooPacingForTests, yahooPacing, yahooPacingState } from './yahooPacing';
 
 const ok = () => new Response('{}', { status: 200 });
 const status = (code: number) => new Response('{}', { status: code });
@@ -66,6 +66,36 @@ describe('pacedYahooFetch', () => {
 
     const other = starts.find(s => s.url === 'other')!;
     expect(other.at - t0).toBeGreaterThanOrEqual(25);
+  });
+
+  it('slows the rest of the load after a throttle, then recovers once Yahoo is quiet', async () => {
+    yahooPacing.slowdownResetMs = 60_000;
+    let throttled = true;
+    let open = 0;
+    let peak = 0;
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      if (throttled) { throttled = false; return status(429); }
+      open++;
+      peak = Math.max(peak, open);
+      await new Promise(r => setTimeout(r, 5));
+      open--;
+      return ok();
+    }));
+
+    await pacedYahooFetch('u', {});
+    expect(yahooPacingState()).toEqual({ slowdown: 2, maxInFlight: 1 });
+    await Promise.all(Array.from({ length: 6 }, () => pacedYahooFetch('u', {})));
+    expect(peak).toBe(1);
+
+    yahooPacing.slowdownResetMs = 0;
+    expect(yahooPacingState()).toEqual({ slowdown: 1, maxInFlight: yahooPacing.maxInFlight });
+  });
+
+  it('caps the slowdown however often Yahoo throttles', async () => {
+    yahooPacing.slowdownResetMs = 60_000;
+    vi.stubGlobal('fetch', vi.fn(async () => status(429)));
+    for (let i = 0; i < 6; i++) await pacedYahooFetch('u', {});
+    expect(yahooPacingState().slowdown).toBe(yahooPacing.maxSlowdown);
   });
 
   it('does not retry a normal 4xx', async () => {

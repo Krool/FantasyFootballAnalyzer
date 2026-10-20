@@ -594,7 +594,9 @@ market ADP/auction costs. Since June 2026 the enrichment phase also fetches:
 - `scoreboard;week={n}` for weeks 1..current, populating `league.matchups` -
   luck analysis, awards, and manager score now work on Yahoo.
 - the weekly stats sub-resource for players who moved midseason (waiver/FA
-  adds + traded players, capped at 150), populating `playerWeeklyPoints`,
+  adds + traded players, all of them since 2026-10-20; the old 150 cap cut
+  whole teams' pickups once a 14-team league passed it), populating
+  `playerWeeklyPoints`,
   real points-since-pickup, and post-trade trade verdicts.
 
 All phases are best-effort, plus weekly `roster;week={n}` lineups for real

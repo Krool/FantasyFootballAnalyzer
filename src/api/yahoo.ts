@@ -1527,7 +1527,7 @@ export async function enrichPlayersWithStats(
     : 17;
   let weeklyPoints: Record<string, Record<number, number>> | null = null;
   // Players whose weekly fetch actually landed (requested, no errored batch).
-  // Everyone else - capped out, batch failed, or never requested - falls back
+  // Everyone else - batch failed, or never requested - falls back
   // to season totals per player.
   let weeklyCoveredKeys = new Set<string>();
   let weeksResolved = false;
@@ -1581,8 +1581,6 @@ export async function enrichPlayersWithStats(
     //    adds and traded players). That set is what real since-pickup math
     //    and Player Journey stint scoring need; fetching every drafted
     //    player would multiply the call count for little gain.
-    // Traded players go in first: the 150 cap below cuts from the end, and
-    // one uncovered player drops a whole trade back to the full-season basis.
     const movedKeys = new Set<string>();
     for (const trade of league.trades || []) {
       for (const side of trade.teams) {
@@ -1597,12 +1595,13 @@ export async function enrichPlayersWithStats(
     }
 
     if (weeksResolved && movedKeys.size > 0) {
-      // Cap the fetch so a hyperactive league can't queue hundreds of calls;
-      // uncovered players fall back to season totals below (weeklyCovered).
-      const keys = Array.from(movedKeys).slice(0, 150);
-      if (keys.length < movedKeys.size) {
-        logger.warn(`[Yahoo] weekly stats capped at 150 of ${movedKeys.size} moved players`);
-      }
+      // Every moved player, uncapped: a 150 cap cut whole teams' pickups out
+      // of Player Journey and Drop Regret once a 14-team league passed it by
+      // week 6 (2026-10-20). The cost is smaller than the count suggests:
+      // step 5 skips covered players, so the net extra calls are only for
+      // moved players off every roster. yahooPacing keeps it gentle and backs
+      // off further on each throttle.
+      const keys = Array.from(movedKeys);
       const totalStatCalls = Math.ceil(keys.length / 25) * maxWeek;
       let statCallsDone = 0;
       onProgress?.({ stage: 'Fetching weekly player stats', current: 0, total: totalStatCalls });
@@ -1676,7 +1675,7 @@ export async function enrichPlayersWithStats(
   // Points from the weeks this team had him in its starting lineup, from the
   // pickup week on. Null when any of those weeks' lineups failed to load, so
   // the caller falls back rather than under-crediting a pickup. A player
-  // without step-3 weekly points (past the 150 cap, or his batch failed) is
+  // without step-3 weekly points (his batch failed) is
   // scored from step 5's roster points, and is null if any of those weeks
   // failed to price.
   const sumStartsSince = (

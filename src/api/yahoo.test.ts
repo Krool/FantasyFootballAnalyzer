@@ -761,11 +761,10 @@ describe('yahoo enrichPlayersWithStats (throttled load)', () => {
   });
 
   it('scores a pickup with no moved-player weekly points from the roster points', async () => {
-    // The moved-player fetch caps at 150; the owner's 14-team Yahoo league
-    // hit 159 by week 6 (2026-10-20), and every pickup past the cap read his
-    // whole season total as points since pickup. Failing the moved-player
-    // batch (three keys; the roster-points batch holds Puka alone) leaves
-    // him uncovered the same way.
+    // A failed moved-player batch (three keys; the roster-points batch holds
+    // Puka alone) used to drop his pickup to his whole season total as points
+    // since pickup. So did the old 150-player cap, which the owner's 14-team
+    // Yahoo league passed by week 6 (2026-10-20).
     const league = await loadWith(endpoint => {
       const wk = endpoint.match(/players;player_keys=([^/]+)\/stats;type=week/);
       return wk && wk[1].split(',').length > 1 ? failing(400) : null;
