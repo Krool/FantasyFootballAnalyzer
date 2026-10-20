@@ -6,8 +6,9 @@ import * as Sentry from '@sentry/react';
 // it reaches Sentry. Disabled in dev and whenever no DSN is configured, so the
 // SDK is a no-op until VITE_SENTRY_DSN is set on the build.
 //
-// The DSN is a public client key (safe to ship in the bundle); it's read from
-// an env var only so non-production builds stay dark.
+// The DSN is a public client key (safe to ship in the bundle). It is not
+// committed: CI passes it from the VITE_SENTRY_DSN repo variable, and a local
+// break-glass deploy reads .env.production.local. A clone builds dark.
 
 const DSN = import.meta.env.VITE_SENTRY_DSN;
 // The repo is public and the built site has been re-hosted elsewhere with

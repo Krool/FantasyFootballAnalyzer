@@ -235,7 +235,12 @@ Fonts are self-hosted via `@fontsource` (not Google Fonts), declared in `src/fon
 ## Observability
 
 - **Sentry** (`src/utils/sentry.ts`, initialized in `src/main.tsx`) is active
-  only when `VITE_SENTRY_DSN` is set AND `import.meta.env.PROD`. It captures
+  only when `VITE_SENTRY_DSN` is set AND `import.meta.env.PROD` AND the host
+  is the production domain. The DSN is NOT committed (removed 2026-10-20 after
+  a clone at traderape.me kept reporting into our project): CI reads the
+  `VITE_SENTRY_DSN` repo variable, and `npm run deploy` needs it in the
+  gitignored `.env.production.local`. Sentry's project Allowed Domains is the
+  server-side backstop for copies already carrying it. It captures
   errors only (no traces, no PII) and scrubs tokens, cookies, GUIDs, and query
   strings before send. Source maps upload at build when `SENTRY_AUTH_TOKEN` is
   present (wired in `vite.config.ts` and CI). Release is `VITE_BUILD_SHA`.

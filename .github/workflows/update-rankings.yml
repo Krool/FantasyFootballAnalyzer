@@ -131,6 +131,9 @@ jobs:
           # Companion ESPN extension id (a repo variable, not a secret). Unset
           # keeps the auto-fill dormant; set it once the extension is published.
           VITE_ESPN_EXTENSION_ID: ${{ vars.VITE_ESPN_EXTENSION_ID }}
+          # Sentry DSN (a repo variable, not committed): a clone of the repo builds
+          # with error reporting off instead of spending this project's quota.
+          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
 
       # This job must deploy its own commit. The push above uses the default
       # GITHUB_TOKEN, and GitHub does not trigger workflows (including ci.yml)
