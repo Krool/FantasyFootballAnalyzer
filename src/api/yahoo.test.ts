@@ -759,6 +759,24 @@ describe('yahoo enrichPlayersWithStats (throttled load)', () => {
       /scoreboard;week=3$/.test(endpoint) ? failing(404) : null);
     expect(league.loadIncomplete).toBeUndefined();
   });
+
+  it('scores a pickup with no moved-player weekly points from the roster points', async () => {
+    // The moved-player fetch caps at 150; the owner's 14-team Yahoo league
+    // hit 159 by week 6 (2026-10-20), and every pickup past the cap read his
+    // whole season total as points since pickup. Failing the moved-player
+    // batch (three keys; the roster-points batch holds Puka alone) leaves
+    // him uncovered the same way.
+    const league = await loadWith(endpoint => {
+      const wk = endpoint.match(/players;player_keys=([^/]+)\/stats;type=week/);
+      return wk && wk[1].split(',').length > 1 ? failing(400) : null;
+    });
+    const tx = league.teams.find(t => t.id === TEAM_1)!.transactions![0];
+    const puka = tx.adds[0];
+    // Started weeks 6 and 8 (12 + 20), not his 180-point season.
+    expect(puka.pointsSincePickup).toBe(32);
+    expect(puka.gamesSincePickup).toBe(2);
+    expect(tx.gamesStarted).toBe(2);
+  });
 });
 
 describe('yahoo loadLeague transaction and manager edge cases', () => {

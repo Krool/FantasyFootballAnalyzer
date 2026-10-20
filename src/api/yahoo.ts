@@ -1532,6 +1532,11 @@ export async function enrichPlayersWithStats(
   let weeklyCoveredKeys = new Set<string>();
   let weeksResolved = false;
   let startersByWeek = new Map<number, Map<string, Set<string>>>();
+  // Step 5's points for every rostered player not in weeklyCoveredKeys, and
+  // the weeks whose batches failed. Enough to score an uncovered pickup's
+  // starts: he only earns points in weeks he sat on this team's roster.
+  let rosterWeekPoints: Record<string, Record<number, number>> = {};
+  let rosterPointsFailedWeeks = new Set<number>();
 
   const maxWeek = Math.min(league.currentWeek || SEASON_MAX_WEEK, SEASON_MAX_WEEK);
   if (league.status !== 'preseason' && maxWeek >= 1) {
@@ -1637,6 +1642,8 @@ export async function enrichPlayersWithStats(
     //    step 3 already covered.
     const lineupPoints = await getRosterWeekPoints(league.id, rosters, weeklyCoveredKeys);
     lineupPoints.failedWeeks.forEach(w => failedRosterWeeks.add(w));
+    rosterWeekPoints = lineupPoints.points;
+    rosterPointsFailedWeeks = lineupPoints.failedWeeks;
     const pointsFor = (key: string, week: number): number =>
       lineupPoints.points[key]?.[week] ?? weeklyPoints?.[key]?.[week] ?? 0;
     const lineups = buildYahooLineups(rosters, league.rosterSlots, pointsFor, lineupPoints.failedWeeks);
@@ -1668,19 +1675,24 @@ export async function enrichPlayersWithStats(
   };
   // Points from the weeks this team had him in its starting lineup, from the
   // pickup week on. Null when any of those weeks' lineups failed to load, so
-  // the caller falls back rather than under-crediting a pickup.
+  // the caller falls back rather than under-crediting a pickup. A player
+  // without step-3 weekly points (past the 150 cap, or his batch failed) is
+  // scored from step 5's roster points, and is null if any of those weeks
+  // failed to price.
   const sumStartsSince = (
     teamId: string,
     playerId: string,
     fromWeek: number,
   ): { points: number; games: number } | null => {
+    const covered = weeklyCovered(playerId);
     let points = 0;
     let games = 0;
     for (let w = Math.max(1, fromWeek); w <= maxWeek; w++) {
       const byTeam = startersByWeek.get(w);
       if (!byTeam) return null;
+      if (!covered && rosterPointsFailedWeeks.has(w)) return null;
       if (byTeam.get(teamId)?.has(playerId)) {
-        const pts = weeklyPoints?.[playerId]?.[w];
+        const pts = covered ? weeklyPoints?.[playerId]?.[w] : rosterWeekPoints[playerId]?.[w];
         // Yahoo rolls current_week on Tuesday, before that week kicks off,
         // and its roster call already returns the lineup set for it. A start
         // there counts once he has points for it; otherwise every rostered
@@ -1747,8 +1759,10 @@ export async function enrichPlayersWithStats(
           const seasonPoints = playerInfo.points || 0;
           player.seasonPoints = Math.round(seasonPoints * 10) / 10;
 
-          if (weeklyCovered(player.id)) {
-            const starts = sumStartsSince(team.id, player.id, tx.week);
+          // Lineups alone are enough to credit a pickup with his starts; the
+          // games-played fallback needs his full weekly line (step 3).
+          const starts = weeksResolved ? sumStartsSince(team.id, player.id, tx.week) : null;
+          if (starts || weeklyCovered(player.id)) {
             const { points, games } =
               starts ?? sumWeeksSince(player.id, tx.week, ownedUntilWeek(team, tx, player.id));
             const par = calculateGamesPAR(points, playerInfo.position, games, replacementMap, baselineWeeks);
