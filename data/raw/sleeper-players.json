@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-10-26T01:04:44.577Z",
+ "fetchedAt": "2026-10-26T17:06:22.670Z",
  "data": {
   "players": [
    {
@@ -4572,8 +4572,8 @@
     "pos": "WR",
     "team": "SEA",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Hamstring",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
@@ -4819,8 +4819,8 @@
     "pos": "WR",
     "team": "SEA",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Knee",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
@@ -6053,6 +6053,19 @@
     "name": "Zavier Scott",
     "pos": "RB",
     "team": "CHI",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 3,
+    "depthChartOrder": null
+   },
+   {
+    "sleeperId": "11304",
+    "name": "E.J. Jenkins",
+    "pos": "TE",
+    "team": "ATL",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
