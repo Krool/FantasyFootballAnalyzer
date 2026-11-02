@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-11-02T02:17:10.729Z",
+ "fetchedAt": "2026-11-02T20:37:50.869Z",
  "data": {
   "players": [
    {
@@ -1088,8 +1088,8 @@
     "pos": "RB",
     "team": "WAS",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Undisclosed",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
@@ -5215,19 +5215,6 @@
     "injuryStartDate": null,
     "yearsExp": 3,
     "depthChartOrder": 5
-   },
-   {
-    "sleeperId": "9505",
-    "name": "Deuce Vaughn",
-    "pos": "RB",
-    "team": "HOU",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 3,
-    "depthChartOrder": null
    },
    {
     "sleeperId": "9506",
@@ -11175,6 +11162,19 @@
     "name": "Patrick Gurd",
     "pos": "TE",
     "team": "LV",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 0,
+    "depthChartOrder": null
+   },
+   {
+    "sleeperId": "13923",
+    "name": "Joshua Pitsenberger",
+    "pos": "RB",
+    "team": "HOU",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
