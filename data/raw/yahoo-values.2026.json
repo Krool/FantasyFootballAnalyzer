@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-11-05T03:22:26.882Z",
+ "fetchedAt": "2026-11-05T18:29:50.623Z",
  "data": {
   "players": [
    {
@@ -37,6 +37,13 @@
     "pos": "QB",
     "avgPick": 49.5,
     "avgCost": 8.5
+   },
+   {
+    "name": "Kirk Cousins",
+    "team": "LV",
+    "pos": "QB",
+    "avgPick": 110.3,
+    "avgCost": 1
    },
    {
     "name": "Jordan Love",
@@ -91,7 +98,7 @@
     "name": "D'Andre Swift",
     "team": "CHI",
     "pos": "RB",
-    "avgPick": 43.6,
+    "avgPick": 43.5,
     "avgCost": 15.6
    },
    {
@@ -126,7 +133,7 @@
     "name": "Tyler Shough",
     "team": "NO",
     "pos": "QB",
-    "avgPick": 120.9,
+    "avgPick": 120.8,
     "avgCost": 1.2
    },
    {
@@ -203,7 +210,7 @@
     "name": "Chuba Hubbard",
     "team": "CAR",
     "pos": "RB",
-    "avgPick": 88.6,
+    "avgPick": 88.5,
     "avgCost": 3.2
    },
    {
@@ -266,7 +273,7 @@
     "name": "Matthew Golden",
     "team": "GB",
     "pos": "WR",
-    "avgPick": 120.4,
+    "avgPick": 120.3,
     "avgCost": 1.2
    },
    {
@@ -364,14 +371,14 @@
     "name": "Isaiah Likely",
     "team": "NYG",
     "pos": "TE",
-    "avgPick": 106.8,
+    "avgPick": 106.7,
     "avgCost": 1.9
    },
    {
     "name": "Braelon Allen",
     "team": "NYJ",
     "pos": "RB",
-    "avgPick": 118.3,
+    "avgPick": 117.9,
     "avgCost": 1.1
    },
    {
@@ -385,7 +392,7 @@
     "name": "Spencer Shrader",
     "team": "IND",
     "pos": "K",
-    "avgPick": 124.1,
+    "avgPick": 124,
     "avgCost": 1.2
    },
    {
@@ -420,7 +427,7 @@
     "name": "Jameson Williams",
     "team": "DET",
     "pos": "WR",
-    "avgPick": 64.8,
+    "avgPick": 64.7,
     "avgCost": 7.1
    },
    {
@@ -441,7 +448,7 @@
     "name": "Tre Tucker",
     "team": "LV",
     "pos": "WR",
-    "avgPick": 123.7,
+    "avgPick": 123.5,
     "avgCost": 1.1
    },
    {
@@ -490,7 +497,7 @@
     "name": "Daniel Jones",
     "team": "IND",
     "pos": "QB",
-    "avgPick": 126.8,
+    "avgPick": 126.7,
     "avgCost": 1.1
    },
    {
@@ -546,7 +553,7 @@
     "name": "Mike Evans",
     "team": "SF",
     "pos": "WR",
-    "avgPick": 70.4,
+    "avgPick": 70.3,
     "avgCost": 5.5
    },
    {
@@ -581,7 +588,7 @@
     "name": "Tyler Allgeier",
     "team": "ARI",
     "pos": "RB",
-    "avgPick": 129.1,
+    "avgPick": 129,
     "avgCost": 1.3
    },
    {
@@ -644,7 +651,7 @@
     "name": "Ollie Gordon II",
     "team": "MIA",
     "pos": "RB",
-    "avgPick": 94.8,
+    "avgPick": 94.4,
     "avgCost": 1
    },
    {
@@ -672,14 +679,14 @@
     "name": "Pat Freiermuth",
     "team": "PIT",
     "pos": "TE",
-    "avgPick": 123.6,
+    "avgPick": 123.7,
     "avgCost": 1.2
    },
    {
     "name": "Jalen Coker",
     "team": "CAR",
     "pos": "WR",
-    "avgPick": 122.5,
+    "avgPick": 122.4,
     "avgCost": 1.2
    },
    {
@@ -714,7 +721,7 @@
     "name": "Jaylen Waddle",
     "team": "DEN",
     "pos": "WR",
-    "avgPick": 39.3,
+    "avgPick": 39.4,
     "avgCost": 17.7
    },
    {
@@ -791,7 +798,7 @@
     "name": "Bengals",
     "team": "CIN",
     "pos": "DST",
-    "avgPick": 125,
+    "avgPick": 124.9,
     "avgCost": 1
    },
    {
@@ -854,7 +861,7 @@
     "name": "Omarion Hampton",
     "team": "LAC",
     "pos": "RB",
-    "avgPick": 19.2,
+    "avgPick": 19.3,
     "avgCost": 44.5
    },
    {
@@ -875,7 +882,7 @@
     "name": "Bears",
     "team": "CHI",
     "pos": "DST",
-    "avgPick": 123.8,
+    "avgPick": 123.7,
     "avgCost": 1
    },
    {
@@ -945,7 +952,7 @@
     "name": "Josh Downs",
     "team": "IND",
     "pos": "WR",
-    "avgPick": 102.5,
+    "avgPick": 102.4,
     "avgCost": 1.4
    },
    {
@@ -966,7 +973,7 @@
     "name": "Brenton Strange",
     "team": "JAX",
     "pos": "TE",
-    "avgPick": 128.5,
+    "avgPick": 128.4,
     "avgCost": 1
    },
    {
@@ -1036,7 +1043,7 @@
     "name": "Jeremiyah Love",
     "team": "ARI",
     "pos": "RB",
-    "avgPick": 30.7,
+    "avgPick": 30.8,
     "avgCost": 27.4
    },
    {
@@ -1197,7 +1204,7 @@
     "name": "Adonai Mitchell",
     "team": "NYJ",
     "pos": "WR",
-    "avgPick": 125.8,
+    "avgPick": 125.6,
     "avgCost": 1
    },
    {
@@ -1218,7 +1225,7 @@
     "name": "Jonah Coleman",
     "team": "DEN",
     "pos": "RB",
-    "avgPick": 126.1,
+    "avgPick": 125.8,
     "avgCost": 1.3
    },
    {
@@ -1316,7 +1323,7 @@
     "name": "Giants",
     "team": "NYG",
     "pos": "DST",
-    "avgPick": 125,
+    "avgPick": 124.9,
     "avgCost": 1.1
    },
    {
@@ -1386,7 +1393,7 @@
     "name": "Kaelon Black",
     "team": "SF",
     "pos": "RB",
-    "avgPick": 126.9,
+    "avgPick": 126.8,
     "avgCost": 1.4
    },
    {
@@ -1414,7 +1421,7 @@
     "name": "Kayshon Boutte",
     "team": "HOU",
     "pos": "WR",
-    "avgPick": 125.5,
+    "avgPick": 125.4,
     "avgCost": 1
    },
    {
