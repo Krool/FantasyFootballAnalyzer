@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-11-10T04:34:00.128Z",
+ "fetchedAt": "2026-11-10T18:27:52.564Z",
  "data": {
   "players": [
    {
@@ -66,19 +66,6 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 17,
-    "depthChartOrder": 1
-   },
-   {
-    "sleeperId": "650",
-    "name": "Nick Folk",
-    "pos": "K",
-    "team": "ATL",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 19,
     "depthChartOrder": 1
    },
    {
@@ -365,7 +352,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 12,
-    "depthChartOrder": 6
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "2197",
@@ -963,7 +950,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 9,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "4144",
@@ -1691,7 +1678,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 8,
-    "depthChartOrder": 5
+    "depthChartOrder": null
    },
    {
     "sleeperId": "5189",
@@ -1886,7 +1873,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 7,
-    "depthChartOrder": 1
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "5854",
@@ -2718,7 +2705,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "6853",
@@ -3277,7 +3264,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "7564",
@@ -3680,7 +3667,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "7828",
@@ -3849,7 +3836,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 1
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "8111",
@@ -3901,7 +3888,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 2
+    "depthChartOrder": 1
    },
    {
     "sleeperId": "8117",
@@ -3953,7 +3940,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 4
+    "depthChartOrder": 6
    },
    {
     "sleeperId": "8123",
@@ -4499,7 +4486,7 @@
     "injuryNotes": "Sprain",
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 2
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "8208",
@@ -4866,6 +4853,19 @@
     "depthChartOrder": null
    },
    {
+    "sleeperId": "8799",
+    "name": "Zaire Mitchell-Paden",
+    "pos": "TE",
+    "team": "CLE",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 4,
+    "depthChartOrder": null
+   },
+   {
     "sleeperId": "8800",
     "name": "Malik Davis",
     "pos": "RB",
@@ -5162,7 +5162,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 1
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "9494",
@@ -5630,7 +5630,7 @@
     "injuryNotes": "Fracture",
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 1
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "10234",
@@ -5753,7 +5753,7 @@
     "sleeperId": "10937",
     "name": "Jake Moody",
     "pos": "K",
-    "team": "BAL",
+    "team": "ATL",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
@@ -5799,7 +5799,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 6
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "11056",
@@ -6605,7 +6605,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 5
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "11592",
@@ -6631,7 +6631,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 2
+    "depthChartOrder": 1
    },
    {
     "sleeperId": "11595",
@@ -6808,12 +6808,12 @@
     "pos": "WR",
     "team": "LAR",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Questionable",
+    "injuryBodyPart": "Back",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "11624",
@@ -7996,7 +7996,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "12505",
@@ -8633,7 +8633,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 2
+    "depthChartOrder": 1
    },
    {
     "sleeperId": "12732",
@@ -9020,19 +9020,6 @@
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 1,
-    "depthChartOrder": null
-   },
-   {
-    "sleeperId": "12938",
-    "name": "Jackson Meeks",
-    "pos": "TE",
-    "team": "DET",
-    "status": "Active",
-    "injuryStatus": "Out",
-    "injuryBodyPart": "Coach's Decision",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -9426,7 +9413,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "13272",
@@ -9595,7 +9582,7 @@
     "injuryNotes": "Sprain",
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 6
+    "depthChartOrder": 8
    },
    {
     "sleeperId": "13288",
@@ -9699,7 +9686,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 2
+    "depthChartOrder": 1
    },
    {
     "sleeperId": "13298",
@@ -10589,7 +10576,7 @@
     "sleeperId": "13428",
     "name": "Joey Aguilar",
     "pos": "QB",
-    "team": "JAX",
+    "team": "ARI",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
@@ -10986,7 +10973,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 7
+    "depthChartOrder": 10
    },
    {
     "sleeperId": "13696",
@@ -11117,19 +11104,6 @@
     "injuryStartDate": null,
     "yearsExp": 0,
     "depthChartOrder": 10
-   },
-   {
-    "sleeperId": "13827",
-    "name": "Tanner Arkin",
-    "pos": "TE",
-    "team": "NE",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 0,
-    "depthChartOrder": null
    },
    {
     "sleeperId": "13830",
