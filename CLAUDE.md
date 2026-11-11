@@ -49,7 +49,14 @@ tree (committed or not) and pushes `dist/` to `gh-pages`, so prefer pushing.
 **Vercel** hosts only the `api/` functions. `vercel.json` sets a no-op build
 command (the frontend does not build on Vercel), `outputDirectory: "."`, and
 baseline security headers. Frontend changes never need a Vercel deploy; `api/`
-changes do.
+changes do. Two things keep that host to the functions (2026-11-10):
+`.vercelignore` leaves the frontend, docs, data, and tests out of the upload
+(with `outputDirectory: "."` they were being served as static files), and
+`ignoreCommand` in `vercel.json` skips the Vercel build unless `api/`,
+`vercel.json`, `.vercelignore`, or `package*.json` changed since the last
+successful deployment, so the twice-daily data commit no longer redeploys the
+API. It fails open: if the previous SHA is missing or outside the shallow
+clone, the build runs. `/` on that host redirects to the real site.
 
 ### Vercel environment
 
@@ -121,8 +128,11 @@ forwards. Yahoo needs OAuth, so no share param.
 **Prerender**: `scripts/prerender.tsx` runs as the final build step and bakes
 real static HTML for the indexable public routes (home, `/rankings`, the
 per-position pages, `/values`, `/trends`, `/draft-room`, `/trade-analyzer`,
-`/draft-grades`) so they
-are crawlable without JS. `vite.config.ts` emits `sitemap.xml` for the same set
+`/draft-grades`, `/privacy`, `/terms`) so they
+are crawlable without JS. `/privacy` and `/terms` render `src/pages/LegalPage.tsx`
+from the copy in `src/pages/legalPages.ts`; the privacy copy states what the
+code does, so a new storage key, analytics event, API function, or third-party
+host means editing it and bumping its `updated` date. `vite.config.ts` emits `sitemap.xml` for the same set
 and stamps build metadata (`VITE_BUILD_TIME`, `VITE_BUILD_SHA`).
 
 **Site Values** (`/values`, third draft-prep tab): where each site's draft

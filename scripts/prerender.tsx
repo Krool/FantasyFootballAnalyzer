@@ -479,6 +479,20 @@ async function prerender() {
       })
     }
 
+    // --- Privacy and terms (same component the live routes render). Real
+    // files so a direct visit or refresh gets HTTP 200, not the 404 shim. ---
+    const { LegalPage } = await vite.ssrLoadModule('/src/pages/LegalPage.tsx')
+    const { LEGAL_PAGES } = await vite.ssrLoadModule('/src/pages/legalPages.ts')
+    for (const key of ['privacy', 'terms'] as const) {
+      const content = LEGAL_PAGES[key]
+      writeRoute({
+        path: content.path,
+        markup: renderToStaticMarkup(createElement(LegalPage, { content })),
+        title: content.title,
+        desc: content.desc,
+      })
+    }
+
     const draftRoomFaq = faqJsonLd([
       ['Is the mock draft simulator free?', 'Yes. No account and no signup. The project is open source.'],
       ['Does it support auction and snake drafts?', 'Both. Any league size, with dollar values and ADP scaled to your budget and roster.'],

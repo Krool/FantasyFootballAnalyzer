@@ -56,6 +56,8 @@ ${url(`${SITE_URL}trends`, '0.8')}
 ${url(`${SITE_URL}draft-room`, '0.8')}
 ${url(`${SITE_URL}trade-analyzer`, '0.8')}
 ${url(`${SITE_URL}draft-grades`, '0.8')}
+${url(`${SITE_URL}privacy`, '0.3')}
+${url(`${SITE_URL}terms`, '0.3')}
 ${positionUrls}
 </urlset>
 `

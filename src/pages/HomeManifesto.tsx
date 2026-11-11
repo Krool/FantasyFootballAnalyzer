@@ -9,15 +9,17 @@ export function HomeManifesto() {
     <aside className={styles.manifesto} aria-label="About this project">
       <span className={styles.manifestoKicker}>★ Completely Free & Open Source</span>
       <p className={styles.manifestoBody}>
-        No accounts. No ads. No server keeps your league data, only anonymized
-        error logs I use to fix bugs.
+        No accounts. No ads. No server keeps your league data. Google
+        Analytics counts page views, and anonymized error logs help me fix
+        bugs.
       </p>
       <p className={styles.manifestoBody}>
         Your credentials stay in your browser and are passed through to
         Sleeper, ESPN, or Yahoo to fetch your league. ESPN cookies clear when
         the tab closes; a Yahoo login is remembered on this device until you
         log out. Your last league ID is kept on this device so reconnecting
-        is one click.
+        is one click. The <a href={`${import.meta.env.BASE_URL}privacy`}>privacy page</a> has
+        the details.
       </p>
       <a
         className={styles.manifestoLink}

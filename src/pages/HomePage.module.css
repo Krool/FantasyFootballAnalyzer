@@ -463,3 +463,10 @@ a.feature:hover .featureIcon {
   .subtitle { font-size: 1rem; }
   .formTitle { font-size: 1.4rem; }
 }
+
+.manifestoBody a {
+  color: var(--lime);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.manifestoBody a:hover { color: var(--bone); }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense, type ReactNode } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate, Link, useNavigate, useLocation, useSearchParams, useParams } from 'react-router-dom';
 // Direct imports, not the '@/components' barrel: App is the always-mounted
 // shell, and a barrel import here would pull every component it re-exports
 // (and their data) into the eager entry chunk.
@@ -17,6 +17,8 @@ import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import { HomePage } from '@/pages/HomePage';
 import { ToolLanding } from '@/pages/ToolLanding';
 import { TOOL_LANDINGS } from '@/pages/toolLandings';
+import { LegalPage } from '@/pages/LegalPage';
+import { LEGAL_PAGES } from '@/pages/legalPages';
 import { posForSlug, labelForPos } from '@/data/rankingsVariants';
 import { Analytics } from '@/utils/analytics';
 import type { GuestDest } from '@/pages/GuestEntry';
@@ -116,6 +118,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/players': 'Player Journey',
   '/trade-analyzer': 'Trade Analyzer',
   '/draft-grades': 'Draft Grades',
+  '/privacy': 'Privacy',
+  '/terms': 'Terms',
 };
 
 // Draft-prep routes whose boards include Yahoo market data (ADP, auction
@@ -858,6 +862,10 @@ function App() {
           <Route path="/trade-analyzer" element={<ToolLanding content={TOOL_LANDINGS['trade-analyzer']} />} />
           <Route path="/draft-grades" element={<ToolLanding content={TOOL_LANDINGS['draft-grades']} />} />
 
+          {/* Privacy and terms: public, prerendered, linked from the footer. */}
+          <Route path="/privacy" element={<LegalPage content={LEGAL_PAGES.privacy} />} />
+          <Route path="/terms" element={<LegalPage content={LEGAL_PAGES.terms} />} />
+
           {/* Data pages need a real connection; guests get bounced to Rankings. */}
           <Route path="/draft" element={dataRoute(l => <DraftPage league={l} />)} />
           <Route path="/trades" element={dataRoute(l => <TradesPage league={l} />)} />
@@ -892,6 +900,10 @@ function App() {
                 <line x1="10" y1="14" x2="21" y2="3" />
               </svg>
             </a>
+          </p>
+          <p className="footer-legal">
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/terms">Terms</Link>
           </p>
           {/* Yahoo's API agreement requires this wherever its data shows:
               a Yahoo league, and the draft-prep boards, which carry Yahoo's
