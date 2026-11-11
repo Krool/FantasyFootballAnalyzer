@@ -17,7 +17,7 @@ platform APIs.
   math, positional-run and tier-break alerts, and an end-of-draft recap with
   instant grades
 - Live Sync pulls picks straight from a running Sleeper draft
-- Rankings: FantasyPros, ESPN, and Sleeper side by side, refreshed twice
+- Rankings: FantasyPros, ESPN, Sleeper, and Yahoo side by side, refreshed twice
   daily by a GitHub Action, with a target/avoid list that follows you into the draft,
   plus per-position views (`/rankings/qb` .. `/rankings/flex`)
 - Site Values: where each site's draft market disagrees with the consensus
