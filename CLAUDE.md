@@ -56,7 +56,9 @@ changes do. Two things keep that host to the functions (2026-11-10):
 `vercel.json`, `.vercelignore`, or `package*.json` changed since the last
 successful deployment, so the twice-daily data commit no longer redeploys the
 API. It fails open: if the previous SHA is missing or outside the shallow
-clone, the build runs. `/` on that host redirects to the real site.
+clone, the build runs. Keep the trailing `|| exit 1`: Vercel reads exit 0 as
+skip and 1 as build, and any other code (git's 128 on a branch with no earlier
+deployment) fails the deployment. `/` on that host redirects to the real site.
 
 ### Vercel environment
 

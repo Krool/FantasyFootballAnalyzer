@@ -1,7 +1,7 @@
 {
   "buildCommand": "echo 'Vercel hosts api/ only; frontend ships to gh-pages via CI'",
   "outputDirectory": ".",
-  "ignoreCommand": "git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- api vercel.json .vercelignore package.json package-lock.json",
+  "ignoreCommand": "git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- api vercel.json .vercelignore package.json package-lock.json || exit 1",
   "redirects": [
     { "source": "/", "destination": "https://fantasyfootballanalyzer.app/", "permanent": false }
   ],
