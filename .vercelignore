@@ -1,0 +1,20 @@
+# Vercel hosts the api/ functions only (see CLAUDE.md, "Deployment").
+# vercel.json sets outputDirectory to ".", so every file uploaded here would
+# also be served as a static file on the API host. Nothing in api/ reads any of
+# these at runtime: the functions import only ./_cors.js and fast-xml-parser.
+src
+docs
+data
+scripts
+extension
+public
+.github
+*.md
+index.html
+api/*.test.js
+eslint.config.js
+vite.config.ts
+tsconfig.json
+tsconfig.node.json
+.env.example
+.nvmrc
