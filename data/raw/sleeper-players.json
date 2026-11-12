@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-11-12T03:42:46.682Z",
+ "fetchedAt": "2026-11-12T18:40:55.357Z",
  "data": {
   "players": [
    {
@@ -196,7 +196,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 13,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "1592",
@@ -430,7 +430,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 11,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "2449",
@@ -690,7 +690,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 10,
-    "depthChartOrder": 2
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "3294",
@@ -1574,7 +1574,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 8,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "5012",
@@ -2175,19 +2175,6 @@
     "depthChartOrder": 2
    },
    {
-    "sleeperId": "6045",
-    "name": "Gary Jennings",
-    "pos": "WR",
-    "team": "LAC",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 7,
-    "depthChartOrder": null
-   },
-   {
     "sleeperId": "6083",
     "name": "Matt Gay",
     "pos": "K",
@@ -2692,7 +2679,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "6847",
@@ -3720,6 +3707,19 @@
     "injuryStartDate": null,
     "yearsExp": 5,
     "depthChartOrder": 2
+   },
+   {
+    "sleeperId": "7922",
+    "name": "Riley Patterson",
+    "pos": "K",
+    "team": "BAL",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 5,
+    "depthChartOrder": 1
    },
    {
     "sleeperId": "7933",
@@ -5130,7 +5130,7 @@
     "name": "Puka Nacua",
     "pos": "WR",
     "team": "LAR",
-    "status": "Inactive",
+    "status": "Active",
     "injuryStatus": "Out",
     "injuryBodyPart": "Knee - MCL",
     "injuryNotes": "Sprain",
@@ -5201,7 +5201,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "9504",
@@ -5214,7 +5214,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "9506",
@@ -5461,7 +5461,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 2
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "10219",
@@ -6800,7 +6800,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 2
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "11626",
@@ -6839,7 +6839,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "11629",
@@ -7308,6 +7308,19 @@
     "injuryStartDate": null,
     "yearsExp": 2,
     "depthChartOrder": 5
+   },
+   {
+    "sleeperId": "12015",
+    "name": "Harrison Mevis",
+    "pos": "K",
+    "team": "BAL",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 2,
+    "depthChartOrder": null
    },
    {
     "sleeperId": "12045",
@@ -7840,7 +7853,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "12497",
@@ -8373,7 +8386,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "12545",
@@ -8542,7 +8555,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 1
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "12713",
@@ -8984,7 +8997,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "12946",
@@ -9153,7 +9166,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "13079",
@@ -9426,7 +9439,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 3
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "13277",
