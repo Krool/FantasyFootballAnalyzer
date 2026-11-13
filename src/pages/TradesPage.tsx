@@ -25,7 +25,12 @@ export function TradesPage({ league }: TradesPageProps) {
         </div>
 
         {hasTrades ? (
-          <TradeTable trades={league.trades || []} teams={league.teams} />
+          <TradeTable
+            trades={league.trades || []}
+            teams={league.teams}
+            leagueName={league.name}
+            season={league.season}
+          />
         ) : (
           <div className={styles.empty}>
             <h2>No Trades Found</h2>

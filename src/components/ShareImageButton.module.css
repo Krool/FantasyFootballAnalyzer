@@ -1,0 +1,33 @@
+/* Same button as the Draft and Awards copy-image buttons. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 0.55rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--lime);
+  border: 2px solid var(--lime);
+  cursor: pointer;
+}
+.button:hover:not(:disabled) {
+  background: var(--lime);
+  color: var(--ink);
+}
+.button:disabled { opacity: 0.6; cursor: wait; }
+.icon { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* On a section heading: shorter, so it doesn't outweigh the title. Still a
+   comfortable thumb target. */
+.compact {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.66rem;
+  min-height: 2.25rem;
+}

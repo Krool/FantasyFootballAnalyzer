@@ -293,9 +293,38 @@
   border: 2px dashed var(--bone-dim);
 }
 
+/* Title + copy button on one line; the dashed rule moves to the row. */
+.sectionHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px dashed var(--bone-dim);
+}
+.sectionHead .sectionTitle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
 @media (max-width: 640px) {
   .title { font-size: 56px; }
+  .sectionTitle { font-size: 1.6rem; }
   .seasons { grid-template-columns: 1fr; }
+  /* Compact the leaderboard so record and win % fit beside the name. */
+  .tableWrapper { box-shadow: 3px 3px 0 var(--bone); }
+  .tableWrapper th,
+  .tableWrapper td {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+  .tableWrapper th { letter-spacing: 0.08em; font-size: 0.6rem; }
+  .tableWrapper td:nth-child(2) { white-space: normal; min-width: 7.5rem; }
+  .tableWrapper .teamName { font-size: 0.85rem; line-height: 1.2; }
   .standingRow {
     grid-template-columns: 1.6rem 1fr 3rem 3.8rem;
     font-size: 0.72rem;

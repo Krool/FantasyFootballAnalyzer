@@ -3,6 +3,8 @@ import type { Team, Transaction } from '@/types';
 import { NflTeamLabel } from './NflTeamLabel';
 import { PosBadge } from './PosBadge';
 import { TeamLink } from './TeamLink';
+import { ShareImageButton } from './ShareImageButton';
+import type { ShareBoardData } from '@/utils/shareBoard';
 import styles from './WaiverTable.module.css';
 
 interface WaiverTableProps {
@@ -10,6 +12,9 @@ interface WaiverTableProps {
   // What pointsSincePickup holds for this load (Yahoo only): real
   // since-pickup sums, or season totals standing in after a failed fetch.
   pointsBasis?: 'since-pickup' | 'season';
+  // For the share images' header.
+  leagueName?: string;
+  season?: number;
 }
 
 type SortField = 'week' | 'team' | 'player' | 'type' | 'points' | 'games' | 'ppg' | 'par';
@@ -32,7 +37,21 @@ interface WaiverPickup {
 // FLEX positions (RB/WR/TE)
 const FLEX_POSITIONS = ['RB', 'WR', 'TE'];
 
-export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
+// How many pickups the share image lists before it says "top N of M".
+const SHARE_ROWS = 25;
+
+const SORT_LABELS: Record<SortField, string> = {
+  par: 'PAR',
+  points: 'Points',
+  ppg: 'PPG',
+  games: 'Games',
+  week: 'Week',
+  player: 'Player',
+  team: 'Fantasy team',
+  type: 'Type / FAAB',
+};
+
+export function WaiverTable({ teams, pointsBasis, leagueName, season }: WaiverTableProps) {
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
   const [selectedPosition, setSelectedPosition] = useState<string>('all');
   // Default to PAR sorting since it's the most meaningful cross-position metric
@@ -272,6 +291,81 @@ export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
     };
   }, [displayPickups, selectedTeam, teamTotals]);
 
+  // ── Share images ──
+  const teamNameOf = (id: string) => teams.find(t => t.id === id)?.name ?? id;
+  const leaderboardRows = Array.from(teamTotals.entries()).sort((a, b) => b[1].par - a[1].par);
+  const anyFaab = leaderboardRows.some(([, d]) => d.faab > 0);
+  const typeText = (p: WaiverPickup) =>
+    (p.transaction.type === 'waiver' ? 'Waiver' : 'FA') +
+    (p.transaction.waiverBudgetSpent ? ` $${p.transaction.waiverBudgetSpent}` : '');
+  const sortOptions = (Object.keys(SORT_LABELS) as SortField[]).filter(
+    f => hasGamesData || (f !== 'games' && f !== 'ppg'),
+  );
+
+  const pickupsBoard = (): ShareBoardData | null => {
+    if (visiblePickups.length === 0) return null;
+    const rows = visiblePickups.slice(0, SHARE_ROWS);
+    const filters = [
+      selectedTeam !== 'all' ? teamNameOf(selectedTeam) : null,
+      selectedPosition === 'FLEX' ? 'RB/WR/TE' : selectedPosition !== 'all' ? selectedPosition : null,
+    ].filter(Boolean);
+    const count = visiblePickups.length > rows.length
+      ? `${rows.length} of ${visiblePickups.length} pickups`
+      : `${rows.length} pickup${rows.length === 1 ? '' : 's'}`;
+    return {
+      leagueName: leagueName ?? 'Waiver Wire',
+      season,
+      title: ['Pickups', ...filters].join(' · '),
+      slug: 'pickups',
+      footnote: `${count}, by ${SORT_LABELS[sortField]} ${sortDirection === 'asc' ? 'low to high' : 'high to low'}`,
+      tables: [{
+        columns: [
+          { label: 'Player', kind: 'team', max: 320 },
+          { label: 'PAR', align: 'right' },
+          { label: seasonFallback ? 'Season pts' : 'Pts', align: 'right' },
+          ...(hasGamesData ? [{ label: 'G', align: 'right' as const }, { label: 'PPG', align: 'right' as const }] : []),
+        ],
+        rows: rows.map(p => [
+          {
+            text: `${p.playerName}${p.pickupCount > 1 ? ` x${p.pickupCount}` : ''}`,
+            sub: [`${p.position} ${p.nflTeam || 'FA'}`, p.transaction.teamName, `Wk ${p.transaction.week}`, typeText(p)],
+          },
+          { text: signed1(p.par), tone: p.par > 20 ? 'lime' : p.par > 5 ? 'good' : p.par < 0 ? 'bad' : 'bone' },
+          p.totalPoints.toFixed(1),
+          ...(hasGamesData ? [String(p.gamesStarted), p.gamesStarted > 0 ? p.pointsPerGame.toFixed(1) : '-'] : []),
+        ]),
+      }],
+    };
+  };
+
+  const leaderboardBoard = (): ShareBoardData | null =>
+    leaderboardRows.length === 0
+      ? null
+      : {
+          leagueName: leagueName ?? 'Waiver Wire',
+          season,
+          title: 'Waiver leaderboard',
+          slug: 'waiver_leaderboard',
+          tables: [{
+            columns: [
+              { label: '#', align: 'right' },
+              { label: 'Team', kind: 'team' },
+              { label: 'Adds', align: 'right' },
+              ...(anyFaab ? [{ label: 'FAAB', align: 'right' as const }, { label: '$/PAR', align: 'right' as const }] : []),
+              { label: 'PAR', align: 'right' },
+            ],
+            rows: leaderboardRows.map(([id, d], i) => [
+              String(i + 1),
+              teamNameOf(id),
+              String(d.pickups),
+              ...(anyFaab
+                ? [d.faab > 0 ? `$${d.faab}` : '-', d.faab > 0 && d.par > 0 ? `$${(d.faab / d.par).toFixed(2)}` : '-']
+                : []),
+              { text: signed1(d.par), tone: d.par >= 0 ? 'lime' : 'terrible' },
+            ]),
+          }],
+        };
+
   return (
     <div className={styles.container}>
       <div className={styles.filters}>
@@ -314,6 +408,27 @@ export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
           </select>
         </div>
 
+        {/* Phones get the list view, which has no column heads to tap. */}
+        <div className={`${styles.filter} ${styles.mobileOnly}`}>
+          <label htmlFor="waiverSort" className={styles.filterLabel}>
+            Sort
+          </label>
+          <select
+            id="waiverSort"
+            className="input"
+            value={sortField}
+            onChange={(e) => {
+              const field = e.target.value as SortField;
+              setSortField(field);
+              setSortDirection(field === 'week' || field === 'player' || field === 'team' ? 'asc' : 'desc');
+            }}
+          >
+            {sortOptions.map(f => (
+              <option key={f} value={f}>{SORT_LABELS[f]}</option>
+            ))}
+          </select>
+        </div>
+
         <div className={styles.stats}>
           <div className={styles.stat}>
             <span className={styles.statLabel}>Total Pickups</span>
@@ -328,6 +443,17 @@ export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
             <span className={styles.statValue}>{totalPoints.toFixed(1)}</span>
           </div>
         </div>
+
+        {visiblePickups.length > 0 && (
+          <div className={styles.shareRow}>
+            <ShareImageButton
+              label="Pickups"
+              ariaLabel="Copy pickups image"
+              hint={`The top ${SHARE_ROWS} pickups as filtered and sorted here, as one image for the group chat`}
+              build={pickupsBoard}
+            />
+          </div>
+        )}
       </div>
 
       <div className={`${styles.tableWrapper} scroll-x-hint`}>
@@ -414,6 +540,45 @@ export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
         </table>
       </div>
 
+      <ul className={styles.mobileList}>
+        {visiblePickups.map((pickup) => (
+          <li key={`${pickup.transaction.teamId}-${pickup.playerId}`} className={styles.mobileRow}>
+            <div className={styles.mobileMain}>
+              <span className={styles.playerName}>
+                {pickup.playerName}
+                {pickup.pickupCount > 1 && (
+                  <span className={styles.pickupCount} title={`Picked up ${pickup.pickupCount} times`}>
+                    x{pickup.pickupCount}
+                  </span>
+                )}
+              </span>
+              <span className={styles.playerMeta}>
+                <PosBadge pos={pickup.position} /> <NflTeamLabel team={pickup.nflTeam} /> · Wk {pickup.transaction.week}
+              </span>
+              <span className={styles.mobileTeam}>
+                <TeamLink teamId={pickup.transaction.teamId} name={pickup.transaction.teamName} />
+              </span>
+            </div>
+            <div className={styles.mobileNums}>
+              <span className={`${styles.mobilePar} ${pickup.par > 20 ? 'grade-great' : pickup.par > 5 ? 'grade-good' : ''}`}>
+                {signed1(pickup.par)}
+                <span className={styles.mobileUnit}> PAR</span>
+              </span>
+              <span className={styles.mobileStat}>
+                {pickup.totalPoints.toFixed(1)} pts
+                {hasGamesData && pickup.gamesStarted > 0 && ` · ${pickup.gamesStarted}g · ${pickup.pointsPerGame.toFixed(1)}`}
+              </span>
+              <span className={`${styles.typeBadge} ${styles[pickup.transaction.type]}`}>
+                {pickup.transaction.type === 'waiver' ? 'Waiver' : 'FA'}
+                {pickup.transaction.waiverBudgetSpent !== undefined && pickup.transaction.waiverBudgetSpent > 0 && (
+                  <span className={styles.faabCost}>${pickup.transaction.waiverBudgetSpent}</span>
+                )}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+
       {unstartedCount > 0 && (
         <button type="button" className={styles.unstartedToggle} onClick={() => setShowUnstarted(v => !v)}>
           {showUnstarted
@@ -441,11 +606,18 @@ export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
 
       {selectedTeam === 'all' && teams.length > 0 && (
         <div className={styles.leaderboard}>
-          <h3 className={styles.leaderboardTitle}>Team Waiver Leaderboard (PAR)</h3>
+          <div className={styles.leaderboardHead}>
+            <h3 className={styles.leaderboardTitle}>Team Waiver Leaderboard (PAR)</h3>
+            <ShareImageButton
+              compact
+              label="Copy"
+              ariaLabel="Copy waiver leaderboard image"
+              hint="The waiver leaderboard as one image for the group chat"
+              build={leaderboardBoard}
+            />
+          </div>
           <div className={styles.leaderboardList}>
-            {Array.from(teamTotals.entries())
-              .sort((a, b) => b[1].par - a[1].par)
-              .map(([teamId, data], index) => {
+            {leaderboardRows.map(([teamId, data], index) => {
                 const team = teams.find(t => t.id === teamId);
                 return (
                   <div key={teamId} className={styles.leaderboardItem}>
@@ -470,4 +642,8 @@ export function WaiverTable({ teams, pointsBasis }: WaiverTableProps) {
       )}
     </div>
   );
+}
+
+function signed1(n: number): string {
+  return `${n >= 0 ? '+' : ''}${n.toFixed(1)}`;
 }

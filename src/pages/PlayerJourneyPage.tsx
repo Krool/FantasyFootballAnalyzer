@@ -4,6 +4,8 @@ import type { League, Player, DraftPick } from '@/types';
 import { NflTeamLabel, PosBadge } from '@/components';
 import { nflTeamInfo } from '@/data/nflTeams';
 import { AWARD_ICONS } from '@/utils/awardIcons';
+import { ShareImageButton } from '@/components/ShareImageButton';
+import type { BoardHeadline, BoardTable, ShareBoardData } from '@/utils/shareBoard';
 import styles from './PlayerJourneyPage.module.css';
 
 interface PlayerJourneyPageProps {
@@ -315,6 +317,70 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
     }
   };
 
+  // The selected player's journey as one image: what he cost, what he
+  // scored for whom, and every move.
+  const draftSlot = (pick: DraftPick) =>
+    pick.auctionValue
+      ? `$${pick.auctionValue}`
+      : `${pick.round}.${String(((pick.pickNumber - 1) % (league.totalTeams || 12)) + 1).padStart(2, '0')}`;
+  const journeyBoard = (): ShareBoardData | null => {
+    if (!selectedPlayer) return null;
+    const { player, draftPick, currentTeam, totalSeasonPoints, events } = selectedPlayer;
+    const headlines: BoardHeadline[] = [
+      ...(draftPick
+        ? [{
+            label: draftPick.auctionValue ? 'Auction price' : 'Draft pick',
+            name: draftPick.teamName,
+            value: draftSlot(draftPick),
+          }]
+        : []),
+      { label: 'Season pts', name: currentTeam?.name ?? 'Free agent', value: totalSeasonPoints?.toFixed(1) ?? '-', detail: currentTeam ? 'current team' : undefined },
+    ];
+    const tables: BoardTable[] = [
+      ...(stints.length > 0
+        ? [{
+            heading: 'Production by stint',
+            columns: [
+              { label: 'Team', kind: 'team' as const },
+              { label: 'Weeks', align: 'right' as const },
+              { label: 'PPG', align: 'right' as const },
+              { label: 'Pts', align: 'right' as const },
+            ],
+            rows: stints.map(st => [
+              st.teamName,
+              `W${st.fromWeek}${st.toWeek !== st.fromWeek ? `-W${st.toWeek}` : ''}`,
+              { text: st.ppg.toFixed(1), tone: 'lime' as const },
+              `${st.points.toFixed(1)} in ${st.games}`,
+            ]),
+          }]
+        : []),
+      ...(events.length > 0
+        ? [{
+            heading: 'Timeline',
+            columns: [
+              { label: 'Wk', align: 'right' as const },
+              { label: 'Move', max: 160 },
+              { label: 'Team', kind: 'team' as const, max: 280 },
+            ],
+            rows: events.map(e => [
+              e.week !== undefined && e.week > 0 ? String(e.week) : '-',
+              { text: getEventLabel(e.type).replace(/ by$| to$| from$/, ''), tone: e.type.endsWith('_drop') || e.type === 'traded_from' ? 'bad' as const : 'bone' as const },
+              { text: e.teamName, ...(e.details && { sub: e.details }) },
+            ]),
+          }]
+        : []),
+    ];
+    return {
+      leagueName: league.name,
+      season: league.season,
+      title: `${player.name} · ${player.position}${player.team ? ` ${player.team}` : ''}`,
+      slug: `journey_${player.name.replace(/[^a-z0-9]/gi, '_')}`,
+      headlines,
+      // A player with no moves and no weekly points still gets his tiles.
+      tables: tables.length > 0 ? tables : [{ columns: [{ label: 'Moves' }], rows: [['No transactions this season']] }],
+    };
+  };
+
   const getEventClass = (type: PlayerJourneyEvent['type']) => {
     switch (type) {
       case 'drafted': return styles.eventDrafted;
@@ -429,25 +495,28 @@ export function PlayerJourneyPage({ league }: PlayerJourneyPageProps) {
                       <NflTeamLabel team={selectedPlayer.player.team} size="sm" />
                     </span>
                   </div>
-                  {selectedPlayer.currentTeam && (
-                    <div className={styles.currentTeam}>
-                      <span className={styles.currentTeamLabel}>Current Team</span>
-                      <span className={styles.currentTeamName}>{selectedPlayer.currentTeam.name}</span>
-                    </div>
-                  )}
+                  <div className={styles.detailSide}>
+                    {selectedPlayer.currentTeam && (
+                      <div className={styles.currentTeam}>
+                        <span className={styles.currentTeamLabel}>Current Team</span>
+                        <span className={styles.currentTeamName}>{selectedPlayer.currentTeam.name}</span>
+                      </div>
+                    )}
+                    <ShareImageButton
+                      compact
+                      label="Copy"
+                      ariaLabel={`Copy ${selectedPlayer.player.name} journey image`}
+                      hint="This player's cost, production and moves as one image for the group chat"
+                      build={journeyBoard}
+                    />
+                  </div>
                 </div>
 
                 {/* Stats Summary */}
                 <div className={styles.statsSummary}>
                   {selectedPlayer.draftPick && (
                     <div className={styles.statCard}>
-                      <span className={styles.statValue}>
-                        {selectedPlayer.draftPick.auctionValue
-                          ? `$${selectedPlayer.draftPick.auctionValue}`
-                          : `${selectedPlayer.draftPick.round}.${String(
-                              ((selectedPlayer.draftPick.pickNumber - 1) % (league.totalTeams || 12)) + 1,
-                            ).padStart(2, '0')}`}
-                      </span>
+                      <span className={styles.statValue}>{draftSlot(selectedPlayer.draftPick)}</span>
                       <span className={styles.statLabel}>
                         {selectedPlayer.draftPick.auctionValue ? 'Auction Price' : 'Draft Pick'}
                       </span>

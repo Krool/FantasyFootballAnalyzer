@@ -118,15 +118,88 @@ describe('injuryLuck', () => {
     expect(b.valueLost).toBe(0);
   });
 
-  it('stops counting once the team drops him', () => {
-    const dropped = {
-      ...league,
-      teams: league.teams.map(t => t.id === 'A'
-        ? { ...t, transactions: [{ id: 'x', type: 'free_agent', timestamp: 0, week: 3, teamId: 'A', teamName: 'A', adds: [], drops: [star] }] }
-        : t),
-    } as League;
-    const a = injuryLuck(dropped, [1, 2, 3, 4], ctx).find(r => r.teamId === 'A')!;
+  // Team A cuts the star in `week` (a free-agent drop), optionally with
+  // different weekly points.
+  const cutIn = (week: number, points?: League['playerWeeklyPoints']) => ({
+    ...league,
+    ...(points && { playerWeeklyPoints: points }),
+    teams: league.teams.map(t => t.id === 'A'
+      ? { ...t, transactions: [{ id: 'x', type: 'free_agent', timestamp: 0, week, teamId: 'A', teamName: 'A', adds: [], drops: [star] }] }
+      : t),
+  }) as League;
+
+  // The injury report has the star out right now.
+  const starOut = { ...ctx, injuryNow: (p: Player) => (p.id === '1' ? { outNow: true, seasonEnding: true } : undefined) };
+
+  it('keeps counting after the team cuts him while he is out', () => {
+    // Hurt after W1, cut in W3 without playing again, still on IR: W2 and
+    // W3 both count (W4 is KC's bye). Cutting a torn ACL doesn't give the
+    // player back.
+    const a = injuryLuck(cutIn(3), [1, 2, 3, 4], starOut).find(r => r.teamId === 'A')!;
+    expect(a.gamesMissed).toBe(2);
+    expect(a.players[0]).toMatchObject({ name: 'P1', cutWhileOut: 3, seasonEnding: true });
+  });
+
+  it('stops at the cut when the injury report does not have him out', () => {
+    // Same weeks, but nothing on the report: a backup who stopped getting
+    // snaps reads the same in the games feed, so the cut ends it.
+    const a = injuryLuck(cutIn(3), [1, 2, 3, 4], ctx).find(r => r.teamId === 'A')!;
     expect(a.gamesMissed).toBe(1);
+    expect(a.players[0].cutWhileOut).toBeUndefined();
+  });
+
+  it('stops counting a cut player once he plays again', () => {
+    // Cut out in W3, back on the field W5, out again W6 (and on the report
+    // now): W6 is not A's loss.
+    const points = {
+      ...league.playerWeeklyPoints,
+      '1': { 1: 20, 5: 20 },
+      '2': { 1: 10, 2: 12, 3: 8, 5: 9, 6: 9 },
+      '3': { 1: 15, 2: 15, 3: 15, 4: 15, 5: 15, 6: 15 },
+    };
+    const a = injuryLuck(cutIn(3, points), [1, 2, 3, 4, 5, 6], starOut).find(r => r.teamId === 'A')!;
+    expect(a.gamesMissed).toBe(2);
+  });
+
+  it('stops counting at the cut when he was healthy and got hurt later', () => {
+    // Played W1-W3, cut in W3 (he played that week), sat W5: not A's loss.
+    const points = {
+      ...league.playerWeeklyPoints,
+      '1': { 1: 20, 2: 20, 3: 20 },
+      '2': { 1: 10, 2: 12, 3: 8, 5: 9 },
+      '3': { 1: 15, 2: 15, 3: 15, 4: 15, 5: 15 },
+    };
+    const a = injuryLuck(cutIn(3, points), [1, 2, 3, 4, 5], starOut).find(r => r.teamId === 'A')!;
+    expect(a.gamesMissed).toBe(0);
+  });
+
+  it('stops counting at a trade even when he was out', () => {
+    const traded = {
+      ...league,
+      trades: [{
+        id: 't', timestamp: 0, week: 3, status: 'completed',
+        teams: [
+          { teamId: 'A', teamName: 'A', playersReceived: [], playersSent: [star] },
+          { teamId: 'B', teamName: 'B', playersReceived: [star], playersSent: [] },
+        ],
+      }],
+    } as unknown as League;
+    const a = injuryLuck(traded, [1, 2, 3, 4], starOut).find(r => r.teamId === 'A')!;
+    expect(a.gamesMissed).toBe(1);
+    expect(a.players[0].cutWhileOut).toBeUndefined();
+  });
+
+  it('counts the week in progress for a player cut this week off the injury report', () => {
+    // Played W1-W3, hurt, cut in W4 while W4 is still in progress.
+    const points = { ...league.playerWeeklyPoints, '1': { 1: 20, 2: 20, 3: 20 } };
+    const out = { outNow: true, seasonEnding: true };
+    const a = injuryLuck(cutIn(4, points), [1, 2, 3], {
+      ...ctx,
+      currentWeek: 4,
+      injuryNow: p => (p.id === '1' ? out : undefined),
+    }).find(r => r.teamId === 'A')!;
+    expect(a.gamesMissed).toBe(1);
+    expect(a.players[0]).toMatchObject({ cutWhileOut: 4, outThisWeek: true, seasonEnding: true });
   });
 
   it('counts a played 0-point game as played when the gp feed is present', () => {

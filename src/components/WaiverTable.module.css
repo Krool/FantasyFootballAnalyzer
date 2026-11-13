@@ -289,6 +289,109 @@
   color: var(--lime);
 }
 
+/* ── Share + phone list ── */
+.shareRow {
+  display: flex;
+  align-self: center;
+}
+
+.leaderboardHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px dashed var(--bone-dim);
+}
+.leaderboardHead .leaderboardTitle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+/* Desktop keeps the sortable table; phones get a list (below). */
+.mobileOnly,
+.mobileList { display: none; }
+
+@media (max-width: 640px) {
+  .filter.mobileOnly { display: flex; }
+  .tableWrapper { display: none; }
+  .shareRow { align-self: stretch; }
+  .shareRow > button { flex: 1; }
+
+  /* One pickup per row: who and when on the left, what he returned on the
+     right, PAR biggest because it's what the list is sorted by. */
+  .mobileList {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--ink);
+    border: 2px solid var(--bone);
+    box-shadow: 3px 3px 0 var(--bone);
+  }
+  .mobileRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.7rem 0.8rem;
+    border-bottom: 1px dashed var(--rule);
+  }
+  .mobileRow:last-child { border-bottom: 0; }
+  .mobileMain {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+  .mobileMain .playerName { font-size: 0.98rem; line-height: 1.2; }
+  .mobileTeam {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 0.8rem;
+    color: var(--bone-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mobileNums {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .mobilePar {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--bone);
+  }
+  .mobileUnit {
+    font-size: 0.6rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    color: var(--bone-dim);
+  }
+  .mobileStat {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--bone-dim);
+    white-space: nowrap;
+  }
+  .mobileNums .typeBadge { padding: 0.15rem 0.4rem; font-size: 0.55rem; }
+  .mobileNums .faabCost { padding: 0 0.3rem; font-size: 0.62rem; }
+
+  .leaderboard { padding: 1rem 0.9rem 1.1rem; box-shadow: 3px 3px 0 var(--bone); }
+  .leaderboardTitle { font-size: 1.2rem; }
+  .leaderboardItem { padding: 0.6rem 0.7rem; }
+  .rank { font-size: 1.2rem; min-width: 30px; }
+}
+
 @media (max-width: 768px) {
   .filters { flex-direction: column; align-items: stretch; }
   .filter  { min-width: 100%; }

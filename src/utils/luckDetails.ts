@@ -230,6 +230,13 @@ export function summarizeScheduleSwap(swap: ScheduleSwap): ScheduleSwapSummary[]
 // hurt (or suspended, or holding out) before the season, which the drafter
 // knew or could have known; that's a draft call, not luck. The week in
 // progress counts when the injury report already has him out.
+//
+// Cutting him doesn't end the bill when he was out at the time: a team that
+// drops a torn ACL lost that player all the same, so his missed weeks keep
+// counting until he plays again. That needs the injury report to still have
+// him out (this season only; past seasons stop at the cut). A player cut
+// while healthy who gets hurt later is someone else's problem. Trades still
+// end it: the other side took the injury on and paid for it.
 
 // Sleeper's per-week `gp` flags (league.gamesPlayed). Structural so this file
 // doesn't depend on where the type lives.
@@ -254,6 +261,9 @@ export interface MissedPlayer {
   // The injury report calls it season-ending (ACL, Achilles, ...), so the
   // count will keep climbing.
   seasonEnding?: boolean;
+  // The week the team cut him while he was out. Weeks after it still count,
+  // up to his return.
+  cutWhileOut?: number;
 }
 
 export interface InjuryLuck {
@@ -281,18 +291,30 @@ export interface InjuryLuckContext {
   byeWeek?: (p: Player) => number | undefined;
 }
 
-// Week a team let the player go (drop or trade), or Infinity if he stayed.
-function releaseWeek(team: League['teams'][number], player: Player, trades: League['trades']): number {
+// Week a team let the player go, and how: a drop or a trade. Infinity if he
+// stayed. The week is the first one he was no longer on the roster.
+function release(
+  team: League['teams'][number],
+  player: Player,
+  trades: League['trades'],
+): { week: number; traded: boolean } {
   let week = Infinity;
+  let traded = false;
   for (const t of team.transactions ?? []) {
     if (t.drops.some(d => d.id === player.id)) week = Math.min(week, Math.max(1, t.week));
   }
   for (const trade of [...(trades ?? []), ...(team.trades ?? [])]) {
     if (trade.status !== 'completed') continue;
     const side = trade.teams.find(s => s.teamId === team.id);
-    if (side?.playersSent.some(p => p.id === player.id)) week = Math.min(week, Math.max(1, trade.week));
+    if (side?.playersSent.some(p => p.id === player.id)) {
+      const w = Math.max(1, trade.week);
+      if (w <= week) {
+        week = w;
+        traded = true;
+      }
+    }
   }
-  return week;
+  return { week, traded };
 }
 
 // Returns [] when there is no way to tell played weeks from missed ones (no
@@ -360,16 +382,30 @@ export function injuryLuck(
       const nflWeeks = p.team ? nflPlayed.get(p.team) : undefined;
       // No known NFL team means no bye to exclude; skip rather than guess.
       if (!played || !nflWeeks) continue;
-      const until = releaseWeek(team, p, league.trades);
       // Missing before his first game is a preseason absence, not luck.
       const firstPlayed = judged.find(w => played.has(w));
       if (firstPlayed === undefined) continue;
+      const injury = ctx.injuryNow?.(p);
+      const rel = release(team, p, league.trades);
+      let until = rel.week;
+      let cutWhileOut: number | undefined;
+      // Not playing isn't proof of an injury: a backup QB who never takes a
+      // snap reads the same in the games feed. So the count runs past a cut
+      // only while the injury report still has him out, and only if he also
+      // sat his NFL team's first game after the cut (none final yet means
+      // he was cut this week).
+      if (!rel.traded && rel.week !== Infinity && rel.week > firstPlayed && injury?.outNow) {
+        const nextGame = judged.find(w => w >= rel.week && nflWeeks.has(w));
+        if (nextGame === undefined || !played.has(nextGame)) {
+          cutWhileOut = rel.week;
+          until = judged.find(w => w >= rel.week && played.has(w)) ?? Infinity;
+        }
+      }
       let weeksMissed = 0;
       for (const w of judged) {
         if (w <= firstPlayed || w >= until || !nflWeeks.has(w)) continue;
         if (!played.has(w)) weeksMissed++;
       }
-      const injury = ctx.injuryNow?.(p);
       const cur = ctx.currentWeek;
       const outThisWeek =
         cur !== undefined &&
@@ -411,6 +447,7 @@ export function injuryLuck(
         valueLost: round1(valueLost),
         ...(outThisWeek && { outThisWeek: true }),
         ...(injury?.seasonEnding && { seasonEnding: true }),
+        ...(cutWhileOut !== undefined && { cutWhileOut }),
       });
     }
     players.sort((a, b) => b.valueLost - a.valueLost);

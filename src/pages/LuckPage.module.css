@@ -126,6 +126,43 @@
   border-bottom: 2px dashed var(--bone-dim);
 }
 
+/* Title + copy button on one line; the dashed rule moves to the row. */
+.sectionHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px dashed var(--bone-dim);
+}
+.sectionHead .sectionTitle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.howTo {
+  margin: -0.4rem 0 0.9rem;
+  font-size: 0.82rem;
+  color: var(--bone-dim);
+}
+.howTo summary {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+.howTo ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
 .table {
   overflow-x: auto;
   border: 2px solid var(--bone);
@@ -248,5 +285,74 @@
   .title { font-size: 56px; }
   .sectionTitle { font-size: 1.6rem; }
   .headlineValue { font-size: 1.6rem; }
-  .table th, .table td { padding: 0.55rem 0.65rem; font-size: 0.75rem; }
+  .headlines { grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 2.5rem; }
+  .headline { padding: 0.7rem 0.75rem 0.8rem; box-shadow: 3px 3px 0 var(--bone); }
+  .headlineTeam { font-size: 0.92rem; }
+  .headlineDetail { font-size: 0.7rem; }
+
+  /* Size to the content instead of a forced 640px, keep numbers on one
+     line, and pin the team column so a sideways scroll never loses whose
+     row it is. */
+  .table { box-shadow: 3px 3px 0 var(--bone); }
+  .table table { min-width: 0; }
+  .table th, .table td {
+    padding: 0.5rem 0.55rem;
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+  .table th { letter-spacing: 0.1em; font-size: 0.6rem; }
+  .table th:first-child,
+  .table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--ink);
+    box-shadow: 1px 0 0 var(--rule);
+    white-space: normal;
+    min-width: 7rem;
+    max-width: 8.5rem;
+  }
+  .teamName { font-size: 0.85rem; line-height: 1.2; }
+  .dim { margin-left: 0.25rem; }
+
+  /* Injury luck reads as a list on a phone: team, value lost and games on
+     one line, the players under it full width. */
+  .injuryTable thead { display: none; }
+  .injuryTable tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: baseline;
+    column-gap: 0.9rem;
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px dashed var(--rule);
+  }
+  .injuryTable tbody tr:last-child { border-bottom: 0; }
+  .injuryTable td,
+  .injuryTable td:first-child {
+    position: static;
+    display: block;
+    padding: 0;
+    border: 0;
+    max-width: none;
+    min-width: 0;
+    box-shadow: none;
+    background: none;
+  }
+  .injuryTable td[data-unit]::after {
+    content: ' ' attr(data-unit);
+    color: var(--bone-dim);
+    font-weight: 400;
+    font-size: 0.65rem;
+  }
+  .injuryTable td.who {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 0.45rem;
+    white-space: normal;
+    gap: 0.3rem 0.9rem;
+  }
+  .missed { white-space: normal; }
+  .table tbody tr:hover td:first-child { box-shadow: 1px 0 0 var(--rule); }
+  .injuryTable tbody tr:hover td:first-child { box-shadow: none; }
 }

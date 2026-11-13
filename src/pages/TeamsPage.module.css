@@ -32,6 +32,27 @@
   content: '▌ ';
 }
 
+/* Title + copy button side by side; on a phone the two-line title takes
+   the row and the button drops under it rather than sitting on the text. */
+.headerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.headerRow .title {
+  margin-bottom: 0;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -190,5 +211,25 @@
 @media (max-width: 640px) {
   .skillParts {
     display: none;
+  }
+  /* The name gets the room; the bar shrinks to a short gauge. At 28% the
+     name was cut to "McMahons…". */
+  .skillRow { gap: 0.6rem; padding: 0.45rem 0.6rem; }
+  .skillName { flex: 1 1 auto; font-size: 0.9rem; }
+  .skillBarTrack { flex: 0 0 3.5rem; }
+
+  /* Pin the row team so a sideways scroll keeps whose record it is. */
+  .matrix th[scope='row'] {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--ink);
+    box-shadow: 1px 0 0 var(--rule);
+  }
+  .matrix thead th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--ink);
   }
 }

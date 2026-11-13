@@ -25,6 +25,8 @@ export function WaiversPage({ league }: WaiversPageProps) {
           <WaiverTable
             teams={league.teams}
             pointsBasis={league.waiverPointsBasis}
+            leagueName={league.name}
+            season={league.season}
           />
         ) : (
           <div className={styles.empty}>

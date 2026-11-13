@@ -5,6 +5,8 @@ import type { League } from '@/types';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
 import { completedMatchups } from '@/utils/completedMatchups';
 import { managerScores } from '@/utils/managerScore';
+import { ShareImageButton } from '@/components/ShareImageButton';
+import type { BoardColumn, CellInput, ShareBoardData } from '@/utils/shareBoard';
 import { TeamDetail } from './TeamDetail';
 import styles from './TeamsPage.module.css';
 
@@ -101,6 +103,82 @@ export function TeamsPage({ league }: TeamsPageProps) {
   const shortName = (name: string) =>
     name.length > 10 ? `${name.slice(0, 9)}…` : name;
 
+  // ── Share images ──
+  const anyTies = sortedTeams.some(t => (t.ties ?? 0) > 0);
+  const anyPA = sortedTeams.some(t => (t.pointsAgainst ?? 0) > 0);
+  const anyLuck = luckByTeam.size > 0;
+  const skillOf = new Map(scores.map(s => [s.teamId, s.score]));
+  const standingsBoard = (): ShareBoardData => {
+    const columns: BoardColumn[] = [
+      { label: '#', align: 'right' },
+      { label: 'Team', kind: 'team' },
+      { label: 'Record', align: 'right' },
+      { label: 'PF', align: 'right' },
+      ...(anyPA ? [{ label: 'PA', align: 'right' as const }] : []),
+      ...(anyLuck ? [{ label: 'Luck', align: 'right' as const }] : []),
+      ...(scores.length > 0 ? [{ label: 'Skill', align: 'right' as const }] : []),
+    ];
+    return {
+      leagueName: league.name,
+      season: league.season,
+      title: 'Standings',
+      slug: 'standings',
+      footnote: scores.length > 0 ? 'Skill: draft, waivers, trades and all-play results, scored 0-100' : undefined,
+      tables: [{
+        columns,
+        rows: sortedTeams.map((t, i): CellInput[] => {
+          const luck = luckByTeam.get(t.id)?.luckScore;
+          const skill = skillOf.get(t.id);
+          return [
+            String(i + 1),
+            t.name,
+            `${t.wins ?? 0}-${t.losses ?? 0}${anyTies ? `-${t.ties ?? 0}` : ''}`,
+            (t.pointsFor ?? 0).toFixed(1),
+            ...(anyPA ? [(t.pointsAgainst ?? 0).toFixed(1)] : []),
+            ...(anyLuck
+              ? [luck === undefined
+                  ? { text: '-', tone: 'dim' as const }
+                  : {
+                      text: `${luck > 0 ? '+' : ''}${luck.toFixed(1)}`,
+                      tone: luck >= 1 ? ('good' as const) : luck <= -1 ? ('bad' as const) : ('dim' as const),
+                    }]
+              : []),
+            ...(scores.length > 0 ? [{ text: skill === undefined ? '-' : String(skill), tone: 'lime' as const }] : []),
+          ];
+        }),
+      }],
+    };
+  };
+  const gridBoard = (): ShareBoardData => ({
+    leagueName: league.name,
+    season: league.season,
+    title: 'Head-to-head',
+    slug: 'head_to_head',
+    footnote: 'Season records, row team vs column team',
+    tables: [{
+      // Columns go by row number: twelve team names across the top made
+      // the image too wide to read on a phone.
+      columns: [
+        { label: '#', align: 'right' },
+        { label: 'Team', kind: 'team', max: 240 },
+        ...sortedTeams.map((_, i) => ({ label: String(i + 1), align: 'center' as const })),
+      ],
+      rows: sortedTeams.map((row, ri) => [
+        { text: String(ri + 1), tone: 'dim' },
+        row.name,
+        ...sortedTeams.map((col): CellInput => {
+          if (row.id === col.id) return { text: '—', tone: 'dim' };
+          const cell = h2h.get(row.id)?.get(col.id);
+          if (!cell) return '';
+          return {
+            text: `${cell.w}-${cell.l}${cell.t ? `-${cell.t}` : ''}`,
+            tone: cell.w > cell.l ? 'lime' : cell.l > cell.w ? 'terrible' : 'dim',
+          };
+        }),
+      ]),
+    }],
+  });
+
   if (detailTeam) {
     return (
       <div className={styles.page}>
@@ -115,7 +193,15 @@ export function TeamsPage({ league }: TeamsPageProps) {
     <div className={styles.page}>
       <div className="container">
         <div className={styles.header}>
-          <h1 className={styles.title}>Team Overview</h1>
+          <div className={styles.headerRow}>
+            <h1 className={styles.title}>Team Overview</h1>
+            <ShareImageButton
+              label="Standings"
+              ariaLabel="Copy standings image"
+              hint="Standings with points, luck and skill score as one image for the group chat"
+              build={standingsBoard}
+            />
+          </div>
           <p className={styles.subtitle}>
             {league.totalTeams} teams in {league.name}
           </p>
@@ -177,8 +263,19 @@ export function TeamsPage({ league }: TeamsPageProps) {
 
         {h2h.size > 1 && (
           <section className={styles.matrixSection}>
-            <h2 className={styles.sectionTitle}>Head-to-Head Grid</h2>
-            <p className={styles.sectionHint}>Season records, row vs column.</p>
+            <div className={styles.sectionHead}>
+              <div>
+                <h2 className={styles.sectionTitle}>Head-to-Head Grid</h2>
+                <p className={styles.sectionHint}>Season records, row vs column.</p>
+              </div>
+              <ShareImageButton
+                compact
+                label="Copy"
+                ariaLabel="Copy head-to-head grid image"
+                hint="The head-to-head grid as one image for the group chat"
+                build={gridBoard}
+              />
+            </div>
             <div className={`${styles.matrixWrapper} scroll-x-hint`}>
               <table className={styles.matrix}>
                 <thead>

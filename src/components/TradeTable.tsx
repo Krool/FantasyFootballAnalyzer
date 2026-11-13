@@ -3,14 +3,22 @@ import type { Trade, Team } from '@/types';
 import { NflTeamLabel } from './NflTeamLabel';
 import { PosBadge } from './PosBadge';
 import { TeamLink } from './TeamLink';
+import { ShareImageButton } from './ShareImageButton';
+import type { BoardRow, ShareBoardData, Tone } from '@/utils/shareBoard';
 import styles from './TradeTable.module.css';
 
 interface TradeTableProps {
   trades: Trade[];
   teams: Team[];
+  // For the share images' header.
+  leagueName?: string;
+  season?: number;
 }
 
-export function TradeTable({ trades, teams }: TradeTableProps) {
+// Trades listed on one share image before it says "N of M".
+const SHARE_TRADES = 20;
+
+export function TradeTable({ trades, teams, leagueName, season }: TradeTableProps) {
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
 
   // Filter and sort trades
@@ -76,6 +84,86 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
     return 'Fair';
   };
 
+  const gradeTone = (netPAR: number): Tone =>
+    netPAR >= 20 ? 'lime' : netPAR >= 5 ? 'good' : netPAR <= -20 ? 'terrible' : netPAR <= -5 ? 'bad' : 'dim';
+  const signedPar = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}`;
+  const leaderboardRows = Array.from(teamStats.entries()).sort((a, b) => b[1].netPAR - a[1].netPAR);
+  const teamNameOf = (id: string) => teams.find(t => t.id === id)?.name || `Unknown team (#${id})`;
+
+  // Each trade is a block of rows, one per side, listing what that side
+  // received: in a two-team deal one side's "sent" is the other's
+  // "received", so the image doesn't print every asset twice.
+  const tradesBoard = (): ShareBoardData | null => {
+    if (displayTrades.length === 0) return null;
+    const shown = displayTrades.slice(0, SHARE_TRADES);
+    const filter = selectedTeam !== 'all' ? teamNameOf(selectedTeam) : null;
+    return {
+      leagueName: leagueName ?? 'Trades',
+      season,
+      title: filter ? `Trades · ${filter}` : 'Trades',
+      slug: 'trades',
+      footnote: displayTrades.length > shown.length
+        ? `${shown.length} of ${displayTrades.length} trades, newest first`
+        : 'Net points above replacement since the trade',
+      tables: [{
+        columns: [
+          { label: 'Wk', align: 'right' },
+          { label: 'Team / received', kind: 'team', max: 340 },
+          { label: 'Net PAR', align: 'right' },
+          { label: 'Verdict', align: 'right' },
+        ],
+        rows: shown.flatMap(trade =>
+          trade.teams.map((side, i): BoardRow => {
+            const net = side.netPAR ?? side.netValue;
+            const got = [
+              ...side.playersReceived.map(p => `${p.name} ${p.position}`),
+              ...(side.draftPicksReceived ?? []).map(pk => `${pk.season} R${pk.round} pick`),
+              ...((side.faabReceived ?? 0) > 0 ? [`$${side.faabReceived} FAAB`] : []),
+            ];
+            return {
+              divider: i === 0,
+              cells: [
+                i === 0
+                  ? { text: String(trade.week), tone: 'lime', ...(trade.status === 'vetoed' && { sub: 'vetoed', subTone: 'terrible' as const }) }
+                  : '',
+                {
+                  text: `${side.teamName}${trade.winner === side.teamId ? ' ★' : ''}`,
+                  sub: got.length > 0 ? got : 'nothing',
+                },
+                { text: signedPar(net), tone: net >= 0 ? 'lime' : 'terrible' },
+                { text: getTradeGradeText(net), tone: gradeTone(net) },
+              ],
+            };
+          }),
+        ),
+      }],
+    };
+  };
+
+  const leaderboardBoard = (): ShareBoardData | null =>
+    leaderboardRows.length === 0
+      ? null
+      : {
+          leagueName: leagueName ?? 'Trades',
+          season,
+          title: 'Trade leaderboard',
+          slug: 'trade_leaderboard',
+          tables: [{
+            columns: [
+              { label: '#', align: 'right' },
+              { label: 'Team', kind: 'team' },
+              { label: 'W-L-F', align: 'right' },
+              { label: 'Net PAR', align: 'right' },
+            ],
+            rows: leaderboardRows.map(([id, st], i) => [
+              String(i + 1),
+              teamNameOf(id),
+              `${st.wins}-${st.losses}-${st.fair}`,
+              { text: signedPar(st.netPAR), tone: st.netPAR >= 0 ? 'lime' : 'terrible' },
+            ]),
+          }],
+        };
+
   return (
     <div className={styles.container}>
       <div className={styles.filters}>
@@ -104,6 +192,17 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
             <span className={styles.statValue}>{displayTrades.length}</span>
           </div>
         </div>
+
+        {displayTrades.length > 0 && (
+          <div className={styles.shareRow}>
+            <ShareImageButton
+              label="Trades"
+              ariaLabel="Copy trades image"
+              hint="These trades and who won them as one image for the group chat"
+              build={tradesBoard}
+            />
+          </div>
+        )}
       </div>
 
       {displayTrades.length > 0 ? (
@@ -263,11 +362,18 @@ export function TradeTable({ trades, teams }: TradeTableProps) {
 
       {teams.length > 0 && trades.length > 0 && (
         <div className={styles.leaderboard}>
-          <h3 className={styles.leaderboardTitle}>Trade Performance Leaderboard (PAR)</h3>
+          <div className={styles.leaderboardHead}>
+            <h3 className={styles.leaderboardTitle}>Trade Performance Leaderboard (PAR)</h3>
+            <ShareImageButton
+              compact
+              label="Copy"
+              ariaLabel="Copy trade leaderboard image"
+              hint="The trade leaderboard as one image for the group chat"
+              build={leaderboardBoard}
+            />
+          </div>
           <div className={styles.leaderboardList}>
-            {Array.from(teamStats.entries())
-              .sort((a, b) => b[1].netPAR - a[1].netPAR)
-              .map(([teamId, stats], index) => {
+            {leaderboardRows.map(([teamId, stats], index) => {
                 const team = teams.find(t => t.id === teamId);
                 // teamId is internal (Sleeper roster id / ESPN team id); if the
                 // team isn't on the current roster (left the league mid-season,

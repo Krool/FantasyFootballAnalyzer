@@ -448,6 +448,62 @@
   .stats   { margin-left: 0; justify-content: space-between; }
 }
 
+/* ── Share ── */
+.shareRow {
+  display: flex;
+  align-self: center;
+}
+.leaderboardHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px dashed var(--bone-dim);
+}
+.leaderboardHead .leaderboardTitle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .shareRow { align-self: stretch; }
+  .shareRow > button { flex: 1; }
+
+  /* A side's "sent" is the other side's "received": on a phone the card
+     shows each asset once, under whoever got it. */
+  .sent { display: none; }
+  .tradeSide { padding: 0.85rem 0.9rem; }
+  .teamHeader { margin-bottom: 0.6rem; gap: 0.5rem; }
+  .tradeSide.winner .teamHeader { padding-top: 1rem; }
+  .tradeDetails { margin-bottom: 0.7rem; }
+  .player {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+  }
+  .playerMeta { white-space: nowrap; }
+  .pointsBreakdown { flex-direction: row; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.7rem; }
+  .pointItem { gap: 0.4rem; }
+  .pointItem.netValue { flex-basis: 100%; justify-content: space-between; margin-top: 0.15rem; }
+  .tradeDivider { padding: 0.2rem; }
+  .tradeCard { box-shadow: 3px 3px 0 var(--bone); }
+
+  /* Leaderboard rows wrap like the waiver leaderboard's: rank + name on
+     the first line, record + PAR on the second. */
+  .leaderboard { padding: 1rem 0.9rem 1.1rem; box-shadow: 3px 3px 0 var(--bone); }
+  .leaderboardTitle { font-size: 1.2rem; }
+  .leaderboardItem { flex-wrap: wrap; gap: 0.3rem 0.75rem; padding: 0.6rem 0.7rem; }
+  .rank { font-size: 1.2rem; min-width: 30px; }
+  .teamNameLb { flex: 1 1 calc(100% - 56px); min-width: 0; overflow-wrap: break-word; }
+  .netPointsLb { margin-left: auto; min-width: 0; font-size: 1.1rem; }
+}
+
 .vetoedTag {
   font-family: var(--font-mono);
   font-size: 0.62rem;

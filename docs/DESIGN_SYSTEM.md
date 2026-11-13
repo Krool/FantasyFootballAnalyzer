@@ -382,6 +382,33 @@ shadow:
 }
 ```
 
+**On a phone (≤640px)** a table must not hide its headline number off the
+right edge. In order of preference:
+- Put the column the table is sorted by right after the identity column.
+- Drop the desktop `min-width`, cut padding to ~0.5rem, `white-space: nowrap`
+  on cells, and pin the identity column (`position: sticky; left: 0` with a
+  solid `--ink` background) so a sideways scroll keeps whose row it is
+  (Luck tables, H2H grid).
+- A long record list becomes a list on phones: hide the table, render a
+  `mobileList` of two-sided rows (who/when left, numbers right) plus a Sort
+  select, since there are no column heads to tap (Waivers).
+- A row with a long free-text column becomes a grid row with that column
+  full-width underneath (Injury Luck).
+
+### Share images
+
+Every league page offers a copy-as-PNG button for the group chat:
+`<ShareImageButton label build={() => ShareBoardData} />`
+(`src/components/ShareImageButton.tsx`), drawn by `src/utils/shareBoard.ts`.
+The page hands over plain columns and rows; the renderer lays them out at a
+fixed width (560px minimum, 2x scale) that doesn't depend on the viewport, so
+a table that scrolls on a phone still lands whole. Pick the columns that
+matter for the image rather than mirroring the screen, put secondary detail
+in a cell's `sub` (wraps; a list wraps between items), and keep wide grids
+narrow (the H2H image numbers its columns instead of naming them). `build`
+runs at click time, so an image follows the page's current filters and sort.
+The Draft and Awards boards predate it and keep their own renderers.
+
 ### Sortable column headers
 
 ```css
@@ -632,6 +659,8 @@ These exist; reuse them instead of re-implementing:
   brand-tinted abbreviation with text fallback (`src/components/NflTeamLabel.tsx`)
 - `<TeamLink teamId name />` — fantasy team name linking to its hub page
   (`src/components/TeamLink.tsx`)
+- `<ShareImageButton label ariaLabel hint build compact? />`: copy a page's
+  tables as a PNG (`src/components/ShareImageButton.tsx`; see Share images)
 - `.skeleton` (global) — hard-edged loading block with a stepped shimmer;
   use for content-heavy loads instead of a bare spinner
 - `.visually-hidden` (global) — screen-reader-only content (aria-live

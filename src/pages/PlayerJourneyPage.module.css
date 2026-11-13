@@ -245,6 +245,15 @@ button.moreResults:hover {
 
 .detailInfo { display: flex; flex-direction: column; gap: 0.3rem; }
 
+/* Current team over the copy button, right-aligned. */
+.detailSide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
 .detailName {
   font-family: var(--font-headline);
   font-size: 2.2rem;
@@ -462,4 +471,11 @@ button.moreResults:hover {
 .stintTotal {
   font-size: 0.68rem;
   color: var(--bone-dim);
+}
+
+/* Phone: the stint's team takes its own line so the name isn't cut to
+   "Zesty …"; weeks, ppg and total sit under it. */
+@media (max-width: 640px) {
+  .stintRow { flex-wrap: wrap; gap: 0.2rem 0.8rem; padding: 0.45rem 0; }
+  .stintTeam { flex-basis: 100%; white-space: normal; }
 }

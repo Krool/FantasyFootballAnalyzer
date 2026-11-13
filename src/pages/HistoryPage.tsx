@@ -4,6 +4,8 @@ import { loadLeagueHistory as loadSleeperHistory, loadHeadToHeadRecords as loadS
 import { loadLeagueHistory as loadESPNHistory, loadHeadToHeadRecords as loadESPNH2H } from '@/api/espn';
 import { loadLeagueHistory as loadYahooHistory, loadHeadToHeadRecords as loadYahooH2H } from '@/api/yahoo';
 import { RivalryCard } from '@/components';
+import { ShareImageButton } from '@/components/ShareImageButton';
+import type { ShareBoardData } from '@/utils/shareBoard';
 import { AWARD_ICONS } from '@/utils/awardIcons';
 import { logger } from '@/utils/logger';
 import { loadESPNCredentials } from '@/utils/espnCredentials';
@@ -200,6 +202,61 @@ export function HistoryPage({ league }: HistoryPageProps) {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [league.teams]);
 
+  // All-time image: the champions roll, then the leaderboard.
+  const winPctOf = (t: { totalWins: number; totalLosses: number; totalTies: number }) => {
+    const games = t.totalWins + t.totalLosses + t.totalTies;
+    // Ties count as half a win, the standard convention.
+    return games > 0 ? (((t.totalWins + t.totalTies * 0.5) / games) * 100).toFixed(1) : '0.0';
+  };
+  const historyBoard = (): ShareBoardData | null => {
+    if (allTimeStats.length === 0) return null;
+    const champs = history.filter(s => s.championTeamId);
+    return {
+      leagueName: league.name,
+      title: `All-time · last ${history.length} season${history.length === 1 ? '' : 's'}`,
+      slug: 'all_time',
+      tables: [
+        ...(champs.length > 0
+          ? [{
+              heading: 'Champions',
+              columns: [
+                { label: 'Season', align: 'right' as const },
+                { label: 'Champion', kind: 'team' as const },
+                { label: 'Record', align: 'right' as const },
+              ],
+              rows: champs.map(s => {
+                const champ = s.teams.find(t => t.id === s.championTeamId);
+                return [
+                  { text: String(s.season), tone: 'lime' as const },
+                  champ?.name ?? '?',
+                  champ ? `${champ.wins}-${champ.losses}${champ.ties ? `-${champ.ties}` : ''}` : '-',
+                ];
+              }),
+            }]
+          : []),
+        {
+          heading: 'Leaderboard',
+          columns: [
+            { label: '#', align: 'right' },
+            { label: 'Team', kind: 'team' },
+            { label: 'Titles', align: 'right' },
+            { label: 'Record', align: 'right' },
+            { label: 'Win %', align: 'right' },
+            { label: 'Points', align: 'right' },
+          ],
+          rows: allTimeStats.map((t, i) => [
+            String(i + 1),
+            t.name,
+            t.championships > 0 ? { text: String(t.championships), tone: 'lime' } : { text: '-', tone: 'dim' },
+            `${t.totalWins}-${t.totalLosses}${t.totalTies > 0 ? `-${t.totalTies}` : ''}`,
+            `${winPctOf(t)}%`,
+            t.totalPointsFor.toFixed(1),
+          ]),
+        },
+      ],
+    };
+  };
+
   if (!supportsHistory) {
     return (
       <div className={styles.page}>
@@ -335,32 +392,37 @@ export function HistoryPage({ league }: HistoryPageProps) {
 
             {/* All-Time Leaderboard */}
             <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>
-                Leaderboard{' '}
-                <span className={styles.sectionQualifier}>
-                  last {history.length} season{history.length === 1 ? '' : 's'}
-                </span>
-              </h2>
+              <div className={styles.sectionHead}>
+                <h2 className={styles.sectionTitle}>
+                  Leaderboard{' '}
+                  <span className={styles.sectionQualifier}>
+                    last {history.length} season{history.length === 1 ? '' : 's'}
+                  </span>
+                </h2>
+                <ShareImageButton
+                  compact
+                  label="Copy"
+                  ariaLabel="Copy all-time leaderboard image"
+                  hint="Champions and the all-time leaderboard as one image for the group chat"
+                  build={historyBoard}
+                />
+              </div>
               <div className={`${styles.tableWrapper} scroll-x-hint`}>
                 <table className="table">
                   <thead>
                     <tr>
                       <th>Rank</th>
                       <th>Team</th>
-                      <th>Championships</th>
+                      <th>Titles</th>
                       <th>Record</th>
                       <th>Win %</th>
-                      <th>Total Points</th>
+                      <th>Points</th>
                       <th>Seasons</th>
                     </tr>
                   </thead>
                   <tbody>
                     {allTimeStats.map((team, index) => {
-                      const totalGames = team.totalWins + team.totalLosses + team.totalTies;
-                      // Ties count as half a win, the standard convention.
-                      const winPct = totalGames > 0
-                        ? ((team.totalWins + team.totalTies * 0.5) / totalGames * 100).toFixed(1)
-                        : '0.0';
+                      const winPct = winPctOf(team);
                       return (
                         <tr key={team.key} className={index < 3 ? styles.topThree : ''}>
                           <td className="font-mono">{index + 1}</td>

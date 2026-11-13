@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { League } from '@/types';
 import { calculateLuckMetrics, type LuckMetrics, type MatchupData } from '@/utils/luck';
@@ -11,6 +11,9 @@ import {
 } from '@/utils/luckDetails';
 import { TeamLink, LuckIcon } from '@/components';
 import { leagueInjuryLuck } from '@/utils/leagueInjuryLuck';
+import type { MissedPlayer } from '@/utils/luckDetails';
+import { ShareImageButton } from '@/components/ShareImageButton';
+import type { BoardHeadline, BoardTable, ShareBoardData, Tone } from '@/utils/shareBoard';
 import styles from './LuckPage.module.css';
 
 interface LuckPageProps {
@@ -80,6 +83,110 @@ export function LuckPage({ league }: LuckPageProps) {
   const anyLuckySplits = pa.some(m => m.unluckyLosses + m.luckyWins > 0);
   const showSwap = weeks.length >= 2 && teamIds.length >= 3;
   const showInjuries = injuries.some(i => i.gamesMissed > 0);
+  const injuriesByLoss = [...injuries].sort((a, b) => b.valueLost - a.valueLost);
+  const swapRows = [...swapSummary].sort((a, b) => b.betterCount - a.betterCount || a.worseCount - b.worseCount);
+
+  // ── Share images: one per section, built from the same numbers ──
+  const board = (title: string, slug: string, tables: BoardTable[], headlines?: BoardHeadline[]): ShareBoardData => ({
+    leagueName: league.name,
+    season: league.season,
+    title: `${title} · ${weeks.length} week${weeks.length === 1 ? '' : 's'} final`,
+    slug,
+    tables,
+    headlines,
+  });
+  const recordOf = (m: LuckMetrics) => `${m.actualWins}-${m.actualLosses}${anyTies ? `-${m.actualTies}` : ''}`;
+  const headlineCards = (): BoardHeadline[] => {
+    const cards: BoardHeadline[] = [];
+    if (luckiest.luckScore > 0) {
+      cards.push({ label: 'Luckiest', name: luckyTie.map(m => m.teamName).join(', '), value: signed(luckiest.luckScore), detail: 'wins over expected' });
+    }
+    if (unluckiest.luckScore < 0) {
+      cards.push({ label: 'Unluckiest', name: unluckyTie.map(m => m.teamName).join(', '), value: signed(unluckiest.luckScore), detail: 'wins under expected' });
+    }
+    if (toughest) {
+      cards.push({ label: 'Toughest schedule', name: nameOf(toughest.teamId), value: toughest.pointsAgainst.toFixed(1), detail: `points against, ${signed(toughest.paVsLeague)}/game vs avg` });
+    }
+    return cards;
+  };
+  const luckBoard = () =>
+    board('Luck', 'luck', [{
+      columns: [
+        { label: 'Team', kind: 'team' },
+        { label: 'Luck', align: 'right' },
+        { label: 'Record', align: 'right' },
+        { label: 'Expected', align: 'right' },
+        { label: 'All-play', align: 'right' },
+        ...(anyCloseGames ? [{ label: 'Close', align: 'right' as const }] : []),
+      ],
+      rows: byLuck.map(m => [
+        m.teamName,
+        { text: signed(m.luckScore), tone: luckTone(m.luckScore) },
+        recordOf(m),
+        m.expectedWins.toFixed(1),
+        `${m.allPlayWins}-${m.allPlayLosses}`,
+        ...(anyCloseGames ? [m.closeWins + m.closeLosses > 0 ? `${m.closeWins}-${m.closeLosses}` : '-'] : []),
+      ]),
+    }], headlineCards());
+  const paBoard = () =>
+    board('Points Against', 'points_against', [{
+      note: '"Above norm": how much better opponents scored against you than their own average.',
+      columns: [
+        { label: 'Team', kind: 'team' },
+        { label: 'PA', align: 'right' },
+        { label: 'Vs avg', align: 'right' },
+        { label: 'Above norm', align: 'right' },
+        { label: 'Faced top', align: 'right' },
+        ...(anyLuckySplits ? [{ label: 'Bad L / Lucky W', align: 'right' as const }] : []),
+      ],
+      rows: [...pa].sort((a, b) => a.paRank - b.paRank).map(m => [
+        nameOf(m.teamId),
+        m.pointsAgainst.toFixed(1),
+        { text: signed(m.paVsLeague), tone: m.paVsLeague > 0 ? 'terrible' : m.paVsLeague < 0 ? 'good' : 'dim' },
+        { text: signed(m.oppAboveNorm), tone: m.oppAboveNorm > 0 ? 'terrible' : m.oppAboveNorm < 0 ? 'good' : 'dim' },
+        m.facedTopScore > 0 ? String(m.facedTopScore) : '-',
+        ...(anyLuckySplits ? [`${m.unluckyLosses} / ${m.luckyWins}`] : []),
+      ]),
+    }]);
+  const swapBoard = () =>
+    board('Schedule Swap', 'schedule_swap', [{
+      note: 'Your weekly scores replayed against every other team\'s schedule.',
+      columns: [
+        { label: 'Team', kind: 'team' },
+        { label: 'Actual', align: 'right' },
+        { label: 'Best', max: 210 },
+        { label: 'Worst', max: 210 },
+        { label: 'Better elsewhere', align: 'right' },
+      ],
+      rows: swapRows.map(s => [
+        nameOf(s.teamId),
+        fmtRecord(s.actual),
+        s.best.scheduleOf === s.teamId
+          ? { text: 'their own', tone: 'dim' }
+          : { text: fmtRecord(s.best.record), sub: nameOf(s.best.scheduleOf) },
+        s.worst.scheduleOf === s.teamId
+          ? { text: 'their own', tone: 'dim' }
+          : { text: fmtRecord(s.worst.record), sub: nameOf(s.worst.scheduleOf) },
+        {
+          text: `${s.betterCount} of ${s.others}`,
+          tone: s.betterCount > s.others / 2 ? 'terrible' : s.worseCount > s.others / 2 ? 'good' : 'bone',
+        },
+      ]),
+    }]);
+  const injuryBoard = () =>
+    board('Injury Luck', 'injury_luck', [{
+      note: INJURY_NOTE,
+      columns: [
+        { label: 'Team', kind: 'team', max: 380 },
+        { label: 'Lost', align: 'right' },
+        { label: 'Games', align: 'right' },
+      ],
+      rows: injuriesByLoss.map(i => [
+        { text: nameOf(i.teamId), sub: i.players.map(p => `${p.name} ${p.weeksMissed}g -${p.valueLost.toFixed(1)}${p.cutWhileOut ? ' (cut)' : ''}`) },
+        i.valueLost > 0 ? { text: `-${i.valueLost.toFixed(1)}`, tone: 'terrible' } : { text: '-', tone: 'dim' },
+        { text: String(i.gamesMissed), tone: i.gamesMissed > 0 ? 'bone' : 'dim' },
+      ]),
+    }]);
 
   return (
     <div className={styles.luckPage}>
@@ -139,7 +246,15 @@ export function LuckPage({ league }: LuckPageProps) {
         </div>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Luck Table</h2>
+          <SectionHead title="Luck Table">
+            <ShareImageButton
+              compact
+              label="Copy"
+              ariaLabel="Copy luck table image"
+              hint="The luck table and headlines as one image for the group chat"
+              build={luckBoard}
+            />
+          </SectionHead>
           <p className={styles.note}>
             Expected wins: one for every week you outscored the league median.
             Luck is actual wins minus that.
@@ -149,9 +264,9 @@ export function LuckPage({ league }: LuckPageProps) {
               <thead>
                 <tr>
                   <th scope="col">Team</th>
+                  <th scope="col">Luck</th>
                   <th scope="col">Record</th>
                   <th scope="col">Expected</th>
-                  <th scope="col">Luck</th>
                   <th scope="col" title="Points-for rank vs wins rank: scoring like the #2 team while sitting #7 in wins is the schedule's fault">
                     PF vs W
                   </th>
@@ -167,14 +282,14 @@ export function LuckPage({ league }: LuckPageProps) {
                     <td className={styles.teamName}>
                       <TeamLink teamId={m.teamId} name={m.teamName} />
                     </td>
+                    <td className={getLuckClass(m.luckScore)}>
+                      {signed(m.luckScore)} <LuckIcon rating={m.luckRating} />
+                    </td>
                     <td>
                       {m.actualWins}-{m.actualLosses}
                       {anyTies && `-${m.actualTies}`}
                     </td>
                     <td>{m.expectedWins.toFixed(1)}</td>
-                    <td className={getLuckClass(m.luckScore)}>
-                      {signed(m.luckScore)} <LuckIcon rating={m.luckRating} />
-                    </td>
                     <td title={`Ranked #${m.pointsForRank} in scoring, #${m.winsRank} in wins`}>
                       #{m.pointsForRank} / #{m.winsRank}
                       {m.rankDifference !== 0 && (
@@ -207,7 +322,15 @@ export function LuckPage({ league }: LuckPageProps) {
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Points Against</h2>
+          <SectionHead title="Points Against">
+            <ShareImageButton
+              compact
+              label="Copy"
+              ariaLabel="Copy points against image"
+              hint="Points against as one image for the group chat"
+              build={paBoard}
+            />
+          </SectionHead>
           <p className={styles.note}>
             What your opponents put up. "Above norm" is how much better they
             scored against you than they did on average all season.
@@ -275,7 +398,15 @@ export function LuckPage({ league }: LuckPageProps) {
 
         {showSwap && (
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Schedule Swap</h2>
+            <SectionHead title="Schedule Swap">
+              <ShareImageButton
+                compact
+                label="Copy"
+                ariaLabel="Copy schedule swap image"
+                hint="Best and worst schedules as one image for the group chat"
+                build={swapBoard}
+              />
+            </SectionHead>
             <p className={styles.note}>
               Your weekly scores, replayed against every other team's
               schedule. Head-to-head games only.
@@ -294,9 +425,7 @@ export function LuckPage({ league }: LuckPageProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {[...swapSummary]
-                    .sort((a, b) => b.betterCount - a.betterCount || a.worseCount - b.worseCount)
-                    .map(s => (
+                  {swapRows.map(s => (
                       <tr key={s.teamId}>
                         <td className={styles.teamName}>
                           <TeamLink teamId={s.teamId} name={nameOf(s.teamId)} />
@@ -373,55 +502,64 @@ export function LuckPage({ league }: LuckPageProps) {
 
         {showInjuries && (
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Injury Luck</h2>
-            <p className={styles.note}>
-              Weeks a drafted player sat out (byes excluded) while still on the
-              roster, priced at what he scores per game above a replacement-level
-              pickup at his position. A player no better than the waiver wire
-              costs nothing when he sits; a stud costs the gap. Only weeks after
-              his first game count: a player drafted while already hurt (or
-              suspended, or holding out) was a draft call, not bad luck. The week
-              in progress counts once the injury report has him out.
-            </p>
-            <div className={`${styles.table} scroll-x-hint`}>
+            <SectionHead title="Injury Luck">
+              <ShareImageButton
+                compact
+                label="Copy"
+                ariaLabel="Copy injury luck image"
+                hint="Injury luck as one image for the group chat"
+                build={injuryBoard}
+              />
+            </SectionHead>
+            <p className={styles.note}>{INJURY_NOTE}</p>
+            <details className={styles.howTo}>
+              <summary>How it's counted</summary>
+              <ul>
+                <li>Byes don't count, and neither do weeks before his first game: drafting a player who was already hurt or suspended was a draft call.</li>
+                <li>Cutting him doesn't stop the count while the injury report still has him out; it runs until he plays again. A player cut healthy, or traded away, stops counting.</li>
+                <li>The week in progress counts once the injury report has him out.</li>
+              </ul>
+            </details>
+            <div className={`${styles.table} ${styles.injuryTable} scroll-x-hint`}>
               <table>
                 <thead>
                   <tr>
                     <th scope="col">Team</th>
-                    <th scope="col" title="Weeks missed by players worth more than replacement">Games Missed</th>
                     <th scope="col" title="Points over replacement those games would have been worth">Value Lost</th>
+                    <th scope="col" title="Weeks missed by players worth more than replacement">Games</th>
                     <th scope="col">Who</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[...injuries]
-                    .sort((a, b) => b.valueLost - a.valueLost)
-                    .map(i => (
-                      <tr key={i.teamId}>
-                        <td className={styles.teamName}>
-                          <TeamLink teamId={i.teamId} name={nameOf(i.teamId)} />
-                        </td>
-                        <td>{i.gamesMissed > 0 ? i.gamesMissed : <span className={styles.dim}>0</span>}</td>
-                        <td className={i.valueLost > 0 ? styles.bad : undefined}>
-                          {i.valueLost > 0 ? i.valueLost.toFixed(1) : <span className={styles.dim}>-</span>}
-                        </td>
-                        <td className={styles.who}>
-                          {i.players.length === 0 ? (
-                            <span className={styles.dim}>Nothing lost</span>
-                          ) : (
-                            i.players.map(p => (
-                              <span
-                                key={p.name}
-                                className={styles.missed}
-                                title={`${p.perGame.toFixed(1)} per game vs ${p.replacementPerGame.toFixed(1)} replacement: ${p.valueLost.toFixed(1)} lost over ${p.weeksMissed} game${p.weeksMissed === 1 ? '' : 's'}${p.outThisWeek ? ', including this week (ruled out on the injury report)' : ''}`}
-                              >
-                                {p.name} <span className={styles.dim}>{p.position} · {p.weeksMissed}g · -{p.valueLost.toFixed(1)}{p.seasonEnding ? ' · out for season' : ''}</span>
+                  {injuriesByLoss.map(i => (
+                    <tr key={i.teamId}>
+                      <td className={styles.teamName}>
+                        <TeamLink teamId={i.teamId} name={nameOf(i.teamId)} />
+                      </td>
+                      <td className={i.valueLost > 0 ? styles.bad : undefined} data-unit="lost">
+                        {i.valueLost > 0 ? i.valueLost.toFixed(1) : <span className={styles.dim}>-</span>}
+                      </td>
+                      <td data-unit={i.gamesMissed === 1 ? 'game' : 'games'}>
+                        {i.gamesMissed > 0 ? i.gamesMissed : <span className={styles.dim}>0</span>}
+                      </td>
+                      <td className={styles.who}>
+                        {i.players.length === 0 ? (
+                          <span className={styles.dim}>Nothing lost</span>
+                        ) : (
+                          i.players.map(p => (
+                            <span key={p.name} className={styles.missed} title={missedTitle(p)}>
+                              {p.name}{' '}
+                              <span className={styles.dim}>
+                                {p.position} · {p.weeksMissed}g · -{p.valueLost.toFixed(1)}
+                                {p.cutWhileOut !== undefined && ` · cut wk ${p.cutWhileOut}`}
+                                {p.seasonEnding && ' · out for season'}
                               </span>
-                            ))
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                            </span>
+                          ))
+                        )}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -473,6 +611,37 @@ function Headline({ label, teamId, name, teams, value, detail }: {
       <span className={styles.headlineDetail}>{detail}</span>
     </div>
   );
+}
+
+const INJURY_NOTE =
+  'Games your drafted players missed, priced at their points per game over a waiver-wire pickup. A star sitting costs the gap; a backup costs nothing.';
+
+function missedTitle(p: MissedPlayer): string {
+  const games = `${p.weeksMissed} game${p.weeksMissed === 1 ? '' : 's'}`;
+  return (
+    `${p.perGame.toFixed(1)} per game vs ${p.replacementPerGame.toFixed(1)} replacement: ` +
+    `${p.valueLost.toFixed(1)} lost over ${games}` +
+    (p.cutWhileOut !== undefined ? `, still counting after the week ${p.cutWhileOut} cut: he was out when cut and the injury report still has him out` : '') +
+    (p.outThisWeek ? ', including this week (ruled out on the injury report)' : '')
+  );
+}
+
+// Section title with a copy button on the same line.
+function SectionHead({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className={styles.sectionHead}>
+      <h2 className={styles.sectionTitle}>{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function luckTone(luckScore: number): Tone {
+  if (luckScore >= 2) return 'lime';
+  if (luckScore >= 1) return 'good';
+  if (luckScore <= -2) return 'terrible';
+  if (luckScore <= -1) return 'bad';
+  return 'dim';
 }
 
 function getLuckClass(luckScore: number): string {
