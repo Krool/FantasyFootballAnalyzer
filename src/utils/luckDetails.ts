@@ -225,7 +225,7 @@ export function summarizeScheduleSwap(swap: ScheduleSwap): ScheduleSwapSummary[]
 // week is priced at max(0, his per-game rate - replacement per game at his
 // position). A sub-replacement player missing time costs nothing (you'd have
 // streamed that slot anyway); a stud missing time costs the gap. His rate
-// mixes in his preseason projection (blendedPerGame) so a short, injury-
+// mixes in his projection (blendedPerGame) so a short, injury-
 // shortened sample doesn't make a star look like a backup.
 //
 // Only weeks after his first game count. A player who hadn't played yet was
@@ -248,7 +248,7 @@ export interface GamesPlayedLike {
   bySleeperId: Record<string, number[]>;
 }
 
-// How many games his preseason projection counts as when it's mixed into
+// How many games his projection counts as when it's mixed into
 // his real per-game rate (see blendedPerGame). Same weight the draft grades
 // give it (seasonOutlook's PACE_PRIOR_GAMES), so a player's rate reads the
 // same on both pages; a test pins the two together. Not imported: that
@@ -258,7 +258,7 @@ export const PROJECTION_WEIGHT_GAMES = 3;
 // The rate a missed game is priced at. A few real games are a noisy read:
 // the game he got hurt in is often a partial one (Achane's 2026 rate came
 // out 7.0 a game off three games, one of them his ACL), which priced a $53
-// back's season-ending injury below a one-week absence. So his preseason
+// back's season-ending injury below a one-week absence. So his
 // projection counts as PROJECTION_WEIGHT_GAMES extra games: three games in,
 // it's half the rate; nine games in, a quarter. With no projection (past
 // seasons) it's his actual rate; with no games, the projection alone.
@@ -277,7 +277,7 @@ export interface MissedPlayer {
   position: string;
   weeksMissed: number;
   // The rate each missed game is priced at: his real per game (0-point
-  // games included) blended with his preseason projection.
+  // games included) blended with his projection (Sleeper's weekly projections, averaged over the weeks he was expected to play).
   perGame: number;
   // The two inputs to perGame, for the tooltip.
   gamesPlayed?: number;

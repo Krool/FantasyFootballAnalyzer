@@ -517,7 +517,7 @@ export function LuckPage({ league }: LuckPageProps) {
               <ul>
                 <li>Byes don't count, and neither do weeks before his first game: drafting a player who was already hurt or suspended was a draft call.</li>
                 <li>Cutting him doesn't stop the count while the injury report still has him out; it runs until he plays again. A player cut healthy, or traded away, stops counting.</li>
-                <li>A player's per-game value mixes what he's scored with his preseason projection, which counts as three games. A few games, one of them cut short by the injury, can't make a star look like a backup; the more he plays, the more it's his real scoring.</li>
+                <li>A player's per-game value mixes what he's scored with what he was projected to score in the weeks he was expected to play, the projection counting as three games. A few games, one of them cut short by the injury, can't make a star look like a backup; the more he plays, the more it's his real scoring.</li>
                 <li>The week in progress counts once the injury report has him out.</li>
               </ul>
             </details>
