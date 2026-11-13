@@ -673,7 +673,7 @@ draft pool's stable id scheme does.
 |---------|-------------|-------------|---------------|
 | Passing yards | `pass_yd` | 3 | 4 |
 | Passing TDs | `pass_td` | 4 | 5 |
-| Interceptions | `pass_int` | 1 | 6 |
+| Interceptions | `pass_int` | 20 | 6 |
 | Rushing yards | `rush_yd` | 24 | 9 |
 | Rushing TDs | `rush_td` | 25 | 10 |
 | Receptions | `rec` | 53 | 11 |
@@ -682,7 +682,11 @@ draft pool's stable id scheme does.
 | Fumbles lost | `fum_lost` | 72 | 18 |
 
 (Yahoo scoring lives in `stat_categories`/`stat_modifiers` on league settings;
-reception detection in our adapter keys on stat id 11. Yahoo ids checked
+reception detection in our adapter keys on stat id 11. ESPN ids checked
+2026-11-13 against ESPN's own scoring templates
+(`.../seasons/<yr>/segments/0/leaguedefaults/{1,3}?view=mSettings`: the PPR
+template differs from standard only by statId 53 = 1); interceptions are
+statId 20, not 1 as this table used to say. Yahoo ids checked
 2026-11-13 against the token-free
 `pub-api-ro.fantasysports.yahoo.com/fantasy/v2/game/nfl/stat_categories`.
 This table used to say receptions were 21, which is Field Goals 30-39 Yards;
