@@ -10,7 +10,7 @@ import { injuryLuck, type InjuryLuck } from './luckDetails';
 import { indexPool, resolvePoolPlayer } from './consensusGrade';
 import { projectedPoints } from './projectionValues';
 import { DEFAULT_ROSTER_SLOTS, replacementPerGame } from './projectedRoster';
-import { injuryOf } from './seasonOutlook';
+import { OUTLOOK_WEEKS, injuryOf } from './seasonOutlook';
 
 // `weeks`: the finished weeks to judge (from completedMatchups()).
 export function leagueInjuryLuck(league: League, weeks: number[]): InjuryLuck[] {
@@ -23,6 +23,17 @@ export function leagueInjuryLuck(league: League, weeks: number[]): InjuryLuck[] 
     currentWeek: thisSeason && league.status === 'live' ? league.currentWeek : undefined,
     injuryNow: p => (thisSeason ? injuryOf(pooled(p)) : undefined),
     byeWeek: p => (thisSeason ? pooled(p)?.bye ?? undefined : undefined),
+    // Sleeper's weekly projections, refreshed twice daily, zero the weeks a
+    // hurt player is expected to sit (and his bye, which injuryLuck skips
+    // first). The same curve the draft grades read his return week from.
+    projectedOut: (p, week) => {
+      if (!thisSeason || WEEKLY_SHAPE.season !== league.season) return undefined;
+      const pl = pooled(p);
+      const curve = pl ? WEEKLY_SHAPE.players[pl.id] : undefined;
+      if (!curve || curve.length < week) return undefined;
+      return curve[week - 1] <= 0;
+    },
+    seasonEndWeek: OUTLOOK_WEEKS,
     replacementPerGame: replacementPerGame(
       POOL,
       league.rosterSlots ?? DEFAULT_ROSTER_SLOTS,

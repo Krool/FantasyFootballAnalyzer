@@ -239,6 +239,11 @@ export function summarizeScheduleSwap(swap: ScheduleSwap): ScheduleSwapSummary[]
 // him out (this season only; past seasons stop at the cut). A player cut
 // while healthy who gets hurt later is someone else's problem. Trades still
 // end it: the other side took the injury on and paid for it.
+//
+// Known absences ahead count too (weeksAhead): a player out now costs every
+// upcoming week Sleeper projects him to sit, through his projected return
+// or the end of the season for a season-ending injury, at the same rate.
+// As those weeks are played they move from "ahead" to "missed".
 
 // Sleeper's per-week `gp` flags (league.gamesPlayed). Structural so this file
 // doesn't depend on where the type lives.
@@ -294,12 +299,19 @@ export interface MissedPlayer {
   // The week the team cut him while he was out. Weeks after it still count,
   // up to his return.
   cutWhileOut?: number;
+  // Weeks still to come that he's projected to sit (on the injury report
+  // now, through his projected return). Priced into valueLost alongside
+  // weeksMissed; they turn into real missed games as the weeks pass.
+  weeksAhead?: number;
 }
 
 export interface InjuryLuck {
   teamId: string;
   // Missed weeks by players who were worth more than replacement.
   gamesMissed: number;
+  // Weeks those players are projected to miss from here.
+  gamesAhead: number;
+  // Both: games missed plus games ahead.
   valueLost: number;
   players: MissedPlayer[];
 }
@@ -319,6 +331,11 @@ export interface InjuryLuckContext {
   // His NFL team's bye week, when known (the week in progress has no
   // played-games evidence to infer it from).
   byeWeek?: (p: Player) => number | undefined;
+  // Known absences ahead: whether he's projected to sit a future week
+  // (Sleeper's weekly projection is zero for it), undefined when no
+  // projection covers him. Counted through seasonEndWeek.
+  projectedOut?: (p: Player, week: number) => boolean | undefined;
+  seasonEndWeek?: number;
 }
 
 // Week a team let the player go, and how: a drop or a trade. Infinity if he
@@ -446,7 +463,23 @@ export function injuryLuck(
         !played.has(cur) &&
         ctx.byeWeek?.(p) !== cur;
       if (outThisWeek) weeksMissed++;
-      if (weeksMissed === 0) continue;
+
+      // Known absences ahead. A player on the injury report right now who is
+      // still this team's loss (on the roster, or cut while out and not back)
+      // keeps costing through every week he's projected to sit, up to the
+      // first week he's projected back. A season-ending injury sits them all.
+      // No projection covering him means no guess: nothing ahead.
+      let weeksAhead = 0;
+      const end = ctx.seasonEndWeek;
+      if (cur !== undefined && end !== undefined && injury?.outNow && until === Infinity) {
+        const bye = ctx.byeWeek?.(p);
+        for (let w = Math.max(cur, ...judged) + 1; w <= end; w++) {
+          if (w === bye) continue;
+          if (!injury.seasonEnding && ctx.projectedOut?.(p, w) !== true) break;
+          weeksAhead++;
+        }
+      }
+      if (weeksMissed + weeksAhead === 0) continue;
 
       const playedJudged = judged.filter(w => played.has(w));
       const pts = pointsOf(p);
@@ -468,12 +501,15 @@ export function injuryLuck(
       if (perGame === undefined) continue;
 
       const repl = ctx.replacementPerGame(p.position);
-      const valueLost = weeksMissed * Math.max(0, perGame - repl);
+      // Games ahead cost the same as games missed: the same player, the
+      // same rate, just later.
+      const valueLost = (weeksMissed + weeksAhead) * Math.max(0, perGame - repl);
       if (valueLost <= 0) continue;
       players.push({
         name: p.name,
         position: p.position,
         weeksMissed,
+        ...(weeksAhead > 0 && { weeksAhead }),
         perGame: round1(perGame),
         replacementPerGame: round1(repl),
         valueLost: round1(valueLost),
@@ -488,6 +524,7 @@ export function injuryLuck(
     return {
       teamId: team.id,
       gamesMissed: players.reduce((s, p) => s + p.weeksMissed, 0),
+      gamesAhead: players.reduce((s, p) => s + (p.weeksAhead ?? 0), 0),
       valueLost: round1(players.reduce((s, p) => s + p.valueLost, 0)),
       players,
     };

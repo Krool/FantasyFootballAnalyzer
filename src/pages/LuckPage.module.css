@@ -344,6 +344,8 @@
     font-weight: 400;
     font-size: 0.65rem;
   }
+  /* The unit label carries "+N ahead" here, so drop the inline copy. */
+  .injuryTable .aheadInline { display: none; }
   .injuryTable td.who {
     grid-column: 1 / -1;
     display: flex;

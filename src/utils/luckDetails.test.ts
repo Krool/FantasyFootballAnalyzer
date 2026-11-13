@@ -295,6 +295,68 @@ describe('injuryLuck', () => {
       name: 'P1', weeksMissed: 2, perGame: 14, valueLost: 12, gamesPlayed: 1, actualPerGame: 5, projectedPerGame: 17,
     });
   });
+
+  describe('weeks ahead', () => {
+    // Star played W1, missed W2-W3; W4 is in progress, his bye is W6, the
+    // season runs through W8.
+    const ahead = (opts: {
+      injury?: { outNow: boolean; seasonEnding: boolean };
+      projectedOut?: (p: Player, w: number) => boolean | undefined;
+      lg?: League;
+    }) =>
+      injuryLuck(opts.lg ?? league, [1, 2, 3], {
+        ...ctx,
+        currentWeek: 4,
+        seasonEndWeek: 8,
+        byeWeek: p => (p.id === '1' ? 6 : undefined),
+        injuryNow: p => (p.id === '1' ? opts.injury : undefined),
+        projectedOut: opts.projectedOut,
+      }).find(r => r.teamId === 'A')!;
+
+    it('counts every week left, bye aside, for a season-ending injury', () => {
+      const a = ahead({ injury: { outNow: true, seasonEnding: true } });
+      // W2, W3, and W4 off the report; W5, W7, W8 ahead.
+      expect(a.players[0]).toMatchObject({ weeksMissed: 3, weeksAhead: 3, valueLost: 6 * 12 });
+      expect(a).toMatchObject({ gamesMissed: 3, gamesAhead: 3, valueLost: 72 });
+    });
+
+    it('stops at the week he is projected back', () => {
+      // Projected out through W6, back W7: only W5 ahead (W6 is the bye).
+      const a = ahead({ injury: { outNow: true, seasonEnding: false }, projectedOut: (_p, w) => w < 7 });
+      expect(a.players[0].weeksAhead).toBe(1);
+    });
+
+    it('guesses nothing ahead without a projection covering him', () => {
+      const a = ahead({ injury: { outNow: true, seasonEnding: false }, projectedOut: () => undefined });
+      expect(a.players[0].weeksAhead).toBeUndefined();
+      expect(a.gamesAhead).toBe(0);
+    });
+
+    it('counts nothing ahead for a player not on the injury report', () => {
+      const a = ahead({ projectedOut: () => true });
+      expect(a.gamesAhead).toBe(0);
+    });
+
+    it('counts nothing ahead once he is traded away', () => {
+      const traded = {
+        ...league,
+        trades: [{
+          id: 't', timestamp: 0, week: 3, status: 'completed',
+          teams: [
+            { teamId: 'A', teamName: 'A', playersReceived: [], playersSent: [star] },
+            { teamId: 'B', teamName: 'B', playersReceived: [star], playersSent: [] },
+          ],
+        }],
+      } as unknown as League;
+      const a = ahead({ injury: { outNow: true, seasonEnding: true }, lg: traded });
+      expect(a.gamesAhead).toBe(0);
+    });
+
+    it('keeps counting ahead for a player cut while out', () => {
+      const a = ahead({ injury: { outNow: true, seasonEnding: true }, lg: cutIn(3) });
+      expect(a.players[0]).toMatchObject({ cutWhileOut: 3, weeksAhead: 3 });
+    });
+  });
 });
 
 describe('blendedPerGame', () => {

@@ -82,7 +82,7 @@ export function LuckPage({ league }: LuckPageProps) {
   const anyCloseGames = luckMetrics.some(m => m.closeWins + m.closeLosses > 0);
   const anyLuckySplits = pa.some(m => m.unluckyLosses + m.luckyWins > 0);
   const showSwap = weeks.length >= 2 && teamIds.length >= 3;
-  const showInjuries = injuries.some(i => i.gamesMissed > 0);
+  const showInjuries = injuries.some(i => i.gamesMissed + i.gamesAhead > 0);
   const injuriesByLoss = [...injuries].sort((a, b) => b.valueLost - a.valueLost);
   const swapRows = [...swapSummary].sort((a, b) => b.betterCount - a.betterCount || a.worseCount - b.worseCount);
 
@@ -182,9 +182,18 @@ export function LuckPage({ league }: LuckPageProps) {
         { label: 'Games', align: 'right' },
       ],
       rows: injuriesByLoss.map(i => [
-        { text: nameOf(i.teamId), sub: i.players.map(p => `${p.name} ${p.weeksMissed}g -${p.valueLost.toFixed(1)}${p.cutWhileOut ? ' (cut)' : ''}`) },
+        {
+          text: nameOf(i.teamId),
+          sub: i.players.map(p =>
+            `${p.name} ${p.weeksMissed}g${p.weeksAhead ? `+${p.weeksAhead}` : ''} -${p.valueLost.toFixed(1)}${p.cutWhileOut ? ' (cut)' : ''}`,
+          ),
+        },
         i.valueLost > 0 ? { text: `-${i.valueLost.toFixed(1)}`, tone: 'terrible' } : { text: '-', tone: 'dim' },
-        { text: String(i.gamesMissed), tone: i.gamesMissed > 0 ? 'bone' : 'dim' },
+        {
+          text: String(i.gamesMissed),
+          tone: i.gamesMissed > 0 ? 'bone' : 'dim',
+          ...(i.gamesAhead > 0 && { sub: `+${i.gamesAhead} ahead` }),
+        },
       ]),
     }]);
 
@@ -240,7 +249,11 @@ export function LuckPage({ league }: LuckPageProps) {
               teamId={injuryHit.teamId}
               name={nameOf(injuryHit.teamId)}
               value={`${injuryHit.gamesMissed} games`}
-              detail={`missed by players better than replacement, ${injuryHit.valueLost.toFixed(1)} pts over replacement lost`}
+              detail={
+                `missed by players better than replacement` +
+                (injuryHit.gamesAhead > 0 ? ` (${injuryHit.gamesAhead} more ahead)` : '') +
+                `, ${injuryHit.valueLost.toFixed(1)} pts over replacement lost`
+              }
             />
           )}
         </div>
@@ -519,6 +532,7 @@ export function LuckPage({ league }: LuckPageProps) {
                 <li>Cutting him doesn't stop the count while the injury report still has him out; it runs until he plays again. A player cut healthy, or traded away, stops counting.</li>
                 <li>A player's per-game value mixes what he's scored with what he was projected to score in the weeks he was expected to play, the projection counting as three games. A few games, one of them cut short by the injury, can't make a star look like a backup; the more he plays, the more it's his real scoring.</li>
                 <li>The week in progress counts once the injury report has him out.</li>
+                <li>So do the weeks ahead he's known to miss: a player on the injury report counts every coming week Sleeper projects him to sit, up to his projected return (the rest of the season for an ACL). Those show as "+N ahead" and become real missed games as the weeks are played.</li>
               </ul>
             </details>
             <div className={`${styles.table} ${styles.injuryTable} scroll-x-hint`}>
@@ -540,8 +554,13 @@ export function LuckPage({ league }: LuckPageProps) {
                       <td className={i.valueLost > 0 ? styles.bad : undefined} data-unit="lost">
                         {i.valueLost > 0 ? i.valueLost.toFixed(1) : <span className={styles.dim}>-</span>}
                       </td>
-                      <td data-unit={i.gamesMissed === 1 ? 'game' : 'games'}>
+                      <td
+                        data-unit={
+                          (i.gamesMissed === 1 ? 'game' : 'games') + (i.gamesAhead > 0 ? `, +${i.gamesAhead} ahead` : '')
+                        }
+                      >
                         {i.gamesMissed > 0 ? i.gamesMissed : <span className={styles.dim}>0</span>}
+                        {i.gamesAhead > 0 && <span className={`${styles.dim} ${styles.aheadInline}`}>+{i.gamesAhead} ahead</span>}
                       </td>
                       <td className={styles.who}>
                         {i.players.length === 0 ? (
@@ -551,7 +570,7 @@ export function LuckPage({ league }: LuckPageProps) {
                             <span key={p.name} className={styles.missed} title={missedTitle(p)}>
                               {p.name}{' '}
                               <span className={styles.dim}>
-                                {p.position} · {p.weeksMissed}g · -{p.valueLost.toFixed(1)}
+                                {p.position} · {p.weeksMissed}g{p.weeksAhead ? ` +${p.weeksAhead} ahead` : ''} · -{p.valueLost.toFixed(1)}
                                 {p.cutWhileOut !== undefined && ` · cut wk ${p.cutWhileOut}`}
                                 {p.seasonEnding && ' · out for season'}
                               </span>
@@ -615,10 +634,12 @@ function Headline({ label, teamId, name, teams, value, detail }: {
 }
 
 const INJURY_NOTE =
-  'Games your drafted players missed, priced at their points per game over a waiver-wire pickup. A star sitting costs the gap; a backup costs nothing.';
+  'Games your drafted players missed or are projected to miss, priced at their points per game over a waiver-wire pickup. A star sitting costs the gap; a backup costs nothing.';
 
 function missedTitle(p: MissedPlayer): string {
-  const games = `${p.weeksMissed} game${p.weeksMissed === 1 ? '' : 's'}`;
+  const games =
+    `${p.weeksMissed} game${p.weeksMissed === 1 ? '' : 's'}` +
+    (p.weeksAhead ? ` plus ${p.weeksAhead} more he's projected to miss` : '');
   // Show where the rate came from when it's a blend of real games and the
   // projection: "11.5 per game (7.0 in 3 games, 16.0 projected)".
   const basis =
