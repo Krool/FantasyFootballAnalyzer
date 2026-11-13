@@ -521,10 +521,11 @@ dropdown (`getAvailableSeasons`) still name-matches.
 
 - **Scalars are NOT reliably strings through our proxy** — Yahoo's JSON
   format quotes everything, but our pipeline parses Yahoo's XML with
-  fast-xml-parser's default numeric coercion, so `<stat_id>21</stat_id>` or
-  `<is_auction_draft>1</is_auction_draft>` can arrive as the NUMBER 21/1
-  and `=== '21'` silently never matches (this read every league's scoring
-  as standard until 2026-08-31). Always compare via `String(x) === '1'` or
+  fast-xml-parser's default numeric coercion, so `<stat_id>11</stat_id>` or
+  `<is_auction_draft>1</is_auction_draft>` can arrive as the NUMBER 11/1
+  and `=== '11'` silently never matches (this read every league's scoring
+  as standard until 2026-08-31; the id itself was also wrong until
+  2026-11-13, see Scoring settings). Always compare via `String(x) === '1'` or
   parse explicitly — and remember string `"0"` is truthy where a real
   string does arrive.
 - **Median leagues**: `settings.uses_median_score === "1"` — extra weekly
@@ -675,13 +676,18 @@ draft pool's stable id scheme does.
 | Interceptions | `pass_int` | 1 | 6 |
 | Rushing yards | `rush_yd` | 24 | 9 |
 | Rushing TDs | `rush_td` | 25 | 10 |
-| Receptions | `rec` | 53 | 21 |
-| Receiving yards | `rec_yd` | 42 | 11 |
-| Receiving TDs | `rec_td` | 43 | 12 |
+| Receptions | `rec` | 53 | 11 |
+| Receiving yards | `rec_yd` | 42 | 12 |
+| Receiving TDs | `rec_td` | 43 | 13 |
 | Fumbles lost | `fum_lost` | 72 | 18 |
 
 (Yahoo scoring lives in `stat_categories`/`stat_modifiers` on league settings;
-reception detection in our adapter keys on stat id 21.)
+reception detection in our adapter keys on stat id 11. Yahoo ids checked
+2026-11-13 against the token-free
+`pub-api-ro.fantasysports.yahoo.com/fantasy/v2/game/nfl/stat_categories`.
+This table used to say receptions were 21, which is Field Goals 30-39 Yards;
+the adapter followed it, so a league scoring that field-goal range read as
+full PPR and one without it (like a real half-PPR league) read as standard.)
 
 ## ESPN lineup slot IDs
 

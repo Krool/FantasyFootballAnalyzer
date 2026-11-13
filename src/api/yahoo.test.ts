@@ -180,7 +180,7 @@ const leagueBody = {
         stat_modifiers: {
           stats: {
             stat: [
-              { stat_id: 21, value: 0.5 }, // receptions: half PPR
+              { stat_id: 11, value: 0.5 }, // receptions: half PPR
               { stat_id: 4, value: 0.04 },
             ],
           },
@@ -546,6 +546,38 @@ function routeYahooEnrich(url: string): unknown {
 
   throw new Error(`Unexpected Yahoo endpoint in test: ${endpoint}`);
 }
+
+describe('yahoo enrichPlayersWithStats (no player_points)', () => {
+  afterAll(() => {
+    vi.unstubAllGlobals();
+    localStorage.removeItem('yahoo_access_token');
+    localStorage.removeItem('yahoo_token_expiry');
+  });
+
+  it('never reads stat 0 (Games Played) as fantasy points', async () => {
+    localStorage.setItem('yahoo_access_token', 'test-token');
+    localStorage.setItem('yahoo_token_expiry', String(Date.now() + 60 * 60 * 1000));
+    // Puka's season body carries stats but no player_points; stat 0 is his
+    // 9 games played, which the old fallback took as his season total.
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const body = routeYahooEnrich(String(input)) as any;
+      const players = body?.fantasy_content?.league?.players?.player;
+      if (Array.isArray(players) && players.some((p: any) => p.player_points?.coverage_type === 'season')) {
+        for (const p of players) {
+          if (p.player_key !== '461.p.200') continue;
+          delete p.player_points;
+          p.player_stats = { stats: { stat: [{ stat_id: 0, value: 9 }, { stat_id: 11, value: 60 }] } };
+        }
+      }
+      return jsonResponse(body);
+    }));
+    const league = await loadLeague(LEAGUE_KEY);
+    await enrichPlayersWithStats(league);
+    const puka = league.teams.find(t => t.id === TEAM_1)!.transactions![0].adds[0];
+    expect(puka.name).toBe('Puka Nacua');
+    expect(puka.seasonPoints).not.toBe(9);
+  });
+});
 
 describe('yahoo enrichPlayersWithStats (weekly data)', () => {
   let league: League;
@@ -1190,15 +1222,24 @@ describe('yahoo loadLeague scoring detection', () => {
   // parser coerces tag values). The unwrapped/string shape is kept as its
   // own case since detection accepts it as a fallback.
   it.each([
-    ['1.0 receptions -> ppr', { stats: { stat: [{ stat_id: 21, value: 1 }] } }, 'ppr'],
-    ['0.5 receptions -> half_ppr', { stats: { stat: [{ stat_id: 21, value: 0.5 }] } }, 'half_ppr'],
-    ['0.25 receptions -> custom', { stats: { stat: [{ stat_id: 21, value: 0.25 }] } }, 'custom'],
+    ['1.0 receptions -> ppr', { stats: { stat: [{ stat_id: 11, value: 1 }] } }, 'ppr'],
+    ['0.5 receptions -> half_ppr', { stats: { stat: [{ stat_id: 11, value: 0.5 }] } }, 'half_ppr'],
+    ['0.25 receptions -> custom', { stats: { stat: [{ stat_id: 11, value: 0.25 }] } }, 'custom'],
     ['no reception modifier -> standard', { stats: { stat: [{ stat_id: 4, value: 0.04 }] } }, 'standard'],
+    // Regression (2026-11-13): stat 21 is Field Goals 30-39 Yards, which
+    // detection used to read as receptions. A half-PPR league that also
+    // scores 30-39 yard field goals is half PPR, not "3 per catch".
+    [
+      'FG 30-39 modifier is not receptions',
+      { stats: { stat: [{ stat_id: 21, value: 3 }, { stat_id: 11, value: 0.5 }] } },
+      'half_ppr',
+    ],
+    ['FG 30-39 modifier alone -> standard', { stats: { stat: [{ stat_id: 21, value: 3 }] } }, 'standard'],
     // fast-xml-parser returns a bare object, not an array, when a league
     // defines exactly one stat modifier. Detection must handle that shape.
-    ['lone stat_modifier object (not array) -> ppr', { stats: { stat: { stat_id: 21, value: 1 } } }, 'ppr'],
+    ['lone stat_modifier object (not array) -> ppr', { stats: { stat: { stat_id: 11, value: 1 } } }, 'ppr'],
     // Legacy/unwrapped shape with string ids still detects.
-    ['unwrapped string-id shape -> ppr', { stat: [{ stat_id: '21', value: '1' }] }, 'ppr'],
+    ['unwrapped string-id shape -> ppr', { stat: [{ stat_id: '11', value: '1' }] }, 'ppr'],
   ] as const)('%s', async (_label, mods, expected) => {
     const league = await loadWithModifiers(mods);
     expect(league.scoringType).toBe(expected);
@@ -1210,18 +1251,18 @@ describe('yahoo loadLeague scoring detection', () => {
   // every real league passTdPoints 0.04 and hid 6pt leagues (audit 2026-10-07).
   it('reads points-per-passing-TD from stat_id 5, not passing yards (4)', async () => {
     const sixPt = await loadWithModifiers({
-      stats: { stat: [{ stat_id: 21, value: 0.5 }, { stat_id: 4, value: 0.04 }, { stat_id: 5, value: 6 }] },
+      stats: { stat: [{ stat_id: 11, value: 0.5 }, { stat_id: 4, value: 0.04 }, { stat_id: 5, value: 6 }] },
     });
     expect(sixPt.passTdPoints).toBe(6);
 
     const fourPt = await loadWithModifiers({
-      stats: { stat: [{ stat_id: 21, value: 0.5 }, { stat_id: 4, value: 0.04 }, { stat_id: 5, value: 4 }] },
+      stats: { stat: [{ stat_id: 11, value: 0.5 }, { stat_id: 4, value: 0.04 }, { stat_id: 5, value: 4 }] },
     });
     expect(fourPt.passTdPoints).toBe(4);
   });
 
   it('leaves passTdPoints undefined when Yahoo sends no passing-TD modifier', async () => {
-    const league = await loadWithModifiers({ stats: { stat: [{ stat_id: 21, value: 0.5 }] } });
+    const league = await loadWithModifiers({ stats: { stat: [{ stat_id: 11, value: 0.5 }] } });
     expect(league.passTdPoints).toBeUndefined();
   });
 });

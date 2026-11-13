@@ -572,7 +572,12 @@ export async function loadLeague(leagueKey: string): Promise<League> {
     leagueInfo.settings?.stat_modifiers?.stat ??
     [];
   const scoringSettings = Array.isArray(statData) ? statData : [statData];
-  const receptionStat = scoringSettings.find((s: any) => String(s.stat_id) === '21'); // Receptions
+  // stat_id 11 = Receptions. It read 21 until 2026-11-13, which is Field
+  // Goals 30-39 Yards: a league scoring those 3 points read as full PPR and
+  // one without that modifier read as standard (the owner's half-PPR league
+  // did), skewing projections and replacement levels everywhere. Ids per
+  // Yahoo's game/nfl/stat_categories (docs/API_REFERENCE.md, Scoring).
+  const receptionStat = scoringSettings.find((s: any) => String(s.stat_id) === '11');
   // stat_id 5 = Passing Touchdowns (4 is passing YARDS; reading 4 gave every
   // league ~0.04 per TD, so 6pt leagues were never detected - audit 2026-10-07).
   const passTdStat = scoringSettings.find((s: any) => String(s.stat_id) === '5');
@@ -1395,19 +1400,14 @@ export async function enrichPlayersWithStats(
       for (const player of playerList) {
         let points: number | undefined;
 
+        // League-scored points only come as player_points. There is no
+        // fantasy-points stat in player_stats to fall back on: this used to
+        // read stat_id 0 as points, and 0 is Games Played, so a player with
+        // no player_points showed his game count as his season total
+        // (Yahoo ids: game/nfl/stat_categories, 2026-11-13). Missing stays
+        // missing.
         if (player.player_points?.total !== undefined) {
           points = parseFloat(player.player_points.total);
-        } else if (player.player_stats?.stats?.stat) {
-          const stats = player.player_stats.stats.stat;
-          const statList = Array.isArray(stats) ? stats : [stats];
-          // String(): the proxy's XML parser coerces numeric tag values, so
-          // stat_id 0 arrives as a number and === '0' never matched.
-          const pointsStat = statList.find((s: any) =>
-            String(s.stat_id) === '0' || s.stat_id === 'fpts'
-          );
-          if (pointsStat) {
-            points = parseFloat(pointsStat.value);
-          }
         }
 
         playerMap.set(player.player_key, {

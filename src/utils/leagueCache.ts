@@ -19,7 +19,10 @@ import { logger } from '@/utils/logger';
 //     snapshots would have served it for up to 30 more days.
 // v5: added League.weeklyLineups (Sleeper/ESPN). Optional, but a final-season
 //     snapshot without it would hide the lineup awards for up to 30 days.
-const CACHE_VERSION = 5;
+// v6: Yahoo scoringType read the wrong stat id for receptions (21, a
+//     field-goal range, instead of 11), so every Yahoo snapshot carries a
+//     wrong scoring type and final-season ones would keep it for 30 days.
+const CACHE_VERSION = 6;
 const KEY_PREFIX = 'ffa:league:v' + CACHE_VERSION + ':';
 
 interface CacheEntry {
