@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { DraftPick, League, Player, WeeklyMatchup } from '@/types';
-import { injuryLuck, pointsAgainstMetrics, scheduleSwap, summarizeScheduleSwap } from './luckDetails';
+import { PACE_PRIOR_GAMES } from './seasonOutlook';
+import {
+  PROJECTION_WEIGHT_GAMES,
+  blendedPerGame,
+  injuryLuck,
+  pointsAgainstMetrics,
+  scheduleSwap,
+  summarizeScheduleSwap,
+} from './luckDetails';
 
 const m = (week: number, t1: string, p1: number, t2: string, p2: number): WeeklyMatchup => ({
   week, team1Id: t1, team1Points: p1, team2Id: t2, team2Points: p2,
@@ -269,5 +277,42 @@ describe('injuryLuck', () => {
 
   it('returns nothing with no way to tell played from missed (Yahoo, no gp)', () => {
     expect(injuryLuck({ ...league, playerWeeklyPoints: undefined }, [1, 2], ctx)).toEqual([]);
+  });
+
+  it('prices a short sample against his projection, not his raw rate alone', () => {
+    // The Achane case: one game of 5 (he got hurt in it), projected 17 a
+    // game. Raw, that's 5 - 8 = nothing lost; blended, (5 + 3 x 17) / 4 =
+    // 14 a game, so each of the 2 missed weeks costs 14 - 8 = 6.
+    const hurtEarly = {
+      ...league,
+      playerWeeklyPoints: { ...league.playerWeeklyPoints, '1': { 1: 5 } },
+    } as League;
+    const raw = injuryLuck(hurtEarly, [1, 2, 3, 4], ctx).find(r => r.teamId === 'A')!;
+    expect(raw.players).toEqual([]);
+    const a = injuryLuck(hurtEarly, [1, 2, 3, 4], { ...ctx, projectedPerGame: p => (p.id === '1' ? 17 : undefined) })
+      .find(r => r.teamId === 'A')!;
+    expect(a.players[0]).toMatchObject({
+      name: 'P1', weeksMissed: 2, perGame: 14, valueLost: 12, gamesPlayed: 1, actualPerGame: 5, projectedPerGame: 17,
+    });
+  });
+});
+
+describe('blendedPerGame', () => {
+  it('weighs the projection as three extra games', () => {
+    // 3 games at 7 against a 16 projection: an even split.
+    expect(blendedPerGame({ total: 21, games: 3 }, 16)).toBeCloseTo(11.5);
+    // 9 games: his own scoring is 75% of it.
+    expect(blendedPerGame({ total: 90, games: 9 }, 18)).toBeCloseTo(12);
+  });
+
+  it('falls back to whichever side exists', () => {
+    expect(blendedPerGame({ total: 21, games: 3 }, undefined)).toBe(7);
+    expect(blendedPerGame(undefined, 16)).toBe(16);
+    expect(blendedPerGame({ total: 0, games: 0 }, 16)).toBe(16);
+    expect(blendedPerGame(undefined, undefined)).toBeUndefined();
+  });
+
+  it('uses the same projection weight as the draft grades', () => {
+    expect(PROJECTION_WEIGHT_GAMES).toBe(PACE_PRIOR_GAMES);
   });
 });

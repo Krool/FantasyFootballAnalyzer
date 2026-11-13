@@ -517,6 +517,7 @@ export function LuckPage({ league }: LuckPageProps) {
               <ul>
                 <li>Byes don't count, and neither do weeks before his first game: drafting a player who was already hurt or suspended was a draft call.</li>
                 <li>Cutting him doesn't stop the count while the injury report still has him out; it runs until he plays again. A player cut healthy, or traded away, stops counting.</li>
+                <li>A player's per-game value mixes what he's scored with his preseason projection, which counts as three games. A few games, one of them cut short by the injury, can't make a star look like a backup; the more he plays, the more it's his real scoring.</li>
                 <li>The week in progress counts once the injury report has him out.</li>
               </ul>
             </details>
@@ -618,8 +619,16 @@ const INJURY_NOTE =
 
 function missedTitle(p: MissedPlayer): string {
   const games = `${p.weeksMissed} game${p.weeksMissed === 1 ? '' : 's'}`;
+  // Show where the rate came from when it's a blend of real games and the
+  // projection: "11.5 per game (7.0 in 3 games, 16.0 projected)".
+  const basis =
+    p.actualPerGame !== undefined && p.projectedPerGame !== undefined && p.gamesPlayed
+      ? ` (${p.actualPerGame.toFixed(1)} in ${p.gamesPlayed} game${p.gamesPlayed === 1 ? '' : 's'}, ${p.projectedPerGame.toFixed(1)} projected)`
+      : p.actualPerGame === undefined && p.projectedPerGame !== undefined
+        ? ' (projected)'
+        : '';
   return (
-    `${p.perGame.toFixed(1)} per game vs ${p.replacementPerGame.toFixed(1)} replacement: ` +
+    `${p.perGame.toFixed(1)} per game${basis} vs ${p.replacementPerGame.toFixed(1)} replacement: ` +
     `${p.valueLost.toFixed(1)} lost over ${games}` +
     (p.cutWhileOut !== undefined ? `, still counting after the week ${p.cutWhileOut} cut: he was out when cut and the injury report still has him out` : '') +
     (p.outThisWeek ? ', including this week (ruled out on the injury report)' : '')

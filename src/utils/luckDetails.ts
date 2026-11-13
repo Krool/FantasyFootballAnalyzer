@@ -224,7 +224,9 @@ export function summarizeScheduleSwap(swap: ScheduleSwap): ScheduleSwapSummary[]
 // stops producing above what the waiver wire would have given. So each missed
 // week is priced at max(0, his per-game rate - replacement per game at his
 // position). A sub-replacement player missing time costs nothing (you'd have
-// streamed that slot anyway); a stud missing time costs the gap.
+// streamed that slot anyway); a stud missing time costs the gap. His rate
+// mixes in his preseason projection (blendedPerGame) so a short, injury-
+// shortened sample doesn't make a star look like a backup.
 //
 // Only weeks after his first game count. A player who hadn't played yet was
 // hurt (or suspended, or holding out) before the season, which the drafter
@@ -246,13 +248,41 @@ export interface GamesPlayedLike {
   bySleeperId: Record<string, number[]>;
 }
 
+// How many games his preseason projection counts as when it's mixed into
+// his real per-game rate (see blendedPerGame). Same weight the draft grades
+// give it (seasonOutlook's PACE_PRIOR_GAMES), so a player's rate reads the
+// same on both pages; a test pins the two together. Not imported: that
+// module drags the weekly projection data into whatever imports this one.
+export const PROJECTION_WEIGHT_GAMES = 3;
+
+// The rate a missed game is priced at. A few real games are a noisy read:
+// the game he got hurt in is often a partial one (Achane's 2026 rate came
+// out 7.0 a game off three games, one of them his ACL), which priced a $53
+// back's season-ending injury below a one-week absence. So his preseason
+// projection counts as PROJECTION_WEIGHT_GAMES extra games: three games in,
+// it's half the rate; nine games in, a quarter. With no projection (past
+// seasons) it's his actual rate; with no games, the projection alone.
+export function blendedPerGame(
+  actual: { total: number; games: number } | undefined,
+  projected: number | undefined,
+): number | undefined {
+  const games = actual && actual.games > 0 ? actual.games : 0;
+  if (games === 0) return projected;
+  if (projected === undefined) return actual!.total / games;
+  return (actual!.total + projected * PROJECTION_WEIGHT_GAMES) / (games + PROJECTION_WEIGHT_GAMES);
+}
+
 export interface MissedPlayer {
   name: string;
   position: string;
   weeksMissed: number;
-  // Per game in the weeks he played (0-point games included), or his
-  // projection when he hasn't played at all.
+  // The rate each missed game is priced at: his real per game (0-point
+  // games included) blended with his preseason projection.
   perGame: number;
+  // The two inputs to perGame, for the tooltip.
+  gamesPlayed?: number;
+  actualPerGame?: number;
+  projectedPerGame?: number;
   replacementPerGame: number;
   // weeksMissed * max(0, perGame - replacementPerGame).
   valueLost: number;
@@ -420,19 +450,21 @@ export function injuryLuck(
 
       const playedJudged = judged.filter(w => played.has(w));
       const pts = pointsOf(p);
-      let perGame: number | undefined;
+      // What he actually scored, and over how many games.
+      let actual: { total: number; games: number } | undefined;
       if (playedJudged.length > 0) {
         if (pts) {
-          perGame = playedJudged.reduce((s, w) => s + (pts[w] ?? 0), 0) / playedJudged.length;
+          actual = { total: playedJudged.reduce((s, w) => s + (pts[w] ?? 0), 0), games: playedJudged.length };
         } else {
           // A season total covers every game to date: the in-progress week
           // (Yahoo adds it back) and playoff weeks, which judged leaves out.
           // Divide by every game played, or the rate inflates.
           const total = pk.seasonPoints ?? p.seasonPoints;
-          if (total !== undefined) perGame = total / Math.max(played.size, playedJudged.length);
+          if (total !== undefined) actual = { total, games: Math.max(played.size, playedJudged.length) };
         }
       }
-      perGame ??= ctx.projectedPerGame?.(p);
+      const projected = ctx.projectedPerGame?.(p);
+      const perGame = blendedPerGame(actual, projected);
       if (perGame === undefined) continue;
 
       const repl = ctx.replacementPerGame(p.position);
@@ -448,6 +480,8 @@ export function injuryLuck(
         ...(outThisWeek && { outThisWeek: true }),
         ...(injury?.seasonEnding && { seasonEnding: true }),
         ...(cutWhileOut !== undefined && { cutWhileOut }),
+        ...(actual && { gamesPlayed: actual.games, actualPerGame: round1(actual.total / actual.games) }),
+        ...(projected !== undefined && { projectedPerGame: round1(projected) }),
       });
     }
     players.sort((a, b) => b.valueLost - a.valueLost);
