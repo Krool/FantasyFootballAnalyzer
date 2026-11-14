@@ -530,7 +530,7 @@ export function LuckPage({ league }: LuckPageProps) {
               <ul>
                 <li>Byes don't count, and neither do weeks before his first game: drafting a player who was already hurt or suspended was a draft call.</li>
                 <li>Cutting him doesn't stop the count while the injury report still has him out; it runs until he plays again. A player cut healthy, or traded away, stops counting.</li>
-                <li>A player's per-game value mixes what he's scored with what he was projected to score in the weeks he was expected to play, the projection counting as three games. A few games, one of them cut short by the injury, can't make a star look like a backup; the more he plays, the more it's his real scoring.</li>
+                <li>A missed game is priced at what Sleeper projected him for in his last three games before it, not what he scored. That's the read on his role at the time, so a couple of bad games, or the one he got hurt in, don't make a star look like a backup. Weeks he's projected to sit read 0 and are skipped. Past seasons have no projections, so they use his scoring, leaving out the game he got hurt in.</li>
                 <li>The week in progress counts once the injury report has him out.</li>
                 <li>So do the weeks ahead he's known to miss: a player on the injury report counts every coming week Sleeper projects him to sit, up to his projected return (the rest of the season for an ACL). Those show as "+N ahead" and become real missed games as the weeks are played.</li>
               </ul>
@@ -634,22 +634,24 @@ function Headline({ label, teamId, name, teams, value, detail }: {
 }
 
 const INJURY_NOTE =
-  'Games your drafted players missed or are projected to miss, priced at their points per game over a waiver-wire pickup. A star sitting costs the gap; a backup costs nothing.';
+  'Games your drafted players missed or are projected to miss, priced at their projected points over a waiver-wire pickup. A star sitting costs the gap; a backup costs nothing.';
 
 function missedTitle(p: MissedPlayer): string {
   const games =
     `${p.weeksMissed} game${p.weeksMissed === 1 ? '' : 's'}` +
     (p.weeksAhead ? ` plus ${p.weeksAhead} more he's projected to miss` : '');
-  // Show where the rate came from when it's a blend of real games and the
-  // projection: "11.5 per game (7.0 in 3 games, 16.0 projected)".
+  // Where the rate came from, with what he actually scored beside a
+  // projection: "16.2 projected per game (scored 7.0 a game in 3)".
+  const scored =
+    p.actualPerGame !== undefined && p.gamesPlayed
+      ? ` (scored ${p.actualPerGame.toFixed(1)} a game in ${p.gamesPlayed})`
+      : '';
   const basis =
-    p.actualPerGame !== undefined && p.projectedPerGame !== undefined && p.gamesPlayed
-      ? ` (${p.actualPerGame.toFixed(1)} in ${p.gamesPlayed} game${p.gamesPlayed === 1 ? '' : 's'}, ${p.projectedPerGame.toFixed(1)} projected)`
-      : p.actualPerGame === undefined && p.projectedPerGame !== undefined
-        ? ' (projected)'
-        : '';
+    p.basis === 'projection'
+      ? ` projected per game${scored}`
+      : ' per game (his scoring, leaving out the game he got hurt in)';
   return (
-    `${p.perGame.toFixed(1)} per game${basis} vs ${p.replacementPerGame.toFixed(1)} replacement: ` +
+    `${p.perGame.toFixed(1)}${basis} vs ${p.replacementPerGame.toFixed(1)} replacement: ` +
     `${p.valueLost.toFixed(1)} lost over ${games}` +
     (p.cutWhileOut !== undefined ? `, still counting after the week ${p.cutWhileOut} cut: he was out when cut and the injury report still has him out` : '') +
     (p.outThisWeek ? ', including this week (ruled out on the injury report)' : '')

@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DraftPick, League, Player, WeeklyMatchup } from '@/types';
-import { PACE_PRIOR_GAMES } from './seasonOutlook';
 import {
-  PROJECTION_WEIGHT_GAMES,
-  blendedPerGame,
+  actualPerGame,
   injuryLuck,
   pointsAgainstMetrics,
   scheduleSwap,
@@ -238,7 +236,7 @@ describe('injuryLuck', () => {
       ...league,
       playerWeeklyPoints: { ...league.playerWeeklyPoints, '1': {} },
     } as League;
-    const a = injuryLuck(neverPlayed, [1, 2, 3], { ...ctx, projectedPerGame: () => 14 })
+    const a = injuryLuck(neverPlayed, [1, 2, 3], { ...ctx, projectedWeek: () => 14 })
       .find(r => r.teamId === 'A')!;
     expect(a.gamesMissed).toBe(0);
     expect(a.players).toEqual([]);
@@ -279,20 +277,62 @@ describe('injuryLuck', () => {
     expect(injuryLuck({ ...league, playerWeeklyPoints: undefined }, [1, 2], ctx)).toEqual([]);
   });
 
-  it('prices a short sample against his projection, not his raw rate alone', () => {
-    // The Achane case: one game of 5 (he got hurt in it), projected 17 a
-    // game. Raw, that's 5 - 8 = nothing lost; blended, (5 + 3 x 17) / 4 =
-    // 14 a game, so each of the 2 missed weeks costs 14 - 8 = 6.
-    const hurtEarly = {
+  describe('pricing', () => {
+    // The star with his own weekly points; his KC teammate plays every
+    // week at 10, so no week reads as KC's bye.
+    const season = (starPts: Record<number, number>, weeks: number) => ({
       ...league,
-      playerWeeklyPoints: { ...league.playerWeeklyPoints, '1': { 1: 5 } },
-    } as League;
-    const raw = injuryLuck(hurtEarly, [1, 2, 3, 4], ctx).find(r => r.teamId === 'A')!;
-    expect(raw.players).toEqual([]);
-    const a = injuryLuck(hurtEarly, [1, 2, 3, 4], { ...ctx, projectedPerGame: p => (p.id === '1' ? 17 : undefined) })
-      .find(r => r.teamId === 'A')!;
-    expect(a.players[0]).toMatchObject({
-      name: 'P1', weeksMissed: 2, perGame: 14, valueLost: 12, gamesPlayed: 1, actualPerGame: 5, projectedPerGame: 17,
+      playerWeeklyPoints: {
+        ...league.playerWeeklyPoints,
+        '1': starPts,
+        '2': Object.fromEntries(Array.from({ length: weeks }, (_, i) => [i + 1, 10])),
+      },
+    }) as League;
+    const weeksTo = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
+    // Projections for the star only, week -> points (missing = 0).
+    const projecting = (curve: Record<number, number>) => ({
+      ...ctx,
+      projectedWeek: (p: Player, w: number) => (p.id === '1' ? curve[w] ?? 0 : undefined),
+    });
+    const starRow = (lg: League, weeks: number, c: Parameters<typeof injuryLuck>[2]) =>
+      injuryLuck(lg, weeksTo(weeks), c).find(r => r.teamId === 'A')!.players.find(p => p.name === 'P1');
+
+    it('prices missed games at his projection going in, not what he scored', () => {
+      // The Achane case: 5 points in the game he got hurt in, projected 17
+      // for it. His scoring says he cost nothing (5 < 8); his projection
+      // says each of the 2 missed weeks cost 17 - 8 = 9.
+      const lg = season({ 1: 5 }, 3);
+      expect(starRow(lg, 3, ctx)).toBeUndefined();
+      expect(starRow(lg, 3, projecting({ 1: 17 }))).toMatchObject({
+        weeksMissed: 2, perGame: 17, basis: 'projection', valueLost: 18, gamesPlayed: 1, actualPerGame: 5,
+      });
+    });
+
+    it('averages his last three games and skips weeks projected at zero', () => {
+      // Played W1-W4 with a rising role, out W5-W6 (projected 0 there once
+      // he was ruled out): his last three games average (14 + 16 + 18) / 3.
+      const lg = season({ 1: 10, 2: 12, 3: 14, 4: 16 }, 6);
+      expect(starRow(lg, 6, projecting({ 1: 10, 2: 14, 3: 16, 4: 18 }))).toMatchObject({
+        weeksMissed: 2, perGame: 16, valueLost: 16,
+      });
+    });
+
+    it('prices each absence off the projections before it', () => {
+      // Out W2 (only W1 before it, 12), back W3-W4 at 18, out W5:
+      // (12 - 8) + ((12 + 18 + 18) / 3 - 8) = 4 + 8.
+      const lg = season({ 1: 10, 3: 15, 4: 15 }, 5);
+      expect(starRow(lg, 5, projecting({ 1: 12, 3: 18, 4: 18 }))).toMatchObject({
+        weeksMissed: 2, perGame: 14, valueLost: 12,
+      });
+    });
+
+    it('falls back to his scoring, leaving out the game he got hurt in', () => {
+      // No projection: 20 and 16, then 3 in the game before his absence.
+      // That game drags him under his other games, so it's left out: 18.
+      const lg = season({ 1: 20, 2: 16, 3: 3 }, 5);
+      expect(starRow(lg, 5, ctx)).toMatchObject({
+        weeksMissed: 2, perGame: 18, basis: 'actual', valueLost: 20, actualPerGame: 13,
+      });
     });
   });
 
@@ -301,7 +341,7 @@ describe('injuryLuck', () => {
     // season runs through W8.
     const ahead = (opts: {
       injury?: { outNow: boolean; seasonEnding: boolean };
-      projectedOut?: (p: Player, w: number) => boolean | undefined;
+      projectedWeek?: (p: Player, w: number) => number | undefined;
       lg?: League;
     }) =>
       injuryLuck(opts.lg ?? league, [1, 2, 3], {
@@ -310,7 +350,7 @@ describe('injuryLuck', () => {
         seasonEndWeek: 8,
         byeWeek: p => (p.id === '1' ? 6 : undefined),
         injuryNow: p => (p.id === '1' ? opts.injury : undefined),
-        projectedOut: opts.projectedOut,
+        projectedWeek: opts.projectedWeek,
       }).find(r => r.teamId === 'A')!;
 
     it('counts every week left, bye aside, for a season-ending injury', () => {
@@ -322,18 +362,22 @@ describe('injuryLuck', () => {
 
     it('stops at the week he is projected back', () => {
       // Projected out through W6, back W7: only W5 ahead (W6 is the bye).
-      const a = ahead({ injury: { outNow: true, seasonEnding: false }, projectedOut: (_p, w) => w < 7 });
-      expect(a.players[0].weeksAhead).toBe(1);
+      const a = ahead({
+        injury: { outNow: true, seasonEnding: false },
+        projectedWeek: (_p, w) => (w === 1 ? 20 : w < 7 ? 0 : 15),
+      });
+      // Priced off his W1 projection, not the 15 he's projected back at.
+      expect(a.players[0]).toMatchObject({ weeksAhead: 1, perGame: 20 });
     });
 
     it('guesses nothing ahead without a projection covering him', () => {
-      const a = ahead({ injury: { outNow: true, seasonEnding: false }, projectedOut: () => undefined });
+      const a = ahead({ injury: { outNow: true, seasonEnding: false }, projectedWeek: () => undefined });
       expect(a.players[0].weeksAhead).toBeUndefined();
       expect(a.gamesAhead).toBe(0);
     });
 
     it('counts nothing ahead for a player not on the injury report', () => {
-      const a = ahead({ projectedOut: () => true });
+      const a = ahead({ projectedWeek: () => 0 });
       expect(a.gamesAhead).toBe(0);
     });
 
@@ -359,22 +403,20 @@ describe('injuryLuck', () => {
   });
 });
 
-describe('blendedPerGame', () => {
-  it('weighs the projection as three extra games', () => {
-    // 3 games at 7 against a 16 projection: an even split.
-    expect(blendedPerGame({ total: 21, games: 3 }, 16)).toBeCloseTo(11.5);
-    // 9 games: his own scoring is 75% of it.
-    expect(blendedPerGame({ total: 90, games: 9 }, 18)).toBeCloseTo(12);
+describe('actualPerGame', () => {
+  const pts = { 1: 20, 2: 16, 3: 3 };
+
+  it('leaves out the game he got hurt in when it dragged him down', () => {
+    expect(actualPerGame(pts, [1, 2, 3], new Set([3]))).toBe(18);
   });
 
-  it('falls back to whichever side exists', () => {
-    expect(blendedPerGame({ total: 21, games: 3 }, undefined)).toBe(7);
-    expect(blendedPerGame(undefined, 16)).toBe(16);
-    expect(blendedPerGame({ total: 0, games: 0 }, 16)).toBe(16);
-    expect(blendedPerGame(undefined, undefined)).toBeUndefined();
+  it('keeps a big last game: hurt in practice, not in it', () => {
+    expect(actualPerGame({ 1: 10, 2: 10, 3: 22 }, [1, 2, 3], new Set([3]))).toBe(14);
   });
 
-  it('uses the same projection weight as the draft grades', () => {
-    expect(PROJECTION_WEIGHT_GAMES).toBe(PACE_PRIOR_GAMES);
+  it('keeps it when it is his only game, and counts a 0 as a game', () => {
+    expect(actualPerGame({ 1: 4 }, [1], new Set([1]))).toBe(4);
+    expect(actualPerGame({ 1: 12 }, [1, 2], new Set())).toBe(6);
+    expect(actualPerGame({}, [], new Set())).toBeUndefined();
   });
 });

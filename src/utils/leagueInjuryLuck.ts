@@ -1,37 +1,63 @@
 // Injury luck (luckDetails.injuryLuck) wired to this app's data: league-scoring
 // replacement levels from the bundled pool, Sleeper's games-played feed, and
-// a projection for a drafted player who hasn't played yet. Shared by the Luck
-// tab and the Infirmary / Iron Man awards so both read the same numbers.
+// Sleeper's weekly projections, which price each missed game. Shared by the
+// Luck tab and the Infirmary / Iron Man awards so both read the same numbers.
 
 import type { League, Player } from '@/types';
+import type { PoolPlayer } from '@/types/draft';
 import { POOL } from '@/data/draftPool';
 import { WEEKLY_SHAPE } from '@/data/weeklyShape';
 import { injuryLuck, type InjuryLuck } from './luckDetails';
 import { indexPool, resolvePoolPlayer } from './consensusGrade';
-import { projectedPoints } from './projectionValues';
+import { adjustedPoints, projectedPoints, vorConfigFor } from './projectionValues';
 import { DEFAULT_ROSTER_SLOTS, replacementPerGame } from './projectedRoster';
 import { OUTLOOK_WEEKS, injuryOf } from './seasonOutlook';
 
 // `weeks`: the finished weeks to judge (from completedMatchups()).
 export function leagueInjuryLuck(league: League, weeks: number[]): InjuryLuck[] {
   const scoring = league.scoringType ?? 'ppr';
+  const extras = { passTdPoints: league.passTdPoints, tePremiumPerReception: league.tePremiumPerReception };
+  // Same QB / TE adjustment the replacement level gets, so a QB in a
+  // 6-point league is priced like for like against a waiver QB.
+  const cfg = vorConfigFor({
+    sixPtPassTd: (extras.passTdPoints ?? 4) >= 6,
+    tePremium: (extras.tePremiumPerReception ?? 0) > 0,
+  });
   const index = indexPool(POOL);
   const pooled = (p: Player) => resolvePoolPlayer(p, index);
-  // The bundled injury report and byes describe the pool's season only.
+  // The bundled injury report, byes, and projections describe the pool's
+  // season only.
   const thisSeason = POOL.season === league.season;
+  const shapeCovers = thisSeason && WEEKLY_SHAPE.season === league.season;
+
+  // The weekly curve is half PPR; scale it by his league-scoring /
+  // half-PPR season ratio.
+  const scaleCache = new Map<string, number>();
+  const scaleOf = (pl: PoolPlayer): number => {
+    let v = scaleCache.get(pl.id);
+    if (v === undefined) {
+      const season = projectedPoints(pl, scoring);
+      const half = projectedPoints(pl, 'half_ppr');
+      v = half && season != null ? adjustedPoints(pl, season, cfg) / half : 1;
+      scaleCache.set(pl.id, v);
+    }
+    return v;
+  };
+
   return injuryLuck(league, weeks, {
     currentWeek: thisSeason && league.status === 'live' ? league.currentWeek : undefined,
     injuryNow: p => (thisSeason ? injuryOf(pooled(p)) : undefined),
     byeWeek: p => (thisSeason ? pooled(p)?.bye ?? undefined : undefined),
-    // Sleeper's weekly projections, refreshed twice daily, zero the weeks a
-    // hurt player is expected to sit (and his bye, which injuryLuck skips
-    // first). The same curve the draft grades read his return week from.
-    projectedOut: (p, week) => {
-      if (!thisSeason || WEEKLY_SHAPE.season !== league.season) return undefined;
+    // Sleeper's weekly projections, refreshed twice daily. A week already
+    // played keeps the projection he went into it with; the weeks a hurt
+    // player is expected to sit (and his bye) are zero, which is also how
+    // the draft grades read his return week.
+    projectedWeek: (p, week) => {
+      if (!shapeCovers) return undefined;
       const pl = pooled(p);
       const curve = pl ? WEEKLY_SHAPE.players[pl.id] : undefined;
-      if (!curve || curve.length < week) return undefined;
-      return curve[week - 1] <= 0;
+      if (!pl || !curve || curve.length < week) return undefined;
+      return curve[week - 1] * scaleOf(pl);
     },
     seasonEndWeek: OUTLOOK_WEEKS,
     replacementPerGame: replacementPerGame(
@@ -39,29 +65,10 @@ export function leagueInjuryLuck(league: League, weeks: number[]): InjuryLuck[] 
       league.rosterSlots ?? DEFAULT_ROSTER_SLOTS,
       league.totalTeams || league.teams.length,
       scoring,
-      { passTdPoints: league.passTdPoints, tePremiumPerReception: league.tePremiumPerReception },
+      extras,
     ),
     gamesPlayed: league.gamesPlayed,
     // Sleeper ids are the platform ids; ESPN and Yahoo join through the pool.
     sleeperIdOf: p => (league.platform === 'sleeper' ? p.id : pooled(p)?.sleeperId),
-    // A player who hasn't played yet: his projected points per ACTIVE
-    // week (the weekly shape zeroes byes and suspensions, so season / 17
-    // would dilute a suspended starter). The shape is half PPR; scale it
-    // by his league-scoring / half-PPR season ratio. This season only.
-    projectedPerGame: p => {
-      if (POOL.season !== league.season) return undefined;
-      const pl = pooled(p);
-      if (!pl) return undefined;
-      const season = projectedPoints(pl, scoring);
-      const weeksOn = WEEKLY_SHAPE.season === league.season
-        ? (WEEKLY_SHAPE.players[pl.id] ?? []).filter(v => v > 0)
-        : [];
-      if (weeksOn.length > 0) {
-        const half = projectedPoints(pl, 'half_ppr');
-        const factor = half && season != null ? season / half : 1;
-        return (weeksOn.reduce((a, v) => a + v, 0) / weeksOn.length) * factor;
-      }
-      return season != null ? season / 17 : undefined;
-    },
   });
 }
