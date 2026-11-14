@@ -904,6 +904,7 @@ function App() {
           <p className="footer-legal">
             <Link to="/privacy">Privacy</Link>
             <Link to="/terms">Terms</Link>
+            <a href="https://ko-fi.com/kroolworld" target="_blank" rel="noopener noreferrer">Ko-fi</a>
           </p>
           {/* Yahoo's API agreement requires this wherever its data shows:
               a Yahoo league, and the draft-prep boards, which carry Yahoo's
