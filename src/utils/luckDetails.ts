@@ -225,7 +225,7 @@ export function summarizeScheduleSwap(swap: ScheduleSwap): ScheduleSwapSummary[]
 // week is priced at max(0, his per-game rate - replacement per game at his
 // position). A sub-replacement player missing time costs nothing (you'd have
 // streamed that slot anyway); a stud missing time costs the gap. His rate
-// is what analysts projected for him going into the games he missed (see
+// is what analysts projected for him around the games he missed (see
 // PROJECTION_WINDOW_GAMES), not what he'd scored: a great player's couple
 // of bad games, or the one he got hurt in, don't make him a backup.
 //
@@ -255,14 +255,21 @@ export interface GamesPlayedLike {
 }
 
 // The rate a missed game is priced at: the average of his weekly
-// projections for his last PROJECTION_WINDOW_GAMES games before it. That's
-// the analysts' read on him at the time: it moves with his role over the
-// season (Michael Wilson's went from 8.5 to 12.8 as his targets grew), and
-// a few games smooth out single-week matchups. Real games are a noisy read
-// by comparison: Achane's 2026 rate came out 7.0 a game off three games,
-// one of them his ACL, which priced a $53 back's season-ending injury below
-// a one-week absence. The game he got hurt in still counts its projection,
-// which was set before he got hurt.
+// projections for his last PROJECTION_WINDOW_GAMES games before it, or for
+// his first games back after it, whichever is higher. That's the analysts'
+// read on him around the time: it moves with his role over the season
+// (Michael Wilson's went from 8.5 to 12.8 as his targets grew), and a few
+// games smooth out single-week matchups. The games back matter because a
+// breakout right before an injury never reaches a projection: the next
+// week's is zeroed once he's ruled out (Jonah Coleman, 13.3 points on 25
+// snaps in 2026 week 2, then out four weeks, priced off his 2.3 and 6.1
+// rookie projections). A player still out has no games back, so his
+// absence ahead prices off the games before it.
+//
+// Real games are a noisy read by comparison: Achane's 2026 rate came out
+// 7.0 a game off three games, one of them his ACL, which priced a $53
+// back's season-ending injury below a one-week absence. The game he got
+// hurt in still counts its projection, which was set before he got hurt.
 export const PROJECTION_WINDOW_GAMES = 3;
 
 // No projection covers him (past seasons): what he scored, minus the game
@@ -289,7 +296,7 @@ export interface MissedPlayer {
   position: string;
   weeksMissed: number;
   // The rate his missed games are priced at, averaged over them: his
-  // projection going into each (basis 'projection'), or with none, what he
+  // projection around each (basis 'projection'), or with none, what he
   // scored (basis 'actual', the game he got hurt in left out).
   perGame: number;
   basis: 'projection' | 'actual';
@@ -504,15 +511,22 @@ export function injuryLuck(
         if (v !== undefined && v > 0) projectedWeeks.push(v);
       }
       const mean = (vs: number[]) => vs.reduce((s, v) => s + v, 0) / vs.length;
-      const projectedRate = (w: number): number | undefined => {
-        const window: number[] = [];
-        for (const g of gamesBack) {
-          if (g >= w) continue;
+      // His projections for up to PROJECTION_WINDOW_GAMES games he played on
+      // one side of week w, nearest first.
+      const gamesForward = [...gamesBack].reverse();
+      const windowAround = (w: number, side: 'before' | 'after'): number[] => {
+        const out: number[] = [];
+        for (const g of side === 'before' ? gamesBack : gamesForward) {
+          if (side === 'before' ? g >= w : g <= w) continue;
           const v = projOf(g);
-          if (v !== undefined && v > 0) window.push(v);
-          if (window.length === PROJECTION_WINDOW_GAMES) break;
+          if (v !== undefined && v > 0) out.push(v);
+          if (out.length === PROJECTION_WINDOW_GAMES) break;
         }
-        if (window.length > 0) return mean(window);
+        return out;
+      };
+      const projectedRate = (w: number): number | undefined => {
+        const sides = [windowAround(w, 'before'), windowAround(w, 'after')].filter(s => s.length > 0);
+        if (sides.length > 0) return Math.max(...sides.map(mean));
         return projectedWeeks.length > 0 ? mean(projectedWeeks) : undefined;
       };
 

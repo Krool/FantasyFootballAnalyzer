@@ -317,12 +317,33 @@ describe('injuryLuck', () => {
       });
     });
 
-    it('prices each absence off the projections before it', () => {
-      // Out W2 (only W1 before it, 12), back W3-W4 at 18, out W5:
-      // (12 - 8) + ((12 + 18 + 18) / 3 - 8) = 4 + 8.
+    it('prices each absence off the projections around it', () => {
+      // Out W2 (12 before it, 18 and 18 once back: the higher, 18), back
+      // W3-W4, out W5 and still out (only the games before it):
+      // (18 - 8) + ((12 + 18 + 18) / 3 - 8) = 10 + 8.
       const lg = season({ 1: 10, 3: 15, 4: 15 }, 5);
       expect(starRow(lg, 5, projecting({ 1: 12, 3: 18, 4: 18 }))).toMatchObject({
-        weeksMissed: 2, perGame: 14, valueLost: 12,
+        weeksMissed: 2, perGame: 17, valueLost: 18,
+      });
+    });
+
+    it('uses his first games back when they project higher: a breakout before the injury', () => {
+      // The Jonah Coleman case: a rookie projected 2 and 6 in W1-W2 (he
+      // broke out in W2), out W3-W6, back W7-W9 projected 4, 11, 14. Before
+      // it he's a sub-replacement 4 a game; his first three back average
+      // 9.67, so the 4 missed weeks cost 4 x 1.67.
+      const lg = season({ 1: 0.1, 2: 13, 7: 8, 8: 18, 9: 17 }, 9);
+      expect(starRow(lg, 9, projecting({ 1: 2, 2: 6, 7: 4, 8: 11, 9: 14 }))).toMatchObject({
+        weeksMissed: 4, perGame: 9.7, valueLost: 6.7,
+      });
+    });
+
+    it('keeps the games before when his games back project lower', () => {
+      // Back from the injury in a smaller role: the absence still prices
+      // at what he was before it.
+      const lg = season({ 1: 15, 2: 15, 4: 6 }, 4);
+      expect(starRow(lg, 4, projecting({ 1: 16, 2: 16, 4: 9 }))).toMatchObject({
+        weeksMissed: 1, perGame: 16, valueLost: 8,
       });
     });
 

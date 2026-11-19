@@ -530,7 +530,7 @@ export function LuckPage({ league }: LuckPageProps) {
               <ul>
                 <li>Byes don't count, and neither do weeks before his first game: drafting a player who was already hurt or suspended was a draft call.</li>
                 <li>Cutting him doesn't stop the count while the injury report still has him out; it runs until he plays again. A player cut healthy, or traded away, stops counting.</li>
-                <li>A missed game is priced at what Sleeper projected him for in his last three games before it, not what he scored. That's the read on his role at the time, so a couple of bad games, or the one he got hurt in, don't make a star look like a backup. Weeks he's projected to sit read 0 and are skipped. Past seasons have no projections, so they use his scoring, leaving out the game he got hurt in.</li>
+                <li>A missed game is priced at what Sleeper projected him for in his last three games before it, or his first three back, whichever is higher, not what he scored. That's the read on his role at the time, so a couple of bad games, or the one he got hurt in, don't make a star look like a backup, and a breakout right before an injury still counts once he's back. Weeks he's projected to sit read 0 and are skipped. Past seasons have no projections, so they use his scoring, leaving out the game he got hurt in.</li>
                 <li>The week in progress counts once the injury report has him out.</li>
                 <li>So do the weeks ahead he's known to miss: a player on the injury report counts every coming week Sleeper projects him to sit, up to his projected return (the rest of the season for an ACL). Those show as "+N ahead" and become real missed games as the weeks are played.</li>
               </ul>
