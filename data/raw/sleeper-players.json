@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-11-26T06:34:29.198Z",
+ "fetchedAt": "2026-11-26T19:58:13.217Z",
  "data": {
   "players": [
    {
@@ -15,19 +15,6 @@
     "injuryStartDate": null,
     "yearsExp": 18,
     "depthChartOrder": 2
-   },
-   {
-    "sleeperId": "96",
-    "name": "Aaron Rodgers",
-    "pos": "QB",
-    "team": "PIT",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 21,
-    "depthChartOrder": null
    },
    {
     "sleeperId": "138",
@@ -256,8 +243,8 @@
     "pos": "QB",
     "team": "CHI",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Coach's Decision",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 14,
@@ -677,7 +664,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 10,
-    "depthChartOrder": 1
+    "depthChartOrder": 2
    },
    {
     "sleeperId": "3286",
@@ -1263,19 +1250,6 @@
     "injuryStartDate": null,
     "yearsExp": 1,
     "depthChartOrder": 4
-   },
-   {
-    "sleeperId": "4718",
-    "name": "Dare Ogunbowale",
-    "pos": "RB",
-    "team": "HOU",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 9,
-    "depthChartOrder": null
    },
    {
     "sleeperId": "4744",
@@ -2634,10 +2608,10 @@
     "name": "Michael Pittman Jr.",
     "pos": "WR",
     "team": "PIT",
-    "status": "Inactive",
-    "injuryStatus": "IR",
-    "injuryBodyPart": "Foot",
-    "injuryNotes": "Plantar Fasciitis",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
     "depthChartOrder": 7
@@ -2666,7 +2640,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "6847",
@@ -2718,7 +2692,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 2
+    "depthChartOrder": 1
    },
    {
     "sleeperId": "6866",
@@ -3609,8 +3583,8 @@
     "name": "Ben Skowronek",
     "pos": "WR",
     "team": "PIT",
-    "status": "Active",
-    "injuryStatus": "Questionable",
+    "status": "Inactive",
+    "injuryStatus": "IR",
     "injuryBodyPart": "Calf",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -4741,8 +4715,8 @@
     "pos": "TE",
     "team": "IND",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Knee",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
@@ -7112,7 +7086,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": null
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "11649",
@@ -7965,8 +7939,8 @@
     "pos": "WR",
     "team": "MIN",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Hip",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -8212,8 +8186,8 @@
     "pos": "TE",
     "team": "CHI",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Knee",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -8909,6 +8883,19 @@
     "depthChartOrder": null
    },
    {
+    "sleeperId": "12860",
+    "name": "Theo Wease Jr.",
+    "pos": "WR",
+    "team": "LAC",
+    "status": "Active",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
+    "injuryStartDate": null,
+    "yearsExp": 1,
+    "depthChartOrder": null
+   },
+   {
     "sleeperId": "12863",
     "name": "Andrew Armstrong",
     "pos": "WR",
@@ -9101,7 +9088,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "12946",
@@ -10635,7 +10622,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "13429",
