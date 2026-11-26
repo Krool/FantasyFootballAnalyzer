@@ -14,6 +14,7 @@ import {
 import { POOL as REAL_POOL } from '@/data/draftPool';
 import { gradeLeaguePicks } from './consensusGrade';
 import { gradeAllPicks, gradeConsensusPick } from './grading';
+import { consensusAvg } from './consensus';
 import type { DraftPick, League, Player, RosterSlots } from '@/types';
 import { DEFAULT_ROSTER_SLOTS } from './projectedRoster';
 import type { DraftPoolFile } from '@/types/draft';
@@ -570,7 +571,13 @@ describe('grading a draft on the overall consensus board', () => {
   });
 
   it('leaves a pick taken at his consensus slot at market', () => {
-    const graded = gradeLeaguePicks(leagueDrafting(skill.slice(0, TEAMS * ROUNDS)), REAL_POOL);
+    // Draft in the order the board grades against, not pool order. The pool
+    // sorts by FantasyPros rank alone, and in season that rank moves weekly
+    // while the ADPs in the blend stay frozen at draft day, so the two orders
+    // drift apart (2026-11-16: pool #4 sat 7 slots off his consensus slot,
+    // which failed every Update rankings run for ten days).
+    const byConsensus = [...skill].sort((a, b) => consensusAvg(a, 'half_ppr') - consensusAvg(b, 'half_ppr'));
+    const graded = gradeLeaguePicks(leagueDrafting(byConsensus.slice(0, TEAMS * ROUNDS)), REAL_POOL);
     const early = graded.find(g => g.pickNumber === 4)!;
     expect(Math.abs(early.valueOverExpected)).toBeLessThanOrEqual(2);
     expect(early.grade).toBe('good');
