@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-11-27T04:54:05.958Z",
+ "fetchedAt": "2026-11-27T19:47:02.544Z",
  "data": {
   "players": [
    {
@@ -1881,7 +1881,7 @@
     "pos": "WR",
     "team": "NE",
     "status": "Active",
-    "injuryStatus": "Doubtful",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Hamstring",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -1959,8 +1959,8 @@
     "pos": "WR",
     "team": "DEN",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Coach's Decision",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 7,
@@ -2640,7 +2640,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "6847",
@@ -2744,7 +2744,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 3
+    "depthChartOrder": null
    },
    {
     "sleeperId": "6927",
@@ -3272,8 +3272,8 @@
     "pos": "QB",
     "team": "DEN",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Coach's Decision",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
@@ -3857,7 +3857,7 @@
     "pos": "WR",
     "team": "ATL",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Hamstring",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -4369,7 +4369,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 2
+    "depthChartOrder": null
    },
    {
     "sleeperId": "8195",
@@ -4455,9 +4455,9 @@
     "pos": "RB",
     "team": "DEN",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Thumb",
-    "injuryNotes": "Fracture",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
     "depthChartOrder": 2
@@ -4733,7 +4733,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 4
+    "depthChartOrder": null
    },
    {
     "sleeperId": "8523",
@@ -5105,7 +5105,7 @@
     "pos": "WR",
     "team": "JAX",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Shoulder",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -5495,7 +5495,7 @@
     "pos": "TE",
     "team": "IND",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Hamstring",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -5956,19 +5956,6 @@
     "injuryStartDate": null,
     "yearsExp": 3,
     "depthChartOrder": 2
-   },
-   {
-    "sleeperId": "11210",
-    "name": "Malik Heath",
-    "pos": "WR",
-    "team": "WAS",
-    "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryNotes": null,
-    "injuryStartDate": null,
-    "yearsExp": 3,
-    "depthChartOrder": null
    },
    {
     "sleeperId": "11237",
@@ -8984,7 +8971,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 3
+    "depthChartOrder": null
    },
    {
     "sleeperId": "12901",
@@ -9088,7 +9075,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "12946",
@@ -9179,7 +9166,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 10
+    "depthChartOrder": null
    },
    {
     "sleeperId": "13013",
@@ -9486,7 +9473,7 @@
     "pos": "QB",
     "team": "ARI",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Back",
     "injuryNotes": "Spasms",
     "injuryStartDate": null,
@@ -9538,7 +9525,7 @@
     "pos": "WR",
     "team": "NYJ",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Ankle",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -9668,8 +9655,8 @@
     "pos": "QB",
     "team": "PIT",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Coach's Decision",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -9980,7 +9967,7 @@
     "pos": "WR",
     "team": "ATL",
     "status": "Active",
-    "injuryStatus": "Questionable",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Hamstring",
     "injuryNotes": null,
     "injuryStartDate": null,
@@ -10578,8 +10565,8 @@
     "pos": "RB",
     "team": "PIT",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Coach's Decision",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -10760,8 +10747,8 @@
     "pos": "WR",
     "team": "PIT",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Coach's Decision",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
@@ -10851,8 +10838,8 @@
     "pos": "TE",
     "team": "DEN",
     "status": "Active",
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Out",
+    "injuryBodyPart": "Coach's Decision",
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
