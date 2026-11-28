@@ -1,6 +1,6 @@
 {
  "season": 2026,
- "fetchedAt": "2026-11-28T04:39:26.067Z",
+ "fetchedAt": "2026-11-28T18:40:14.530Z",
  "data": {
   "players": [
    {
@@ -438,8 +438,8 @@
     "pos": "TE",
     "team": "CAR",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Knee",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 11,
@@ -677,7 +677,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 10,
-    "depthChartOrder": 6
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "3294",
@@ -2640,7 +2640,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 6,
-    "depthChartOrder": 3
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "6847",
@@ -3532,8 +3532,8 @@
     "pos": "TE",
     "team": "CAR",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Knee",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
@@ -3699,14 +3699,14 @@
     "sleeperId": "7946",
     "name": "Jack Stoll",
     "pos": "TE",
-    "team": "SF",
+    "team": "LAR",
     "status": "Active",
     "injuryStatus": null,
     "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 5,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "8002",
@@ -4174,7 +4174,7 @@
     "injuryNotes": "Soreness",
     "injuryStartDate": null,
     "yearsExp": 4,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "8154",
@@ -5149,7 +5149,7 @@
     "injuryNotes": "Sprain",
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 6
+    "depthChartOrder": 7
    },
    {
     "sleeperId": "9494",
@@ -5442,13 +5442,13 @@
     "name": "Davis Allen",
     "pos": "TE",
     "team": "LAR",
-    "status": "Active",
-    "injuryStatus": "Questionable",
+    "status": "Inactive",
+    "injuryStatus": "Out",
     "injuryBodyPart": "Ankle",
-    "injuryNotes": null,
+    "injuryNotes": "Sprain",
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 3
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "10215",
@@ -6033,7 +6033,7 @@
     "injuryNotes": "Sprain",
     "injuryStartDate": null,
     "yearsExp": 3,
-    "depthChartOrder": 5
+    "depthChartOrder": 4
    },
    {
     "sleeperId": "11280",
@@ -6774,7 +6774,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "11617",
@@ -6826,7 +6826,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 2,
-    "depthChartOrder": 7
+    "depthChartOrder": 9
    },
    {
     "sleeperId": "11624",
@@ -7567,7 +7567,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 6
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "12457",
@@ -7666,8 +7666,8 @@
     "pos": "TE",
     "team": "CAR",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Achilles",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
@@ -8277,9 +8277,9 @@
     "pos": "WR",
     "team": "CAR",
     "status": "Active",
-    "injuryStatus": "Questionable",
-    "injuryBodyPart": "Foot",
-    "injuryNotes": "Soreness",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
     "depthChartOrder": 1
@@ -9075,7 +9075,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 1,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "12946",
@@ -9556,7 +9556,7 @@
     "injuryNotes": null,
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 4
+    "depthChartOrder": 3
    },
    {
     "sleeperId": "13279",
@@ -9907,7 +9907,7 @@
     "injuryNotes": "Surgery",
     "injuryStartDate": null,
     "yearsExp": 0,
-    "depthChartOrder": 4
+    "depthChartOrder": 5
    },
    {
     "sleeperId": "13316",
